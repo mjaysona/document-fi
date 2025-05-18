@@ -119,6 +119,120 @@ This boilerplate implements a multi-tenant architecture with these key features:
 - Custom role creation with granular permissions
 - Access control at collection and field level
 
+## Fork and Clone Setup
+
+1. First, fork the repository by visiting [https://github.com/mjaysona/pv3-boilerplate](https://github.com/mjaysona/pv3-boilerplate) and clicking the "Fork" button in the upper right corner.
+
+2. After forking, clone your forked repository to your local machine:
+   ```bash
+   git clone https://github.com/YOUR-USERNAME/pv3-boilerplate.git
+   cd pv3-boilerplate
+   ```
+
+3. Add the original repository as an upstream remote to keep your fork updated:
+   ```bash
+   git remote add upstream https://github.com/mjaysona/pv3-boilerplate.git
+   ```
+
+4. Verify your remotes are set up correctly:
+   ```bash
+   git remote -v
+   ```
+   You should see:
+   ```
+   origin    https://github.com/YOUR-USERNAME/pv3-boilerplate.git (fetch)
+   origin    https://github.com/YOUR-USERNAME/pv3-boilerplate.git (push)
+   upstream  https://github.com/mjaysona/pv3-boilerplate.git (fetch)
+   upstream  https://github.com/mjaysona/pv3-boilerplate.git (push)
+   ```
+
+## Branch Management
+
+To ensure your fork's branches (like `main`) are prioritized as default:
+
+1. Set up your local branches to track your fork's remote branches:
+   ```bash
+   git checkout main
+   git branch -u origin/main
+   ```
+
+2. When switching branches, use the following format to ensure you're using your fork's branches:
+   ```bash
+   git checkout origin/branch-name
+   ```
+
+## Keeping Your Fork Updated
+
+To get updates from the original repository:
+
+1. Fetch the upstream changes:
+   ```bash
+   git fetch upstream
+   ```
+
+2. Merge the changes from the upstream repository to your local branches:
+   ```bash
+   git checkout main
+   git merge upstream/main
+   ```
+
+3. Push the merged changes to your fork:
+   ```bash
+   git push origin main
+   git push origin dev
+   ```
+
+## Creating a Duplicate Repository
+
+If you own this repository and want to create a duplicate that can be updated from the original (similar to a fork):
+
+1. Create a new empty repository on GitHub (without initializing it with any files)
+
+2. Clone your new empty repository locally:
+   ```bash
+   git clone https://github.com/YOUR-USERNAME/NEW-REPO-NAME.git
+   cd NEW-REPO-NAME
+   ```
+
+3. Add the original repository as the "upstream" remote:
+   ```bash
+   git remote add upstream https://github.com/YOUR-USERNAME/pv3-boilerplate.git
+   ```
+
+4. Fetch all branches and history from the original repository:
+   ```bash
+   git fetch upstream
+   ```
+
+5. Pull in the content from the original repository's main branch:
+   ```bash
+   git pull upstream main
+   ```
+
+6. Push all the content to your new repository:
+   ```bash
+   git push origin main
+   ```
+
+7. Set up any additional branches you need:
+   ```bash
+   # For each branch you want to copy over:
+   git checkout -b branch-name upstream/branch-name
+   git push origin branch-name
+   ```
+
+Now you have two remotes:
+- `origin` - points to your new repository
+- `upstream` - points to your original repository
+
+You can fetch updates from the original repository and merge them as needed:
+```bash
+git fetch upstream
+git checkout main
+git merge upstream/main
+git push origin main
+```
+
 ## Customization
 
 ### Adding a New Collection
