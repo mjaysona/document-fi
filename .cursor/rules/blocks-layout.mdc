@@ -1,0 +1,5675 @@
+# Blocks Overview
+
+Block Type: Hero/Header
+├── Two-Column Hero (Text + Image)
+├── Centered Content Hero
+├── Full-Width Background Image Hero
+├── Video Background Hero
+├── Animated/Parallax Hero
+├── Multi-Column Features Hero
+├── Slider/Carousel Hero
+├── Splash Screen Hero
+├── App Showcase Hero
+└── Minimalist Text-Only Hero
+
+Block Type: Content/Feature
+├── Alternating Image & Text Sections
+├── Icon Grid Features
+├── Three-Column Features
+├── Feature List with Icons
+├── Feature Tabs/Accordion
+├── Stepped Features Process
+├── Feature Comparison Table
+├── Content with Side Navigation
+├── Feature Spotlight (Single Focus)
+└── Animated Feature Reveal
+
+Block Type: Product Display
+├── Product Grid (2×2, 3×3, etc.)
+├── Horizontal Scrolling Products
+├── Featured Product Spotlight
+├── Product Comparison Section
+├── Category Navigation Grid
+├── Product Lookbook
+├── Collection Showcase
+├── New Arrivals Banner
+├── Product Benefits List
+└── Related Products Carousel
+
+Block Type: Testimonial/Social Proof
+├── Testimonial Carousel
+├── Quote Grid Layout
+├── Featured Single Testimonial
+├── Testimonial with Avatar
+├── Client Logo Grid
+├── Ratings & Reviews Section
+├── Social Media Testimonial Wall
+├── Video Testimonials Grid
+├── Case Study Preview
+└── Before & After Showcase
+
+Block Type: Call to Action (CTA)
+├── Simple Centered CTA
+├── Split CTA (Image + Text)
+├── Full-Width Banner CTA
+├── Newsletter Signup
+├── Download/Free Trial CTA
+├── Contact CTA
+├── Floating CTA Bar
+├── Popup/Modal CTA
+├── Sticky Bottom CTA
+└── Time-Limited Offer CTA
+
+Block Type: Media/Gallery
+├── Masonry Image Gallery
+├── Video Grid
+├── Image Carousel
+├── Lightbox Gallery
+├── Before/After Image Slider
+├── Portfolio Grid
+├── Media with Captions
+├── Instagram Feed Style Gallery
+├── 360° Product View
+└── Video Background Section
+
+Block Type: Contact/Form
+├── Simple Contact Form
+├── Split Contact (Form + Info)
+├── Contact with Map
+├── Multi-Step Form
+├── Contact Card Grid
+├── Newsletter Subscription
+├── Booking/Reservation Form
+├── Help/Support Contact Section
+├── Callback Request Form
+└── Contact with Social Links
+
+Block Type: Statistics/Metrics
+├── Number Counter Grid
+├── Animated Statistics
+├── Progress Bars
+├── Infographic Style Stats
+├── Timeline with Metrics
+├── Achievement Showcase
+├── Comparison Stats
+├── Circular Progress Charts
+├── Dynamic Data Visualization
+└── Growth Metrics Display
+
+Block Type: Team/About
+├── Team Member Grid
+├── Team Member Carousel
+├── About Company Timeline
+├── Values/Mission Grid
+├── Team Member Profile
+├── Leadership Spotlight
+├── Company History Timeline
+├── Office/Location Showcase
+├── Awards & Recognition
+└── Company Culture Gallery
+
+Block Type: FAQ/Information
+├── Accordion FAQ
+├── Category Tabs FAQ
+├── Two-Column FAQ
+├── Searchable FAQ Section
+├── Icon Grid Information
+├── Step-by-Step Guide
+├── Information Cards
+├── Resource Download Section
+├── Knowledge Base Preview
+└── Glossary/Terms Section
+
+Block Type: Pricing
+├── Pricing Table Compare
+├── Pricing Cards
+├── Pricing Slider/Calculator
+├── Feature Comparison Pricing
+├── Subscription Tiers
+├── Pricing Toggle (Monthly/Annual)
+├── Service Package Grid
+├── Custom Quote Section
+├── Pricing with Testimonials
+└── Free vs. Paid Comparison
+
+Block Type: Footer
+├── Multi-Column Footer
+├── Newsletter Footer
+├── Minimal Footer
+├── App Download Footer
+├── Social-Focused Footer
+├── Two-Tier Footer
+├── Mega Footer
+├── CTA Footer
+├── Map/Location Footer
+└── Awards & Partners Footer
+
+# Content/Feature Block Types with Fields
+
+# Hero/Header Block Types with Fields
+
+## Two-Column Hero (Text + Image)
+┌──────────────────────────────────────────┐
+│    Text Column         Image Column      │
+│ ┌─────────────┐     ┌────────────┐      │
+│ │ Headline    │     │            │      │
+│ │ Subheader   │     │   Large    │      │
+│ │ Description │     │   Image    │      │
+│ │ [Buttons]   │     │            │      │
+│ └─────────────┘     └────────────┘      │
+└──────────────────────────────────────────┘
+
+Fields:
+- headline
+- subheader
+- description
+- buttons: array of {label, url, style}
+- image: {src, alt}
+- layout_position: "image_right" or "image_left"
+- text_alignment: "left", "center", "right"
+- background_color
+- column_ratio: "50/50", "40/60", "60/40"
+- spacing: {padding, gap}
+
+## Centered Content Hero
+┌──────────────────────────────────────────┐
+│                                          │
+│         ┌─────────────────────┐          │
+│         │  Headline (Large)   │          │
+│         │      Subheader      │          │
+│         │     Description     │          │
+│         │                     │          │
+│         │    [Button 1]       │          │
+│         └─────────────────────┘          │
+│                                          │
+└──────────────────────────────────────────┘
+
+Fields:
+- headline
+- subheader
+- description
+- buttons: array of {label, url, style}
+- max_width
+- text_alignment: "center"
+- background_color
+- background_image
+- overlay_opacity
+- spacing: {padding, margin}
+
+## Full-Width Background Image Hero
+┌──────────────────────────────────────────┐
+│ ////////// BACKGROUND IMAGE //////////// │
+│ //                                    // │
+│ //   ┌──────────────────────────┐     // │
+│ //   │     Headline (Large)     │     // │
+│ //   │        Subheader         │     // │
+│ //   │       [Button 1]         │     // │
+│ //   └──────────────────────────┘     // │
+│ //                                    // │
+│ //////////////////////////////////////// │
+└──────────────────────────────────────────┘
+
+Fields:
+- headline
+- subheader
+- description
+- buttons: array of {label, url, style}
+- background_image: {src, alt}
+- overlay_color
+- overlay_opacity
+- text_color
+- text_position: "left", "center", "right"
+- height: "short", "medium", "tall", "full"
+
+## Video Background Hero
+┌──────────────────────────────────────────┐
+│ >>>>>>>>> VIDEO BACKGROUND <<<<<<<<<<<<< │
+│ >>                                    << │
+│ >>  ┌─────────────────────────────┐   << │
+│ >>  │        Hero Headline        │   << │
+│ >>  │          Subheader          │   << │
+│ >>  │          [Play] [CTA]       │   << │
+│ >>  └─────────────────────────────┘   << │
+│ >>                                    << │
+│ >>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<< │
+└──────────────────────────────────────────┘
+
+Fields:
+- headline
+- subheader
+- buttons: array of {label, url, style}
+- video: {src, poster}
+- video_settings: {autoplay, loop, muted}
+- overlay_color
+- overlay_opacity
+- text_color
+- text_position
+- height: "medium", "tall", "full"
+
+## Animated/Parallax Hero
+┌──────────────────────────────────────────┐
+│ ~~~~ LAYER 1 (MOVES SLOWER) ~~~~~~~~~~~~ │
+│ ~                                      ~ │
+│ ~  ┌─────────────────────────┐ LAYER 2 ~ │
+│ ~  │       Hero Title        │ (MOVES  ~ │
+│ ~  │       Subtitle          │ FASTER) ~ │
+│ ~  └─────────────────────────┘         ~ │
+│ ~          [Animated Button]            ~ │
+│ ~                                      ~ │
+│ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ │
+└──────────────────────────────────────────┘
+
+Fields:
+- headline
+- subheader
+- buttons: array of {label, url, style}
+- layers: array of {image, depth, speed}
+- animation_type
+- text_color
+- overlay_opacity
+- spacing: {padding}
+
+## Multi-Column Features Hero
+┌──────────────────────────────────────────┐
+│        ┌─────────────────────┐           │
+│        │    Main Headline    │           │
+│        │      Subheader      │           │
+│        └─────────────────────┘           │
+│                                          │
+│ ┌────────┐  ┌────────┐  ┌────────────┐  │
+│ │Feature1│  │Feature2│  │  Feature3  │  │
+│ │ Icon   │  │ Icon   │  │   Icon     │  │
+│ │ Text   │  │ Text   │  │   Text     │  │
+│ └────────┘  └────────┘  └────────────┘  │
+└──────────────────────────────────────────┘
+
+Fields:
+- main_headline
+- main_subheader
+- features: array of {title, icon, description}
+- columns_count: 3, 4, 5
+- icon_style: "outline", "filled", "colored"
+- background_color
+- spacing: {gap, padding}
+
+## Slider/Carousel Hero
+┌──────────────────────────────────────────┐
+│  [<]                               [>]   │
+│                                          │
+│       ┌─────────────────────────┐        │
+│       │    Slide 1 Headline     │        │
+│       │    Slide 1 Content      │        │
+│       │    [Button]             │        │
+│       └─────────────────────────┘        │
+│                                          │
+│        ● ○ ○ ○      (Navigation)         │
+└──────────────────────────────────────────┘
+
+Fields:
+- slides: array of {headline, content, buttons, image}
+- transition_effect: "slide", "fade", "zoom"
+- autoplay: boolean
+- autoplay_speed
+- navigation: {arrows, dots, none}
+- height: "short", "medium", "tall"
+
+## Splash Screen Hero
+┌──────────────────────────────────────────┐
+│                                          │
+│                                          │
+│                                          │
+│       ┌─────────────────────────┐        │
+│       │      LARGE LOGO         │        │
+│       │                         │        │
+│       │      Tagline            │        │
+│       │      [Enter Site]       │        │
+│       └─────────────────────────┘        │
+│                                          │
+│                                          │
+│                                          │
+└──────────────────────────────────────────┘
+
+Fields:
+- logo: {src, alt}
+- tagline
+- button: {label, url}
+- background_color
+- background_image
+- animation: "fade", "zoom", "none"
+- fullscreen: boolean
+
+## App Showcase Hero
+┌──────────────────────────────────────────┐
+│  ┌────────────┐       ┌─────────────┐    │
+│  │            │       │ App Headline│    │
+│  │            │       │ Description │    │
+│  │  Phone     │       │ • Feature 1 │    │
+│  │  with      │       │ • Feature 2 │    │
+│  │  App       │       │ • Feature 3 │    │
+│  │  Screenshot│       │             │    │
+│  │            │       │ [Download]  │    │
+│  └────────────┘       └─────────────┘    │
+└──────────────────────────────────────────┘
+
+Fields:
+- app_headline
+- description
+- features: array of strings
+- download_buttons: array of {platform, label, url}
+- app_screenshot: {src, alt}
+- device_frame: "phone", "tablet", "laptop", "none"
+- background_color
+- layout_position: "image_left", "image_right"
+
+## Minimalist Text-Only Hero
+┌──────────────────────────────────────────┐
+│                                          │
+│                                          │
+│  ┌────────────────────────────────────┐  │
+│  │                                    │  │
+│  │  Large, Bold, Minimal Headline     │  │
+│  │                                    │  │
+│  │  Small Subtitle or Tagline         │  │
+│  │                                    │  │
+│  │  [Button]                          │  │
+│  │                                    │  │
+│  └────────────────────────────────────┘  │
+│                                          │
+└──────────────────────────────────────────┘
+
+Fields:
+- headline
+- subtitle
+- button: {label, url, style}
+- text_alignment: "left", "center", "right"
+- background_color
+- font_size: "small", "medium", "large"
+- font_weight: "normal", "medium", "bold"
+- spacing: {padding, margin}
+
+## Alternating Image & Text Sections
+┌──────────────────────────────────────────┐
+│ ┌────────────┐    ┌─────────────────┐   │
+│ │            │    │ Section Title   │   │
+│ │   Image    │    │ Description     │   │
+│ │            │    │                 │   │
+│ │            │    │ • Feature point │   │
+│ │            │    │ • Feature point │   │
+│ │            │    │ [Button]        │   │
+│ └────────────┘    └─────────────────┘   │
+└──────────────────────────────────────────┘
+
+Fields:
+- section_title
+- description
+- feature_points: array of strings
+- image: {src, alt}
+- button: {label, url, style}
+- layout_style: "image_left", "image_right"
+- background_color
+- spacing: {padding, gap}
+- text_alignment: "left", "center", "right"
+
+## Icon Grid Features
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │     Section Header      │         │
+│      └─────────────────────────┘         │
+│                                          │
+│ ┌─────────┐  ┌─────────┐  ┌─────────┐   │
+│ │   Icon  │  │   Icon  │  │   Icon  │   │
+│ │ Feature │  │ Feature │  │ Feature │   │
+│ │  Text   │  │  Text   │  │  Text   │   │
+│ └─────────┘  └─────────┘  └─────────┘   │
+│                                          │
+│ ┌─────────┐  ┌─────────┐  ┌─────────┐   │
+│ │   Icon  │  │   Icon  │  │   Icon  │   │
+│ │ Feature │  │ Feature │  │ Feature │   │
+│ │  Text   │  │  Text   │  │  Text   │   │
+│ └─────────┘  └─────────┘  └─────────┘   │
+└──────────────────────────────────────────┘
+
+Fields:
+- section_header
+- features: array of {icon, title, text}
+- columns: 2, 3, 4
+- rows: 1, 2, 3
+- icon_style: "outline", "filled", "colored"
+- background_color
+- spacing: {padding, gap}
+- text_alignment: "left", "center"
+
+## Three-Column Features
+┌──────────────────────────────────────────┐
+│        ┌─────────────────────┐           │
+│        │   Section Heading   │           │
+│        └─────────────────────┘           │
+│                                          │
+│ ┌──────────┐  ┌──────────┐  ┌──────────┐ │
+│ │ Feature 1 │  │ Feature 2 │  │ Feature 3│ │
+│ │ Image     │  │ Image     │  │ Image    │ │
+│ │ Title     │  │ Title     │  │ Title    │ │
+│ │ Text      │  │ Text      │  │ Text     │ │
+│ │ [Link]    │  │ [Link]    │  │ [Link]   │ │
+│ └──────────┘  └──────────┘  └──────────┘ │
+└──────────────────────────────────────────┘
+
+Fields:
+- section_heading
+- features: array of {title, image, text, link}
+- column_count: 2, 3, 4
+- image_style: "circle", "square", "none"
+- background_color
+- spacing: {padding, gap}
+- text_alignment: "left", "center"
+- equal_height: boolean
+
+## Feature List with Icons
+┌──────────────────────────────────────────┐
+│   ┌───────────────────────────────────┐  │
+│   │         Section Headline          │  │
+│   └───────────────────────────────────┘  │
+│                                          │
+│   ┌────┐  Feature Title                  │
+│   │Icon│  Feature description text that  │
+│   └────┘  provides more details.         │
+│                                          │
+│   ┌────┐  Feature Title                  │
+│   │Icon│  Feature description text that  │
+│   └────┘  provides more details.         │
+│                                          │
+│   ┌────┐  Feature Title                  │
+│   │Icon│  Feature description text that  │
+│   └────┘  provides more details.         │
+└──────────────────────────────────────────┘
+
+Fields:
+- section_headline
+- features: array of {icon, title, description}
+- icon_position: "left", "top"
+- icon_style: "outline", "filled", "colored"
+- background_color
+- spacing: {padding, gap}
+- text_alignment: "left"
+- list_style: "compact", "spaced"
+
+## Feature Tabs/Accordion
+┌──────────────────────────────────────────┐
+│  [Tab 1]  [Tab 2]  [Tab 3]  [Tab 4]     │
+│  ┌─────────────────────────────────────┐ │
+│  │                                     │ │
+│  │           Tab 1 Content             │ │
+│  │           • Feature point           │ │
+│  │           • Feature point           │ │
+│  │           [Button]                  │ │
+│  │                                     │ │
+│  └─────────────────────────────────────┘ │
+└──────────────────────────────────────────┘
+
+Fields:
+- tabs: array of {title, content, features, button, image}
+- display_style: "tabs", "accordion"
+- default_active: number
+- animation_style: "fade", "slide"
+- background_color
+- active_tab_color
+- spacing: {padding}
+- align_tabs: "left", "center", "justified"
+
+## Stepped Features Process
+┌──────────────────────────────────────────┐
+│    ┌───────────────────────────────┐     │
+│    │      Process Headline         │     │
+│    └───────────────────────────────┘     │
+│                                          │
+│  ┌──────┐     ───►     ┌──────┐     ───► │
+│  │ [1]  │              │ [2]  │          │
+│  │ Step │              │ Step │          │
+│  │ Text │              │ Text │          │
+│  └──────┘              └──────┘          │
+│                                          │
+│              ┌──────┐                    │
+│     ◄───     │ [3]  │     ◄───          │
+│              │ Step │                    │
+│              │ Text │                    │
+│              └──────┘                    │
+└──────────────────────────────────────────┘
+
+Fields:
+- process_headline
+- steps: array of {number, title, description, icon}
+- layout_style: "horizontal", "vertical", "zigzag"
+- connector_style: "line", "arrow", "dots", "none"
+- step_style: "circle", "square", "numbered"
+- background_color
+- active_color
+- spacing: {padding, gap}
+- animation: boolean
+
+## Feature Comparison Table
+┌──────────────────────────────────────────┐
+│  ┌──────────────────────────────────┐    │
+│  │      Comparison Headline         │    │
+│  └──────────────────────────────────┘    │
+│                                          │
+│  ┌────────┬────────┬────────┬────────┐   │
+│  │Feature │ Basic  │  Pro   │Premium │   │
+│  ├────────┼────────┼────────┼────────┤   │
+│  │Feat 1  │   ✓    │   ✓    │   ✓    │   │
+│  ├────────┼────────┼────────┼────────┤   │
+│  │Feat 2  │   -    │   ✓    │   ✓    │   │
+│  ├────────┼────────┼────────┼────────┤   │
+│  │Feat 3  │   -    │   -    │   ✓    │   │
+│  └────────┴────────┴────────┴────────┘   │
+└──────────────────────────────────────────┘
+
+Fields:
+- comparison_headline
+- columns: array of {title, highlight}
+- features: array of {name, values}
+- highlight_column: number
+- style: "minimal", "bordered", "striped"
+- checkmark_style: "check", "text", "dot"
+- background_color
+- highlight_color
+- responsive_mode: "scroll", "stack"
+
+## Content with Side Navigation
+┌──────────────────────────────────────────┐
+│ ┌─────────┐  ┌─────────────────────────┐ │
+│ │         │  │                         │ │
+│ │ [Nav 1] │  │     Content Title       │ │
+│ │         │  │                         │ │
+│ │ [Nav 2] │  │     Content for the     │ │
+│ │         │  │     selected navigation │ │
+│ │ [Nav 3] │  │     item with details   │ │
+│ │         │  │     and information.    │ │
+│ │ [Nav 4] │  │                         │ │
+│ │         │  │     [Button]            │ │
+│ └─────────┘  └─────────────────────────┘ │
+└──────────────────────────────────────────┘
+
+Fields:
+- navigation_items: array of {title, content, button, image}
+- default_active: number
+- nav_position: "left", "right"
+- nav_style: "tabs", "pills", "links"
+- content_width: string
+- background_color
+- active_color
+- spacing: {padding, gap}
+- sticky_nav: boolean
+
+## Feature Spotlight
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │   Spotlight Headline    │         │
+│      └─────────────────────────┘         │
+│                                          │
+│ ┌────────────────────────────────────┐   │
+│ │                                    │   │
+│ │          Featured Image            │   │
+│ │                                    │   │
+│ └────────────────────────────────────┘   │
+│                                          │
+│ Feature description text that explains   │
+│ the key feature in detail. Highlighting  │
+│ benefits and advantages.                 │
+│                                          │
+│         [Primary CTA] [Secondary]        │
+└──────────────────────────────────────────┘
+
+Fields:
+- spotlight_headline
+- description
+- featured_image: {src, alt}
+- buttons: array of {label, url, style}
+- content_alignment: "left", "center"
+- background_color
+- text_width
+- spacing: {padding}
+- highlight_style: "border", "shadow", "none"
+
+## Animated Feature Reveal
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │   Animation Headline    │         │
+│      └─────────────────────────┘         │
+│                                          │
+│ ┌────────────┐      ┌────────────────┐   │
+│ │            │  →   │                │   │
+│ │  Before    │      │  After         │   │
+│ │  State     │      │  State         │   │
+│ │            │      │                │   │
+│ └────────────┘      └────────────────┘   │
+│                                          │
+│ Description text explaining the animated │
+│ feature and its benefits.                │
+│                                          │
+│                [Button]                  │
+└──────────────────────────────────────────┘
+
+Fields:
+- animation_headline
+- description
+- animation_type: "fade", "slide", "zoom", "flip"
+- before_image: {src, alt}
+- after_image: {src, alt}
+- button: {label, url, style}
+- animation_trigger: "scroll", "click", "hover"
+- background_color
+- spacing: {padding}
+- animation_duration
+
+# Product Display Block Types with Fields
+
+## Product Grid
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │     Products Heading    │         │
+│      └─────────────────────────┘         │
+│                                          │
+│ ┌─────────┐  ┌─────────┐  ┌─────────┐   │
+│ │ Product │  │ Product │  │ Product │   │
+│ │  Image  │  │  Image  │  │  Image  │   │
+│ │         │  │         │  │         │   │
+│ │ Name    │  │ Name    │  │ Name    │   │
+│ │ Price   │  │ Price   │  │ Price   │   │
+│ │ [Cart]  │  │ [Cart]  │  │ [Cart]  │   │
+│ └─────────┘  └─────────┘  └─────────┘   │
+│                                          │
+│ ┌─────────┐  ┌─────────┐  ┌─────────┐   │
+│ │ Product │  │ Product │  │ Product │   │
+│ │  Image  │  │  Image  │  │  Image  │   │
+│ │         │  │         │  │         │   │
+│ │ Name    │  │ Name    │  │ Name    │   │
+│ │ Price   │  │ Price   │  │ Price   │   │
+│ │ [Cart]  │  │ [Cart]  │  │ [Cart]  │   │
+│ └─────────┘  └─────────┘  └─────────┘   │
+└──────────────────────────────────────────┘
+
+Fields:
+- products_heading
+- products: array of {image, name, price, sale_price, button}
+- grid_columns: 2, 3, 4, 5
+- grid_rows: 1, 2, 3, 4
+- card_style: "bordered", "shadow", "minimal"
+- show_rating: boolean
+- quick_view: boolean
+- background_color
+- spacing: {padding, gap}
+- equal_height: boolean
+
+## Horizontal Scrolling Products
+┌──────────────────────────────────────────┐
+│  ┌─────────────────────────┐    [<] [>]  │
+│  │   Products Heading      │             │
+│  └─────────────────────────┘             │
+│                                          │
+│  ┌────────┐  ┌────────┐  ┌────────┐     │
+│  │Product │  │Product │  │Product │     │
+│  │Image   │  │Image   │  │Image   │ ... │
+│  │Name    │  │Name    │  │Name    │     │
+│  │Price   │  │Price   │  │Price   │     │
+│  │[Buy]   │  │[Buy]   │  │[Buy]   │     │
+│  └────────┘  └────────┘  └────────┘     │
+└──────────────────────────────────────────┘
+
+Fields:
+- products_heading
+- products: array of {image, name, price, sale_price, button}
+- visible_items: 2, 3, 4, 5
+- scroll_behavior: "manual", "auto"
+- navigation_arrows: boolean
+- card_style: "bordered", "shadow", "minimal"
+- show_rating: boolean
+- background_color
+- spacing: {padding, gap}
+- autoplay: boolean
+- autoplay_speed: number
+
+## Featured Product Spotlight
+┌──────────────────────────────────────────┐
+│  ┌──────────────┐    ┌───────────────┐   │
+│  │              │    │ Product Name  │   │
+│  │              │    │               │   │
+│  │   Product    │    │ Price: $XX.XX │   │
+│  │    Image     │    │               │   │
+│  │    Gallery   │    │ • Feature 1   │   │
+│  │              │    │ • Feature 2   │   │
+│  │ [o] [o] [o]  │    │ • Feature 3   │   │
+│  │              │    │               │   │
+│  │              │    │ [Add to Cart] │   │
+│  └──────────────┘    └───────────────┘   │
+└──────────────────────────────────────────┘
+
+Fields:
+- product_name
+- price
+- sale_price
+- description
+- features: array of strings
+- images: array of {src, alt}
+- buttons: array of {label, action, style}
+- variations: array of {name, options}
+- background_color
+- spacing: {padding, gap}
+- gallery_style: "thumbnails", "dots", "slider"
+- highlight_badge: {text, style}
+
+## Product Comparison Section
+┌──────────────────────────────────────────┐
+│     ┌────────────────────────────┐       │
+│     │   Comparison Headline      │       │
+│     └────────────────────────────┘       │
+│                                          │
+│  ┌─────────┐   ┌─────────┐  ┌─────────┐  │
+│  │ Product │   │ Product │  │ Product │  │
+│  │  Image  │   │  Image  │  │  Image  │  │
+│  │         │   │         │  │         │  │
+│  │ Name    │   │ Name    │  │ Name    │  │
+│  │ Price   │   │ Price   │  │ Price   │  │
+│  │         │   │         │  │         │  │
+│  │ Spec 1  │   │ Spec 1  │  │ Spec 1  │  │
+│  │ Spec 2  │   │ Spec 2  │  │ Spec 2  │  │
+│  │ Spec 3  │   │ Spec 3  │  │ Spec 3  │  │
+│  │         │   │         │  │         │  │
+│  │ [Buy]   │   │ [Buy]   │  │ [Buy]   │  │
+│  └─────────┘   └─────────┘  └─────────┘  │
+└──────────────────────────────────────────┘
+
+Fields:
+- comparison_headline
+- products: array of {image, name, price, specs, button}
+- specs: array of {name, values}
+- highlight_differences: boolean
+- sticky_headers: boolean
+- comparison_count: 2, 3, 4
+- background_color
+- spacing: {padding, gap}
+- responsive_mode: "scroll", "stack"
+- highlight_product: number
+
+## Category Navigation Grid
+┌──────────────────────────────────────────┐
+│     ┌───────────────────────┐            │
+│     │  Categories Headline  │            │
+│     └───────────────────────┘            │
+│                                          │
+│  ┌─────────┐  ┌─────────┐  ┌─────────┐   │
+│  │Category │  │Category │  │Category │   │
+│  │ Image   │  │ Image   │  │ Image   │   │
+│  │         │  │         │  │         │   │
+│  │Category │  │Category │  │Category │   │
+│  │  Name   │  │  Name   │  │  Name   │   │
+│  └─────────┘  └─────────┘  └─────────┘   │
+│                                          │
+│  ┌─────────┐  ┌─────────┐  ┌─────────┐   │
+│  │Category │  │Category │  │Category │   │
+│  │ Image   │  │ Image   │  │ Image   │   │
+│  │         │  │         │  │         │   │
+│  │Category │  │Category │  │Category │   │
+│  │  Name   │  │  Name   │  │  Name   │   │
+│  └─────────┘  └─────────┘  └─────────┘   │
+└──────────────────────────────────────────┘
+
+Fields:
+- categories_headline
+- categories: array of {image, name, link, product_count}
+- grid_columns: 2, 3, 4, 5
+- grid_rows: 1, 2, 3, 4
+- card_style: "bordered", "shadow", "minimal"
+- image_aspect_ratio: "1:1", "4:3", "16:9"
+- background_color
+- spacing: {padding, gap}
+- hover_effect: "zoom", "overlay", "none"
+- text_position: "overlay", "below"
+
+## Product Lookbook
+┌──────────────────────────────────────────┐
+│  ┌────────────────────────────────────┐  │
+│  │                                    │  │
+│  │                                    │  │
+│  │            Lifestyle               │  │
+│  │             Image                  │  │
+│  │                                    │  │
+│  │     ┌───┐                          │  │
+│  │     │ + │  Product 1              │  │
+│  │     └───┘                          │  │
+│  │                   ┌───┐            │  │
+│  │                   │ + │ Product 2  │  │
+│  │                   └───┘            │  │
+│  └────────────────────────────────────┘  │
+└──────────────────────────────────────────┘
+
+Fields:
+- lifestyle_image: {src, alt}
+- products: array of {name, price, image, link, position_x, position_y}
+- hotspot_style: "plus", "dot", "icon"
+- popup_content: "product_card", "quick_view", "tooltip"
+- background_color
+- spacing: {padding}
+- mobile_display: "scroll", "stack"
+- hotspot_color
+- hotspot_animation: boolean
+
+## Collection Showcase
+┌──────────────────────────────────────────┐
+│   ┌─────────────────────────────┐        │
+│   │    Collection Headline      │        │
+│   └─────────────────────────────┘        │
+│                                          │
+│   ┌───────────────────────────────────┐  │
+│   │                                   │  │
+│   │          Collection               │  │
+│   │           Banner                  │  │
+│   │                                   │  │
+│   │  Collection Name   [Shop Now]     │  │
+│   └───────────────────────────────────┘  │
+│                                          │
+│   ┌─────┐  ┌─────┐  ┌─────┐  ┌─────┐    │
+│   │Prod │  │Prod │  │Prod │  │Prod │    │
+│   │Img  │  │Img  │  │Img  │  │Img  │    │
+│   └─────┘  └─────┘  └─────┘  └─────┘    │
+└──────────────────────────────────────────┘
+
+Fields:
+- collection_headline
+- collection_name
+- description
+- banner_image: {src, alt}
+- button: {label, url, style}
+- featured_products: array of {image, name, price, link}
+- products_to_show: 3, 4, 5, 6
+- background_color
+- banner_overlay_color
+- banner_overlay_opacity
+- spacing: {padding, gap}
+- text_position: "left", "center", "right"
+
+## New Arrivals Banner
+┌──────────────────────────────────────────┐
+│ ////////// BACKGROUND IMAGE //////////// │
+│ //                                    // │
+│ //  ┌────────────────────────────┐    // │
+│ //  │    New Arrivals Banner     │    // │
+│ //  │                            │    // │
+│ //  │  [Shop Women]  [Shop Men]  │    // │
+│ //  └────────────────────────────┘    // │
+│ //                                    // │
+│ //////////////////////////////////////// │
+└──────────────────────────────────────────┘
+
+Fields:
+- banner_title
+- subtitle
+- background_image: {src, alt}
+- buttons: array of {label, url, style}
+- overlay_color
+- overlay_opacity
+- text_color
+- text_position: "left", "center", "right"
+- height: "short", "medium", "tall"
+- spacing: {padding}
+- mobile_text_alignment: "left", "center"
+
+## Product Benefits List
+┌──────────────────────────────────────────┐
+│    ┌──────────────────────────────┐      │
+│    │    Product Name/Headline     │      │
+│    └──────────────────────────────┘      │
+│                                          │
+│    ┌─────┐  Benefit Title              │
+│    │Icon │  Detailed description of the  │
+│    └─────┘  product benefit.             │
+│                                          │
+│    ┌─────┐  Benefit Title              │
+│    │Icon │  Detailed description of the  │
+│    └─────┘  product benefit.             │
+│                                          │
+│    ┌─────┐  Benefit Title              │
+│    │Icon │  Detailed description of the  │
+│    └─────┘  product benefit.             │
+│                                          │
+│             [Shop Now]                   │
+└──────────────────────────────────────────┘
+
+Fields:
+- product_headline
+- subtitle
+- benefits: array of {icon, title, description}
+- button: {label, url, style}
+- layout_style: "list", "columns", "cards"
+- icon_style: "outline", "filled", "colored"
+- background_color
+- spacing: {padding, gap}
+- text_alignment: "left", "center"
+- highlight_style: "border", "shadow", "none"
+
+## Related Products Carousel
+┌──────────────────────────────────────────┐
+│  ┌─────────────────────────────┐ [<] [>] │
+│  │    Related Products         │         │
+│  └─────────────────────────────┘         │
+│                                          │
+│  ┌────────┐  ┌────────┐  ┌────────┐     │
+│  │Product │  │Product │  │Product │     │
+│  │Image   │  │Image   │  │Image   │ ... │
+│  │Name    │  │Name    │  │Name    │     │
+│  │Price   │  │Price   │  │Price   │     │
+│  │[View]  │  │[View]  │  │[View]  │     │
+│  └────────┘  └────────┘  └────────┘     │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- subtitle
+- products: array of {image, name, price, link}
+- visible_items: 3, 4, 5
+- show_arrows: boolean
+- show_dots: boolean
+- card_style: "bordered", "shadow", "minimal"
+- autoplay: boolean
+- autoplay_speed: number
+- background_color
+- spacing: {padding, gap}
+- show_rating: boolean
+
+# Testimonial/Social Proof Block Types with Fields
+
+## Testimonial Carousel
+┌──────────────────────────────────────────┐
+│                  [<] [>]                 │
+│                                          │
+│         ┌──────────────────┐             │
+│         │      ★★★★★       │             │
+│         │                  │             │
+│         │  "Testimonial    │             │
+│         │   quote text"    │             │
+│         │                  │             │
+│         │  - Name, Title   │             │
+│         └──────────────────┘             │
+│                                          │
+│              ○ ● ○ ○ ○                  │
+└──────────────────────────────────────────┘
+
+Fields:
+- testimonials: array of {quote, name, title, company, rating, image}
+- carousel_style: "cards", "quotes", "minimal"
+- show_rating: boolean
+- show_arrows: boolean
+- show_dots: boolean
+- autoplay: boolean
+- autoplay_speed: number
+- background_color
+- text_alignment: "left", "center"
+- card_style: "bordered", "shadow", "minimal"
+- spacing: {padding}
+
+## Quote Grid Layout
+┌──────────────────────────────────────────┐
+│    ┌───────────────────┐                 │
+│    │  Testimonials     │                 │
+│    └───────────────────┘                 │
+│                                          │
+│  ┌─────────┐  ┌─────────┐  ┌─────────┐   │
+│  │ ★★★★☆  │  │ ★★★★★  │  │ ★★★★★  │   │
+│  │ "Quote" │  │ "Quote" │  │ "Quote" │   │
+│  │ - Name  │  │ - Name  │  │ - Name  │   │
+│  └─────────┘  └─────────┘  └─────────┘   │
+│                                          │
+│  ┌─────────┐  ┌─────────┐  ┌─────────┐   │
+│  │ ★★★★★  │  │ ★★★★☆  │  │ ★★★★★  │   │
+│  │ "Quote" │  │ "Quote" │  │ "Quote" │   │
+│  │ - Name  │  │ - Name  │  │ - Name  │   │
+│  └─────────┘  └─────────┘  └─────────┘   │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- testimonials: array of {quote, name, title, company, rating, image}
+- grid_columns: 2, 3, 4
+- grid_rows: 1, 2, 3
+- show_rating: boolean
+- card_style: "bordered", "shadow", "minimal"
+- quote_style: "quotes", "simple"
+- background_color
+- text_alignment: "left", "center"
+- spacing: {padding, gap}
+- equal_height: boolean
+
+## Featured Single Testimonial
+┌──────────────────────────────────────────┐
+│  ┌────────────────────────────────────┐  │
+│  │                                    │  │
+│  │  "Large featured testimonial quote │  │
+│  │  that stands out on the page to    │  │
+│  │  convey social proof and build     │  │
+│  │  trust with potential customers."  │  │
+│  │                                    │  │
+│  │  ┌──────┐                          │  │
+│  │  │Person│  Name, Title             │  │
+│  │  │Photo │  Company                 │  │
+│  │  └──────┘                          │  │
+│  │                                    │  │
+│  └────────────────────────────────────┘  │
+└──────────────────────────────────────────┘
+
+Fields:
+- quote
+- author_name
+- author_title
+- author_company
+- author_image: {src, alt}
+- rating
+- background_color
+- quote_font_size
+- text_alignment: "left", "center"
+- quote_style: "quotes", "simple"
+- spacing: {padding}
+- highlight_style: "border", "shadow", "background"
+
+## Testimonial with Avatar
+┌──────────────────────────────────────────┐
+│   ┌───────────────────────────────────┐  │
+│   │      Testimonials Headline        │  │
+│   └───────────────────────────────────┘  │
+│                                          │
+│   ┌─────┐  "Testimonial quote from       │
+│   │Avatar│  the customer about their     │
+│   │Photo │  experience with the product  │
+│   └─────┘  or service."                  │
+│                                          │
+│            - Customer Name               │
+│              Customer Title              │
+│              ★★★★★                      │
+└──────────────────────────────────────────┘
+
+Fields:
+- headline
+- testimonials: array of {quote, name, title, image, rating}
+- avatar_position: "left", "top"
+- avatar_size: "small", "medium", "large"
+- avatar_style: "circle", "rounded", "square"
+- show_rating: boolean
+- background_color
+- text_alignment: "left", "center"
+- spacing: {padding}
+- highlight_style: "border", "shadow", "none"
+
+## Client Logo Grid
+┌──────────────────────────────────────────┐
+│   ┌───────────────────────────────────┐  │
+│   │       Trusted By Headline         │  │
+│   └───────────────────────────────────┘  │
+│                                          │
+│   ┌─────┐  ┌─────┐  ┌─────┐  ┌─────┐    │
+│   │Logo1│  │Logo2│  │Logo3│  │Logo4│    │
+│   └─────┘  └─────┘  └─────┘  └─────┘    │
+│                                          │
+│   ┌─────┐  ┌─────┐  ┌─────┐  ┌─────┐    │
+│   │Logo5│  │Logo6│  │Logo7│  │Logo8│    │
+│   └─────┘  └─────┘  └─────┘  └─────┘    │
+└──────────────────────────────────────────┘
+
+Fields:
+- headline
+- subtitle
+- logos: array of {image, name, url}
+- grid_columns: 3, 4, 5, 6
+- grid_rows: 1, 2
+- logo_style: "grayscale", "color", "color_on_hover"
+- background_color
+- spacing: {padding, gap}
+- logo_size
+- enable_links: boolean
+
+## Ratings & Reviews Section
+┌──────────────────────────────────────────┐
+│  ┌────────────────────────────────────┐  │
+│  │   Customer Reviews (4.8/5)  ★★★★☆  │  │
+│  └────────────────────────────────────┘  │
+│                                          │
+│  ┌──────────────────────────────────┐    │
+│  │ ★★★★★                            │    │
+│  │ "Review text from customer"       │    │
+│  │ - Verified Buyer                  │    │
+│  └──────────────────────────────────┘    │
+│                                          │
+│  ┌──────────────────────────────────┐    │
+│  │ ★★★★☆                            │    │
+│  │ "Another review from customer"    │    │
+│  │ - Verified Buyer                  │    │
+│  └──────────────────────────────────┘    │
+│                                          │
+│  [Load More Reviews] [Write a Review]    │
+└──────────────────────────────────────────┘
+
+Fields:
+- section_title
+- overall_rating
+- reviews: array of {rating, text, author, date, verified}
+- show_verified_badge: boolean
+- reviews_per_page: number
+- allow_filtering: boolean
+- review_card_style: "bordered", "shadow", "minimal"
+- background_color
+- spacing: {padding, gap}
+- write_review_button: boolean
+- sort_options: array of strings
+
+## Social Media Testimonial Wall
+┌──────────────────────────────────────────┐
+│   ┌───────────────────────────────────┐  │
+│   │    Social Media Testimonials      │  │
+│   └───────────────────────────────────┘  │
+│                                          │
+│  ┌────────┐ ┌────────┐ ┌────────┐       │
+│  │ Twitter│ │Facebook│ │Insta   │       │
+│  │ Post   │ │ Post   │ │ Post   │       │
+│  │ [Icon] │ │ [Icon] │ │ [Icon] │       │
+│  └────────┘ └────────┘ └────────┘       │
+│                                          │
+│  ┌────────┐ ┌────────┐ ┌────────┐       │
+│  │ Insta  │ │Twitter │ │Facebook│       │
+│  │ Post   │ │ Post   │ │ Post   │       │
+│  │ [Icon] │ │ [Icon] │ │ [Icon] │       │
+│  └────────┘ └────────┘ └────────┘       │
+└──────────────────────────────────────────┘
+
+Fields:
+- section_title
+- subtitle
+- posts: array of {platform, content, username, image, date, url}
+- grid_columns: 2, 3, 4
+- grid_rows: 2, 3, 4
+- platforms: array of strings
+- show_platform_icon: boolean
+- card_style: "bordered", "shadow", "minimal"
+- background_color
+- spacing: {padding, gap}
+- masonry_layout: boolean
+- load_more_button: boolean
+
+## Video Testimonials Grid
+┌──────────────────────────────────────────┐
+│   ┌───────────────────────────────────┐  │
+│   │       Video Testimonials          │  │
+│   └───────────────────────────────────┘  │
+│                                          │
+│  ┌────────────┐   ┌────────────────┐     │
+│  │   Video    │   │     Video      │     │
+│  │ Thumbnail  │   │   Thumbnail    │     │
+│  │  [▶]      │   │    [▶]        │     │
+│  │            │   │                │     │
+│  │ Name, Title│   │  Name, Title   │     │
+│  └────────────┘   └────────────────┘     │
+│                                          │
+│  ┌────────────┐   ┌────────────────┐     │
+│  │   Video    │   │     Video      │     │
+│  │ Thumbnail  │   │   Thumbnail    │     │
+│  │  [▶]      │   │    [▶]        │     │
+│  │            │   │                │     │
+│  │ Name, Title│   │  Name, Title   │     │
+│  └────────────┘   └────────────────┘     │
+└──────────────────────────────────────────┘
+
+Fields:
+- section_title
+- subtitle
+- videos: array of {thumbnail, video_url, name, title, duration}
+- grid_columns: 2, 3, 4
+- grid_rows: 1, 2, 3
+- video_player: "youtube", "vimeo", "custom"
+- play_button_style: "standard", "minimal", "custom"
+- thumbnail_style: "standard", "overlay"
+- modal_player: boolean
+- background_color
+- spacing: {padding, gap}
+- show_duration: boolean
+
+## Case Study Preview
+┌──────────────────────────────────────────┐
+│   ┌───────────────────────────────────┐  │
+│   │       Customer Success            │  │
+│   └───────────────────────────────────┘  │
+│                                          │
+│  ┌────────────────────────────────────┐  │
+│  │                                    │  │
+│  │  Client Logo        Result Stats   │  │
+│  │                                    │  │
+│  │  Case Study Title                  │  │
+│  │                                    │  │
+│  │  Brief description of the case     │  │
+│  │  study and results achieved.       │  │
+│  │                                    │  │
+│  │  [Read Case Study]                 │  │
+│  └────────────────────────────────────┘  │
+└──────────────────────────────────────────┘
+
+Fields:
+- section_title
+- case_studies: array of {title, description, client_logo, stats, image, button}
+- stats: array of {figure, label}
+- layout_style: "grid", "list", "featured"
+- card_style: "bordered", "shadow", "minimal"
+- background_color
+- spacing: {padding, gap}
+- content_alignment: "left", "center"
+- image_position: "top", "left", "right", "background"
+
+## Before & After Showcase
+┌──────────────────────────────────────────┐
+│   ┌───────────────────────────────────┐  │
+│   │       Results Showcase            │  │
+│   └───────────────────────────────────┘  │
+│                                          │
+│  ┌────────────────────────────────────┐  │
+│  │                                    │  │
+│  │   Before         │        After    │  │
+│  │    Image         │        Image    │  │
+│  │                  │                 │  │
+│  │                  │                 │  │
+│  │                                    │  │
+│  └────────────────────────────────────┘  │
+│                                          │
+│   Client quote about the transformation  │
+│   and results achieved.                  │
+└──────────────────────────────────────────┘
+
+Fields:
+- section_title
+- subtitle
+- showcases: array of {before_image, after_image, title, quote, client_name}
+- slider_enabled: boolean
+- show_labels: boolean
+- slider_orientation: "horizontal", "vertical"
+- card_style: "bordered", "shadow", "minimal"
+- background_color
+- spacing: {padding, gap}
+- text_position: "below", "overlay"
+- slider_initial_position: number
+
+# Call to Action (CTA) Block Types with Fields
+
+## Simple Centered CTA
+┌──────────────────────────────────────────┐
+│                                          │
+│       ┌─────────────────────────┐        │
+│       │      CTA Headline       │        │
+│       └─────────────────────────┘        │
+│                                          │
+│       Supporting text that explains      │
+│       why the user should take action.   │
+│                                          │
+│      [Primary Button] [Secondary]        │
+│                                          │
+└──────────────────────────────────────────┘
+
+Fields:
+- headline
+- supporting_text
+- buttons: array of {label, url, style}
+- background_color
+- text_color
+- text_alignment: "center"
+- max_width
+- spacing: {padding}
+- border_radius
+- enable_animation: boolean
+
+## Split CTA (Image + Text)
+┌──────────────────────────────────────────┐
+│ ┌──────────────┐  ┌──────────────────┐   │
+│ │              │  │                  │   │
+│ │              │  │  CTA Headline    │   │
+│ │   Image      │  │                  │   │
+│ │              │  │  Supporting text │   │
+│ │              │  │  with details    │   │
+│ │              │  │                  │   │
+│ │              │  │  [Button]        │   │
+│ │              │  │                  │   │
+│ └──────────────┘  └──────────────────┘   │
+└──────────────────────────────────────────┘
+
+Fields:
+- headline
+- supporting_text
+- image: {src, alt}
+- button: {label, url, style}
+- background_color
+- image_position: "left", "right"
+- text_color
+- text_alignment: "left", "center"
+- column_ratio: "50/50", "40/60", "60/40"
+- spacing: {padding, gap}
+- image_style: "standard", "rounded", "circle"
+
+## Full-Width Banner CTA
+┌──────────────────────────────────────────┐
+│ ////////// BACKGROUND IMAGE //////////// │
+│ //                                    // │
+│ //   CTA Headline               [BTN] // │
+│ //                                    // │
+│ //////////////////////////////////////// │
+└──────────────────────────────────────────┘
+
+Fields:
+- headline
+- supporting_text
+- background_image: {src, alt}
+- button: {label, url, style}
+- overlay_color
+- overlay_opacity
+- text_color
+- text_alignment: "left", "center", "right"
+- button_position: "right", "below"
+- height: "small", "medium", "large"
+- spacing: {padding}
+
+## Newsletter Signup
+┌──────────────────────────────────────────┐
+│     ┌──────────────────────────────┐     │
+│     │     Newsletter Headline      │     │
+│     └──────────────────────────────┘     │
+│                                          │
+│     Subscribe text that explains the     │
+│     benefit of signing up.               │
+│                                          │
+│     ┌───────────────────┐ ┌─────────┐   │
+│     │ Email address     │ │ Sign Up │   │
+│     └───────────────────┘ └─────────┘   │
+│                                          │
+│     Privacy policy text or disclaimer    │
+└──────────────────────────────────────────┘
+
+Fields:
+- headline
+- subscribe_text
+- input_placeholder
+- button_text
+- privacy_text
+- background_color
+- text_color
+- form_width
+- text_alignment: "left", "center"
+- form_style: "inline", "stacked"
+- spacing: {padding}
+- show_success_message: boolean
+- success_message
+
+## Download/Free Trial CTA
+┌──────────────────────────────────────────┐
+│   ┌────────────────────────────────┐     │
+│   │     Download Headline          │     │
+│   └────────────────────────────────┘     │
+│                                          │
+│   ┌───────┐   Get our product now with   │
+│   │ File  │   this compelling reason     │
+│   │ Icon  │   that explains the value.   │
+│   └───────┘                              │
+│                                          │
+│    [Download Now]  [Learn More]          │
+│                                          │
+│    No credit card required • Free trial  │
+└──────────────────────────────────────────┘
+
+Fields:
+- headline
+- description
+- icon_type: "file", "download", "custom"
+- custom_icon: {src, alt}
+- buttons: array of {label, url, style}
+- background_color
+- text_color
+- footer_text
+- text_alignment: "left", "center"
+- layout_style: "icon_top", "icon_left"
+- spacing: {padding}
+- highlight_style: "border", "shadow", "none"
+
+## Contact CTA
+┌──────────────────────────────────────────┐
+│    ┌─────────────────────────────────┐   │
+│    │      Contact Headline           │   │
+│    └─────────────────────────────────┘   │
+│                                          │
+│    Get in touch using the following      │
+│    contact options:                      │
+│                                          │
+│    ┌────┐ Email: example@domain.com      │
+│    │Icon│                                │
+│    └────┘                                │
+│                                          │
+│    ┌────┐ Phone: (123) 456-7890          │
+│    │Icon│                                │
+│    └────┘                                │
+│                                          │
+│             [Contact Us]                 │
+└──────────────────────────────────────────┘
+
+Fields:
+- headline
+- description
+- contact_methods: array of {type, icon, value, label}
+- button: {label, url, style}
+- background_color
+- text_color
+- text_alignment: "left", "center"
+- icon_style: "outline", "filled", "colored"
+- spacing: {padding}
+- card_style: "bordered", "shadow", "none"
+
+## Floating CTA Bar
+┌──────────────────────────────────────────┐
+│                                          │
+│                Content                   │
+│                                          │
+├──────────────────────────────────────────┤
+│  CTA Text                      [Button]  │
+└──────────────────────────────────────────┘
+
+Fields:
+- cta_text
+- button: {label, url, style}
+- position: "top", "bottom"
+- sticky: boolean
+- background_color
+- text_color
+- close_button: boolean
+- spacing: {padding}
+- z_index: number
+- show_after: number
+- show_on: array of paths
+
+## Popup/Modal CTA
+┌──────────────────────────────────────────┐
+│     ┌───────────────────────────┐        │
+│     │           [X]             │        │
+│     │                           │        │
+│     │      Popup Headline       │        │
+│     │                           │        │
+│     │      Popup content and    │        │
+│     │      call to action       │        │
+│     │                           │        │
+│     │      [Button]  [Dismiss]  │        │
+│     │                           │        │
+│     └───────────────────────────┘        │
+└──────────────────────────────────────────┘
+
+Fields:
+- headline
+- content
+- image: {src, alt}
+- buttons: array of {label, url, style}
+- close_button: boolean
+- dismiss_button: boolean
+- dismiss_text
+- background_color
+- text_color
+- width
+- height
+- animation: "fade", "slide", "zoom"
+- trigger: "time", "scroll", "exit"
+- trigger_value: number
+- frequency: "once", "always", "custom"
+
+## Sticky Bottom CTA
+┌──────────────────────────────────────────┐
+│                                          │
+│                Content                   │
+│                                          │
+└──────────────────────────────────────────┘
+┌──────────────────────────────────────────┐
+│  Product Name    $Price    [Add to Cart] │
+└──────────────────────────────────────────┘
+
+Fields:
+- product_name
+- price
+- sale_price
+- button: {label, url, style}
+- background_color
+- text_color
+- show_product_image: boolean
+- product_image: {src, alt}
+- sticky: boolean
+- spacing: {padding}
+- show_divider: boolean
+- responsive_behavior: "collapse", "stack"
+
+## Time-Limited Offer CTA
+┌──────────────────────────────────────────┐
+│    ┌────────────────────────────────┐    │
+│    │     Limited Time Offer!        │    │
+│    │                                │    │
+│    │  Offer ends in: 2d 14h 37m 22s │    │
+│    │                                │    │
+│    │  [Get Offer Now]  [Learn More] │    │
+│    └────────────────────────────────┘    │
+└──────────────────────────────────────────┘
+
+Fields:
+- headline
+- description
+- end_date
+- countdown_format: "dhms", "dhm", "hms"
+- buttons: array of {label, url, style}
+- background_color
+- text_color
+- show_timer: boolean
+- timer_style: "boxes", "simple", "separator"
+- text_alignment: "left", "center"
+- spacing: {padding}
+- border_style: "none", "dashed", "solid"
+- highlight_color
+
+# Media/Gallery Block Types with Fields
+
+## Masonry Image Gallery
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │     Gallery Title       │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌─────────┐  ┌──────┐  ┌─────────────┐ │
+│  │         │  │      │  │             │ │
+│  │ Image 1 │  │Image │  │  Image 3    │ │
+│  │         │  │  2   │  │             │ │
+│  └─────────┘  └──────┘  └─────────────┘ │
+│                                          │
+│  ┌────┐  ┌────────────┐  ┌────────────┐ │
+│  │Img │  │            │  │            │ │
+│  │ 4  │  │  Image 5   │  │  Image 6   │ │
+│  │    │  │            │  │            │ │
+│  └────┘  └────────────┘  └────────────┘ │
+└──────────────────────────────────────────┘
+
+Fields:
+- gallery_title
+- images: array of {src, alt, caption, link}
+- columns: 2, 3, 4, 5
+- gap_size
+- image_hover_effect: "zoom", "overlay", "none"
+- enable_lightbox: boolean
+- show_captions: boolean
+- background_color
+- spacing: {padding}
+- load_more_button: boolean
+- items_per_load: number
+
+## Video Grid
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │     Videos Heading      │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌──────────┐   ┌──────────┐   ┌──────┐  │
+│  │  Video   │   │  Video   │   │Video │  │
+│  │Thumbnail │   │Thumbnail │   │Thumb │  │
+│  │   [▶]   │   │   [▶]   │   │ [▶] │  │
+│  └──────────┘   └──────────┘   └──────┘  │
+│                                          │
+│  ┌──────────┐   ┌──────────┐   ┌──────┐  │
+│  │  Video   │   │  Video   │   │Video │  │
+│  │Thumbnail │   │Thumbnail │   │Thumb │  │
+│  │   [▶]   │   │   [▶]   │   │ [▶] │  │
+│  └──────────┘   └──────────┘   └──────┘  │
+└──────────────────────────────────────────┘
+
+Fields:
+- videos_heading
+- videos: array of {thumbnail, video_url, title, duration}
+- grid_columns: 2, 3, 4
+- grid_rows: 1, 2, 3
+- video_player: "youtube", "vimeo", "custom"
+- play_button_style: "standard", "minimal", "custom"
+- thumbnail_style: "standard", "overlay"
+- modal_player: boolean
+- background_color
+- spacing: {padding, gap}
+- show_title: boolean
+- show_duration: boolean
+
+## Image Carousel
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │     Gallery Heading     │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  [<]                               [>]   │
+│                                          │
+│  ┌────────────────────────────────────┐  │
+│  │                                    │  │
+│  │                                    │  │
+│  │             Image                  │  │
+│  │                                    │  │
+│  │                                    │  │
+│  └────────────────────────────────────┘  │
+│                                          │
+│              ○ ● ○ ○ ○                  │
+└──────────────────────────────────────────┘
+
+Fields:
+- gallery_heading
+- images: array of {src, alt, caption}
+- show_arrows: boolean
+- show_dots: boolean
+- autoplay: boolean
+- autoplay_speed: number
+- transition_effect: "slide", "fade", "zoom"
+- show_captions: boolean
+- background_color
+- spacing: {padding}
+- aspect_ratio: "1:1", "4:3", "16:9", "custom"
+- enable_lightbox: boolean
+
+## Lightbox Gallery
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │     Gallery Title       │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌───────┐ ┌───────┐ ┌───────┐ ┌─────┐  │
+│  │       │ │       │ │       │ │     │  │
+│  │ Thumb │ │ Thumb │ │ Thumb │ │Thumb│  │
+│  │       │ │       │ │       │ │     │  │
+│  └───────┘ └───────┘ └───────┘ └─────┘  │
+│                                          │
+│  ┌───────┐ ┌───────┐ ┌───────┐ ┌─────┐  │
+│  │       │ │       │ │       │ │     │  │
+│  │ Thumb │ │ Thumb │ │ Thumb │ │Thumb│  │
+│  │       │ │       │ │       │ │     │  │
+│  └───────┘ └───────┘ └───────┘ └─────┘  │
+└──────────────────────────────────────────┘
+
+Fields:
+- gallery_title
+- images: array of {src, thumbnail, alt, caption}
+- grid_columns: 3, 4, 5, 6
+- grid_rows: 1, 2, 3, 4
+- thumbnail_size
+- thumbnail_spacing
+- lightbox_options: {show_thumbnails, show_captions, show_count}
+- background_color
+- spacing: {padding, gap}
+- thumbnail_aspect_ratio: "1:1", "4:3", "3:2"
+- hover_effect: "zoom", "overlay", "none"
+
+## Before/After Image Slider
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │     Comparison Title    │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌────────────────────────────────────┐  │
+│  │                  │                 │  │
+│  │                  │                 │  │
+│  │      BEFORE      │      AFTER      │  │
+│  │                  │                 │  │
+│  │                  │                 │  │
+│  └────────────────────────────────────┘  │
+│                                          │
+│  Comparison description text explaining  │
+│  the transformation shown in the images. │
+└──────────────────────────────────────────┘
+
+Fields:
+- comparison_title
+- description
+- before_image: {src, alt, label}
+- after_image: {src, alt, label}
+- slider_orientation: "horizontal", "vertical"
+- show_labels: boolean
+- initial_position: number
+- background_color
+- spacing: {padding}
+- slider_handle_color
+- slider_style: "line", "bar", "arrow"
+- label_position: "top", "center", "bottom"
+
+## Portfolio Grid
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │     Portfolio Title     │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  [All] [Category 1] [Category 2] [Cat 3] │
+│                                          │
+│  ┌─────────┐  ┌─────────┐  ┌─────────┐  │
+│  │         │  │         │  │         │  │
+│  │ Project │  │ Project │  │ Project │  │
+│  │   Img   │  │   Img   │  │   Img   │  │
+│  │         │  │         │  │         │  │
+│  │Project 1│  │Project 2│  │Project 3│  │
+│  └─────────┘  └─────────┘  └─────────┘  │
+└──────────────────────────────────────────┘
+
+Fields:
+- portfolio_title
+- categories: array of strings
+- projects: array of {image, title, category, link, description}
+- grid_columns: 2, 3, 4
+- grid_rows: 1, 2, 3, 4
+- filter_buttons: boolean
+- image_aspect_ratio: "1:1", "4:3", "16:9"
+- background_color
+- spacing: {padding, gap}
+- hover_effect: "zoom", "overlay", "none"
+- show_title: boolean
+- show_category: boolean
+
+## Media with Captions
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │       Media Title       │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌────────────────────────────────────┐  │
+│  │                                    │  │
+│  │             Image/Video            │  │
+│  │                                    │  │
+│  │                                    │  │
+│  └────────────────────────────────────┘  │
+│                                          │
+│  Caption title                           │
+│  Detailed caption text that provides     │
+│  context for the media shown above.      │
+└──────────────────────────────────────────┘
+
+Fields:
+- media_title
+- media_type: "image", "video"
+- media: {src, alt, poster}
+- caption_title
+- caption_text
+- caption_alignment: "left", "center", "right"
+- background_color
+- spacing: {padding}
+- media_aspect_ratio: "1:1", "4:3", "16:9", "custom"
+- caption_style: "overlay", "below", "hover"
+- enable_lightbox: boolean
+
+## Instagram Feed Style Gallery
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │   Social Feed Title     │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐│
+│  │     │ │     │ │     │ │     │ │     ││
+│  │ Img │ │ Img │ │ Img │ │ Img │ │ Img ││
+│  │     │ │     │ │     │ │     │ │     ││
+│  └─────┘ └─────┘ └─────┘ └─────┘ └─────┘│
+│                                          │
+│  ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐│
+│  │     │ │     │ │     │ │     │ │     ││
+│  │ Img │ │ Img │ │ Img │ │ Img │ │ Img ││
+│  │     │ │     │ │     │ │     │ │     ││
+│  └─────┘ └─────┘ └─────┘ └─────┘ └─────┘│
+│                                          │
+│  [Follow Us] [View More]                 │
+└──────────────────────────────────────────┘
+
+Fields:
+- social_feed_title
+- feed_source: "instagram", "custom"
+- images: array of {src, alt, link, likes, comments}
+- grid_columns: 4, 5, 6
+- grid_rows: 1, 2, 3
+- show_overlay: boolean
+- overlay_content: "likes", "icon", "none"
+- buttons: array of {label, url, style}
+- background_color
+- spacing: {padding, gap}
+- hover_effect: "zoom", "overlay", "none"
+- username: string
+- hashtag: string
+
+## 360° Product View
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │     Product Name        │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌────────────────────────────────────┐  │
+│  │                                    │  │
+│  │                                    │  │
+│  │            360° Image              │  │
+│  │            [Rotate]                │  │
+│  │                                    │  │
+│  │                                    │  │
+│  └────────────────────────────────────┘  │
+│                                          │
+│  Drag to rotate or use controls         │
+│  to view product from all angles.        │
+└──────────────────────────────────────────┘
+
+Fields:
+- product_name
+- frames: array of {src, alt}
+- frame_count: number
+- autorotate: boolean
+- autorotate_speed: number
+- zoom_enabled: boolean
+- fullscreen_enabled: boolean
+- control_buttons: boolean
+- background_color
+- spacing: {padding}
+- instruction_text
+- loading_text
+- hotspots: array of {x, y, content}
+
+## Video Background Section
+┌──────────────────────────────────────────┐
+│ >>>>>>>>> VIDEO BACKGROUND <<<<<<<<<<<<< │
+│ >>                                    << │
+│ >>  ┌─────────────────────────────┐   << │
+│ >>  │        Section Title        │   << │
+│ >>  │                             │   << │
+│ >>  │        Section Text         │   << │
+│ >>  │                             │   << │
+│ >>  │        [Button]             │   << │
+│ >>  └─────────────────────────────┘   << │
+│ >>                                    << │
+│ >>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<< │
+└──────────────────────────────────────────┘
+
+Fields:
+- section_title
+- section_text
+- button: {label, url, style}
+- video: {src, poster, fallback_image}
+- video_settings: {autoplay, loop, muted, controls}
+- overlay_color
+- overlay_opacity
+- text_color
+- text_alignment: "left", "center", "right"
+- height: "short", "medium", "tall", "full"
+- spacing: {padding}
+- mobile_video: boolean
+
+# Contact/Form Block Types with Fields
+
+## Simple Contact Form
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │    Contact Heading      │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌────────────────────────────────────┐  │
+│  │ Name                               │  │
+│  │ ┌────────────────────────────────┐ │  │
+│  │ │                                │ │  │
+│  │ └────────────────────────────────┘ │  │
+│  │                                    │  │
+│  │ Email                              │  │
+│  │ ┌────────────────────────────────┐ │  │
+│  │ │                                │ │  │
+│  │ └────────────────────────────────┘ │  │
+│  │                                    │  │
+│  │ Message                            │  │
+│  │ ┌────────────────────────────────┐ │  │
+│  │ │                                │ │  │
+│  │ │                                │ │  │
+│  │ └────────────────────────────────┘ │  │
+│  │                                    │  │
+│  │ [Submit]                           │  │
+│  └────────────────────────────────────┘  │
+└──────────────────────────────────────────┘
+
+Fields:
+- contact_heading
+- description
+- fields: array of {name, type, label, required, placeholder}
+- button_text
+- success_message
+- error_message
+- background_color
+- text_color
+- form_width
+- field_style: "underline", "outlined", "filled"
+- spacing: {padding}
+- submit_button_style
+- show_required_labels: boolean
+- redirect_url
+
+## Split Contact (Form + Info)
+┌──────────────────────────────────────────┐
+│ ┌─────────────────┐  ┌────────────────┐  │
+│ │                 │  │ Contact Info   │  │
+│ │  Name           │  │                │  │
+│ │  ┌───────────┐  │  │ ┌───┐ Phone   │  │
+│ │  └───────────┘  │  │ │Icn│ Number  │  │
+│ │                 │  │ └───┘          │  │
+│ │  Email          │  │                │  │
+│ │  ┌───────────┐  │  │ ┌───┐ Email   │  │
+│ │  └───────────┘  │  │ │Icn│ Address │  │
+│ │                 │  │ └───┘          │  │
+│ │  Message        │  │                │  │
+│ │  ┌───────────┐  │  │ ┌───┐ Office  │  │
+│ │  │           │  │  │ │Icn│ Address │  │
+│ │  │           │  │  │ └───┘          │  │
+│ │  └───────────┘  │  │                │  │
+│ │                 │  │ Social Icons   │  │
+│ │  [Submit]       │  │ [F] [T] [I]    │  │
+│ └─────────────────┘  └────────────────┘  │
+└──────────────────────────────────────────┘
+
+Fields:
+- contact_heading
+- description
+- fields: array of {name, type, label, required, placeholder}
+- button_text
+- contact_info: array of {icon, title, content}
+- social_links: array of {platform, url, icon}
+- form_position: "left", "right"
+- background_color
+- text_color
+- column_ratio: "50/50", "40/60", "60/40"
+- spacing: {padding, gap}
+- field_style: "underline", "outlined", "filled"
+- info_card_style: "bordered", "shadow", "none"
+- success_message
+
+## Contact with Map
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │    Contact Heading      │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌────────────────────────────────────┐  │
+│  │                                    │  │
+│  │                Map                 │  │
+│  │                                    │  │
+│  └────────────────────────────────────┘  │
+│                                          │
+│  ┌────────┬────────┬────────┬─────────┐  │
+│  │Name    │Email   │Phone   │Subject  │  │
+│  │[     ] │[     ] │[     ] │[      ] │  │
+│  └────────┴────────┴────────┴─────────┘  │
+│  ┌────────────────────────────────────┐  │
+│  │Message                              │  │
+│  │[                                  ]│  │
+│  └────────────────────────────────────┘  │
+│  [Submit]                                │
+└──────────────────────────────────────────┘
+
+Fields:
+- contact_heading
+- description
+- fields: array of {name, type, label, required, placeholder}
+- button_text
+- map_location: {latitude, longitude, zoom}
+- map_api_key
+- map_style
+- map_height
+- map_markers: array of {lat, lng, title}
+- map_position: "top", "bottom"
+- background_color
+- text_color
+- spacing: {padding, gap}
+- field_style: "underline", "outlined", "filled"
+- form_layout: "inline", "stacked"
+- success_message
+
+## Multi-Step Form
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │     Form Heading        │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ○ Step 1 ──── ○ Step 2 ──── ○ Step 3   │
+│                                          │
+│  ┌────────────────────────────────────┐  │
+│  │                                    │  │
+│  │             Step 1 Fields          │  │
+│  │                                    │  │
+│  │                                    │  │
+│  │                                    │  │
+│  │                                    │  │
+│  │                                    │  │
+│  │ [Back]                    [Next]   │  │
+│  └────────────────────────────────────┘  │
+└──────────────────────────────────────────┘
+
+Fields:
+- form_heading
+- steps: array of {title, fields}
+- fields: array of {name, type, label, required, placeholder}
+- button_labels: {next, prev, submit}
+- show_progress: boolean
+- progress_style: "dots", "numbers", "text", "bar"
+- background_color
+- text_color
+- spacing: {padding}
+- field_style: "underline", "outlined", "filled" 
+- active_step_color
+- success_message
+- success_redirect
+- remember_progress: boolean
+
+## Contact Card Grid
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │    Contact Options      │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌────────────┐  ┌────────────┐         │
+│  │  ┌───┐     │  │  ┌───┐     │         │
+│  │  │Icn│     │  │  │Icn│     │         │
+│  │  └───┘     │  │  └───┘     │         │
+│  │            │  │            │         │
+│  │ Sales      │  │ Support    │         │
+│  │            │  │            │         │
+│  │ Email      │  │ Email      │         │
+│  │ Phone      │  │ Phone      │         │
+│  │            │  │            │         │
+│  │ [Contact]  │  │ [Contact]  │         │
+│  └────────────┘  └────────────┘         │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- cards: array of {icon, title, contact_info, button}
+- contact_info: array of {label, value, type}
+- grid_columns: 2, 3, 4
+- card_style: "bordered", "shadow", "minimal"
+- icon_style: "outline", "filled", "colored"
+- background_color
+- spacing: {padding, gap}
+- text_alignment: "left", "center"
+- equal_height: boolean
+- hover_effect: "lift", "border", "none"
+
+## Newsletter Subscription
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │   Newsletter Signup     │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  Subscribe to our newsletter for updates,│
+│  news, and exclusive offers.             │
+│                                          │
+│  ┌────────────────────────┐ ┌─────────┐ │
+│  │      Email address     │ │Subscribe│ │
+│  └────────────────────────┘ └─────────┘ │
+│                                          │
+│  We respect your privacy and will never  │
+│  share your information with third       │
+│  parties.                                │
+└──────────────────────────────────────────┘
+
+Fields:
+- headline
+- description
+- placeholder_text
+- button_text
+- privacy_text
+- background_color
+- text_color
+- form_width
+- form_style: "inline", "stacked"
+- field_style: "underline", "outlined", "filled"
+- button_style
+- spacing: {padding}
+- success_message
+- text_alignment: "left", "center"
+- additional_fields: array of {name, type, label, required}
+
+## Booking/Reservation Form
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │   Booking/Reservation   │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌────────────────────────────────────┐  │
+│  │ Name                               │  │
+│  │ ┌────────────────────────────────┐ │  │
+│  │ │                                │ │  │
+│  │ └────────────────────────────────┘ │  │
+│  │                                    │  │
+│  │ Date                    Time       │  │
+│  │ ┌───────────┐          ┌────────┐ │  │
+│  │ │           │          │        │ │  │
+│  │ └───────────┘          └────────┘ │  │
+│  │                                    │  │
+│  │ Party Size                         │  │
+│  │ ┌────────────────────────────────┐ │  │
+│  │ │                                │ │  │
+│  │ └────────────────────────────────┘ │  │
+│  │                                    │  │
+│  │ [Book Now]                         │  │
+│  └────────────────────────────────────┘  │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- fields: array of {name, type, label, required, placeholder}
+- button_text
+- date_field_options: {min_date, max_date, disabled_dates}
+- time_field_options: {interval, min_time, max_time}
+- background_color
+- text_color
+- form_width
+- field_style: "underline", "outlined", "filled"
+- spacing: {padding}
+- success_message
+- redirect_url
+- terms_checkbox: boolean
+- terms_text
+
+## Help/Support Contact Section
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │      Need Help?         │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  Have a question or need assistance?     │
+│  Our team is here to help you.           │
+│                                          │
+│  ┌────────────┐ ┌────────────┐ ┌───────┐ │
+│  │ ┌───┐      │ │ ┌───┐      │ │┌───┐  │ │
+│  │ │Icn│ Chat │ │ │Icn│ Call │ ││Icn│  │ │
+│  │ └───┘      │ │ └───┘      │ │└───┘  │ │
+│  │            │ │            │ │       │ │
+│  │ Start a    │ │ Call our   │ │Email  │ │
+│  │ live chat  │ │ support    │ │support│ │
+│  │            │ │            │ │       │ │
+│  │ [Chat Now] │ │ [Call Now] │ │[Email]│ │
+│  └────────────┘ └────────────┘ └───────┘ │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- support_options: array of {icon, title, description, button}
+- background_color
+- text_color
+- layout_style: "grid", "list", "cards"
+- grid_columns: 3, 4
+- option_style: "bordered", "shadow", "minimal"
+- spacing: {padding, gap}
+- text_alignment: "left", "center"
+- icon_style: "outline", "filled", "colored"
+- equal_height: boolean
+
+## Callback Request Form
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │    Request Callback     │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  Leave your details and we'll call you   │
+│  back as soon as possible.               │
+│                                          │
+│  Name                                    │
+│  ┌────────────────────────────────────┐  │
+│  │                                    │  │
+│  └────────────────────────────────────┘  │
+│                                          │
+│  Phone Number                            │
+│  ┌────────────────────────────────────┐  │
+│  │                                    │  │
+│  └────────────────────────────────────┘  │
+│                                          │
+│  Preferred Time                          │
+│  ○ Morning  ○ Afternoon  ○ Evening      │
+│                                          │
+│  [Request Call]                          │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- fields: array of {name, type, label, required, placeholder}
+- time_options: array of strings
+- button_text
+- background_color
+- text_color
+- form_width
+- field_style: "underline", "outlined", "filled"
+- spacing: {padding}
+- success_message
+- terms_checkbox: boolean
+- terms_text
+- show_privacy_policy: boolean
+- privacy_text
+
+## Contact with Social Links
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │      Get In Touch       │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌────────────────────────────────────┐  │
+│  │                                    │  │
+│  │  Name                              │  │
+│  │  ┌───────────────────────────────┐ │  │
+│  │  │                               │ │  │
+│  │  └───────────────────────────────┘ │  │
+│  │                                    │  │
+│  │  Email                             │  │
+│  │  ┌───────────────────────────────┐ │  │
+│  │  │                               │ │  │
+│  │  └───────────────────────────────┘ │  │
+│  │                                    │  │
+│  │  Message                           │  │
+│  │  ┌───────────────────────────────┐ │  │
+│  │  │                               │ │  │
+│  │  │                               │ │  │
+│  │  └───────────────────────────────┘ │  │
+│  │                                    │  │
+│  │  [Send Message]                    │  │
+│  │                                    │  │
+│  │  Or connect with us:               │  │
+│  │  [FB] [TW] [IG] [LI] [YT]          │  │
+│  └────────────────────────────────────┘  │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- fields: array of {name, type, label, required, placeholder}
+- button_text
+- social_heading
+- social_links: array of {platform, url, icon}
+- background_color
+- text_color
+- form_width
+- field_style: "underline", "outlined", "filled"
+- spacing: {padding}
+- success_message
+- social_icons_style: "filled", "outline", "rounded"
+- social_icons_color
+- show_social_text: boolean
+
+# Statistics/Metrics Block Types with Fields
+
+## Number Counter Grid
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │      Stats Heading      │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌─────────┐  ┌─────────┐  ┌─────────┐  │
+│  │         │  │         │  │         │  │
+│  │  3,500+ │  │  98%    │  │  24/7   │  │
+│  │         │  │         │  │         │  │
+│  │ Clients │  │Customer │  │ Support │  │
+│  │ Served  │  │Satisfied│  │Available│  │
+│  │         │  │         │  │         │  │
+│  └─────────┘  └─────────┘  └─────────┘  │
+└──────────────────────────────────────────┘
+
+Fields:
+- stats_heading
+- stats: array of {number, label, icon, prefix, suffix}
+- grid_columns: 2, 3, 4, 5
+- background_color
+- text_color
+- animation: boolean
+- animation_duration
+- animation_delay
+- spacing: {padding, gap}
+- text_alignment: "left", "center"
+- number_font_size
+- label_font_size
+- highlight_color
+- card_style: "none", "bordered", "shadow"
+
+## Animated Statistics
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │     Key Metrics         │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  Our achievements by the numbers:        │
+│                                          │
+│  ┌─────────────┐ ┌─────────────┐        │
+│  │             │ │             │        │
+│  │    95%      │ │  $10.5M     │        │
+│  │             │ │             │        │
+│  │ Satisfaction│ │ Revenue     │        │
+│  │    Rate     │ │ Generated   │        │
+│  │             │ │             │        │
+│  └─────────────┘ └─────────────┘        │
+│                                          │
+│  ┌─────────────┐ ┌─────────────┐        │
+│  │             │ │             │        │
+│  │   15,000+   │ │    500+     │        │
+│  │             │ │             │        │
+│  │  Projects   │ │  Clients    │        │
+│  │ Completed   │ │ Worldwide   │        │
+│  │             │ │             │        │
+│  └─────────────┘ └─────────────┘        │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- metrics: array of {value, label, icon, prefix, suffix}
+- grid_columns: 2, 3, 4
+- grid_rows: 1, 2, 3
+- animation_type: "countUp", "typewriter", "flip"
+- animation_duration
+- animation_trigger: "scroll", "load"
+- background_color
+- text_color
+- spacing: {padding, gap}
+- text_alignment: "left", "center"
+- card_style: "none", "bordered", "shadow"
+- enable_icons: boolean
+- icon_position: "top", "left"
+
+## Progress Bars
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │     Our Expertise       │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  Web Design                     95%      │
+│  ┌────────────────────────────┐         │
+│  │███████████████████████░░░░░│         │
+│  └────────────────────────────┘         │
+│                                          │
+│  Mobile Development             85%      │
+│  ┌────────────────────────────┐         │
+│  │███████████████████░░░░░░░░░│         │
+│  └────────────────────────────┘         │
+│                                          │
+│  UI/UX Design                   90%      │
+│  ┌────────────────────────────┐         │
+│  │██████████████████████░░░░░░│         │
+│  └────────────────────────────┘         │
+│                                          │
+│  Backend Development            80%      │
+│  ┌────────────────────────────┐         │
+│  │████████████████████░░░░░░░░│         │
+│  └────────────────────────────┘         │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- skills: array of {name, percentage, color}
+- show_percentage: boolean
+- progress_height
+- bar_style: "solid", "striped", "gradient"
+- background_color
+- bar_background_color
+- text_color
+- spacing: {padding, gap}
+- animation: boolean
+- animation_duration
+- label_position: "left", "top"
+- label_font_weight
+- rounded_corners: boolean
+
+## Infographic Style Stats
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │   Business Growth       │         │
+│      └─────────────────────────┘         │
+│                                          │
+│            ┌───┐                         │
+│   45%  ────┤▲▲▲│──── Annual Growth       │
+│            └───┘                         │
+│                                          │
+│            ┌───┐                         │
+│  120K  ────┤▲▲▲│──── Active Users        │
+│            └───┘                         │
+│                                          │
+│            ┌───┐                         │
+│   98%  ────┤▲▲▲│──── Client Retention    │
+│            └───┘                         │
+│                                          │
+│            ┌───┐                         │
+│   24x  ────┤▲▲▲│──── Revenue Increase    │
+│            └───┘                         │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- stats: array of {value, label, icon, prefix, suffix}
+- layout_style: "horizontal", "vertical", "alternating"
+- icon_style: "outline", "filled", "colored"
+- background_color
+- text_color
+- spacing: {padding, gap}
+- connector_style: "line", "dot", "arrow"
+- animation: boolean
+- animation_duration
+- highlight_color
+- stat_font_size
+- label_font_size
+
+## Timeline with Metrics
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │    Growth Timeline      │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ●───┬───────●───────┬───────●───────┬───│
+│      │               │               │   │
+│  2018│      2019     │      2020     │2021│
+│      │               │               │   │
+│  500 │     2,500     │     10,000    │25K+│
+│ Users│     Users     │     Users     │Users│
+│      │               │               │   │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- timeline_points: array of {year, metric, label}
+- orientation: "horizontal", "vertical"
+- connector_style: "line", "dot", "solid"
+- background_color
+- text_color
+- highlight_color
+- spacing: {padding}
+- animation: boolean
+- animation_duration
+- show_labels: boolean
+- metric_position: "above", "below"
+- timeline_style: "minimal", "detailed"
+
+## Achievement Showcase
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │    Our Achievements     │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌────────────────────────────────────┐  │
+│  │  ┌───┐                             │  │
+│  │  │AWD│  Best Design Agency 2023    │  │
+│  │  └───┘  Design Industry Awards     │  │
+│  └────────────────────────────────────┘  │
+│                                          │
+│  ┌────────────────────────────────────┐  │
+│  │  ┌───┐                             │  │
+│  │  │AWD│  Top 50 Tech Company        │  │
+│  │  └───┘  Fortune Magazine           │  │
+│  └────────────────────────────────────┘  │
+│                                          │
+│  ┌────────────────────────────────────┐  │
+│  │  ┌───┐                             │  │
+│  │  │AWD│  Innovation Excellence      │  │
+│  │  └───┘  Tech Innovation Summit     │  │
+│  └────────────────────────────────────┘  │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- achievements: array of {title, organization, icon, year, description}
+- layout_style: "list", "grid", "cards"
+- background_color
+- text_color
+- spacing: {padding, gap}
+- show_icons: boolean
+- icon_style: "trophy", "badge", "ribbon", "custom"
+- card_style: "bordered", "shadow", "minimal"
+- hover_effect: boolean
+- sorting: "newest", "oldest", "alphabetical"
+
+## Comparison Stats
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │  Before vs. After       │         │
+│      └─────────────────────────┘         │
+│                                          │
+│     Before                After          │
+│  ┌──────────┐          ┌──────────┐      │
+│  │          │          │          │      │
+│  │   45%    │    →     │   95%    │      │
+│  │          │          │          │      │
+│  └──────────┘          └──────────┘      │
+│  Conversion Rate     Conversion Rate     │
+│                                          │
+│  ┌──────────┐          ┌──────────┐      │
+│  │          │          │          │      │
+│  │  3.4min  │    →     │  1.2min  │      │
+│  │          │          │          │      │
+│  └──────────┘          └──────────┘      │
+│   Loading Time         Loading Time      │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- comparisons: array of {label, before_value, after_value, before_suffix, after_suffix}
+- layout_style: "horizontal", "vertical"
+- background_color
+- text_color
+- spacing: {padding, gap}
+- show_improvement: boolean
+- improvement_format: "percentage", "difference", "multiplier"
+- card_style: "bordered", "shadow", "minimal"
+- animation: boolean
+- connector_style: "arrow", "line", "none"
+- before_color
+- after_color
+
+## Circular Progress Charts
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │   Performance Metrics   │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌─────────┐  ┌─────────┐  ┌─────────┐  │
+│  │  ◔75%   │  │  ◕90%   │  │  ◓50%   │  │
+│  │         │  │         │  │         │  │
+│  │ Sales   │  │ User    │  │ Market  │  │
+│  │ Target  │  │ Growth  │  │ Share   │  │
+│  └─────────┘  └─────────┘  └─────────┘  │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- metrics: array of {label, percentage, color}
+- chart_size
+- grid_columns: 3, 4, 5
+- background_color
+- text_color
+- spacing: {padding, gap}
+- chart_thickness
+- animation: boolean
+- animation_duration
+- show_percentage: boolean
+- text_alignment: "center"
+- track_color
+- chart_style: "full", "semi", "minimal"
+
+## Dynamic Data Visualization
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │     Sales Dashboard     │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌────────────────────────────────────┐  │
+│  │                               ↗    │  │
+│  │                          ↗         │  │
+│  │                    ↗               │  │
+│  │              ↗                     │  │
+│  │        ↗                           │  │
+│  │  ↗                                 │  │
+│  └────────────────────────────────────┘  │
+│    Jan Feb Mar Apr May Jun Jul Aug Sep   │
+│                                          │
+│  Total Revenue: $1.2M    Growth: +27%    │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- chart_type: "line", "bar", "pie", "area"
+- data_series: array of {label, values, color}
+- x_axis_labels: array of strings
+- y_axis_title
+- x_axis_title
+- background_color
+- text_color
+- spacing: {padding}
+- show_legend: boolean
+- show_grid: boolean
+- chart_height
+- is_responsive: boolean
+- summary_metrics: array of {label, value, trend}
+- animation: boolean
+
+## Growth Metrics Display
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │    Growth Snapshot      │         │
+│      └─────────────────────────┐         │
+│                                          │
+│  Revenue                         +37%    │
+│  ███████████████████████████████→        │
+│                                          │
+│  New Customers                   +24%    │
+│  ███████████████████████→                │
+│                                          │
+│  Retention                       +18%    │
+│  ██████████████████→                     │
+│                                          │
+│  Market Share                    +42%    │
+│  ███████████████████████████████████→    │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- metrics: array of {label, value, increase, previous_value}
+- layout_style: "bar", "arrow", "text"
+- background_color
+- text_color
+- positive_color
+- negative_color
+- spacing: {padding, gap}
+- show_previous_value: boolean
+- animation: boolean
+- sort_by: "highest", "lowest", "alphabetical"
+- show_percentage: boolean
+- bar_style: "solid", "gradient", "segmented"
+- max_value: number
+- comparison_period: string
+
+# Team/About Block Types with Fields
+
+## Team Member Grid
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │     Our Team            │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌──────────┐  ┌──────────┐  ┌─────────┐ │
+│  │    ┌─┐   │  │    ┌─┐   │  │   ┌─┐   │ │
+│  │    │ │   │  │    │ │   │  │   │ │   │ │
+│  │    └─┘   │  │    └─┘   │  │   └─┘   │ │
+│  │          │  │          │  │         │ │
+│  │ Name     │  │ Name     │  │ Name    │ │
+│  │ Title    │  │ Title    │  │ Title   │ │
+│  │          │  │          │  │         │ │
+│  │ [Social] │  │ [Social] │  │ [Social]│ │
+│  └──────────┘  └──────────┘  └─────────┘ │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- team_members: array of {name, title, image, bio, social_links}
+- grid_columns: 2, 3, 4
+- grid_rows: 1, 2, 3, 4
+- background_color
+- text_color
+- spacing: {padding, gap}
+- card_style: "bordered", "shadow", "minimal"
+- image_style: "square", "circle", "rounded"
+- text_alignment: "left", "center"
+- show_bio: boolean
+- hover_effect: "zoom", "overlay", "flip"
+- social_icons_style: "filled", "outline"
+
+## Team Member Carousel
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐  [<][>] │
+│      │     Meet Our Team       │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌───────────┐  ┌───────────┐  ┌────────┐│
+│  │           │  │           │  │        ││
+│  │    ┌─┐    │  │    ┌─┐    │  │  ┌─┐   ││
+│  │    │ │    │  │    │ │    │  │  │ │   ││
+│  │    └─┘    │  │    └─┘    │  │  └─┘   ││
+│  │           │  │           │  │        ││
+│  │  Name     │  │  Name     │  │  Name  ││
+│  │  Title    │  │  Title    │  │  Title ││
+│  │           │  │           │  │        ││
+│  │ Bio text  │  │ Bio text  │  │Bio text││
+│  │           │  │           │  │        ││
+│  └───────────┘  └───────────┘  └────────┘│
+│            ●  ○  ○  ○  ○                 │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- team_members: array of {name, title, image, bio, social_links}
+- visible_members: 1, 2, 3, 4
+- show_arrows: boolean
+- show_dots: boolean
+- autoplay: boolean
+- autoplay_speed: number
+- background_color
+- text_color
+- spacing: {padding, gap}
+- card_style: "bordered", "shadow", "minimal" 
+- image_style: "square", "circle", "rounded"
+- text_alignment: "left", "center"
+- show_bio: boolean
+- transition_effect: "slide", "fade"
+
+## About Company Timeline
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │     Our Journey         │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ●──────────────────────────────────     │
+│  │                                       │
+│  │  2005: Company Founded                │
+│  │  Began with just 3 employees          │
+│  │                                       │
+│  ●──────────────────────────────────     │
+│  │                                       │
+│  │  2010: Expansion to Europe            │
+│  │  Opened offices in London and Berlin  │
+│  │                                       │
+│  ●──────────────────────────────────     │
+│  │                                       │
+│  │  2018: 500+ Employees Worldwide       │
+│  │  Became industry leader               │
+│  │                                       │
+│  ●                                       │
+│  │  Today: Global Operations             │
+│  │  Offices in 12 countries              │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- timeline_events: array of {year, title, description, image}
+- orientation: "vertical", "horizontal"
+- background_color
+- text_color
+- spacing: {padding, gap}
+- marker_style: "dot", "numbered", "custom"
+- connector_style: "solid", "dashed", "dotted"
+- highlight_color
+- animation: boolean
+- card_style: "bordered", "shadow", "minimal"
+- image_position: "left", "right", "none"
+- show_images: boolean
+- alternate_layout: boolean
+
+## Values/Mission Grid
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │  Our Values & Mission   │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐│
+│  │ ┌─────┐  │  │ ┌─────┐  │  │ ┌─────┐  ││
+│  │ │Icon │  │  │ │Icon │  │  │ │Icon │  ││
+│  │ └─────┘  │  │ └─────┘  │  │ └─────┘  ││
+│  │          │  │          │  │          ││
+│  │ Integrity│  │Innovation│  │Excellence││
+│  │          │  │          │  │          ││
+│  │ Value    │  │ Value    │  │ Value    ││
+│  │ details  │  │ details  │  │ details  ││
+│  │          │  │          │  │          ││
+│  └──────────┘  └──────────┘  └──────────┘│
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- values: array of {title, icon, description}
+- mission_statement
+- grid_columns: 2, 3, 4
+- grid_rows: 1, 2
+- background_color
+- text_color
+- spacing: {padding, gap}
+- card_style: "bordered", "shadow", "minimal"
+- icon_style: "outline", "filled", "colored" 
+- text_alignment: "left", "center"
+- show_mission: boolean
+- mission_position: "top", "bottom"
+- equal_height: boolean
+- hover_effect: boolean
+
+## Team Member Profile
+┌──────────────────────────────────────────┐
+│  ┌──────────────┐  ┌───────────────────┐ │
+│  │              │  │                   │ │
+│  │              │  │ Name, Title       │ │
+│  │              │  │                   │ │
+│  │    Team      │  │ Detailed bio and  │ │
+│  │    Member    │  │ information about │ │
+│  │    Photo     │  │ the team member,  │ │
+│  │              │  │ experience, etc.  │ │
+│  │              │  │                   │ │
+│  │              │  │ Areas of expertise:│ │
+│  │              │  │ • Skill 1         │ │
+│  │              │  │ • Skill 2         │ │
+│  │              │  │                   │ │
+│  │  [Social]    │  │ [Contact]         │ │
+│  └──────────────┘  └───────────────────┘ │
+└──────────────────────────────────────────┘
+
+Fields:
+- name
+- title
+- photo: {src, alt}
+- bio
+- experience: array of {position, company, period, description}
+- education: array of {degree, institution, year}
+- skills: array of strings
+- contact_information: {email, phone}
+- social_links: array of {platform, url, icon}
+- background_color
+- text_color
+- spacing: {padding, gap}
+- layout_style: "split", "stacked"
+- photo_style: "square", "circle", "rounded"
+- show_skills: boolean
+- show_experience: boolean
+- show_education: boolean
+- contact_button: boolean
+
+## Leadership Spotlight
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │    Leadership Team      │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌────────────────────────────────────┐  │
+│  │                                    │  │
+│  │  ┌────┐  CEO Name                  │  │
+│  │  │    │  Chief Executive Officer   │  │
+│  │  │ CEO│                            │  │
+│  │  │Photo│  "Leadership quote or     │  │
+│  │  │    │   brief statement."        │  │
+│  │  └────┘                            │  │
+│  │        [LinkedIn] [Twitter]        │  │
+│  └────────────────────────────────────┘  │
+│                                          │
+│  [CFO] [COO] [CTO] [CMO] [Other Leaders] │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- leaders: array of {name, title, photo, quote, bio, social_links}
+- display_style: "tabs", "slider", "expandable"
+- default_active: number
+- background_color
+- text_color
+- spacing: {padding, gap}
+- card_style: "bordered", "shadow", "minimal"
+- photo_style: "square", "circle", "rounded"
+- show_quote: boolean
+- show_bio: boolean
+- show_social: boolean
+- navigation_style: "tabs", "buttons", "thumbnails"
+
+## Company History Timeline
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │     Our History         │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌────────────────────────────────────┐  │
+│  │                                    │  │
+│  │  [1990s] [2000s] [2010s] [Today]   │  │
+│  │                                    │  │
+│  │  2010s                             │  │
+│  │  ──────                            │  │
+│  │                                    │  │
+│  │  • 2015: Launched flagship product │  │
+│  │  • 2017: Expanded to APAC region   │  │
+│  │  • 2018: Company rebranding        │  │
+│  │  • 2019: Reached 1 million users   │  │
+│  │                                    │  │
+│  │  [Historic Photo]                  │  │
+│  │                                    │  │
+│  └────────────────────────────────────┘  │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- periods: array of {title, events, image}
+- events: array of {year, title, description} 
+- navigation_style: "tabs", "buttons", "dropdown"
+- default_period: string
+- background_color
+- text_color
+- spacing: {padding, gap}
+- layout_style: "list", "cards", "dots"
+- show_images: boolean
+- image_position: "right", "bottom"
+- card_style: "bordered", "shadow", "minimal"
+- animation: boolean
+- show_navigation: boolean
+
+## Office/Location Showcase
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │   Global Locations      │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌─────────────┐  ┌─────────────┐       │
+│  │             │  │             │       │
+│  │  New York   │  │   London    │       │
+│  │  Office     │  │   Office    │       │
+│  │  Image      │  │   Image     │       │
+│  │             │  │             │       │
+│  │ Address     │  │ Address     │       │
+│  │ Phone       │  │ Phone       │       │
+│  │             │  │             │       │
+│  │ [Directions]│  │ [Directions]│       │
+│  └─────────────┘  └─────────────┘       │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- locations: array of {name, image, address,# Media/Gallery Block Types with Fields
+
+## Masonry Image Gallery
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │     Gallery Title       │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌─────────┐  ┌──────┐  ┌─────────────┐ │
+│  │         │  │      │  │             │ │
+│  │ Image 1 │  │Image │  │  Image 3    │ │
+│  │         │  │  2   │  │             │ │
+│  └─────────┘  └──────┘  └─────────────┘ │
+│                                          │
+│  ┌────┐  ┌────────────┐  ┌────────────┐ │
+│  │Img │  │            │  │            │ │
+│  │ 4  │  │  Image 5   │  │  Image 6   │ │
+│  │    │  │            │  │            │ │
+│  └────┘  └────────────┘  └────────────┘ │
+└──────────────────────────────────────────┘
+
+Fields:
+- gallery_title
+- images: array of {src, alt, caption, link}
+- columns: 2, 3, 4, 5
+- gap_size
+- image_hover_effect: "zoom", "overlay", "none"
+- enable_lightbox: boolean
+- show_captions: boolean
+- background_color
+- spacing: {padding}
+- load_more_button: boolean
+- items_per_load: number
+
+## Video Grid
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │     Videos Heading      │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌──────────┐   ┌──────────┐   ┌──────┐  │
+│  │  Video   │   │  Video   │   │Video │  │
+│  │Thumbnail │   │Thumbnail │   │Thumb │  │
+│  │   [▶]   │   │   [▶]   │   │ [▶] │  │
+│  └──────────┘   └──────────┘   └──────┘  │
+│                                          │
+│  ┌──────────┐   ┌──────────┐   ┌──────┐  │
+│  │  Video   │   │  Video   │   │Video │  │
+│  │Thumbnail │   │Thumbnail │   │Thumb │  │
+│  │   [▶]   │   │   [▶]   │   │ [▶] │  │
+│  └──────────┘   └──────────┘   └──────┘  │
+└──────────────────────────────────────────┘
+
+Fields:
+- videos_heading
+- videos: array of {thumbnail, video_url, title, duration}
+- grid_columns: 2, 3, 4
+- grid_rows: 1, 2, 3
+- video_player: "youtube", "vimeo", "custom"
+- play_button_style: "standard", "minimal", "custom"
+- thumbnail_style: "standard", "overlay"
+- modal_player: boolean
+- background_color
+- spacing: {padding, gap}
+- show_title: boolean
+- show_duration: boolean
+
+## Image Carousel
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │     Gallery Heading     │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  [<]                               [>]   │
+│                                          │
+│  ┌────────────────────────────────────┐  │
+│  │                                    │  │
+│  │                                    │  │
+│  │             Image                  │  │
+│  │                                    │  │
+│  │                                    │  │
+│  └────────────────────────────────────┘  │
+│                                          │
+│              ○ ● ○ ○ ○                  │
+└──────────────────────────────────────────┘
+
+Fields:
+- gallery_heading
+- images: array of {src, alt, caption}
+- show_arrows: boolean
+- show_dots: boolean
+- autoplay: boolean
+- autoplay_speed: number
+- transition_effect: "slide", "fade", "zoom"
+- show_captions: boolean
+- background_color
+- spacing: {padding}
+- aspect_ratio: "1:1", "4:3", "16:9", "custom"
+- enable_lightbox: boolean
+
+## Lightbox Gallery
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │     Gallery Title       │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌───────┐ ┌───────┐ ┌───────┐ ┌─────┐  │
+│  │       │ │       │ │       │ │     │  │
+│  │ Thumb │ │ Thumb │ │ Thumb │ │Thumb│  │
+│  │       │ │       │ │       │ │     │  │
+│  └───────┘ └───────┘ └───────┘ └─────┘  │
+│                                          │
+│  ┌───────┐ ┌───────┐ ┌───────┐ ┌─────┐  │
+│  │       │ │       │ │       │ │     │  │
+│  │ Thumb │ │ Thumb │ │ Thumb │ │Thumb│  │
+│  │       │ │       │ │       │ │     │  │
+│  └───────┘ └───────┘ └───────┘ └─────┘  │
+└──────────────────────────────────────────┘
+
+Fields:
+- gallery_title
+- images: array of {src, thumbnail, alt, caption}
+- grid_columns: 3, 4, 5, 6
+- grid_rows: 1, 2, 3, 4
+- thumbnail_size
+- thumbnail_spacing
+- lightbox_options: {show_thumbnails, show_captions, show_count}
+- background_color
+- spacing: {padding, gap}
+- thumbnail_aspect_ratio: "1:1", "4:3", "3:2"
+- hover_effect: "zoom", "overlay", "none"
+
+## Before/After Image Slider
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │     Comparison Title    │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌────────────────────────────────────┐  │
+│  │                  │                 │  │
+│  │                  │                 │  │
+│  │      BEFORE      │      AFTER      │  │
+│  │                  │                 │  │
+│  │                  │                 │  │
+│  └────────────────────────────────────┘  │
+│                                          │
+│  Comparison description text explaining  │
+│  the transformation shown in the images. │
+└──────────────────────────────────────────┘
+
+Fields:
+- comparison_title
+- description
+- before_image: {src, alt, label}
+- after_image: {src, alt, label}
+- slider_orientation: "horizontal", "vertical"
+- show_labels: boolean
+- initial_position: number
+- background_color
+- spacing: {padding}
+- slider_handle_color
+- slider_style: "line", "bar", "arrow"
+- label_position: "top", "center", "bottom"
+
+## Portfolio Grid
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │     Portfolio Title     │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  [All] [Category 1] [Category 2] [Cat 3] │
+│                                          │
+│  ┌─────────┐  ┌─────────┐  ┌─────────┐  │
+│  │         │  │         │  │         │  │
+│  │ Project │  │ Project │  │ Project │  │
+│  │   Img   │  │   Img   │  │   Img   │  │
+│  │         │  │         │  │         │  │
+│  │Project 1│  │Project 2│  │Project 3│  │
+│  └─────────┘  └─────────┘  └─────────┘  │
+└──────────────────────────────────────────┘
+
+Fields:
+- portfolio_title
+- categories: array of strings
+- projects: array of {image, title, category, link, description}
+- grid_columns: 2, 3, 4
+- grid_rows: 1, 2, 3, 4
+- filter_buttons: boolean
+- image_aspect_ratio: "1:1", "4:3", "16:9"
+- background_color
+- spacing: {padding, gap}
+- hover_effect: "zoom", "overlay", "none"
+- show_title: boolean
+- show_category: boolean
+
+## Media with Captions
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │       Media Title       │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌────────────────────────────────────┐  │
+│  │                                    │  │
+│  │             Image/Video            │  │
+│  │                                    │  │
+│  │                                    │  │
+│  └────────────────────────────────────┘  │
+│                                          │
+│  Caption title                           │
+│  Detailed caption text that provides     │
+│  context for the media shown above.      │
+└──────────────────────────────────────────┘
+
+Fields:
+- media_title
+- media_type: "image", "video"
+- media: {src, alt, poster}
+- caption_title
+- caption_text
+- caption_alignment: "left", "center", "right"
+- background_color
+- spacing: {padding}
+- media_aspect_ratio: "1:1", "4:3", "16:9", "custom"
+- caption_style: "overlay", "below", "hover"
+- enable_lightbox: boolean
+
+## Instagram Feed Style Gallery
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │   Social Feed Title     │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐│
+│  │     │ │     │ │     │ │     │ │     ││
+│  │ Img │ │ Img │ │ Img │ │ Img │ │ Img ││
+│  │     │ │     │ │     │ │     │ │     ││
+│  └─────┘ └─────┘ └─────┘ └─────┘ └─────┘│
+│                                          │
+│  ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐│
+│  │     │ │     │ │     │ │     │ │     ││
+│  │ Img │ │ Img │ │ Img │ │ Img │ │ Img ││
+│  │     │ │     │ │     │ │     │ │     ││
+│  └─────┘ └─────┘ └─────┘ └─────┘ └─────┘│
+│                                          │
+│  [Follow Us] [View More]                 │
+└──────────────────────────────────────────┘
+
+Fields:
+- social_feed_title
+- feed_source: "instagram", "custom"
+- images: array of {src, alt, link, likes, comments}
+- grid_columns: 4, 5, 6
+- grid_rows: 1, 2, 3
+- show_overlay: boolean
+- overlay_content: "likes", "icon", "none"
+- buttons: array of {label, url, style}
+- background_color
+- spacing: {padding, gap}
+- hover_effect: "zoom", "overlay", "none"
+- username: string
+- hashtag: string
+
+## 360° Product View
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │     Product Name        │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌────────────────────────────────────┐  │
+│  │                                    │  │
+│  │                                    │  │
+│  │            360° Image              │  │
+│  │            [Rotate]                │  │
+│  │                                    │  │
+│  │                                    │  │
+│  └────────────────────────────────────┘  │
+│                                          │
+│  Drag to rotate or use controls         │
+│  to view product from all angles.        │
+└──────────────────────────────────────────┘
+
+Fields:
+- product_name
+- frames: array of {src, alt}
+- frame_count: number
+- autorotate: boolean
+- autorotate_speed: number
+- zoom_enabled: boolean
+- fullscreen_enabled: boolean
+- control_buttons: boolean
+- background_color
+- spacing: {padding}
+- instruction_text
+- loading_text
+- hotspots: array of {x, y, content}
+
+## Video Background Section
+┌──────────────────────────────────────────┐
+│ >>>>>>>>> VIDEO BACKGROUND <<<<<<<<<<<<< │
+│ >>                                    << │
+│ >>  ┌─────────────────────────────┐   << │
+│ >>  │        Section Title        │   << │
+│ >>  │                             │   << │
+│ >>  │        Section Text         │   << │
+│ >>  │                             │   << │
+│ >>  │        [Button]             │   << │
+│ >>  └─────────────────────────────┘   << │
+│ >>                                    << │
+│ >>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<< │
+└──────────────────────────────────────────┘
+
+Fields:
+- section_title
+- section_text
+- button: {label, url, style}
+- video: {src, poster, fallback_image}
+- video_settings: {autoplay, loop, muted, controls}
+- overlay_color
+- overlay_opacity
+- text_color
+- text_alignment: "left", "center", "right"
+- height: "short", "medium", "tall", "full"
+- spacing: {padding}
+- mobile_video: boolean
+
+# Contact/Form Block Types with Fields
+
+## Simple Contact Form
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │    Contact Heading      │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌────────────────────────────────────┐  │
+│  │ Name                               │  │
+│  │ ┌────────────────────────────────┐ │  │
+│  │ │                                │ │  │
+│  │ └────────────────────────────────┘ │  │
+│  │                                    │  │
+│  │ Email                              │  │
+│  │ ┌────────────────────────────────┐ │  │
+│  │ │                                │ │  │
+│  │ └────────────────────────────────┘ │  │
+│  │                                    │  │
+│  │ Message                            │  │
+│  │ ┌────────────────────────────────┐ │  │
+│  │ │                                │ │  │
+│  │ │                                │ │  │
+│  │ └────────────────────────────────┘ │  │
+│  │                                    │  │
+│  │ [Submit]                           │  │
+│  └────────────────────────────────────┘  │
+└──────────────────────────────────────────┘
+
+Fields:
+- contact_heading
+- description
+- fields: array of {name, type, label, required, placeholder}
+- button_text
+- success_message
+- error_message
+- background_color
+- text_color
+- form_width
+- field_style: "underline", "outlined", "filled"
+- spacing: {padding}
+- submit_button_style
+- show_required_labels: boolean
+- redirect_url
+
+## Split Contact (Form + Info)
+┌──────────────────────────────────────────┐
+│ ┌─────────────────┐  ┌────────────────┐  │
+│ │                 │  │ Contact Info   │  │
+│ │  Name           │  │                │  │
+│ │  ┌───────────┐  │  │ ┌───┐ Phone   │  │
+│ │  └───────────┘  │  │ │Icn│ Number  │  │
+│ │                 │  │ └───┘          │  │
+│ │  Email          │  │                │  │
+│ │  ┌───────────┐  │  │ ┌───┐ Email   │  │
+│ │  └───────────┘  │  │ │Icn│ Address │  │
+│ │                 │  │ └───┘          │  │
+│ │  Message        │  │                │  │
+│ │  ┌───────────┐  │  │ ┌───┐ Office  │  │
+│ │  │           │  │  │ │Icn│ Address │  │
+│ │  │           │  │  │ └───┘          │  │
+│ │  └───────────┘  │  │                │  │
+│ │                 │  │ Social Icons   │  │
+│ │  [Submit]       │  │ [F] [T] [I]    │  │
+│ └─────────────────┘  └────────────────┘  │
+└──────────────────────────────────────────┘
+
+Fields:
+- contact_heading
+- description
+- fields: array of {name, type, label, required, placeholder}
+- button_text
+- contact_info: array of {icon, title, content}
+- social_links: array of {platform, url, icon}
+- form_position: "left", "right"
+- background_color
+- text_color
+- column_ratio: "50/50", "40/60", "60/40"
+- spacing: {padding, gap}
+- field_style: "underline", "outlined", "filled"
+- info_card_style: "bordered", "shadow", "none"
+- success_message
+
+## Contact with Map
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │    Contact Heading      │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌────────────────────────────────────┐  │
+│  │                                    │  │
+│  │                Map                 │  │
+│  │                                    │  │
+│  └────────────────────────────────────┘  │
+│                                          │
+│  ┌────────┬────────┬────────┬─────────┐  │
+│  │Name    │Email   │Phone   │Subject  │  │
+│  │[     ] │[     ] │[     ] │[      ] │  │
+│  └────────┴────────┴────────┴─────────┘  │
+│  ┌────────────────────────────────────┐  │
+│  │Message                              │  │
+│  │[                                  ]│  │
+│  └────────────────────────────────────┘  │
+│  [Submit]                                │
+└──────────────────────────────────────────┘
+
+Fields:
+- contact_heading
+- description
+- fields: array of {name, type, label, required, placeholder}
+- button_text
+- map_location: {latitude, longitude, zoom}
+- map_api_key
+- map_style
+- map_height
+- map_markers: array of {lat, lng, title}
+- map_position: "top", "bottom"
+- background_color
+- text_color
+- spacing: {padding, gap}
+- field_style: "underline", "outlined", "filled"
+- form_layout: "inline", "stacked"
+- success_message
+
+## Multi-Step Form
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │     Form Heading        │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ○ Step 1 ──── ○ Step 2 ──── ○ Step 3   │
+│                                          │
+│  ┌────────────────────────────────────┐  │
+│  │                                    │  │
+│  │             Step 1 Fields          │  │
+│  │                                    │  │
+│  │                                    │  │
+│  │                                    │  │
+│  │                                    │  │
+│  │                                    │  │
+│  │ [Back]                    [Next]   │  │
+│  └────────────────────────────────────┘  │
+└──────────────────────────────────────────┘
+
+Fields:
+- form_heading
+- steps: array of {title, fields}
+- fields: array of {name, type, label, required, placeholder}
+- button_labels: {next, prev, submit}
+- show_progress: boolean
+- progress_style: "dots", "numbers", "text", "bar"
+- background_color
+- text_color
+- spacing: {padding}
+- field_style: "underline", "outlined", "filled" 
+- active_step_color
+- success_message
+- success_redirect
+- remember_progress: boolean
+
+## Contact Card Grid
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │    Contact Options      │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌────────────┐  ┌────────────┐         │
+│  │  ┌───┐     │  │  ┌───┐     │         │
+│  │  │Icn│     │  │  │Icn│     │         │
+│  │  └───┘     │  │  └───┘     │         │
+│  │            │  │            │         │
+│  │ Sales      │  │ Support    │         │
+│  │            │  │            │         │
+│  │ Email      │  │ Email      │         │
+│  │ Phone      │  │ Phone      │         │
+│  │            │  │            │         │
+│  │ [Contact]  │  │ [Contact]  │         │
+│  └────────────┘  └────────────┘         │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- cards: array of {icon, title, contact_info, button}
+- contact_info: array of {label, value, type}
+- grid_columns: 2, 3, 4
+- card_style: "bordered", "shadow", "minimal"
+- icon_style: "outline", "filled", "colored"
+- background_color
+- spacing: {padding, gap}
+- text_alignment: "left", "center"
+- equal_height: boolean
+- hover_effect: "lift", "border", "none"
+
+## Newsletter Subscription
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │   Newsletter Signup     │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  Subscribe to our newsletter for updates,│
+│  news, and exclusive offers.             │
+│                                          │
+│  ┌────────────────────────┐ ┌─────────┐ │
+│  │      Email address     │ │Subscribe│ │
+│  └────────────────────────┘ └─────────┘ │
+│                                          │
+│  We respect your privacy and will never  │
+│  share your information with third       │
+│  parties.                                │
+└──────────────────────────────────────────┘
+
+Fields:
+- headline
+- description
+- placeholder_text
+- button_text
+- privacy_text
+- background_color
+- text_color
+- form_width
+- form_style: "inline", "stacked"
+- field_style: "underline", "outlined", "filled"
+- button_style
+- spacing: {padding}
+- success_message
+- text_alignment: "left", "center"
+- additional_fields: array of {name, type, label, required}
+
+## Booking/Reservation Form
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │   Booking/Reservation   │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌────────────────────────────────────┐  │
+│  │ Name                               │  │
+│  │ ┌────────────────────────────────┐ │  │
+│  │ │                                │ │  │
+│  │ └────────────────────────────────┘ │  │
+│  │                                    │  │
+│  │ Date                    Time       │  │
+│  │ ┌───────────┐          ┌────────┐ │  │
+│  │ │           │          │        │ │  │
+│  │ └───────────┘          └────────┘ │  │
+│  │                                    │  │
+│  │ Party Size                         │  │
+│  │ ┌────────────────────────────────┐ │  │
+│  │ │                                │ │  │
+│  │ └────────────────────────────────┘ │  │
+│  │                                    │  │
+│  │ [Book Now]                         │  │
+│  └────────────────────────────────────┘  │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- fields: array of {name, type, label, required, placeholder}
+- button_text
+- date_field_options: {min_date, max_date, disabled_dates}
+- time_field_options: {interval, min_time, max_time}
+- background_color
+- text_color
+- form_width
+- field_style: "underline", "outlined", "filled"
+- spacing: {padding}
+- success_message
+- redirect_url
+- terms_checkbox: boolean
+- terms_text
+
+## Help/Support Contact Section
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │      Need Help?         │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  Have a question or need assistance?     │
+│  Our team is here to help you.           │
+│                                          │
+│  ┌────────────┐ ┌────────────┐ ┌───────┐ │
+│  │ ┌───┐      │ │ ┌───┐      │ │┌───┐  │ │
+│  │ │Icn│ Chat │ │ │Icn│ Call │ ││Icn│  │ │
+│  │ └───┘      │ │ └───┘      │ │└───┘  │ │
+│  │            │ │            │ │       │ │
+│  │ Start a    │ │ Call our   │ │Email  │ │
+│  │ live chat  │ │ support    │ │support│ │
+│  │            │ │            │ │       │ │
+│  │ [Chat Now] │ │ [Call Now] │ │[Email]│ │
+│  └────────────┘ └────────────┘ └───────┘ │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- support_options: array of {icon, title, description, button}
+- background_color
+- text_color
+- layout_style: "grid", "list", "cards"
+- grid_columns: 3, 4
+- option_style: "bordered", "shadow", "minimal"
+- spacing: {padding, gap}
+- text_alignment: "left", "center"
+- icon_style: "outline", "filled", "colored"
+- equal_height: boolean
+
+## Callback Request Form
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │    Request Callback     │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  Leave your details and we'll call you   │
+│  back as soon as possible.               │
+│                                          │
+│  Name                                    │
+│  ┌────────────────────────────────────┐  │
+│  │                                    │  │
+│  └────────────────────────────────────┘  │
+│                                          │
+│  Phone Number                            │
+│  ┌────────────────────────────────────┐  │
+│  │                                    │  │
+│  └────────────────────────────────────┘  │
+│                                          │
+│  Preferred Time                          │
+│  ○ Morning  ○ Afternoon  ○ Evening      │
+│                                          │
+│  [Request Call]                          │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- fields: array of {name, type, label, required, placeholder}
+- time_options: array of strings
+- button_text
+- background_color
+- text_color
+- form_width
+- field_style: "underline", "outlined", "filled"
+- spacing: {padding}
+- success_message
+- terms_checkbox: boolean
+- terms_text
+- show_privacy_policy: boolean
+- privacy_text
+
+## Contact with Social Links
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │      Get In Touch       │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌────────────────────────────────────┐  │
+│  │                                    │  │
+│  │  Name                              │  │
+│  │  ┌───────────────────────────────┐ │  │
+│  │  │                               │ │  │
+│  │  └───────────────────────────────┘ │  │
+│  │                                    │  │
+│  │  Email                             │  │
+│  │  ┌───────────────────────────────┐ │  │
+│  │  │                               │ │  │
+│  │  └───────────────────────────────┘ │  │
+│  │                                    │  │
+│  │  Message                           │  │
+│  │  ┌───────────────────────────────┐ │  │
+│  │  │                               │ │  │
+│  │  │                               │ │  │
+│  │  └───────────────────────────────┘ │  │
+│  │                                    │  │
+│  │  [Send Message]                    │  │
+│  │                                    │  │
+│  │  Or connect with us:               │  │
+│  │  [FB] [TW] [IG] [LI] [YT]          │  │
+│  └────────────────────────────────────┘  │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- fields: array of {name, type, label, required, placeholder}
+- button_text
+- social_heading
+- social_links: array of {platform, url, icon}
+- background_color
+- text_color
+- form_width
+- field_style: "underline", "outlined", "filled"
+- spacing: {padding}
+- success_message
+- social_icons_style: "filled", "outline", "rounded"
+- social_icons_color
+- show_social_text: boolean
+
+# Statistics/Metrics Block Types with Fields
+
+## Number Counter Grid
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │      Stats Heading      │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌─────────┐  ┌─────────┐  ┌─────────┐  │
+│  │         │  │         │  │         │  │
+│  │  3,500+ │  │  98%    │  │  24/7   │  │
+│  │         │  │         │  │         │  │
+│  │ Clients │  │Customer │  │ Support │  │
+│  │ Served  │  │Satisfied│  │Available│  │
+│  │         │  │         │  │         │  │
+│  └─────────┘  └─────────┘  └─────────┘  │
+└──────────────────────────────────────────┘
+
+Fields:
+- stats_heading
+- stats: array of {number, label, icon, prefix, suffix}
+- grid_columns: 2, 3, 4, 5
+- background_color
+- text_color
+- animation: boolean
+- animation_duration
+- animation_delay
+- spacing: {padding, gap}
+- text_alignment: "left", "center"
+- number_font_size
+- label_font_size
+- highlight_color
+- card_style: "none", "bordered", "shadow"
+
+## Animated Statistics
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │     Key Metrics         │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  Our achievements by the numbers:        │
+│                                          │
+│  ┌─────────────┐ ┌─────────────┐        │
+│  │             │ │             │        │
+│  │    95%      │ │  $10.5M     │        │
+│  │             │ │             │        │
+│  │ Satisfaction│ │ Revenue     │        │
+│  │    Rate     │ │ Generated   │        │
+│  │             │ │             │        │
+│  └─────────────┘ └─────────────┘        │
+│                                          │
+│  ┌─────────────┐ ┌─────────────┐        │
+│  │             │ │             │        │
+│  │   15,000+   │ │    500+     │        │
+│  │             │ │             │        │
+│  │  Projects   │ │  Clients    │        │
+│  │ Completed   │ │ Worldwide   │        │
+│  │             │ │             │        │
+│  └─────────────┘ └─────────────┘        │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- metrics: array of {value, label, icon, prefix, suffix}
+- grid_columns: 2, 3, 4
+- grid_rows: 1, 2, 3
+- animation_type: "countUp", "typewriter", "flip"
+- animation_duration
+- animation_trigger: "scroll", "load"
+- background_color
+- text_color
+- spacing: {padding, gap}
+- text_alignment: "left", "center"
+- card_style: "none", "bordered", "shadow"
+- enable_icons: boolean
+- icon_position: "top", "left"
+
+## Progress Bars
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │     Our Expertise       │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  Web Design                     95%      │
+│  ┌────────────────────────────┐         │
+│  │███████████████████████░░░░░│         │
+│  └────────────────────────────┘         │
+│                                          │
+│  Mobile Development             85%      │
+│  ┌────────────────────────────┐         │
+│  │███████████████████░░░░░░░░░│         │
+│  └────────────────────────────┘         │
+│                                          │
+│  UI/UX Design                   90%      │
+│  ┌────────────────────────────┐         │
+│  │██████████████████████░░░░░░│         │
+│  └────────────────────────────┘         │
+│                                          │
+│  Backend Development            80%      │
+│  ┌────────────────────────────┐         │
+│  │████████████████████░░░░░░░░│         │
+│  └────────────────────────────┘         │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- skills: array of {name, percentage, color}
+- show_percentage: boolean
+- progress_height
+- bar_style: "solid", "striped", "gradient"
+- background_color
+- bar_background_color
+- text_color
+- spacing: {padding, gap}
+- animation: boolean
+- animation_duration
+- label_position: "left", "top"
+- label_font_weight
+- rounded_corners: boolean
+
+## Infographic Style Stats
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │   Business Growth       │         │
+│      └─────────────────────────┘         │
+│                                          │
+│            ┌───┐                         │
+│   45%  ────┤▲▲▲│──── Annual Growth       │
+│            └───┘                         │
+│                                          │
+│            ┌───┐                         │
+│  120K  ────┤▲▲▲│──── Active Users        │
+│            └───┘                         │
+│                                          │
+│            ┌───┐                         │
+│   98%  ────┤▲▲▲│──── Client Retention    │
+│            └───┘                         │
+│                                          │
+│            ┌───┐                         │
+│   24x  ────┤▲▲▲│──── Revenue Increase    │
+│            └───┘                         │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- stats: array of {value, label, icon, prefix, suffix}
+- layout_style: "horizontal", "vertical", "alternating"
+- icon_style: "outline", "filled", "colored"
+- background_color
+- text_color
+- spacing: {padding, gap}
+- connector_style: "line", "dot", "arrow"
+- animation: boolean
+- animation_duration
+- highlight_color
+- stat_font_size
+- label_font_size
+
+## Timeline with Metrics
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │    Growth Timeline      │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ●───┬───────●───────┬───────●───────┬───│
+│      │               │               │   │
+│  2018│      2019     │      2020     │2021│
+│      │               │               │   │
+│  500 │     2,500     │     10,000    │25K+│
+│ Users│     Users     │     Users     │Users│
+│      │               │               │   │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- timeline_points: array of {year, metric, label}
+- orientation: "horizontal", "vertical"
+- connector_style: "line", "dot", "solid"
+- background_color
+- text_color
+- highlight_color
+- spacing: {padding}
+- animation: boolean
+- animation_duration
+- show_labels: boolean
+- metric_position: "above", "below"
+- timeline_style: "minimal", "detailed"
+
+## Achievement Showcase
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │    Our Achievements     │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌────────────────────────────────────┐  │
+│  │  ┌───┐                             │  │
+│  │  │AWD│  Best Design Agency 2023    │  │
+│  │  └───┘  Design Industry Awards     │  │
+│  └────────────────────────────────────┘  │
+│                                          │
+│  ┌────────────────────────────────────┐  │
+│  │  ┌───┐                             │  │
+│  │  │AWD│  Top 50 Tech Company        │  │
+│  │  └───┘  Fortune Magazine           │  │
+│  └────────────────────────────────────┘  │
+│                                          │
+│  ┌────────────────────────────────────┐  │
+│  │  ┌───┐                             │  │
+│  │  │AWD│  Innovation Excellence      │  │
+│  │  └───┘  Tech Innovation Summit     │  │
+│  └────────────────────────────────────┘  │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- achievements: array of {title, organization, icon, year, description}
+- layout_style: "list", "grid", "cards"
+- background_color
+- text_color
+- spacing: {padding, gap}
+- show_icons: boolean
+- icon_style: "trophy", "badge", "ribbon", "custom"
+- card_style: "bordered", "shadow", "minimal"
+- hover_effect: boolean
+- sorting: "newest", "oldest", "alphabetical"
+
+## Comparison Stats
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │  Before vs. After       │         │
+│      └─────────────────────────┘         │
+│                                          │
+│     Before                After          │
+│  ┌──────────┐          ┌──────────┐      │
+│  │          │          │          │      │
+│  │   45%    │    →     │   95%    │      │
+│  │          │          │          │      │
+│  └──────────┘          └──────────┘      │
+│  Conversion Rate     Conversion Rate     │
+│                                          │
+│  ┌──────────┐          ┌──────────┐      │
+│  │          │          │          │      │
+│  │  3.4min  │    →     │  1.2min  │      │
+│  │          │          │          │      │
+│  └──────────┘          └──────────┘      │
+│   Loading Time         Loading Time      │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- comparisons: array of {label, before_value, after_value, before_suffix, after_suffix}
+- layout_style: "horizontal", "vertical"
+- background_color
+- text_color
+- spacing: {padding, gap}
+- show_improvement: boolean
+- improvement_format: "percentage", "difference", "multiplier"
+- card_style: "bordered", "shadow", "minimal"
+- animation: boolean
+- connector_style: "arrow", "line", "none"
+- before_color
+- after_color
+
+## Circular Progress Charts
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │   Performance Metrics   │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌─────────┐  ┌─────────┐  ┌─────────┐  │
+│  │  ◔75%   │  │  ◕90%   │  │  ◓50%   │  │
+│  │         │  │         │  │         │  │
+│  │ Sales   │  │ User    │  │ Market  │  │
+│  │ Target  │  │ Growth  │  │ Share   │  │
+│  └─────────┘  └─────────┘  └─────────┘  │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- metrics: array of {label, percentage, color}
+- chart_size
+- grid_columns: 3, 4, 5
+- background_color
+- text_color
+- spacing: {padding, gap}
+- chart_thickness
+- animation: boolean
+- animation_duration
+- show_percentage: boolean
+- text_alignment: "center"
+- track_color
+- chart_style: "full", "semi", "minimal"
+
+## Dynamic Data Visualization
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │     Sales Dashboard     │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌────────────────────────────────────┐  │
+│  │                               ↗    │  │
+│  │                          ↗         │  │
+│  │                    ↗               │  │
+│  │              ↗                     │  │
+│  │        ↗                           │  │
+│  │  ↗                                 │  │
+│  └────────────────────────────────────┘  │
+│    Jan Feb Mar Apr May Jun Jul Aug Sep   │
+│                                          │
+│  Total Revenue: $1.2M    Growth: +27%    │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- chart_type: "line", "bar", "pie", "area"
+- data_series: array of {label, values, color}
+- x_axis_labels: array of strings
+- y_axis_title
+- x_axis_title
+- background_color
+- text_color
+- spacing: {padding}
+- show_legend: boolean
+- show_grid: boolean
+- chart_height
+- is_responsive: boolean
+- summary_metrics: array of {label, value, trend}
+- animation: boolean
+
+## Growth Metrics Display
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │    Growth Snapshot      │         │
+│      └─────────────────────────┐         │
+│                                          │
+│  Revenue                         +37%    │
+│  ███████████████████████████████→        │
+│                                          │
+│  New Customers                   +24%    │
+│  ███████████████████████→                │
+│                                          │
+│  Retention                       +18%    │
+│  ██████████████████→                     │
+│                                          │
+│  Market Share                    +42%    │
+│  ███████████████████████████████████→    │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- metrics: array of {label, value, increase, previous_value}
+- layout_style: "bar", "arrow", "text"
+- background_color
+- text_color
+- positive_color
+- negative_color
+- spacing: {padding, gap}
+- show_previous_value: boolean
+- animation: boolean
+- sort_by: "highest", "lowest", "alphabetical"
+- show_percentage: boolean
+- bar_style: "solid", "gradient", "segmented"
+- max_value: number
+- comparison_period: string
+
+# Team/About Block Types with Fields
+
+## Team Member Grid
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │     Our Team            │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌──────────┐  ┌──────────┐  ┌─────────┐ │
+│  │    ┌─┐   │  │    ┌─┐   │  │   ┌─┐   │ │
+│  │    │ │   │  │    │ │   │  │   │ │   │ │
+│  │    └─┘   │  │    └─┘   │  │   └─┘   │ │
+│  │          │  │          │  │         │ │
+│  │ Name     │  │ Name     │  │ Name    │ │
+│  │ Title    │  │ Title    │  │ Title   │ │
+│  │          │  │          │  │         │ │
+│  │ [Social] │  │ [Social] │  │ [Social]│ │
+│  └──────────┘  └──────────┘  └─────────┘ │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- team_members: array of {name, title, image, bio, social_links}
+- grid_columns: 2, 3, 4
+- grid_rows: 1, 2, 3, 4
+- background_color
+- text_color
+- spacing: {padding, gap}
+- card_style: "bordered", "shadow", "minimal"
+- image_style: "square", "circle", "rounded"
+- text_alignment: "left", "center"
+- show_bio: boolean
+- hover_effect: "zoom", "overlay", "flip"
+- social_icons_style: "filled", "outline"
+
+## Team Member Carousel
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐  [<][>] │
+│      │     Meet Our Team       │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌───────────┐  ┌───────────┐  ┌────────┐│
+│  │           │  │           │  │        ││
+│  │    ┌─┐    │  │    ┌─┐    │  │  ┌─┐   ││
+│  │    │ │    │  │    │ │    │  │  │ │   ││
+│  │    └─┘    │  │    └─┘    │  │  └─┘   ││
+│  │           │  │           │  │        ││
+│  │  Name     │  │  Name     │  │  Name  ││
+│  │  Title    │  │  Title    │  │  Title ││
+│  │           │  │           │  │        ││
+│  │ Bio text  │  │ Bio text  │  │Bio text││
+│  │           │  │           │  │        ││
+│  └───────────┘  └───────────┘  └────────┘│
+│            ●  ○  ○  ○  ○                 │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- team_members: array of {name, title, image, bio, social_links}
+- visible_members: 1, 2, 3, 4
+- show_arrows: boolean
+- show_dots: boolean
+- autoplay: boolean
+- autoplay_speed: number
+- background_color
+- text_color
+- spacing: {padding, gap}
+- card_style: "bordered", "shadow", "minimal" 
+- image_style: "square", "circle", "rounded"
+- text_alignment: "left", "center"
+- show_bio: boolean
+- transition_effect: "slide", "fade"
+
+## About Company Timeline
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │     Our Journey         │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ●──────────────────────────────────     │
+│  │                                       │
+│  │  2005: Company Founded                │
+│  │  Began with just 3 employees          │
+│  │                                       │
+│  ●──────────────────────────────────     │
+│  │                                       │
+│  │  2010: Expansion to Europe            │
+│  │  Opened offices in London and Berlin  │
+│  │                                       │
+│  ●──────────────────────────────────     │
+│  │                                       │
+│  │  2018: 500+ Employees Worldwide       │
+│  │  Became industry leader               │
+│  │                                       │
+│  ●                                       │
+│  │  Today: Global Operations             │
+│  │  Offices in 12 countries              │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- timeline_events: array of {year, title, description, image}
+- orientation: "vertical", "horizontal"
+- background_color
+- text_color
+- spacing: {padding, gap}
+- marker_style: "dot", "numbered", "custom"
+- connector_style: "solid", "dashed", "dotted"
+- highlight_color
+- animation: boolean
+- card_style: "bordered", "shadow", "minimal"
+- image_position: "left", "right", "none"
+- show_images: boolean
+- alternate_layout: boolean
+
+## Values/Mission Grid
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │  Our Values & Mission   │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐│
+│  │ ┌─────┐  │  │ ┌─────┐  │  │ ┌─────┐  ││
+│  │ │Icon │  │  │ │Icon │  │  │ │Icon │  ││
+│  │ └─────┘  │  │ └─────┘  │  │ └─────┘  ││
+│  │          │  │          │  │          ││
+│  │ Integrity│  │Innovation│  │Excellence││
+│  │          │  │          │  │          ││
+│  │ Value    │  │ Value    │  │ Value    ││
+│  │ details  │  │ details  │  │ details  ││
+│  │          │  │          │  │          ││
+│  └──────────┘  └──────────┘  └──────────┘│
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- values: array of {title, icon, description}
+- mission_statement
+- grid_columns: 2, 3, 4
+- grid_rows: 1, 2
+- background_color
+- text_color
+- spacing: {padding, gap}
+- card_style: "bordered", "shadow", "minimal"
+- icon_style: "outline", "filled", "colored" 
+- text_alignment: "left", "center"
+- show_mission: boolean
+- mission_position: "top", "bottom"
+- equal_height: boolean
+- hover_effect: boolean
+
+## Team Member Profile
+┌──────────────────────────────────────────┐
+│  ┌──────────────┐  ┌───────────────────┐ │
+│  │              │  │                   │ │
+│  │              │  │ Name, Title       │ │
+│  │              │  │                   │ │
+│  │    Team      │  │ Detailed bio and  │ │
+│  │    Member    │  │ information about │ │
+│  │    Photo     │  │ the team member,  │ │
+│  │              │  │ experience, etc.  │ │
+│  │              │  │                   │ │
+│  │              │  │ Areas of expertise:│ │
+│  │              │  │ • Skill 1         │ │
+│  │              │  │ • Skill 2         │ │
+│  │              │  │                   │ │
+│  │  [Social]    │  │ [Contact]         │ │
+│  └──────────────┘  └───────────────────┘ │
+└──────────────────────────────────────────┘
+
+Fields:
+- name
+- title
+- photo: {src, alt}
+- bio
+- experience: array of {position, company, period, description}
+- education: array of {degree, institution, year}
+- skills: array of strings
+- contact_information: {email, phone}
+- social_links: array of {platform, url, icon}
+- background_color
+- text_color
+- spacing: {padding, gap}
+- layout_style: "split", "stacked"
+- photo_style: "square", "circle", "rounded"
+- show_skills: boolean
+- show_experience: boolean
+- show_education: boolean
+- contact_button: boolean
+
+## Leadership Spotlight
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │    Leadership Team      │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌────────────────────────────────────┐  │
+│  │                                    │  │
+│  │  ┌────┐  CEO Name                  │  │
+│  │  │    │  Chief Executive Officer   │  │
+│  │  │ CEO│                            │  │
+│  │  │Photo│  "Leadership quote or     │  │
+│  │  │    │   brief statement."        │  │
+│  │  └────┘                            │  │
+│  │        [LinkedIn] [Twitter]        │  │
+│  └────────────────────────────────────┘  │
+│                                          │
+│  [CFO] [COO] [CTO] [CMO] [Other Leaders] │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- leaders: array of {name, title, photo, quote, bio, social_links}
+- display_style: "tabs", "slider", "expandable"
+- default_active: number
+- background_color
+- text_color
+- spacing: {padding, gap}
+- card_style: "bordered", "shadow", "minimal"
+- photo_style: "square", "circle", "rounded"
+- show_quote: boolean
+- show_bio: boolean
+- show_social: boolean
+- navigation_style: "tabs", "buttons", "thumbnails"
+
+## Company History Timeline
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │     Our History         │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌────────────────────────────────────┐  │
+│  │                                    │  │
+│  │  [1990s] [2000s] [2010s] [Today]   │  │
+│  │                                    │  │
+│  │  2010s                             │  │
+│  │  ──────                            │  │
+│  │                                    │  │
+│  │  • 2015: Launched flagship product │  │
+│  │  • 2017: Expanded to APAC region   │  │
+│  │  • 2018: Company rebranding        │  │
+│  │  • 2019: Reached 1 million users   │  │
+│  │                                    │  │
+│  │  [Historic Photo]                  │  │
+│  │                                    │  │
+│  └────────────────────────────────────┘  │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- periods: array of {title, events, image}
+- events: array of {year, title, description} 
+- navigation_style: "tabs", "buttons", "dropdown"
+- default_period: string
+- background_color
+- text_color
+- spacing: {padding, gap}
+- layout_style: "list", "cards", "dots"
+- show_images: boolean
+- image_position: "right", "bottom"
+- card_style: "bordered", "shadow", "minimal"
+- animation: boolean
+- show_navigation: boolean
+
+## Office/Location Showcase
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │   Global Locations      │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌─────────────┐  ┌─────────────┐       │
+│  │             │  │             │       │
+│  │  New York   │  │   London    │       │
+│  │  Office     │  │   Office    │       │
+│  │  Image      │  │   Image     │       │
+│  │             │  │             │       │
+│  │ Address     │  │ Address     │       │
+│  │ Phone       │  │ Phone       │       │
+│  │             │  │             │       │
+│  │ [Directions]│  │ [Directions]│       │
+│  └─────────────┘  └─────────────┘       │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- locations: array of {name, image, address, phone, email, directions_url}
+- grid_columns: 2, 3, 4
+- background_color
+- text_color
+- spacing: {padding, gap}
+- card_style: "bordered", "shadow", "minimal"
+- show_map: boolean
+- map_position: "top", "bottom", "side"
+- text_alignment: "left", "center"
+- equal_height: boolean
+- show_contact_info: boolean
+- contact_info_position: "below", "overlay"
+
+## Awards & Recognition
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │   Awards & Recognition  │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐│
+│  │ ┌──────┐ │  │ ┌──────┐ │  │ ┌──────┐ ││
+│  │ │Award │ │  │ │Award │ │  │ │Award │ ││
+│  │ │Image │ │  │ │Image │ │  │ │Image │ ││
+│  │ └──────┘ │  │ └──────┘ │  │ └──────┘ ││
+│  │          │  │          │  │          ││
+│  │ Award    │  │ Award    │  │ Award    ││
+│  │ Name     │  │ Name     │  │ Name     ││
+│  │          │  │          │  │          ││
+│  │ Year     │  │ Year     │  │ Year     ││
+│  └──────────┘  └──────────┘  └──────────┘│
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- awards: array of {name, image, organization, year, description, link}
+- grid_columns: 3, 4, 5
+- background_color
+- text_color
+- spacing: {padding, gap}
+- card_style: "bordered", "shadow", "minimal"
+- image_style: "badge", "logo", "trophy"
+- text_alignment: "left", "center"
+- show_organization: boolean
+- show_description: boolean
+- sort_by: "recent", "alphabetical"
+- hover_effect: "zoom", "glow", "none"
+
+## Company Culture Gallery
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │     Life at Company     │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  We believe in creating a positive and   │
+│  inclusive workplace where everyone can  │
+│  thrive and contribute their best work.  │
+│                                          │
+│  ┌────┐ ┌────┐ ┌────┐ ┌────┐ ┌────┐     │
+│  │    │ │    │ │    │ │    │ │    │     │
+│  │ 📷 │ │ 📷 │ │ 📷 │ │ 📷 │ │ 📷 │     │
+│  │    │ │    │ │    │ │    │ │    │     │
+│  └────┘ └────┘ └────┘ └────┘ └────┘     │
+│                                          │
+│  ┌────┐ ┌────┐ ┌────┐ ┌────┐ ┌────┐     │
+│  │    │ │    │ │    │ │    │ │    │     │
+│  │ 📷 │ │ 📷 │ │ 📷 │ │ 📷 │ │ 📷 │     │
+│  │    │ │    │ │    │ │    │ │    │     │
+│  └────┘ └────┘ └────┘ └────┘ └────┘     │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- images: array of {src, alt, caption}
+- gallery_style: "grid", "masonry", "carousel"
+- grid_columns: 4, 5, 6
+- grid_rows: 2, 3
+- background_color
+- text_color
+- spacing: {padding, gap}
+- show_captions: boolean
+- enable_lightbox: boolean
+- image_aspect_ratio: "1:1", "4:3", "16:9"
+- hover_effect: "zoom", "overlay", "none"
+- overlay_content: "caption", "icon", "none"
+- show_social_proof: boolean
+- cta_button: {label, url, style}
+
+# FAQ/Information Block Types with Fields
+
+## Accordion FAQ
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │   Frequently Asked      │         │
+│      │       Questions         │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ▼ Question 1?                           │
+│    Answer to the first question goes     │
+│    here with detailed information.       │
+│                                          │
+│  ▶ Question 2?                           │
+│                                          │
+│  ▶ Question 3?                           │
+│                                          │
+│  ▶ Question 4?                           │
+│                                          │
+│         [View All FAQs]                  │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- faqs: array of {question, answer}
+- default_open: number or "all" or "none"
+- accordion_style: "basic", "bordered", "separated"
+- background_color
+- text_color
+- spacing: {padding, gap}
+- icon_style: "plus-minus", "arrow", "chevron"
+- allow_multiple_open: boolean
+- show_search: boolean
+- button: {label, url, style}
+- animation: boolean
+- animation_speed: "slow", "medium", "fast"
+- structured_data: boolean
+
+## Category Tabs FAQ
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │         Help Center     │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  [General] [Pricing] [Technical] [Returns]│
+│  ┌────────────────────────────────────┐  │
+│  │                                    │  │
+│  │  ▼ General Question 1?            │  │
+│  │    Answer to the first question    │  │
+│  │                                    │  │
+│  │  ▶ General Question 2?            │  │
+│  │                                    │  │
+│  │  ▶ General Question 3?            │  │
+│  │                                    │  │
+│  └────────────────────────────────────┘  │
+│                                          │
+│  Can't find an answer? [Contact Support] │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- categories: array of {name, faqs}
+- faqs: array of {question, answer, category}
+- default_category: string
+- accordion_style: "basic", "bordered", "separated"
+- tab_style: "tabs", "pills", "underlined"
+- background_color
+- text_color
+- spacing: {padding, gap}
+- show_search: boolean
+- support_button: {label, url, style}
+- icon_style: "plus-minus", "arrow", "chevron"
+- allow_multiple_open: boolean
+- tab_alignment: "left", "center", "stretched"
+
+## Two-Column FAQ
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │   Common Questions      │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌─────────────┐   ┌─────────────┐      │
+│  │             │   │             │      │
+│  │ Question 1? │   │ Question 3? │      │
+│  │             │   │             │      │
+│  │ Answer 1    │   │ Answer 3    │      │
+│  │             │   │             │      │
+│  └─────────────┘   └─────────────┘      │
+│                                          │
+│  ┌─────────────┐   ┌─────────────┐      │
+│  │             │   │             │      │
+│  │ Question 2? │   │ Question 4? │      │
+│  │             │   │             │      │
+│  │ Answer 2    │   │ Answer 4    │      │
+│  │             │   │             │      │
+│  └─────────────┘   └─────────────┘      │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- faqs: array of {question, answer}
+- layout_style: "grid", "compact"
+- grid_columns: 2, 3
+- background_color
+- text_color
+- spacing: {padding, gap}
+- card_style: "bordered", "shadow", "minimal"
+- text_alignment: "left", "center"
+- expand_behavior: "accordion", "toggle", "always_open"
+- show_icons: boolean
+- equal_height: boolean
+- button: {label, url, style}
+
+## Searchable FAQ Section
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │     Find Answers        │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌────────────────────────────────────┐  │
+│  │  Search for questions...     [🔍]  │  │
+│  └────────────────────────────────────┘  │
+│                                          │
+│  [All] [Category1] [Category2] [Category3]│
+│                                          │
+│  ▼ Question 1?                           │
+│    Answer to the first question goes     │
+│    here with detailed information.       │
+│                                          │
+│  ▶ Question 2?                           │
+│                                          │
+│  ▶ Question 3?                           │
+│                                          │
+│  [Load More]                             │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- faqs: array of {question, answer, category, tags}
+- search_placeholder
+- background_color
+- text_color
+- spacing: {padding, gap}
+- show_categories: boolean
+- categories: array of strings
+- items_per_page: number
+- load_more_button: boolean
+- accordion_style: "basic", "bordered", "separated"
+- icon_style: "plus-minus", "arrow", "chevron"
+- search_results_behavior: "filter", "highlight", "both"
+- no_results_text
+
+## Icon Grid Information
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │  Important Information  │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌──────────┐  ┌──────────┐  ┌─────────┐ │
+│  │   ┌─┐    │  │    ┌─┐   │  │   ┌─┐   │ │
+│  │   │I│    │  │    │I│   │  │   │I│   │ │
+│  │   └─┘    │  │    └─┘   │  │   └─┘   │ │
+│  │          │  │          │  │         │ │
+│  │ Info     │  │ Info     │  │ Info    │ │
+│  │ Title    │  │ Title    │  │ Title   │ │
+│  │          │  │          │  │         │ │
+│  │ Brief    │  │ Brief    │  │ Brief   │ │
+│  │ details  │  │ details  │  │ details │ │
+│  └──────────┘  └──────────┘  └─────────┘ │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- info_items: array of {icon, title, text, link}
+- grid_columns: 2, 3, 4
+- grid_rows: 1, 2, 3
+- background_color
+- text_color
+- spacing: {padding, gap}
+- card_style: "bordered", "shadow", "minimal"
+- icon_style: "outline", "filled", "colored"
+- text_alignment: "left", "center"
+- equal_height: boolean
+- show_link: boolean
+- link_style: "button", "text", "arrow"
+
+## Step-by-Step Guide
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │    How It Works         │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌───┐                                   │
+│  │ 1 │  Step One Title                   │
+│  └───┘  Description of first step with   │
+│         detailed instructions.           │
+│                                          │
+│  ┌───┐                                   │
+│  │ 2 │  Step Two Title                   │
+│  └───┘  Description of second step with  │
+│         detailed instructions.           │
+│                                          │
+│  ┌───┐                                   │
+│  │ 3 │  Step Three Title                 │
+│  └───┘  Description of third step with   │
+│         detailed instructions.           │
+│                                          │
+│         [Get Started]                    │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- steps: array of {number, title, description, image}
+- layout_style: "vertical", "horizontal", "cards"
+- background_color
+- text_color
+- spacing: {padding, gap}
+- step_style: "numbered", "circled", "icon"
+- connector_style: "line", "arrow", "none" 
+- show_images: boolean
+- image_position: "left", "top", "right"
+- text_alignment: "left", "center"
+- button: {label, url, style}
+- animation: boolean
+
+## Information Cards
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │   Important Details     │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌────────────────────────────────────┐  │
+│  │                                    │  │
+│  │  Information Card Title            │  │
+│  │                                    │  │
+│  │  Detailed information content with │  │
+│  │  important facts and details that  │  │
+│  │  users need to know.               │  │
+│  │                                    │  │
+│  │  [Learn More]                      │  │
+│  │                                    │  │
+│  └────────────────────────────────────┘  │
+│                                          │
+│  ┌────────────────────────────────────┐  │
+│  │                                    │  │
+│  │  Information Card Title            │  │
+│  │                                    │  │
+│  │  Detailed information content with │  │
+│  │  important facts and details that  │  │
+│  │  users need to know.               │  │
+│  │                                    │  │
+│  │  [Learn More]                      │  │
+│  │                                    │  │
+│  └────────────────────────────────────┘  │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- cards: array of {title, content, button, image, icon}
+- layout_style: "list", "grid", "columns"
+- grid_columns: 1, 2, 3
+- background_color
+- text_color
+- spacing: {padding, gap}
+- card_style: "bordered", "shadow", "minimal"
+- text_alignment: "left", "center"
+- show_icon: boolean
+- icon_position: "top", "left"
+- icon_style: "outline", "filled", "colored"
+- show_image: boolean
+- image_position: "top", "left", "background"
+- equal_height: boolean
+
+## Resource Download Section
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │   Helpful Resources     │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌────────────┐  ┌────────────┐         │
+│  │ ┌────────┐ │  │ ┌────────┐ │         │
+│  │ │Doc Icon│ │  │ │PDF Icon│ │         │
+│  │ └────────┘ │  │ └────────┘ │         │
+│  │            │  │            │         │
+│  │ Resource   │  │ Resource   │         │
+│  │ Title      │  │ Title      │         │
+│  │            │  │            │         │
+│  │ Brief desc │  │ Brief desc │         │
+│  │            │  │            │         │
+│  │ [Download] │  │ [Download] │         │
+│  └────────────┘  └────────────┘         │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- resources: array of {title, description, file_type, file_size, download_url, icon}
+- grid_columns: 2, 3, 4
+- background_color
+- text_color
+- spacing: {padding, gap}
+- card_style: "bordered", "shadow", "minimal"
+- text_alignment: "left", "center"
+- show_file_type: boolean
+- show_file_size: boolean
+- icon_style: "standard", "colored", "custom"
+- button_style: "button", "link", "icon"
+- require_email: boolean
+- download_tracking: boolean
+- gated_content: boolean
+
+## Knowledge Base Preview
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │    Knowledge Base       │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌────────────┐  ┌────────────┐         │
+│  │ ┌────┐     │  │ ┌────┐     │         │
+│  │ │Icon│     │  │ │Icon│     │         │
+│  │ └────┘     │  │ └────┘     │         │
+│  │            │  │            │         │
+│  │ Category   │  │ Category   │         │
+│  │ Name       │  │ Name       │         │
+│  │            │  │            │         │
+│  │ • Article  │  │ • Article  │         │
+│  │ • Article  │  │ • Article  │         │
+│  │ • Article  │  │ • Article  │         │
+│  │            │  │            │         │
+│  │ [View All] │  │ [View All] │         │
+│  └────────────┘  └────────────┘         │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- categories: array of {name, icon, articles}
+- articles: array of {title, excerpt, url}
+- grid_columns: 2, 3, 4
+- articles_to_show: 3, 4, 5
+- background_color
+- text_color
+- spacing: {padding, gap}
+- card_style: "bordered", "shadow", "minimal" 
+- icon_style: "outline", "filled", "colored"
+- text_alignment: "left", "center"
+- show_article_count: boolean
+- button_text
+- search_bar: boolean
+- search_placeholder
+
+## Glossary/Terms Section
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │   Glossary of Terms     │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  [A] [B] [C]...[Z]                       │
+│                                          │
+│  A                                       │
+│  ──                                      │
+│                                          │
+│  Term A            Definition of Term A  │
+│  ──────────────────────────────────────  │
+│                                          │
+│  Term A2           Definition of Term A2 │
+│  ──────────────────────────────────────  │
+│                                          │
+│  B                                       │
+│  ──                                      │
+│                                          │
+│  Term B            Definition of Term B  │
+│  ──────────────────────────────────────  │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- terms: array of {term, definition, category}
+- layout_style: "alphabetical", "categorized", "list"
+- background_color
+- text_color
+- spacing: {padding, gap}
+- show_alphabet_navigation: boolean
+- letter_style: "buttons", "links", "tabs"
+- term_style: "bold", "heading", "normal"
+- divider_style: "solid", "dashed", "none"
+- term_width: "30%", "40%", "auto"
+- search_bar: boolean
+- search_placeholder
+- scroll_to_letter: boolean
+- expandable_definitions: boolean
+
+# Pricing Block Types with Fields
+
+## Pricing Table Compare
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │     Pricing Plans       │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌─────────┬─────────┬────────────┐      │
+│  │ Basic   │ Pro     │ Enterprise │      │
+│  ├─────────┼─────────┼────────────┤      │
+│  │ $10/mo  │ $25/mo  │ $49/mo     │      │
+│  ├─────────┼─────────┼────────────┤      │
+│  │ Feature │ Feature │ Feature    │      │
+│  │ Feature │ Feature │ Feature    │      │
+│  │ -       │ Feature │ Feature    │      │
+│  │ -       │ -       │ Feature    │      │
+│  ├─────────┼─────────┼────────────┤      │
+│  │[Sign Up]│[Sign Up]│ [Sign Up]  │      │
+│  └─────────┴─────────┴────────────┘      │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- price_toggle: {monthly, annual, discount_text}
+- plans: array of {name, price_monthly, price_annual, features, button, highlight}
+- features: array of {name, basic, pro, enterprise}
+- feature_icons: {included, excluded}
+- background_color
+- text_color
+- spacing: {padding}
+- table_style: "bordered", "minimal", "modern"
+- highlight_column: number
+- highlight_color
+- text_alignment: "left", "center"
+- show_popular_badge: boolean
+- currency_symbol
+- responsive_mode: "scroll", "stack"
+- button_style
+
+## Pricing Cards
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │     Pricing Plans       │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌──────────┐  ┌──────────┐  ┌─────────┐ │
+│  │          │  │          │  │         │ │
+│  │  Basic   │  │   Pro    │  │ Premium │ │
+│  │          │  │ [Popular]│  │         │ │
+│  │  $19/mo  │  │  $49/mo  │  │ $99/mo  │ │
+│  │          │  │          │  │         │ │
+│  │ • Feature│  │ • Feature│  │• Feature│ │
+│  │ • Feature│  │ • Feature│  │• Feature│ │
+│  │ • Feature│  │ • Feature│  │• Feature│ │
+│  │          │  │          │  │         │ │
+│  │[Get Plan]│  │[Get Plan]│  │[Get Plan]│ │
+│  └──────────┘  └──────────┘  └─────────┘ │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- price_toggle: {monthly, annual, discount_text}
+- plans: array of {name, price_monthly, price_annual, features, button, highlight, badge}
+- card_style: "bordered", "shadow", "minimal"
+- background_color
+- highlight_color
+- spacing: {padding, gap}
+- feature_icon: "check", "dot", "none"
+- hover_effect: boolean
+- equal_height: boolean
+- featured_plan: number
+- currency_symbol
+- text_alignment: "left", "center"
+- layout_columns: 3, 4
+
+## Pricing Slider/Calculator
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │   Price Calculator      │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  Number of users                         │
+│  ┌────────────────────────────────────┐  │
+│  │        ○                           │  │
+│  │ 0                              100 │  │
+│  └────────────────────────────────────┘  │
+│  Selected: 25 users                      │
+│                                          │
+│  Storage space                           │
+│  ┌────────────────────────────────────┐  │
+│  │                  ○                 │  │
+│  │ 1GB                           100GB│  │
+│  └────────────────────────────────────┘  │
+│  Selected: 50GB                          │
+│                                          │
+│  ┌────────────────────────────────────┐  │
+│  │  Estimated price: $125/month       │  │
+│  │  [Get Started]   [Contact Sales]   │  │
+│  └────────────────────────────────────┘  │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- sliders: array of {name, min, max, default, step, unit}
+- calculation_formula: string
+- currency_symbol
+- result_prefix_text
+- result_suffix_text
+- background_color
+- primary_color
+- spacing: {padding}
+- buttons: array of {label, url, style}
+- show_details: boolean
+- details: array of {label, value_formula}
+- slider_style: "filled", "minimalist", "gradient"
+- layout_style: "stacked", "side-by-side"
+- recalculation: "immediate", "button"
+
+## Feature Comparison Pricing
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │   Feature Comparison    │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌─────────┬─────────┬─────────┬───────┐ │
+│  │         │ Basic   │ Pro     │Premium│ │
+│  │         │ $9/mo   │ $29/mo  │$59/mo │ │
+│  ├─────────┼─────────┼─────────┼───────┤ │
+│  │Feature 1│    ✓    │    ✓    │   ✓   │ │
+│  ├─────────┼─────────┼─────────┼───────┤ │
+│  │Feature 2│    ✓    │    ✓    │   ✓   │ │
+│  ├─────────┼─────────┼─────────┼───────┤ │
+│  │Feature 3│    -    │    ✓    │   ✓   │ │
+│  ├─────────┼─────────┼─────────┼───────┤ │
+│  │Feature 4│    -    │    -    │   ✓   │ │
+│  ├─────────┼─────────┼─────────┼───────┤ │
+│  │         │[Select] │[Select] │[Select]│ │
+│  └─────────┴─────────┴─────────┴───────┘ │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- plans: array of {name, price, currency, interval}
+- features: array of {name, included_in}
+- included_icon: "check", "text", "dot"
+- excluded_icon: "dash", "x", "empty"
+- background_color
+- text_color
+- spacing: {padding}
+- header_style: "sticky", "normal"
+- row_highlight: array of numbers
+- column_highlight: number
+- buttons: array of {label, url, style}
+- table_style: "bordered", "striped", "minimal"
+- comparison_sections: array of {title, features}
+- responsive_behavior: "scroll", "stack"
+
+## Subscription Tiers
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │    Subscription Tiers   │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌────────────────────┐                 │
+│  │     Free Tier      │                 │
+│  │     $0/month       │                 │
+│  │                    │                 │
+│  │  • Basic Feature   │                 │
+│  │  • Basic Feature   │                 │
+│  │                    │                 │
+│  │  [Get Started]     │                 │
+│  └────────────────────┘                 │
+│                                          │
+│  ┌────────────────────┐ ┌──────────────┐ │
+│  │    Standard Tier   │ │ Premium Tier │ │
+│  │    $29/month       │ │  $99/month   │ │
+│  │                    │ │              │ │
+│  │  • Everything in   │ │• Everything  │ │
+│  │    Free Tier plus: │ │  in Standard │ │
+│  │  • More features   │ │• Even more   │ │
+│  │  • More features   │ │• Even more   │ │
+│  │                    │ │              │ │
+│  │  [Subscribe Now]   │ │[Subscribe]   │ │
+│  └────────────────────┘ └──────────────┘ │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- tiers: array of {name, price, interval, features, button, highlight}
+- layout_style: "stacked", "side-by-side", "cascading"
+- background_color
+- text_color
+- spacing: {padding, gap}
+- price_size: "small", "medium", "large"
+- feature_style: "bullets", "text", "icon"
+- card_style: "bordered", "shadow", "minimal"
+- top_tier_label: string
+- highlight_color
+- show_comparison_link: boolean
+- comparison_link: {text, url}
+- incremental_features: boolean
+- currency_symbol
+- text_alignment: "left", "center"
+
+## Pricing Toggle (Monthly/Annual)
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │    Flexible Pricing     │         │
+│      └─────────────────────────┘         │
+│                                          │
+│        Monthly ○───●  Annual             │
+│                 Save 20%                 │
+│                                          │
+│  ┌──────────┐  ┌──────────┐  ┌─────────┐ │
+│  │          │  │          │  │         │ │
+│  │  Starter │  │  Growth  │  │ Business│ │
+│  │          │  │          │  │         │ │
+│  │  $29/yr  │  │  $89/yr  │  │ $179/yr │ │
+│  │$39/month │  │$109/month│  │$219/month│ │
+│  │          │  │          │  │         │ │
+│  │ Features │  │ Features │  │ Features│ │
+│  │ list     │  │ list     │  │ list    │ │
+│  │          │  │          │  │         │ │
+│  │ [Select] │  │ [Select] │  │ [Select]│ │
+│  └──────────┘  └──────────┘  └─────────┘ │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- billing_toggle: {monthly_label, annual_label, default}
+- saving_text
+- plans: array of {name, monthly_price, annual_price, features, button, highlight}
+- toggle_position: "top", "center"
+- toggle_style: "switch", "tabs", "buttons"
+- background_color
+- text_color
+- spacing: {padding, gap}
+- highlight_savings: boolean
+- savings_display: "percentage", "amount"
+- card_layout: "grid", "list"
+- grid_columns: 3, 4
+- currency_symbol
+- toggle_accent_color
+- feature_check_style
+- card_style: "bordered", "shadow", "minimal"
+
+## Service Package Grid
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │    Service Packages     │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌──────────────┐  ┌─────────────────┐   │
+│  │    Basic     │  │     Premium     │   │
+│  │   Package    │  │     Package     │   │
+│  │              │  │                 │   │
+│  │ ✓ Service 1  │  │ ✓ Service 1    │   │
+│  │ ✓ Service 2  │  │ ✓ Service 2    │   │
+│  │ ✓ Service 3  │  │ ✓ Service 3    │   │
+│  │ ✗ Service 4  │  │ ✓ Service 4    │   │
+│  │ ✗ Service 5  │  │ ✓ Service 5    │   │
+│  │              │  │                 │   │
+│  │   $599      │  │     $1499       │   │
+│  │              │  │                 │   │
+│  │ [Get Started]│  │  [Get Started] │   │
+│  └──────────────┘  └─────────────────┘   │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- packages: array of {name, price, services, button, highlight}
+- services: array of {name, description, included_in}
+- grid_columns: 2, 3, 4
+- background_color
+- text_color
+- spacing: {padding, gap}
+- card_style: "bordered", "shadow", "minimal"
+- included_icon: "check", "text", "dot"
+- excluded_icon: "dash", "x", "none"
+- price_position: "top", "bottom"
+- package_tag: array of {package_index, text, style}
+- equal_height: boolean
+- hover_effect: boolean
+- highlight_color
+- text_alignment: "left", "center"
+
+## Custom Quote Section
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │     Custom Quote        │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  Need a custom solution for your         │
+│  business? Contact us for a tailored     │
+│  quote that fits your specific needs.    │
+│                                          │
+│  ┌─────────────────────────────────────┐ │
+│  │                                     │ │
+│  │ Name                                │ │
+│  │ ┌─────────────────────────────────┐ │ │
+│  │ │                                 │ │ │
+│  │ └─────────────────────────────────┘ │ │
+│  │                                     │ │
+│  │ Email                               │ │
+│  │ ┌─────────────────────────────────┐ │ │
+│  │ │                                 │ │ │
+│  │ └─────────────────────────────────┘ │ │
+│  │                                     │ │
+│  │ Project Requirements                │ │
+│  │ ┌─────────────────────────────────┐ │ │
+│  │ │                                 │ │ │
+│  │ └─────────────────────────────────┘ │ │
+│  │                                     │ │
+│  │ [Request Quote]                     │ │
+│  └─────────────────────────────────────┘ │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- form_fields: array of {name, type, label, required, placeholder, options}
+- button_text
+- success_message
+- background_color
+- text_color
+- spacing: {padding}
+- form_style: "boxed", "plain", "underlined"
+- content_alignment: "left", "center"
+- show_estimated_response_time: boolean
+- estimated_response_text
+- alternative_contact: {text, phone, email}
+- include_service_checkboxes: boolean
+- services: array of strings
+- include_budget_field: boolean
+- budget_options: array of strings
+- card_style: "bordered", "shadow", "none"
+
+## Pricing with Testimonials
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │     Pricing Plans       │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌────────────────┐  ┌─────────────────┐ │
+│  │                │  │                 │ │
+│  │    Standard    │  │     Premium     │ │
+│  │    $49/mo      │  │     $99/mo      │ │
+│  │                │  │                 │ │
+│  │  • Feature     │  │  • Feature      │ │
+│  │  • Feature     │  │  • Feature      │ │
+│  │  • Feature     │  │  • Feature      │ │
+│  │                │  │                 │ │
+│  │  [Choose Plan] │  │  [Choose Plan]  │ │
+│  │                │  │                 │ │
+│  │ "Great value!" │  │ "Worth every $" │ │
+│  │  - Customer    │  │  - Customer     │ │
+│  │                │  │                 │ │
+│  └────────────────┘  └─────────────────┘ │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- plans: array of {name, price, interval, features, button, testimonial}
+- testimonials: array of {quote, author, plan_index}
+- grid_columns: 2, 3, 4
+- background_color
+- text_color
+- spacing: {padding, gap}
+- card_style: "bordered", "shadow", "minimal"
+- price_size
+- feature_style: "bullets", "checks", "text"
+- testimonial_style: "quote", "card", "minimal"
+- show_testimonial_image: boolean
+- highlight_plan: number
+- highlight_color
+- equal_height: boolean
+- hover_effect: boolean
+- currency_symbol
+- text_alignment: "left", "center"
+
+## Free vs. Paid Comparison
+┌──────────────────────────────────────────┐
+│      ┌─────────────────────────┐         │
+│      │     Free vs. Paid       │         │
+│      └─────────────────────────┘         │
+│                                          │
+│  ┌─────────────────┐  ┌────────────────┐ │
+│  │                 │  │                │ │
+│  │  Free Version   │  │   Pro Version  │ │
+│  │     $0/mo       │  │    $29/mo      │ │
+│  │                 │  │                │ │
+│  │ • Basic feature │  │ • Everything in│ │
+│  │ • Basic feature │  │   Free Version │ │
+│  │ • Basic feature │  │ • Pro feature  │ │
+│  │ ✖ Pro feature   │  │ • Pro feature  │ │
+│  │ ✖ Pro feature   │  │ • Pro feature  │ │
+│  │ ✖ Pro feature   │  │ • Pro feature  │ │
+│  │                 │  │                │ │
+│  │  [Get Started]  │  │  [Go Pro Now]  │ │
+│  │                 │  │                │ │
+│  └─────────────────┘  └────────────────┘ │
+└──────────────────────────────────────────┘
+
+Fields:
+- heading
+- description
+- free_plan: {name, price, features, limitations, button}
+- paid_plan: {name, price, interval, features, button, highlight_features}
+- background_color
+- text_color
+- spacing: {padding, gap}
+- layout_style: "side-by-side", "stacked"
+- feature_comparison_style: "check-x", "included-blank", "highlight-diff"
+- card_style: "bordered", "shadow", "minimal"
+- show_limitations: boolean
+- pro_highlight_color
+- feature_categories: array of {name, features}
+- upgrade_incentive_text
+- show_most_popular: boolean
+- most_popular_text
+- text_alignment: "left", "center"
+- currency_symbol
+
+# Footer Block Types with Fields
+
+## Multi-Column Footer
+┌──────────────────────────────────────────┐
+│ ┌─────────┐ ┌─────────┐ ┌─────────────┐  │
+│ │         │ │         │ │             │  │
+│ │  Logo   │ │ Products│ │   Support   │  │
+│ │         │ │ ───────┬│ │   ───────   │  │
+│ │ Company │ │ Link   ││ │   Link      │  │
+│ │ tagline │ │ Link   ││ │   Link      │  │
+│ │ goes    │ │ Link   ││ │   Link      │  │
+│ │ here    │ │ Link   ││ │             │  │
+│ │         │ │        ││ │ Contact:    │  │
+│ │         │ └────────┘│ │ email@ex.com│  │
+│ └─────────┘           │ │ 555-123-4567│  │
+│                       │ └─────────────┘  │
+│ © 2023 Company Name. All rights reserved.│
+│ [Social] [Social] [Social] [Social]      │
+└──────────────────────────────────────────┘
+
+Fields:
+- logo: {src, alt, url}
+- tagline
+- columns: array of {title, links}
+- links: array of {text, url}
+- contact_info: {email, phone, address}
+- social_links: array of {platform, url, icon}
+- copyright_text
+- bottom_links: array of {text, url}
+- background_color
+- text_color
+- column_layout: "equal", "custom", "auto"
+- column_count: 3, 4, 5
+- spacing: {padding}
+- divider: boolean
+- logo_position: "left", "center", "top"
+- social_position: "bottom", "column", "top"
+- show_back_to_top: boolean
+- back_to_top_style: "text", "arrow", "button"
+- legal_links: array of {text, url}
+
+## Newsletter Footer
+┌──────────────────────────────────────────┐
+│ ┌──────────────────┐   ┌───────────────┐ │
+│ │                  │   │ Subscribe     │ │
+│ │     Logo         │   │ ───────────── │ │
+│ │                  │   │ Get the latest│ │
+│ │ Company tagline  │   │ updates and   │ │
+│ │ and brief desc.  │   │ special offers│ │
+│ │                  │   │               │ │
+│ │ [Social Icons]   │   │ ┌───────────┐ │ │
+│ │                  │   │ │Email     ▼│ │ │
+│ │                  │   │ └───────────┘ │ │
+│ │                  │   │ [Subscribe]   │ │
+│ └──────────────────┘   └───────────────┘ │
+│                                          │
+│ © 2023 Company. All rights reserved.     │
+│ [Privacy Policy] [Terms of Service]      │
+└──────────────────────────────────────────┘
+
+Fields:
+- logo: {src, alt, url}
+- tagline
+- description
+- newsletter_heading
+- newsletter_text
+- input_placeholder
+- button_text
+- social_links: array of {platform, url, icon}
+- copyright_text
+- legal_links: array of {text, url}
+- background_color
+- text_color
+- layout: "split", "stacked"
+- column_ratio: "50/50", "60/40", "40/60" 
+- spacing: {padding}
+- show_success_message: boolean
+- success_message
+- newsletter_position: "right", "left", "bottom"
+- show_privacy_text: boolean
+- privacy_text
+- social_position: "below-logo", "below-form", "bottom"
+- divider: boolean
+
+## Minimal Footer
+┌──────────────────────────────────────────┐
+│                                          │
+│               Logo                       │
+│                                          │
+│  [Link] • [Link] • [Link] • [Link]       │
+│                                          │
+│  [Social] [Social] [Social] [Social]     │
+│                                          │
+│  © 2023 Company. All rights reserved.    │
+│                                          │
+└──────────────────────────────────────────┘
+
+Fields:
+- logo: {src, alt, url}
+- menu_links: array of {text, url}
+- social_links: array of {platform, url, icon}
+- copyright_text
+- background_color
+- text_color
+- spacing: {padding}
+- alignment: "center", "left"
+- link_separator: "dot", "line", "none", "slash"
+- social_position: "middle", "bottom", "top"
+- logo_size: "small", "medium", "large"
+- show_back_to_top: boolean
+- show_logo: boolean
+- layout_style: "compact", "spaced"
+- hover_effect: boolean
+- social_icons_style: "filled", "outline", "rounded"
+
+## App Download Footer
+┌──────────────────────────────────────────┐
+│ ┌─────────────────┐ ┌──────────────────┐ │
+│ │                 │ │                  │ │
+│ │  Logo           │ │ Get Our App      │ │
+│ │                 │ │                  │ │
+│ │  Short tagline  │ │ [App Store]      │ │
+│ │  or description │ │                  │ │
+│ │                 │ │ [Google Play]    │ │
+│ │                 │ │                  │ │
+│ │  [Social icons] │ │ [Other Platform] │ │
+│ │                 │ │                  │ │
+│ └─────────────────┘ └──────────────────┘ │
+│                                          │
+│ © 2023 Company Name. All rights reserved.│
+│ [Privacy Policy] [Terms] [Contact]       │
+└──────────────────────────────────────────┘
+
+Fields:
+- logo: {src, alt, url}
+- tagline
+- app_section_title
+- app_description
+- app_links: array of {platform, url, image}
+- social_links: array of {platform, url, icon}
+- copyright_text
+- legal_links: array of {text, url}
+- background_color
+- text_color
+- spacing: {padding}
+- layout: "split", "stacked"
+- column_ratio: "50/50", "60/40", "40/60"
+- app_button_style: "official", "custom", "simple"
+- show_qr_code: boolean
+- qr_code: {src, alt}
+- show_device_image: boolean
+- device_image: {src, alt}
+- app_section_position: "right", "left", "bottom"
+- social_position: "below-logo", "bottom"
+- divider: boolean
+
+## Social-Focused Footer
+┌──────────────────────────────────────────┐
+│                                          │
+│                ┌──────┐                  │
+│                │ Logo │                  │
+│                └──────┘                  │
+│                                          │
+│           Connect with us:               │
+│                                          │
+│  [Facebook] [Twitter] [Instagram] [More] │
+│                                          │
+│  • [Link] • [Link] • [Link] • [Link] •   │
+│                                          │
+│  © 2023 Company. All rights reserved.    │
+│                                          │
+└──────────────────────────────────────────┘
+
+Fields:
+- logo: {src, alt, url}
+- social_heading
+- social_links: array of {platform, url, icon, label}
+- menu_links: array of {text, url}
+- copyright_text
+- background_color
+- text_color
+- spacing: {padding}
+- social_icons_style: "large", "medium", "small"
+- social_icons_shape: "round", "square", "rounded"
+- social_icons_color: "branded", "monochrome", "custom"
+- alignment: "center", "left"
+- link_separator: "dot", "line", "none", "slash"
+- show_social_labels: boolean
+- layout_style: "centered", "stacked", "horizontal"
+- social_hover_effect: "grow", "fade", "color"
+- divider: boolean
+- show_logo: boolean
+
+## Two-Tier Footer
+┌──────────────────────────────────────────┐
+│ ┌─────────┐ ┌─────────┐ ┌─────────────┐  │
+│ │         │ │         │ │             │  │
+│ │  About  │ │ Services│ │  Resources  │  │
+│ │ ────────│ │ ────────│ │  ─────────  │  │
+│ │ Link    │ │ Link    │ │  Link       │  │
+│ │ Link    │ │ Link    │ │  Link       │  │
+│ │ Link    │ │ Link    │ │  Link       │  │
+│ └─────────┘ └─────────┘ └─────────────┘  │
+├──────────────────────────────────────────┤
+│ ┌─────────────────┐  ┌────────────────┐  │
+│ │                 │  │                │  │
+│ │      Logo       │  │  [Social icons]│  │
+│ │                 │  │                │  │
+│ └─────────────────┘  └────────────────┘  │
+│                                          │
+│ © 2023 Company. All rights reserved.     │
+│ [Privacy] [Terms] [Cookies]              │
+└──────────────────────────────────────────┘
+
+Fields:
+- logo: {src, alt, url}
+- columns: array of {title, links}
+- links: array of {text, url}
+- social_links: array of {platform, url, icon}
+- copyright_text
+- legal_links: array of {text, url}
+- background_color: {top, bottom}
+- text_color: {top, bottom}
+- spacing: {padding}
+- divider_style: "solid", "dashed", "none"
+- divider_color
+- top_section_style: "links", "menus", "content"
+- bottom_section_style: "minimal", "centered", "split"
+- column_count: 3, 4, 5
+- bottom_logo_position: "left", "center"
+- social_position: "right", "center", "left"
+- show_back_to_top: boolean
+- responsive_stacking: "all", "bottom-first", "custom"
+
+## Mega Footer
+┌──────────────────────────────────────────┐
+│ ┌──────────────────────────────────────┐ │
+│ │                                      │ │
+│ │   Logo         [Social Icons]        │ │
+│ │   Tagline                            │ │
+│ │                                      │ │
+│ └──────────────────────────────────────┘ │
+│                                          │
+│ ┌─────────┐ ┌─────────┐ ┌────────┐ ┌───┐ │
+│ │Products │ │Company  │ │Support │ │More│ │
+│ │─────────│ │─────────│ │────────│ │───│ │
+│ │Link     │ │Link     │ │Link    │ │Link│ │
+│ │Link     │ │Link     │ │Link    │ │Link│ │
+│ │Link     │ │Link     │ │Link    │ │Link│ │
+│ │Link     │ │Link     │ │Link    │ │Link│ │
+│ │Link     │ │Link     │ │Link    │ │Link│ │
+│ └─────────┘ └─────────┘ └────────┘ └───┘ │
+│                                          │
+│ ┌──────────────────┐  ┌───────────────┐  │
+│ │                  │  │               │  │
+│ │ Newsletter signup│  │ Contact info  │  │
+│ │ [Email][Submit]  │  │ and details   │  │
+│ │                  │  │               │  │
+│ └──────────────────┘  └───────────────┘  │
+│                                          │
+│ © 2023 Company. All rights reserved.     │
+│ [Privacy] [Terms] [Sitemap] [Cookies]    │
+└──────────────────────────────────────────┘
+
+Fields:
+- logo: {src, alt, url}
+- tagline
+- columns: array of {title, links}
+- links: array of {text, url}
+- social_links: array of {platform, url, icon}
+- newsletter: {heading, placeholder, button_text}
+- contact_info: {title, email, phone, address}
+- copyright_text
+- legal_links: array of {text, url}
+- background_color
+- text_color
+- spacing: {padding, gap}
+- layout_sections: array of {type, columns}
+- column_count: 3, 4, 5
+- top_section_style: "logo-social", "full-width", "none"
+- bottom_section_style: "copyright-legal", "simple", "split"
+- divider_style: "solid", "dashed", "none"
+- divider_color
+- show_newsletter: boolean
+- show_contact: boolean
+- social_position: "top", "bottom", "column"
+- responsive_behavior: "stack-all", "maintain-columns", "custom"
+
+## CTA Footer
+┌──────────────────────────────────────────┐
+│                                          │
+│         Ready to get started?            │
+│                                          │
+│      [Contact Us]    [Get Demo]          │
+│                                          │
+├──────────────────────────────────────────┤
+│                                          │
+│   Logo                [Social Icons]     │
+│                                          │
+│   [Link] • [Link] • [Link] • [Link]      │
+│                                          │
+│   © 2023 Company. All rights reserved.   │
+│                                          │
+└──────────────────────────────────────────┘
+
+Fields:
+- logo: {src, alt, url}
+- cta_heading
+- cta_subheading
+- buttons: array of {label, url, style}
+- menu_links: array of {text, url}
+- social_links: array of {platform, url, icon}
+- copyright_text
+- background_color: {cta, footer}
+- text_color: {cta, footer}
+- spacing: {padding}
+- cta_style: "centered", "split", "full-width"
+- cta_background_image
+- cta_overlay_color
+- cta_overlay_opacity
+- divider_style: "solid", "dashed", "none"
+- footer_style: "minimal", "with-links"
+- button_style: "filled", "outline", "text"
+- link_separator: "dot", "line", "none"
+- social_position: "right", "bottom", "below-logo"
+- cta_alignment: "center", "left"
+- show_back_to_top: boolean
+
+## Map/Location Footer
+┌──────────────────────────────────────────┐
+│ ┌────────────────┐  ┌─────────────────┐  │
+│ │                │  │                 │  │
+│ │                │  │  Contact Us     │  │
+│ │                │  │  ───────────    │  │
+│ │     Map        │  │                 │  │
+│ │                │  │  Address        │  │
+│ │                │  │  Phone          │  │
+│ │                │  │  Email          │  │
+│ │                │  │                 │  │
+│ │                │  │  [Social Icons] │  │
+│ └────────────────┘  └─────────────────┘  │
+│                                          │
+│ © 2023 Company. All rights reserved.     │
+│ [Link] • [Link] • [Link] • [Link]        │
+└──────────────────────────────────────────┘
+
+Fields:
+- logo: {src, alt, url}
+- contact_heading
+- contact_info: {address, phone, email, hours}
+- map_location: {latitude, longitude, zoom}
+- map_marker_text
+- menu_links: array of {text, url}
+- social_links: array of {platform, url, icon}
+- copyright_text
+- background_color
+- text_color
+- spacing: {padding}
+- map_style: "standard", "light", "dark", "satellite"
+- map_height
+- layout: "split", "map-top", "map-bottom"
+- column_ratio: "50/50", "60/40", "40/60"
+- show_directions_link: boolean
+- directions_text
+- map_api_key
+- show_multiple_locations: boolean
+- locations: array of {name, address, lat, lng}
+- link_separator: "dot", "line", "none"
+- social_position: "below-contact", "bottom"
+- responsive_behavior: "stack", "hide-map", "small-map"
+
+## Awards & Partners Footer
+┌──────────────────────────────────────────┐
+│                                          │
+│   Trusted by industry leaders:           │
+│                                          │
+│  [Logo] [Logo] [Logo] [Logo] [Logo]      │
+│                                          │
+│  Awards & Certifications:                │
+│                                          │
+│  [Badge] [Badge] [Badge]                 │
+│                                          │
+├──────────────────────────────────────────┤
+│                                          │
+│  Logo               [Social Icons]       │
+│                                          │
+│  © 2023 Company. All rights reserved.    │
+│  [Privacy] [Terms] [Contact]             │
+└──────────────────────────────────────────┘
+
+Fields:
+- logo: {src, alt, url}
+- partners_heading
+- partner_logos: array of {image, name, url}
+- awards_heading
+- award_badges: array of {image, name, description}
+- social_links: array of {platform, url, icon}
+- copyright_text
+- legal_links: array of {text, url}
+- background_color: {top, bottom}
+- text_color: {top, bottom}
+- spacing: {padding}
+- logo_style: "grayscale", "color", "color-on-hover"
+- logo_size: "small", "medium", "large"
+- badge_style: "simple", "detailed"
+- divider_style: "solid", "dashed", "none"
+- divider_color
+- partners_layout: "grid", "slider", "wrap"
+- partners_count: 4, 5, 6
+- show_partner_names: boolean
+- show_badge_names: boolean
+- bottom_footer_style: "minimal", "with-links", "logo-social"
+- social_position: "right", "left", "center"
+- enable_logo_links: boolean

@@ -1,0 +1,9 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Payload Plugins
+
+## List
+- [`payload-better-fields-plugin`](https://github.com/NouanceLabs/payload-better-fields-plugin)

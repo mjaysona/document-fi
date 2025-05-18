@@ -1,0 +1,48 @@
+// @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Manrope:wght@200..800&display=swap');
+
+:root {
+  --font-body: 'Inter', sans-serif;
+  --font-heading: 'Inter', sans-serif;
+  --font-inline: 'Inter', sans-serif;
+}
+
+body {
+  font-family: var(--font-body);
+}
+
+.nav-group__toggle {
+  font-family: var(--font-body);
+} 
+
+.field-error.tooltip--position-top {
+  &:hover {
+    bottom: 42px;
+    top: initial;
+    white-space: normal;
+  }
+}
+
+.custom-view-description {
+  padding-bottom: var(--base)
+}
+
+.document-fields__sub-header {
+  padding-bottom: var(--base)
+}
+
+.field-type.row .row__fields {
+  flex-wrap: nowrap;
+}
+
+.bfRangeFieldWrapper.field-type {
+  width: 100%;
+  .container {
+    min-width: 0;
+  }
+  .containerWrapper {
+    flex-wrap: nowrap;
+  }
+  .markersList {
+    display: none;
+  }
+}

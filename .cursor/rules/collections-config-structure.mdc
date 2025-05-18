@@ -1,0 +1,613 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Collections Rules
+
+- Collections are stored in **src/collections** folder.
+
+## Custom Components
+
+- Custom components used for specific collections are generally inside a collection folder.
+
+### Creating New Custom Components
+
+- When creating a new custom component, follow these steps:
+  1. Create a new folder in the specific collection's `components` directory (e.g., `src/collections/CollectionName/components/`)
+  2. Name the folder according to the component's purpose and type (Field or Root)
+  3. Create a single `index.tsx` file by default
+  4. Implement the component as a client component with `Client` suffix
+  5. Export the component as default
+- Only split into client/server parts if specifically requested or if server-side functionality is required
+- Default template for new components:
+  ```typescript
+  const ComponentNameClient: React.FC<ComponentTypeProps> = ({ path }) => {
+    const { value, setValue } = useField({ path });
+    
+    // component implementation
+  };
+  
+  export default ComponentNameClient;
+  ```
+
+### Component Types
+
+When creating a custom component, always use the appropriate type from Payload's type definitions. Payload CMS supports four main types of custom components:
+
+1. **Root Components**
+   - Components that are rendered at the root level of the admin UI
+   - Examples: `AfterNavLinks`, `BeforeDashboard`, `BeforeLogin`
+   - Use `RootComponentProps` type
+   - Use appropriate UI components from `@payloadcms/ui` when applicable:
+     - For navigation: `Nav`, `NavLink`
+     - For layout: `Container`, `Section`
+     - For buttons: `Button`, `SubmitButton`
+     - For forms: `Form`, `FormField`
+
+2. **Collection Components**
+   - Components that are specific to a collection
+   - Examples: `List`, `Edit`, `View`
+   - Use `CollectionComponentProps`, `ListComponentProps`, `EditComponentProps`, or `ViewComponentProps` types
+   - Use appropriate UI components from `@payloadcms/ui` when applicable:
+     - For tables: `Table`, `TableRow`, `TableCell`
+     - For forms: `Form`, `FormField`
+     - For buttons: `Button`, `SubmitButton`
+     - For layout: `Container`, `Section`
+
+3. **Global Components**
+   - Components that are specific to a global
+   - Examples: `List`, `Edit`, `View`
+   - Use `GlobalComponentProps`, `ListComponentProps`, `EditComponentProps`, or `ViewComponentProps` types
+   - Use appropriate UI components from `@payloadcms/ui` when applicable:
+     - For forms: `Form`, `FormField`
+     - For buttons: `Button`, `SubmitButton`
+     - For layout: `Container`, `Section`
+
+4. **Field Components**
+   - Components that are used within fields
+   - Examples: `Field`, `Cell`, `Filter`
+   - Use the specific field type props from 'payload' import:
+     - For text fields: `TextFieldClientProps` or `TextFieldServerProps`
+     - For number fields: `NumberFieldClientProps` or `NumberFieldServerProps`
+     - For select fields: `SelectFieldClientProps` or `SelectFieldServerProps`
+     - For date fields: `DateFieldClientProps` or `DateFieldServerProps`
+     - For rich text fields: `RichTextFieldClientProps` or `RichTextFieldServerProps`
+     - For upload fields: `UploadFieldClientProps` or `UploadFieldServerProps`
+     - For relationship fields: `RelationshipFieldClientProps` or `RelationshipFieldServerProps`
+   - Always use the corresponding UI component from `@payloadcms/ui`:
+     - For text fields: `TextField`
+     - For number fields: `NumberField`
+     - For select fields: `SelectField`
+     - For date fields: `DateTimeField`
+     - For rich text fields: `RichTextField`
+     - For upload fields: `UploadField`
+     - For relationship fields: `RelationshipField`
+
+Example for a text field component:
+```typescript
+import type { TextFieldClientProps } from 'payload'
+import { TextField } from '@payloadcms/ui'
+
+const FeatureTitleTextField: React.FC<TextFieldClientProps> = (props) => {
+  return <TextField {...props} />
+}
+
+export default FeatureTitleTextField
+```
+
+Example for a collection list component:
+```typescript
+import type { ListComponentProps } from 'payload'
+import { Table, TableRow, TableCell, Button } from '@payloadcms/ui'
+
+const CustomList: React.FC<ListComponentProps> = ({ data }) => {
+  return (
+    <Table>
+      {data.map((item) => (
+        <TableRow key={item.id}>
+          <TableCell>{item.title}</TableCell>
+          <TableCell>
+            <Button>Edit</Button>
+          </TableCell>
+        </TableRow>
+      ))}
+    </Table>
+  )
+}
+
+export default CustomList
+```
+
+### Important Guidelines for Existing Components
+
+1. **Do Not Modify Working Files Unless Requested**
+   - Never modify the implementation of working components unless specifically asked
+   - If a component is working correctly, preserve its functionality
+   - Don't change a server component to a client component or vice versa without explicit request
+   - Don't "clean up" or "improve" working code without being asked
+
+2. **Component Naming in Single Index Files**
+   - Even in single `index.tsx` files, component names should reflect their type (Client/Server)
+   - If a component uses server-side features or `'use server'`, name it with `Server` suffix
+   - If a component uses client-side features or `'use client'`, name it with `Client` suffix
+   - Example for a server component in a single index file:
+     ```typescript
+     'use server'
+     
+     const TextFieldServer: React.FC<TextFieldServerProps> = async (props) => {
+       // server component implementation
+     }
+     
+     export default TextFieldServer
+     ```
+   - Example for a client component in a single index file:
+     ```typescript
+     'use client'
+     
+     const TextFieldClient: React.FC<TextFieldClientProps> = (props) => {
+       // client component implementation
+     }
+     
+     export default TextFieldClient
+     ```
+
+**Note:** These guidelines apply ONLY when creating new components. When updating existing components or checking files for compliance, follow the existing implementation patterns unless specifically requested to make changes.
+
+### Server Components
+
+- When creating a server component, it should:
+  1. Always include the `'use server'` directive at the top of the file
+  2. Use the appropriate server-side props type (e.g., `JSONFieldServerProps`, `DefaultServerCellComponentProps`)
+  3. Handle any server-side logic or data fetching
+  4. Return the corresponding client component with processed props
+- Example for a JSON field server component:
+  ```typescript
+  'use server'
+
+  const GeneratedFieldsJsonFieldServer: React.FC<JSONFieldServerProps> = async ({
+    clientField,
+    path,
+  }) => {
+    // Server-side logic here
+    
+    return <GeneratedFieldsJsonFieldClient field={clientField} path={path} />
+  };
+  
+  export default GeneratedFieldsJsonFieldServer;
+  ```
+
+### Client Components
+
+- When creating a client component, it should:
+  1. Always include the `'use client'` directive at the top of the file
+  2. Use the appropriate client-side props type (e.g., `TextFieldClientProps`, `DefaultClientCellComponentProps`)
+  3. Handle any client-side logic or UI interactions
+- Example for a text field client component:
+  ```typescript
+  'use client'
+
+  const TextFieldClient: React.FC<TextFieldClientProps> = ({ path }) => {
+    const { value, setValue } = useField({ path });
+    
+    // component implementation
+  };
+  
+  export default TextFieldClient;
+  ```
+
+### Folder structure
+
+- New custom components requested should be created inside the **components** folder of a specific collection.
+- Each component should have its own folder with an `index.tsx` file.
+- If a component needs both client and server parts, use `index.client.tsx` and `index.server.tsx` instead of a single `index.tsx`.
+- By default, a single `index.tsx` file should be a client component with `'use client'` directive.
+- Only use `'use server'` directive in a single `index.tsx` file if explicitly required for server-side functionality.
+
+### Naming
+
+#### Field Components
+- Field component folder names should reflect the field type they're designed for by appending the field type to the component's purpose.
+- For example, a component for a text field should be named `ComponentPurposeTextField`
+- Common field type suffixes:
+  - `TextField` for text fields
+  - `NumberField` for number fields
+  - `SelectField` for select fields
+  - `DateField` for date fields
+  - `RichTextField` for rich text fields
+  - `UploadField` for file upload fields
+  - `RelationshipField` for relationship fields
+
+#### Root Components
+- Root component folder names should reflect their purpose and the type of root component they're replacing.
+- For example:
+  - `ComponentPurposeCell` for a Cell component
+  - `ComponentPurposeBeforeDashboard` for a beforeDashboard component
+  - `ComponentPurposeAfterLogin` for an afterLogin component
+  - `ComponentPurposeNav` for a Nav component
+- Common root component types:
+  - `Cell` for table cell components
+  - `BeforeDashboard` for components injected before dashboard
+  - `AfterDashboard` for components injected after dashboard
+  - `BeforeLogin` for components injected before login form
+  - `AfterLogin` for components injected after login form
+  - `Nav` for navigation components
+  - `Header` for header components
+  - `Logo` for logo components
+  - `Icon` for icon components
+
+### Naming Custom Components
+
+#### Component Naming Convention
+- Component names should reflect whether they are client or server components
+- For a single `index.tsx` file, the component should be named with `Client` suffix:
+  ```typescript
+  const TextFieldClient: React.FC<TextFieldClientProps> = ({ path }) => {
+    const { value, setValue } = useField({ path });
+    
+    // component implementation
+  };
+  
+  export default TextFieldClient;
+  ```
+- For components with both client and server parts:
+  ```typescript
+  // index.client.tsx
+  const TextFieldClient: React.FC<TextFieldClientProps> = ({ path }) => {
+    const { value, setValue } = useField({ path });
+    
+    // client component implementation
+  };
+  
+  export default TextFieldClient;
+  
+  // index.server.tsx
+  const TextFieldServer: React.FC<TextFieldServerProps> = ({ path }) => {
+    // server component implementation
+  };
+  
+  export default TextFieldServer;
+  ```
+
+#### Export Rules
+- ALL custom components MUST use default exports, regardless of their type (field, view, login, cell, etc.)
+- Never use named exports (e.g., `export const ComponentName`) for the main component
+- The exported component name should match the file's purpose (Client/Server)
+- This allows for clean imports when referencing the component path
+
+##### Export Examples
+```typescript
+// ❌ Wrong - Using named export for any component type
+export const TextFieldClient: React.FC<TextFieldClientProps> = ({ path }) => {
+  // component implementation
+};
+
+// ✅ Correct - Using default export for any component type
+const TextFieldClient: React.FC<TextFieldClientProps> = ({ path }) => {
+  // component implementation
+};
+
+export default TextFieldClient;
+
+// ❌ Wrong - Using named export for server component
+export const TextFieldServer: React.FC<TextFieldServerProps> = ({ path }) => {
+  // component implementation
+};
+
+// ✅ Correct - Using default export for server component
+const TextFieldServer: React.FC<TextFieldServerProps> = ({ path }) => {
+  // component implementation
+};
+
+// ❌ Wrong - Using named export for cell component
+export const PermissionsCellComponent: React.FC<DefaultServerCellComponentProps> = (props) => {
+  // component implementation
+};
+
+// ✅ Correct - Using default export for cell component
+const PermissionsCellComponent: React.FC<DefaultServerCellComponentProps> = (props) => {
+  // component implementation
+};
+
+export default PermissionsCellComponent;
+```
+
+##### Import Examples
+```typescript
+// Importing client components
+import ComponentNameClient from './index.client'
+
+// Importing server components
+import ComponentNameServer from './index.server'
+
+// Importing single file components
+import ComponentNameClient from './index'
+```
+
+#### Important Notes
+- After changing component paths in collection configs, always run `pnpm generate:importmap` to update the import map.
+- After running `pnpm generate:importmap`, check the generated `src/app/(payload)/admin/importMap.js` file to ensure:
+   - Component paths are correctly formatted (e.g., `@/collections/YourCollection/components/YourComponent/index#default`)
+   - No component names are referenced in the paths (e.g., avoid `@/collections/YourCollection/components/YourComponent/index#YourComponentName`)
+   - All custom components are using default exports, regardless of their type
+
+Example of correct import map entry:
+```javascript
+"@/collections/YourCollection/components/YourComponent/index#default": YourComponent_123456
+```
+
+Example of incorrect import map entry:
+```javascript
+"@/collections/YourCollection/components/YourComponent/index#YourComponentName": YourComponent_123456
+```
+
+If you see incorrect paths in the import map:
+1. Verify that the component is using default export
+2. Check the collection config path is correct (should not include component name)
+3. Run `pnpm generate:importmap` again
+
+### Component Path References in Collection Config
+
+When using custom components in collection configurations, always use path-based references instead of direct component imports. This ensures proper component loading and avoids import-related issues.
+
+1. **Path Format**
+   - Use the `@/` alias to reference components from the root of the project
+   - Include the full path to the component's index file
+   - Do not include the file extension
+   - Do not include the component name in the path
+
+2. **Correct Usage**
+   ```typescript
+   admin: {
+     components: {
+       Field: {
+         path: '@/collections/CollectionName/components/ComponentName/index',
+       },
+     },
+   }
+   ```
+
+3. **Incorrect Usage**
+   ```typescript
+   // ❌ Wrong - Using direct import
+   import CustomField from './components/CustomField'
+   
+   admin: {
+     components: {
+       Field: CustomField,
+     },
+   }
+
+   // ❌ Wrong - Including file extension
+   admin: {
+     components: {
+       Field: {
+         path: '@/collections/CollectionName/components/ComponentName/index.tsx',
+       },
+     },
+   }
+
+   // ❌ Wrong - Including component name in path
+   admin: {
+     components: {
+       Field: {
+         path: '@/collections/CollectionName/components/ComponentName/index#ComponentName',
+       },
+     },
+   }
+   ```
+
+4. **Import Map Generation**
+   After updating component paths in collection configs, always run:
+   ```bash
+   pnpm generate:importmap
+   ```
+   This updates the import map and ensures the components are properly loaded.
+
+5. **Verification**
+   After running `pnpm generate:importmap`, check the generated `src/app/(payload)/admin/importMap.js` file to ensure:
+   - Component paths are correctly formatted (e.g., `@/collections/YourCollection/components/YourComponent/index#default`)
+   - No component names are referenced in the paths
+   - All custom components are using default exports
+
+### Examples
+
+#### Field Components Example
+
+Here's an example of how field components should be structured:
+
+```
+src/
+  collections/
+    products/
+      components/
+        ProductNameTextField/
+          index.tsx
+          styles.ts
+        ProductPriceNumberField/
+          index.tsx
+          styles.ts
+        ProductCategorySelectField/
+          index.client.tsx
+          index.server.tsx
+          styles.ts
+      index.ts
+      types.ts
+    users/
+      components/
+        UserNameTextField/
+          index.tsx
+          styles.ts
+        UserRoleSelectField/
+          index.client.tsx
+          index.server.tsx
+          styles.ts
+      index.ts
+      types.ts
+```
+
+In this example:
+- The `products` collection has field components (`ProductNameTextField`, `ProductPriceNumberField`, `ProductCategorySelectField`)
+- The `users` collection has field components (`UserNameTextField`, `UserRoleSelectField`)
+- Each component folder name reflects its field type (e.g., `TextField`, `NumberField`, `SelectField`)
+- Some components have both client and server parts, using `index.client.tsx` and `index.server.tsx`
+
+#### Root Components Example
+
+Here's an example of how root components should be structured:
+
+```
+src/
+  collections/
+    products/
+      components/
+        ProductStatusCell/
+          index.tsx
+          styles.ts
+        ProductDashboardWelcome/
+          index.tsx
+          styles.ts
+      index.ts
+      types.ts
+    users/
+      components/
+        UserPermissionsCell/
+          index.tsx
+          styles.ts
+        UserDashboardWelcome/
+          index.tsx
+          styles.ts
+      index.ts
+      types.ts
+```
+
+In this example:
+- The `products` collection has root components (`ProductStatusCell`, `ProductDashboardWelcome`)
+- The `users` collection has root components (`UserPermissionsCell`, `UserDashboardWelcome`)
+- Each component folder name reflects its root component type (e.g., `Cell`, `DashboardWelcome`)
+- Components follow the root component naming convention based on their purpose
+
+### Tenant Selection in Hooks
+
+When working with collection hooks that need to access the selected tenant, follow these guidelines:
+
+1. **Import the Utility**
+   - Always import the tenant selection utility at the top of the file:
+   ```typescript
+   import { getSelectedTenantId } from '@/utilities/getSelectedTenant'
+   ```
+
+2. **Using in Hooks**
+   - For collections that are NOT defined in the `multiTenantPlugin` in `payload.config.ts`:
+   ```typescript
+   hooks: {
+     beforeChange: [
+       async ({ req, payload }) => {
+         const selectedTenantId = getSelectedTenantId(req)
+         
+         // Get the full tenant data using the local API
+         const fullTenant = await payload.find({
+           collection: 'tenants',
+           where: {
+             id: {
+               equals: selectedTenantId,
+             },
+           },
+         })
+         
+         // Now you can access the data of the tenant
+         // Example: fullTenant.docs[0].name, fullTenant.docs[0].settings, etc.
+       },
+     ],
+   },
+   ```
+
+   - For collections that ARE defined in the `multiTenantPlugin` or have a tenant field:
+   ```typescript
+   hooks: {
+     beforeChange: [
+       async ({ data, siblingData }) => {
+         // The tenant is already accessible through data or siblingData
+         const tenant = data?.tenant || siblingData?.tenant
+         
+         // No need to call the local API as the tenant data is already available
+         // Use tenant directly in your hook logic
+       },
+     ],
+   },
+   ```
+
+3. **Best Practices**
+   - Always check `payload.config.ts` to see if the collection is defined in the `multiTenantPlugin`
+   - If the collection is tenant-aware (defined in plugin or has tenant field), use `data` or `siblingData` to access tenant
+   - If the collection is not tenant-aware, use `getSelectedTenantId` and the local API
+   - Always pass the `req` object to `getSelectedTenantId` when using it
+   - Handle cases where no tenant is selected (the function may return undefined)
+   - Use the tenant ID for any tenant-specific operations within the hook
+   - When you need the full tenant data and the collection is not tenant-aware, use the local API through the `payload` parameter
+   - Remember that `find` returns a `docs` array, so access the first item for the tenant data
+
+4. **Common Use Cases**
+   - Filtering data based on tenant
+   - Setting tenant-specific default values
+   - Validating tenant-specific rules
+   - Enforcing tenant isolation in operations
+   - Accessing tenant-specific settings or configurations
+   - Applying tenant-specific business logic
+
+## Field Configuration Ordering
+
+When defining fields in collection configurations, follow this specific order for properties:
+
+### Guidelines
+1. Always start with `type` as it defines the field's nature.
+2. Follow with `name` and `label` as they are required for most fields.
+3. Add `access` if access control is needed.
+4. Add `admin` configuration next.
+5. Add `required` property to specify if the field is mandatory.
+6. Place `fields` array last if the field type supports nested fields.
+7. Maintain this same order for nested fields within the `fields` array.
+8. Other field-specific properties (like `defaultValue`, etc.) should be placed after these core properties.
+
+### Child Fields
+- Child fields, as well as grandchild fields and so on, are still considered fields and must follow the same ordering rules as parent fields.
+- Do not move child fields to the root level; they should remain nested within their parent field's `fields` array.
+
+### Example
+```typescript
+{
+  type: 'text',
+  name: 'content',
+  label: 'Content',
+  access: {
+    read: () => true,
+    update: () => true,
+  },
+  admin: {
+    description: 'Main content area',
+    condition: (data) => data?.type === 'article',
+  },
+  required: true,
+  fields: [
+    {
+      type: 'text',
+      name: 'title',
+      label: 'Title',
+      access: {
+        read: () => true,
+        update: () => true,
+      },
+      admin: {
+        placeholder: 'Enter title',
+      },
+      required: true,
+    },
+  ],
+}
+```
+
+This ordering ensures consistency and readability across all field configurations in the codebase.
+
+
+
+

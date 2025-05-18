@@ -1,0 +1,25 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Roles
+
+## Global Roles
+
+Global roles are defined in the `Roles` collection and provide system-wide access control.
+
+1. Super Admin
+2. User
+
+### HERE
+
+To check if a user is a super admin in admin properties, use this pattern:
+```typescript
+admin: {
+  condition: (_data, _siblingData, { user }) => Boolean(hasSuperAdminRole(user?.roles)),
+}
+```
+Always import `hasSuperAdminRole` from `@/utilities/getRole`.
+
+### 

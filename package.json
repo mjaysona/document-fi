@@ -1,0 +1,57 @@
+{
+  "name": "pv3-boilerplate",
+  "version": "0.0.3",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "cross-env NODE_OPTIONS=\"${NODE_OPTIONS} --no-deprecation\" next dev",
+    "devturbo": "pnpm dev --turbopack",
+    "devsafe": "rm -rf .next && pnpm dev",
+    "build": "cross-env NODE_OPTIONS=--no-deprecation next build",
+    "start": "cross-env NODE_OPTIONS=--no-deprecation next start",
+    "lint": "cross-env NODE_OPTIONS=--no-deprecation next lint",
+    "ci": "payload migrate && pnpm build",
+    "payload": "payload",
+    "generate:types": "cross-env NODE_OPTIONS=--no-deprecation payload generate:types",
+    "generate:schema": "cross-env NODE_OPTIONS=--no-deprecation payload-graphql generate:schema",
+    "standalone-script": "payload run ./src/scripts/standalone-script.ts",
+    "generate:importmap": "payload generate:importmap",
+    "update:payload": "pnpm up payload@latest @payloadcms/*@latest"
+  },
+  "engines": {
+    "node": "^18.20.2 || >=20.9.0"
+  },
+  "dependencies": {
+    "@innovixx/payload-color-picker-field": "^2.0.1",
+    "@nouance/payload-better-fields-plugin": "^2.0.2",
+    "@payloadcms/admin-bar": "3.38.0",
+    "@payloadcms/db-mongodb": "3.38.0",
+    "@payloadcms/db-postgres": "3.38.0",
+    "@payloadcms/live-preview-react": "3.38.0",
+    "@payloadcms/next": "3.38.0",
+    "@payloadcms/plugin-multi-tenant": "3.38.0",
+    "@payloadcms/plugin-nested-docs": "3.38.0",
+    "@payloadcms/richtext-lexical": "3.38.0",
+    "@payloadcms/richtext-slate": "3.38.0",
+    "@payloadcms/storage-s3": "3.38.0",
+    "@payloadcms/ui": "3.38.0",
+    "cross-env": "^7.0.3",
+    "graphql": "^16.8.2",
+    "lodash": "^4.17.21",
+    "lucide-react": "^0.487.0",
+    "next": "^15.0.4",
+    "payload": "3.38.0",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "sharp": "0.32.6"
+  },
+  "devDependencies": {
+    "@payloadcms/graphql": "3.38.0",
+    "@types/node": "^20.14.9",
+    "@types/react": "19.0.1",
+    "@types/react-dom": "19.0.1",
+    "eslint": "^9.22.0",
+    "eslint-config-next": "15.0.0-canary.173",
+    "typescript": "5.5.4"
+  }
+}
