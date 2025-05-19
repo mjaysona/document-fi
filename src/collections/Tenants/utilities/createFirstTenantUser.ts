@@ -5,6 +5,8 @@ export const createFirstTenantUser = async (
   req: PayloadRequest,
   { tenant, slug }: { tenant: Tenant['id']; slug: Tenant['slug'] },
 ) => {
+  if (slug === 'platform') return
+
   console.info('Attempting to create first tenant user...')
 
   const { payload } = req
@@ -39,7 +41,7 @@ export const createFirstTenantUser = async (
     await req?.payload.create({
       collection: 'users',
       data: {
-        email: email,
+        email,
         password: slug,
         tenants: [{ tenant, roles: tenantAdminRoleId ? [tenantAdminRoleId] : [] }],
         roles: [userRoleId],

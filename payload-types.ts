@@ -203,6 +203,7 @@ export interface TenantRole {
  */
 export interface Tenant {
   id: string;
+  _order?: string;
   name: string;
   /**
    * Domain of the tenant, example: tenant.example.com or tenant.com
@@ -657,6 +658,7 @@ export interface TenantMediaSelect<T extends boolean = true> {
  * via the `definition` "tenants_select".
  */
 export interface TenantsSelect<T extends boolean = true> {
+  _order?: T;
   name?: T;
   domain?: T;
   slug?: T;

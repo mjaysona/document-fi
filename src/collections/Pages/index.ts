@@ -84,7 +84,7 @@ const Pages: CollectionConfig = {
           const selectedTenantId = getSelectedTenantId(req)
 
           if (selectedTenantId) {
-            const { payload, user } = req
+            const { payload } = req
 
             const tenantPages = await payload.find({
               collection: 'pages',
@@ -97,7 +97,7 @@ const Pages: CollectionConfig = {
 
             // If no pages exist for the selected tenant, always create a default home page.
             if (!tenantPages?.docs?.length) {
-              createFirstTenantPage(req, selectedTenantId)
+              createFirstTenantPage(req, { tenant: selectedTenantId })
             }
           }
         }

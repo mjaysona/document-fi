@@ -109,7 +109,7 @@ const TenantRoles: CollectionConfig = {
                     if (collectionSlug && collections[collectionSlug as CollectionSlug]) {
                       const collection = collections[collectionSlug as CollectionSlug]
 
-                      return collection.config.admin.group?.name
+                      return (collection.config.admin.group as { name: string })?.name
                     }
 
                     return null
@@ -213,9 +213,22 @@ const TenantRoles: CollectionConfig = {
               },
             })
 
+            let fullSelectedTenant
+
+            try {
+              fullSelectedTenant = await payload.findByID({
+                collection: 'tenants',
+                id: selectedTenantId,
+                depth: 0,
+              })
+            } catch (e) {}
+
             // If no tenant roles exist for a tenant, always create a default role.
             if (!tenantRoles?.docs?.length) {
-              await createFirstTenantRole(req, selectedTenantId)
+              await createFirstTenantRole(req, {
+                tenant: selectedTenantId,
+                slug: fullSelectedTenant?.slug,
+              })
             }
           }
         }

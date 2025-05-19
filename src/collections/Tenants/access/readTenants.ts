@@ -6,6 +6,7 @@ import type { Access } from 'payload'
 const readTenants: Access = async (args) => {
   const { req } = args
   const { user } = req
+
   const selectedTenantId = getSelectedTenantId(req) || (await getSelectedTenantToken()) || ''
   const isMember = isMemberOfLoggedTenant(user, selectedTenantId) || hasSuperAdminRole(user?.roles)
 

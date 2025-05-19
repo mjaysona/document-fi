@@ -25,6 +25,7 @@ const Tenants: CollectionConfig = {
     },
     hidden: ({ user }) => !hasSuperAdminRole(user?.roles),
   },
+  orderable: true,
   fields: [
     {
       name: 'name',
@@ -60,8 +61,8 @@ const Tenants: CollectionConfig = {
         if (operation === 'create') {
           const { id, slug } = doc
 
-          await createFirstTenantRole(req, id)
-          await createFirstTenantUser(req, { tenant: id, slug: slug })
+          await createFirstTenantRole(req, { tenant: id, slug })
+          await createFirstTenantUser(req, { tenant: id, slug })
 
           const collections: CollectionSlug[] = ['settings']
 

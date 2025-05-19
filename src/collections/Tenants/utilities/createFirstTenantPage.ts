@@ -1,7 +1,12 @@
 import { Tenant } from '@payload-types'
 import { PayloadRequest } from 'payload'
 
-export const createFirstTenantPage = async (req: PayloadRequest, tenant: Tenant['id']) => {
+export const createFirstTenantPage = async (
+  req: PayloadRequest,
+  { tenant, slug }: { tenant: Tenant['id']; slug?: Tenant['slug'] },
+) => {
+  if (slug === 'platform') return
+
   console.info('Attempting to create first tenant page...')
 
   try {

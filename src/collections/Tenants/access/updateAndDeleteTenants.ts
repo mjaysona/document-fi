@@ -1,19 +1,32 @@
 import { hasSuperAdminRole } from '@/utilities/getRole'
 import { getUserTenantIDs } from '@/utilities/getUserTenantIDs'
-import { Access } from 'payload'
+import { Access, Where } from 'payload'
 
-export const updateAndDeleteTenants: Access = ({ req }) => {
+export const updateAndDeleteTenants: Access = ({ req, data }) => {
   if (!req.user) {
     return false
   }
 
   if (hasSuperAdminRole(req.user?.roles)) {
-    return true
+    return {
+      slug: {
+        not_equals: 'platform',
+      },
+    } as Where
   }
 
   return {
-    id: {
-      in: getUserTenantIDs(req.user, 'tenant-admin'),
-    },
-  }
+    and: [
+      {
+        slug: {
+          not_equals: 'platform',
+        },
+      },
+      {
+        id: {
+          in: getUserTenantIDs(req.user, 'tenant-admin'),
+        },
+      },
+    ],
+  } as Where
 }
