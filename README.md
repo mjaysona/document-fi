@@ -89,18 +89,19 @@ If any part of the seeding process fails, you can manually run the specific seed
 
 ```bash
 # Seed all data at once
-pnpm run seed -- all
+pnpm run seed all
 
 # Or seed specific collections
-pnpm run seed -- roles         # Create first role
-pnpm run seed -- tenants       # Seed tenant data
-pnpm run seed -- tenant-roles  # Seed tenant roles
-pnpm run seed -- tenant-user   # Seed tenant user data
-pnpm run seed -- user          # Seed user data
+pnpm run seed roles         # Create first role
+pnpm run seed tenants       # Seed tenant data
+pnpm run seed tenant-roles  # Seed tenant roles
+pnpm run seed tenant-user   # Seed tenant user data
+pnpm run seed user          # Seed user data
+pnpm run seed posts         # Seed posts
 
 # Assign roles after seeding
-pnpm run assign -- user        # Assign roles to users
-pnpm run assign -- tenant-user # Assign tenant roles
+pnpm run assign user        # Assign roles to users
+pnpm run assign tenant-user # Assign tenant roles
 ```
 
 ## Project Structure

@@ -1,7 +1,19 @@
 import path from 'path'
 // import { postgresAdapter } from '@payloadcms/db-postgres'
 import { en } from 'payload/i18n/en'
-import { lexicalEditor } from '@payloadcms/richtext-lexical'
+import {
+  BlockquoteFeature,
+  BoldFeature,
+  HeadingFeature,
+  HorizontalRuleFeature,
+  IndentFeature,
+  InlineToolbarFeature,
+  lexicalEditor,
+  OrderedListFeature,
+  ParagraphFeature,
+  UnderlineFeature,
+  UnorderedListFeature,
+} from '@payloadcms/richtext-lexical'
 import { mongooseAdapter } from '@payloadcms/db-mongodb'
 import { buildConfig } from 'payload'
 import sharp from 'sharp'
@@ -26,9 +38,24 @@ import { initialData } from './src/seed/db'
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
+export const defaultLexicalFeatures = [
+  BlockquoteFeature(),
+  BoldFeature(),
+  HeadingFeature({ enabledHeadingSizes: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'] }),
+  IndentFeature(),
+  InlineToolbarFeature(),
+  HorizontalRuleFeature(),
+  OrderedListFeature(),
+  ParagraphFeature(),
+  UnderlineFeature(),
+  UnorderedListFeature(),
+]
+
 export default buildConfig({
   //editor: slateEditor({}),
-  editor: lexicalEditor(),
+  editor: lexicalEditor({
+    features: defaultLexicalFeatures,
+  }),
   cors: [
     'http://localhost:3000', // Your front-end application
   ],

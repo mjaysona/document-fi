@@ -6,6 +6,7 @@ import { tenants } from '../seed/tenants'
 import { initialData } from '../seed/db'
 import { tenantUser } from '../seed/tenant-user'
 import { tenantRoles } from '../seed/tenant-roles'
+import { posts } from '../seed/posts'
 
 async function run() {
   const params = process.argv.slice(2)
@@ -14,6 +15,9 @@ async function run() {
   switch (params[1]) {
     case 'all':
       await initialData(payload)
+      break
+    case 'posts':
+      await posts(payload)
       break
     case 'roles':
       await createFirstRole(payload)

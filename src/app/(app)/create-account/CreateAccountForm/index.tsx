@@ -10,7 +10,7 @@ import { Input } from '../../components/Input'
 import { Message } from '../../components/Message'
 import { useAuth } from '../../providers/Auth'
 import classes from './index.module.scss'
-import { Tenant } from '~/payload-types'
+import { Tenant } from '@payload-types'
 
 type CreateAccountFormProps = {
   tenant?: Tenant['id']

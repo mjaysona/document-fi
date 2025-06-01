@@ -1,7 +1,5 @@
 import type { Access, Where } from 'payload'
-import { isSuperAdmin } from '@/collections/utilities/access/isSuperAdmin'
 import { getSelectedTenantId, getSelectedTenantToken } from '@/utilities/getSelectedTenant'
-import { isAccessingViaSubdomain } from '@/collections/utilities/access/isAccessingViaSubdomain'
 import {
   hasCreatePermission,
   hasDeletePermission,
@@ -30,13 +28,26 @@ const readPosts: Access = async (args) => {
     if (canCreate || canUpdate || canDelete) return true
 
     return {
-      _status: {
-        equals: 'published',
-      },
+      or: [
+        {
+          _status: {
+            equals: 'published',
+          },
+        },
+        {
+          createdBy: {
+            equals: user.id,
+          },
+        },
+      ],
     } as Where
   }
 
-  return false
+  return {
+    createdBy: {
+      equals: user.id,
+    },
+  }
 }
 
 export default readPosts

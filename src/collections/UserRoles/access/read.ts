@@ -1,7 +1,7 @@
 import type { Access } from 'payload'
 import getGenericTenantRoleBasedAccess from '@/collections/utilities/access/getGenericTenantRoleBasedAccess'
 import { AccessType } from '@/enums'
-import { UserRole } from '~/payload-types'
+import { UserRole } from '@payload-types'
 
 const readOwnRoles: Access<UserRole> = async (args) => {
   const { req } = args

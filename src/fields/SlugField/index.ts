@@ -7,6 +7,7 @@ export const slugField = (beforeValidateHooks?: FieldHook[], fieldToUse?: string
       checkboxOverrides: {
         admin: {
           disableListColumn: true,
+          position: 'sidebar',
         },
       },
       slugOverrides: {

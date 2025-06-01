@@ -9,7 +9,7 @@ import { Message } from '@/app/(app)/components/Message'
 import { useAuth } from '../../providers/Auth'
 import classes from './index.module.scss'
 import { useForm } from 'react-hook-form'
-import { Tenant } from '~/payload-types'
+import { Tenant } from '@payload-types'
 
 type FormData = {
   email: string

@@ -2,7 +2,7 @@
 
 import React, { createContext, useCallback, use, useEffect, useState } from 'react'
 import { Permissions } from 'payload'
-import type { User } from '~/payload-types'
+import type { User } from '@payload-types'
 import type { AuthContext, Create, ForgotPassword, Login, Logout, ResetPassword } from './types'
 
 import { rest } from './rest'

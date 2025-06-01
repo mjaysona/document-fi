@@ -1,6 +1,6 @@
 import { Payload } from 'payload'
 import { ROLES } from '../UserRoles/roles.enum'
-import { UserRole } from '~/payload-types'
+import { UserRole } from '@payload-types'
 
 /*
  * Assigns the "Super Admin" role to the "Super Admin" user. Not to be confused with tenant roles.
