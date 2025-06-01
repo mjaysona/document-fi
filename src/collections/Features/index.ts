@@ -1,12 +1,19 @@
 import { CollectionConfig } from 'payload'
 import { isSuperAdmin } from '../utilities/access/isSuperAdmin'
-import { isTenantAdmin } from '../utilities/access/isTenantAdmin'
 import { readFeatures } from './access/readFeatures'
-import { camelCaseFormat } from '../utilities/camelCaseFormat'
+import { FeatureOptions, FEATURES } from './features.enum'
+import { hasSuperAdminRole } from '~/src/utilities/getRole'
+
+export const features: FeatureOptions = [
+  {
+    label: FEATURES.MULTI_TENANCY,
+    value: FEATURES.MULTI_TENANCY,
+  },
+]
 
 const Features: CollectionConfig = {
   admin: {
-    useAsTitle: 'label',
+    useAsTitle: 'name',
     group: {
       label: 'Super Admin',
       name: 'super-admin',
@@ -14,49 +21,20 @@ const Features: CollectionConfig = {
   },
   slug: 'features',
   access: {
-    create: async ({ req }) => isSuperAdmin(req),
-    read: readFeatures,
-    update: async ({ req }) => isSuperAdmin(req),
-    delete: async ({ req }) => isSuperAdmin(req),
+    create: async ({ req }) => hasSuperAdminRole(req?.user?.userRoles || []),
+    read: async ({ req }) => hasSuperAdminRole(req?.user?.userRoles || []),
+    update: async ({ req }) => hasSuperAdminRole(req?.user?.userRoles || []),
+    delete: async ({ req }) => false,
   },
   fields: [
     {
-      type: 'radio',
-      name: 'type',
-      label: 'Feature for',
-      defaultValue: 'tenant',
-      options: [
-        {
-          label: 'Tenant',
-          value: 'tenant',
-        },
-        {
-          label: 'Dashboard',
-          value: 'dashboard',
-        },
-      ],
-    },
-    {
-      type: 'text',
-      name: 'label',
-      label: 'Feature name',
+      type: 'select',
+      name: 'name',
+      label: 'Feature',
       required: true,
+      options: features,
       admin: {
-        components: {
-          Field: '@/collections/Features/components/FeatureTitleTextField/index',
-        },
-      },
-    },
-    {
-      name: 'value',
-      label: 'Feature value',
-      type: 'text',
-      required: true,
-      admin: {
-        hidden: true,
-      },
-      hooks: {
-        beforeChange: [({ data }) => camelCaseFormat(data?.label)],
+        readOnly: true,
       },
     },
     {

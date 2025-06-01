@@ -19,7 +19,7 @@ export const TenantFieldComponent: React.FC<Props> = async (props) => {
   if (
     user &&
     ((Array.isArray(user.tenants) && user.tenants.length > 1) ||
-      user?.roles?.includes('super-admin'))
+      user?.userRoles?.includes('super-admin'))
   ) {
     return (
       <TenantFieldComponentClient initialValue={payloadTenant} path={path} readOnly={readOnly} />

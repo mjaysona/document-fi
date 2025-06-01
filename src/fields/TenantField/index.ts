@@ -30,7 +30,7 @@ export const tenantField: Field = {
       Field: '@/fields/TenantField/components/Field#TenantFieldComponent',
     },
     condition: (_data, _siblingData, { user }) => {
-      return Boolean(hasSuperAdminRole(user?.roles))
+      return Boolean(hasSuperAdminRole(user?.userRoles))
     },
     position: 'sidebar',
   },

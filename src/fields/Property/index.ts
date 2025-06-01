@@ -6,7 +6,7 @@ export const propertyField: Field = {
   type: 'text',
   name: 'value',
   admin: {
-    condition: (_data, _siblingData, { user }) => Boolean(hasSuperAdminRole(user?.roles)),
+    condition: (_data, _siblingData, { user }) => Boolean(hasSuperAdminRole(user?.userRoles)),
     readOnly: true,
     position: 'sidebar',
   },

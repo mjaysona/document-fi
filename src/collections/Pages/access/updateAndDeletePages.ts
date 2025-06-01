@@ -3,7 +3,7 @@ import type { Access } from 'payload'
 import { getUserTenantIDs } from '../../../utilities/getUserTenantIDs'
 import { isSuperAdmin } from '@/collections/utilities/access/isSuperAdmin'
 import { getSelectedTenantId } from '@/utilities/getSelectedTenant'
-import { ROLES } from '@/collections/Roles/roles.enum'
+import { ROLES } from '@/collections/UserRoles/roles.enum'
 
 export const updateAndDeletePages: Access = ({ req, data }) => {
   const { user } = req

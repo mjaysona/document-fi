@@ -10,7 +10,6 @@ import Users from '@/collections/Users'
 import Media from '@/collections/Media'
 import Features from '@/collections/Features'
 import Tenants from '@/collections/Tenants'
-import Roles from '@/collections/Roles'
 import TenantRoles from '@/collections/TenantRoles'
 import { multiTenantPlugin } from '@payloadcms/plugin-multi-tenant'
 import { Config } from 'payload-types'
@@ -21,7 +20,8 @@ import Posts from '@/collections/Posts'
 import TenantMedia from '@/collections/TenantMedia'
 import Pages from '@/collections/Pages'
 import { nestedDocsPlugin } from '@payloadcms/plugin-nested-docs'
-import { firstUser } from '@/seed/firstUser'
+import UserRoles from './src/collections/UserRoles'
+import { initialData } from './src/seed/db'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -44,7 +44,7 @@ export default buildConfig({
 
     // Super Admin specific collections below
     Tenants,
-    Roles,
+    UserRoles,
     Features,
     Media,
   ],
@@ -55,6 +55,9 @@ export default buildConfig({
   db: mongooseAdapter({
     url: process.env.MONGODB_URI || '',
     collectionsSchemaOptions: {
+      'user-roles': {
+        suppressReservedKeysWarning: true,
+      },
       'tenant-roles': {
         suppressReservedKeysWarning: true,
       },
@@ -110,8 +113,9 @@ export default buildConfig({
     },
   },
   async onInit(payload) {
-    if (process.env.SEED_DB) {
-      await firstUser(payload)
+    const processParams = process?.argv?.slice(2)
+    if (process.env.SEED_USERS === 'true' && !processParams?.includes('standalone')) {
+      await initialData(payload)
     }
   },
   // Sharp is now an optional dependency -
@@ -122,20 +126,21 @@ export default buildConfig({
   // for this before reaching 3.0 stable
   sharp,
   plugins: [
-    multiTenantPlugin<Config>({
-      collections: {
-        pages: {},
-        posts: {},
-        settings: { isGlobal: true },
-        'tenant-roles': {},
-        'tenant-media': {},
-      },
-      tenantsArrayField: {
-        includeDefaultField: false,
-      },
-      userHasAccessToAllTenants: (user) => hasSuperAdminRole(user?.roles),
-      useUsersTenantFilter: false,
-    }),
+    // For now, we disable this plugin to allow creation of items in a collection without a tenant.
+    // multiTenantPlugin<Config>({
+    //   collections: {
+    //     pages: {},
+    //     posts: {},
+    //     settings: { isGlobal: true },
+    //     'tenant-roles': {},
+    //     'tenant-media': {},
+    //   },
+    //   tenantsArrayField: {
+    //     includeDefaultField: false,
+    //   },
+    //   userHasAccessToAllTenants: (user) => hasSuperAdminRole(user?.userRoles),
+    //   useUsersTenantFilter: false,
+    // }),
     nestedDocsPlugin({
       collections: ['pages'],
       generateLabel: (_, doc) => doc?.title as string,

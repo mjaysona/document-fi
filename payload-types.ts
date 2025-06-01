@@ -74,7 +74,7 @@ export interface Config {
     settings: Setting;
     'tenant-media': TenantMedia;
     tenants: Tenant;
-    roles: Role;
+    'user-roles': UserRole;
     features: Feature;
     media: Media;
     'payload-locked-documents': PayloadLockedDocument;
@@ -90,7 +90,7 @@ export interface Config {
     settings: SettingsSelect<false> | SettingsSelect<true>;
     'tenant-media': TenantMediaSelect<false> | TenantMediaSelect<true>;
     tenants: TenantsSelect<false> | TenantsSelect<true>;
-    roles: RolesSelect<false> | RolesSelect<true>;
+    'user-roles': UserRolesSelect<false> | UserRolesSelect<true>;
     features: FeaturesSelect<false> | FeaturesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -139,7 +139,7 @@ export interface User {
    * This user is a system generated account and cannot be deleted.
    */
   isSystemAccount?: boolean | null;
-  roles?: (string | Role)[] | null;
+  userRoles?: (string | UserRole)[] | null;
   assignedRoles?: (string | TenantRole)[] | null;
   tenants?:
     | {
@@ -160,12 +160,29 @@ export interface User {
   password?: string | null;
 }
 /**
+ * User roles are used to control access to records in the system.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "roles".
+ * via the `definition` "user-roles".
  */
-export interface Role {
+export interface UserRole {
   id: string;
+  createdBy?: (string | null) | User;
+  updatedBy?: (string | null) | User;
   label: string;
+  permissions?:
+    | {
+        group?: ('globals' | 'appearance' | 'admin') | null;
+        collectionSlug: string;
+        access: ('read' | 'create' | 'update' | 'delete')[];
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * This user is a system generated user and cannot be deleted.
+   */
+  isSystemRole?: boolean | null;
+  selectedFeatures?: string[] | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -177,7 +194,6 @@ export interface Role {
  */
 export interface TenantRole {
   id: string;
-  tenant?: (string | null) | Tenant;
   createdBy?: (string | null) | User;
   updatedBy?: (string | null) | User;
   label: string;
@@ -203,7 +219,7 @@ export interface TenantRole {
  */
 export interface Tenant {
   id: string;
-  _order?: string;
+  _order?: string | null;
   name: string;
   /**
    * Domain of the tenant, example: tenant.example.com or tenant.com
@@ -224,7 +240,6 @@ export interface Tenant {
  */
 export interface Page {
   id: string;
-  tenant?: (string | null) | Tenant;
   allowPublicRead?: boolean | null;
   createdBy?: (string | null) | User;
   updatedBy?: (string | null) | User;
@@ -250,27 +265,7 @@ export interface Page {
  */
 export interface Post {
   id: string;
-  tenant?: (string | null) | Tenant;
-  createdBy?: (string | null) | User;
-  updatedBy?: (string | null) | User;
-  slug?: string | null;
-  slugLock?: boolean | null;
   title: string;
-  content: {
-    root: {
-      type: string;
-      children: {
-        type: string;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  };
   updatedAt: string;
   createdAt: string;
 }
@@ -280,7 +275,6 @@ export interface Post {
  */
 export interface Setting {
   id: string;
-  tenant?: (string | null) | Tenant;
   dashboard?: {
     logo?: {
       fullSize?: (string | null) | TenantMedia;
@@ -303,7 +297,6 @@ export interface Setting {
  */
 export interface TenantMedia {
   id: string;
-  tenant?: (string | null) | Tenant;
   createdBy?: (string | null) | User;
   text?: string | null;
   prefix?: string | null;
@@ -359,9 +352,7 @@ export interface TenantMedia {
  */
 export interface Feature {
   id: string;
-  type?: ('tenant' | 'dashboard') | null;
-  label: string;
-  value: string;
+  name: 'Multi Tenancy';
   isEnabled?: boolean | null;
   updatedAt: string;
   createdAt: string;
@@ -423,8 +414,8 @@ export interface PayloadLockedDocument {
         value: string | Tenant;
       } | null)
     | ({
-        relationTo: 'roles';
-        value: string | Role;
+        relationTo: 'user-roles';
+        value: string | UserRole;
       } | null)
     | ({
         relationTo: 'features';
@@ -482,7 +473,7 @@ export interface PayloadMigration {
  */
 export interface UsersSelect<T extends boolean = true> {
   isSystemAccount?: T;
-  roles?: T;
+  userRoles?: T;
   assignedRoles?: T;
   tenants?:
     | T
@@ -506,7 +497,6 @@ export interface UsersSelect<T extends boolean = true> {
  * via the `definition` "tenant-roles_select".
  */
 export interface TenantRolesSelect<T extends boolean = true> {
-  tenant?: T;
   createdBy?: T;
   updatedBy?: T;
   label?: T;
@@ -528,7 +518,6 @@ export interface TenantRolesSelect<T extends boolean = true> {
  * via the `definition` "pages_select".
  */
 export interface PagesSelect<T extends boolean = true> {
-  tenant?: T;
   allowPublicRead?: T;
   createdBy?: T;
   updatedBy?: T;
@@ -553,13 +542,7 @@ export interface PagesSelect<T extends boolean = true> {
  * via the `definition` "posts_select".
  */
 export interface PostsSelect<T extends boolean = true> {
-  tenant?: T;
-  createdBy?: T;
-  updatedBy?: T;
-  slug?: T;
-  slugLock?: T;
   title?: T;
-  content?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -568,7 +551,6 @@ export interface PostsSelect<T extends boolean = true> {
  * via the `definition` "settings_select".
  */
 export interface SettingsSelect<T extends boolean = true> {
-  tenant?: T;
   dashboard?:
     | T
     | {
@@ -593,7 +575,6 @@ export interface SettingsSelect<T extends boolean = true> {
  * via the `definition` "tenant-media_select".
  */
 export interface TenantMediaSelect<T extends boolean = true> {
-  tenant?: T;
   createdBy?: T;
   text?: T;
   prefix?: T;
@@ -669,10 +650,22 @@ export interface TenantsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "roles_select".
+ * via the `definition` "user-roles_select".
  */
-export interface RolesSelect<T extends boolean = true> {
+export interface UserRolesSelect<T extends boolean = true> {
+  createdBy?: T;
+  updatedBy?: T;
   label?: T;
+  permissions?:
+    | T
+    | {
+        group?: T;
+        collectionSlug?: T;
+        access?: T;
+        id?: T;
+      };
+  isSystemRole?: T;
+  selectedFeatures?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -681,9 +674,7 @@ export interface RolesSelect<T extends boolean = true> {
  * via the `definition` "features_select".
  */
 export interface FeaturesSelect<T extends boolean = true> {
-  type?: T;
-  label?: T;
-  value?: T;
+  name?: T;
   isEnabled?: T;
   updatedAt?: T;
   createdAt?: T;

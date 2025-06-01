@@ -10,64 +10,63 @@ const Posts: CollectionConfig = {
   slug: 'posts',
   access: {
     create: createPosts,
-    read: readPosts,
-    update: updatePosts,
+    read: () => true,
+    update: () => true,
     delete: deletePosts,
   },
   admin: {
     useAsTitle: 'title',
-    livePreview: {
-      url: ({ data, req }) => {
-        const path = generatePreviewPath({
-          data,
-          slug: typeof data?.slug === 'string' ? data.slug : '',
-          collection: 'posts',
-          req,
-        })
+    // livePreview: {
+    //   url: ({ data, req }) => {
+    //     const path = generatePreviewPath({
+    //       data,
+    //       slug: typeof data?.slug === 'string' ? data.slug : '',
+    //       collection: 'posts',
+    //       req,
+    //     })
 
-        return path
-      },
-    },
-    preview: (data, { req }) => {
-      return generatePreviewPath({
-        data,
-        slug: typeof data?.slug === 'string' ? data.slug : '',
-        collection: 'posts',
-        req,
-      })
-    },
-    hidden: true,
+    //     return path
+    //   },
+    // },
+    // preview: (data, { req }) => {
+    //   return generatePreviewPath({
+    //     data,
+    //     slug: typeof data?.slug === 'string' ? data.slug : '',
+    //     collection: 'posts',
+    //     req,
+    //   })
+    // },
   },
   fields: [
-    {
-      ...createdByField,
-      admin: {
-        ...createdByField.admin,
-        hidden: false,
-        position: 'sidebar',
-      },
-    } as Field,
-    {
-      ...updatedByField,
-      admin: {
-        ...updatedByField.admin,
-        hidden: false,
-        position: 'sidebar',
-      },
-    } as Field,
-    ...slugField([ensureUniqueSlug]),
+    // {
+    //   ...createdByField,
+    //   admin: {
+    //     ...createdByField.admin,
+    //     hidden: false,
+    //     position: 'sidebar',
+    //   },
+    // } as Field,
+    // {
+    //   ...updatedByField,
+    //   admin: {
+    //     ...updatedByField.admin,
+    //     hidden: false,
+    //     position: 'sidebar',
+    //   },
+    // } as Field,
+    // ...slugField([ensureUniqueSlug]),
     {
       name: 'title',
       label: 'Post Title',
       type: 'text',
       required: true,
     },
-    {
-      name: 'content',
-      label: 'Content',
-      type: 'richText',
-      required: true,
-    },
+    // {
+    //   name: 'content',
+    //   label: 'Content',
+    //   type: 'richText',
+    //   required: true,
+    // },
   ],
 }
 

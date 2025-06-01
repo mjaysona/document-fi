@@ -10,7 +10,7 @@ import { TwoColumn } from '@/blocks/TwoColumnBlock/config'
 import { ThreeColumnsBlock } from '@/blocks/ThreeColumnsBlock/config'
 import { getSelectedTenantId } from '@/utilities/getSelectedTenant'
 import { ensureUniqueSlug } from '@/collections/hooks/ensureUniqueSlug'
-import { createFirstTenantPage } from '../Tenants/utilities/createFirstTenantPage'
+import { createFirstTenantPage } from '../utilities/createFirstTenantPage'
 
 const Pages: CollectionConfig = {
   slug: 'pages',
@@ -77,33 +77,6 @@ const Pages: CollectionConfig = {
     },
     ...slugField([ensureUniqueSlug]),
   ],
-  hooks: {
-    beforeOperation: [
-      async ({ operation, req }) => {
-        if (operation === 'read') {
-          const selectedTenantId = getSelectedTenantId(req)
-
-          if (selectedTenantId) {
-            const { payload } = req
-
-            const tenantPages = await payload.find({
-              collection: 'pages',
-              where: {
-                'tenant.id': {
-                  equals: selectedTenantId,
-                },
-              },
-            })
-
-            // If no pages exist for the selected tenant, always create a default home page.
-            if (!tenantPages?.docs?.length) {
-              createFirstTenantPage(req, { tenant: selectedTenantId })
-            }
-          }
-        }
-      },
-    ],
-  },
   versions: {
     drafts: {
       validate: true,

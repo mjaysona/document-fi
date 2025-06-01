@@ -1,36 +1,22 @@
-import { ROLES } from '@/collections/Roles/roles.enum'
 import { Config } from 'payload'
+import { createFirstRole } from '../collections/utilities/createFirstRole'
 
 export const roles: NonNullable<Config['onInit']> = async (payload): Promise<void> => {
-  // Seeds the first two roles in the system: Super Admin and User
   try {
     console.info('Attempting to seed roles...')
 
-    const existingRoles = await payload.find({
-      collection: 'users',
-      limit: 1,
+    const existingRoles = await payload.count({
+      collection: 'user-roles',
     })
 
-    if (existingRoles.docs.length > 0) {
-      console.info('Roles already exist, skipping seed.')
+    if (existingRoles.totalDocs > 0) {
+      console.info('User roles already exist, skipping seed.')
       return
     }
 
-    await payload.create({
-      collection: 'roles',
-      data: {
-        label: ROLES.SUPER_ADMIN,
-      },
-    })
+    createFirstRole(payload)
 
-    await payload.create({
-      collection: 'roles',
-      data: {
-        label: ROLES.USER,
-      },
-    })
-
-    console.info('Roles seeded successfully.')
+    console.info('User roles seeded successfully.')
   } catch (error) {
     console.error('Error seeding roles:', error)
   }

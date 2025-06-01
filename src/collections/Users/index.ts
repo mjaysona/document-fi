@@ -9,11 +9,13 @@ import {
   hasNoSelectedTenant,
 } from '@/utilities/getSelectedTenant'
 import { isTenantAdmin } from '../utilities/access/isTenantAdmin'
-import { ROLES } from '../Roles/roles.enum'
+import { ROLES } from '../UserRoles/roles.enum'
 import { hasSuperAdminRole } from '@/utilities/getRole'
 import { isDeepStrictEqual } from 'util'
 import { createUsers, deleteUsers, readUsers, updateUsers } from './access'
-import { createFirstTenantUser } from '../Tenants/utilities/createFirstTenantUser'
+import { externalUsersAccountCreation } from './endpoints/externalUsersAccountCreation'
+import { features } from '../Features'
+import { hasMultiTenancyFeature } from '../utilities/hasMultitenancyFeature'
 
 const defaultTenantArrayField = tenantsArrayField({
   tenantsArrayFieldName: 'tenants',
@@ -78,7 +80,7 @@ const Users: CollectionConfig = {
     defaultColumns: ['email', 'assignedRoles', 'tenants'],
   },
   auth: true,
-  endpoints: [externalUsersLogin],
+  endpoints: [externalUsersLogin, externalUsersAccountCreation],
   fields: [
     {
       type: 'checkbox',
@@ -95,16 +97,16 @@ const Users: CollectionConfig = {
         disableListColumn: true,
         position: 'sidebar',
         condition: (_data, _siblingData, { user }) => {
-          return hasSuperAdminRole(user?.roles)
+          return hasSuperAdminRole(user?.userRoles)
         },
       },
-      label: 'Global Roles',
-      name: 'roles',
-      relationTo: 'roles',
+      label: 'User Roles',
+      name: 'userRoles',
+      relationTo: 'user-roles',
       hasMany: true,
       defaultValue: async ({ req }) => {
         const selectedUserRole = await req.payload.find({
-          collection: 'roles',
+          collection: 'user-roles',
           where: {
             label: {
               equals: ROLES.USER,
@@ -134,7 +136,7 @@ const Users: CollectionConfig = {
       type: 'relationship',
       admin: {
         condition: (_data, _siblingData, { user }) => {
-          return !hasSuperAdminRole(user?.roles)
+          return !hasSuperAdminRole(user?.userRoles)
         },
         position: 'sidebar',
       },
@@ -171,14 +173,17 @@ const Users: CollectionConfig = {
       admin: {
         ...(defaultTenantArrayField?.admin || {}),
         condition: (_data, _siblingData, { user }) => {
-          return hasSuperAdminRole(user?.roles)
+          return hasSuperAdminRole(user?.userRoles)
         },
         disableListColumn: true,
         position: 'sidebar',
       },
       access: {
         read: ({ req }) => {
-          return hasSuperAdminRole(req?.user?.roles) || !hasNoSelectedTenant(req)
+          return (
+            (hasSuperAdminRole(req?.user?.userRoles) || !hasNoSelectedTenant(req)) &&
+            hasMultiTenancyFeature(req)
+          )
         },
       },
       defaultValue: async ({ req }) => {
@@ -195,43 +200,6 @@ const Users: CollectionConfig = {
     },
   ],
   hooks: {
-    beforeOperation: [
-      async ({ operation, req }) => {
-        if (operation === 'read') {
-          const selectedTenantId = getSelectedTenantId(req)
-
-          if (selectedTenantId) {
-            const { payload } = req
-
-            const tenantUsers = await payload.find({
-              collection: 'users',
-              where: {
-                'tenants.tenant': {
-                  equals: selectedTenantId,
-                },
-              },
-            })
-
-            // If no tenant users exist for a tenant, always create a default user.
-            if (!tenantUsers?.docs?.length) {
-              const fullTenant = await payload.find({
-                collection: 'tenants',
-                where: {
-                  id: {
-                    equals: selectedTenantId,
-                  },
-                },
-              })
-
-              await createFirstTenantUser(req, {
-                tenant: selectedTenantId,
-                slug: fullTenant.docs[0].slug,
-              })
-            }
-          }
-        }
-      },
-    ],
     afterRead: [
       async ({ doc, req }) => {
         let selectedTenantId: string

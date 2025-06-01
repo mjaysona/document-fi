@@ -1,10 +1,7 @@
 import { Config } from 'payload'
 
 export const tenants: NonNullable<Config['onInit']> = async (payload): Promise<void> => {
-  // Seeds the first tenant in the system: Tenant 1
   try {
-    console.info('Attempting to initial tenants...')
-
     const existingTenants = await payload.find({
       collection: 'tenants',
       limit: 1,
@@ -14,6 +11,8 @@ export const tenants: NonNullable<Config['onInit']> = async (payload): Promise<v
       console.info('Tenants already exist, skipping...')
       return
     }
+
+    console.info('Creating "Tenant 1"...')
 
     await payload.create({
       collection: 'tenants',
@@ -31,8 +30,8 @@ export const tenants: NonNullable<Config['onInit']> = async (payload): Promise<v
       },
     })
 
-    console.info('Initial tenants added.')
+    console.info('"Tenant 1" created successfully.')
   } catch (error) {
-    console.error('Error adding initial tenants: ', error)
+    console.error('Error creating initial tenants: ', error)
   }
 }

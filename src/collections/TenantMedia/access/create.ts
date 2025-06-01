@@ -1,9 +1,9 @@
 import type { Access } from 'payload'
 import { TenantMedia, TenantRole } from 'payload-types'
-import getGenericRoleBasedAccess from '@/collections/utilities/access/getGenericRoleBasedAccess'
+import getGenericTenantRoleBasedAccess from '@/collections/utilities/access/getGenericTenantRoleBasedAccess'
 import { AccessType } from '@/enums'
 
 const createTenantMedia: Access<TenantMedia> = async (args) =>
-  await getGenericRoleBasedAccess(args, 'tenant-media', AccessType.CREATE)
+  await getGenericTenantRoleBasedAccess(args, 'tenant-media', AccessType.CREATE)
 
 export default createTenantMedia

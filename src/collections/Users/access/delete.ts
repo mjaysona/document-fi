@@ -11,19 +11,20 @@ const deleteUsers: Access<User> = async (args) => {
 
   if (!user) return false
 
-  const isSuperAdmin = hasSuperAdminRole(user?.roles)
+  const isSuperAdmin = hasSuperAdminRole(user?.userRoles)
   const subdomainAccess = await isAccessingViaSubdomain(req)
   const selectedTenant = getSelectedTenantId(req) || (await getSelectedTenantToken())
   const hasPermission = hasDeletePermission(user, selectedTenant, 'users', subdomainAccess)
 
   if (hasPermission) {
-    if (isSuperAdmin) return true
+    if (isSuperAdmin)
+      return {
+        isSystemAccount: {
+          equals: false,
+        },
+      } as Where
 
-    return {
-      isSystemAccount: {
-        not_equals: true,
-      },
-    } as Where
+    return true
   }
 
   return false

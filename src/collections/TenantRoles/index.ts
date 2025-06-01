@@ -6,13 +6,9 @@ import { camelCaseFormat } from '../utilities/camelCaseFormat'
 import { createdByField } from '@/fields/CreatedByField'
 import { updatedByField } from '@/fields/UpdatedByField'
 import { AccessType } from '@/enums'
-import createTenantRoles from './access/create'
-import readTenantRoles from './access/read'
-import updateTenantRoles from './access/update'
-import deleteTenantRoles from './access/delete'
 import { hasSuperAdminRole } from '@/utilities/getRole'
 import { selectedItemsField } from '@/fields/NonRepeatingArraySelectField'
-import { createFirstTenantRole } from '../Tenants/utilities/createFirstTenantRole'
+import { createTenantRoles, deleteTenantRoles, readTenantRoles, updateTenantRoles } from './access'
 
 const configurableCollections = [
   'users',
@@ -26,8 +22,8 @@ const configurableCollections = [
 const TenantRoles: CollectionConfig = {
   slug: 'tenant-roles',
   labels: {
-    singular: 'User Role',
-    plural: 'User Roles',
+    singular: 'Tenant Role',
+    plural: 'Tenant Roles',
   },
   access: {
     create: createTenantRoles,
@@ -56,7 +52,7 @@ const TenantRoles: CollectionConfig = {
       validate: (value: string) => noSpecialCharacters(value),
       access: {
         update: ({ doc, req }) => {
-          return hasSuperAdminRole(req.user?.roles) || !doc?.isSystemRole
+          return hasSuperAdminRole(req.user?.userRoles) || !doc?.isSystemRole
         },
       },
     },
@@ -179,9 +175,9 @@ const TenantRoles: CollectionConfig = {
       },
       defaultValue: false,
       access: {
-        create: ({ req }) => hasSuperAdminRole(req.user?.roles),
-        read: ({ doc, req }) => hasSuperAdminRole(req.user?.roles) || doc?.isSystemRole,
-        update: ({ req }) => hasSuperAdminRole(req.user?.roles),
+        create: ({ req }) => hasSuperAdminRole(req.user?.userRoles),
+        read: ({ doc, req }) => hasSuperAdminRole(req.user?.userRoles) || doc?.isSystemRole,
+        update: ({ req }) => hasSuperAdminRole(req.user?.userRoles),
       },
     },
     {
@@ -196,44 +192,6 @@ const TenantRoles: CollectionConfig = {
     },
   ],
   hooks: {
-    beforeOperation: [
-      async ({ operation, req }) => {
-        if (operation === 'read') {
-          const selectedTenantId = getSelectedTenantId(req)
-
-          if (selectedTenantId) {
-            const { payload } = req
-
-            const tenantRoles = await payload.find({
-              collection: 'tenant-roles',
-              where: {
-                'tenant.id': {
-                  equals: selectedTenantId,
-                },
-              },
-            })
-
-            let fullSelectedTenant
-
-            try {
-              fullSelectedTenant = await payload.findByID({
-                collection: 'tenants',
-                id: selectedTenantId,
-                depth: 0,
-              })
-            } catch (e) {}
-
-            // If no tenant roles exist for a tenant, always create a default role.
-            if (!tenantRoles?.docs?.length) {
-              await createFirstTenantRole(req, {
-                tenant: selectedTenantId,
-                slug: fullSelectedTenant?.slug,
-              })
-            }
-          }
-        }
-      },
-    ],
     beforeChange: [
       ({ data, req }) => {
         if (hasTenantSelected(req)) {

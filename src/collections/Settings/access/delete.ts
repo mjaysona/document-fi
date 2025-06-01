@@ -1,9 +1,9 @@
 import type { Access } from 'payload'
 import { Setting } from 'payload-types'
-import getGenericRoleBasedAccess from '@/collections/utilities/access/getGenericRoleBasedAccess'
+import getGenericTenantRoleBasedAccess from '@/collections/utilities/access/getGenericTenantRoleBasedAccess'
 import { AccessType } from '@/enums'
 
 const deleteSettings: Access<Setting> = async (args) =>
-  await getGenericRoleBasedAccess(args, 'settings', AccessType.DELETE)
+  await getGenericTenantRoleBasedAccess(args, 'settings', AccessType.DELETE)
 
 export default deleteSettings

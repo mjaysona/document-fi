@@ -1,9 +1,9 @@
 import type { Access } from 'payload'
 import { TenantRole } from 'payload-types'
-import getGenericRoleBasedAccess from '@/collections/utilities/access/getGenericRoleBasedAccess'
+import getGenericTenantRoleBasedAccess from '@/collections/utilities/access/getGenericTenantRoleBasedAccess'
 import { AccessType } from '@/enums'
 
 const updateTenantRoles: Access<TenantRole> = async (args) =>
-  await getGenericRoleBasedAccess(args, 'tenant-roles', AccessType.UPDATE)
+  await getGenericTenantRoleBasedAccess(args, 'tenant-roles', AccessType.UPDATE)
 
 export default updateTenantRoles

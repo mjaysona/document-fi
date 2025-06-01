@@ -6,5 +6,5 @@ export const isSuperAdmin = (req: PayloadRequest) => {
     return false
   }
 
-  return Boolean(hasSuperAdminRole(req.user.roles))
+  return Boolean(hasSuperAdminRole(req.user.userRoles))
 }

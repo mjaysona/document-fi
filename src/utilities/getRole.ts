@@ -1,10 +1,10 @@
 import { User } from 'payload-types'
 import { checkUserRoles } from './checkUserRoles'
-import { ROLES } from '@/collections/Roles/roles.enum'
+import { ROLES } from '@/collections/UserRoles/roles.enum'
 
-export const hasAdminRole = (userRoles: User['roles']): boolean =>
+export const hasAdminRole = (userRoles: User['userRoles']): boolean =>
   checkUserRoles([ROLES.ADMIN], userRoles)
-export const hasSuperAdminRole = (userRoles: User['roles'] | undefined): boolean =>
+export const hasSuperAdminRole = (userRoles: User['userRoles'] | undefined): boolean =>
   checkUserRoles([ROLES.SUPER_ADMIN], userRoles)
-export const hasTenantAdminRole = (userRoles: User['roles']): boolean =>
+export const hasTenantAdminRole = (userRoles: User['userRoles']): boolean =>
   checkUserRoles([ROLES.ADMIN], userRoles)

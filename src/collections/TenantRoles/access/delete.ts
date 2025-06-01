@@ -1,10 +1,10 @@
 import type { Access, Where } from 'payload'
 import { TenantRole } from 'payload-types'
-import getGenericRoleBasedAccess from '@/collections/utilities/access/getGenericRoleBasedAccess'
+import getGenericTenantRoleBasedAccess from '@/collections/utilities/access/getGenericTenantRoleBasedAccess'
 import { AccessType } from '@/enums'
 
 const deleteTenantRoles: Access<TenantRole> = async (args) => {
-  if (await getGenericRoleBasedAccess(args, 'tenant-roles', AccessType.DELETE)) {
+  if (await getGenericTenantRoleBasedAccess(args, 'tenant-roles', AccessType.DELETE)) {
     return {
       isSystemRole: {
         not_equals: true,

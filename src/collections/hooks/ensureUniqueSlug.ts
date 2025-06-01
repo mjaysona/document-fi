@@ -19,7 +19,7 @@ export const ensureUniqueSlug: FieldHook = async ({
   const currentTenantID =
     typeof originalDoc?.tenant === 'object' ? originalDoc.tenant.id : originalDoc?.tenant
   const tenantIDToMatch = incomingTenantID || currentTenantID
-  const isSuperAdmin = hasSuperAdminRole(req.user?.roles)
+  const isSuperAdmin = hasSuperAdminRole(req.user?.userRoles)
 
   if (collectionSlug) {
     const duplicateItemOnCollection = await req.payload.find({

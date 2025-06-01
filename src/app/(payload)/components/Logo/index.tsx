@@ -65,22 +65,26 @@ const AdminLogoServer: React.FC<UIFieldServerProps> = async ({ user, payload }) 
   if (!user) return await fetchLoginLogo()
 
   const selectedTenantId = await getSelectedTenantToken()
-  const tenantSettings = await payload.find({
-    collection: 'settings',
-    where: {
-      'tenant.id': {
-        equals: selectedTenantId,
+
+  try {
+    const tenantSettings = await payload.find({
+      collection: 'settings',
+      where: {
+        'tenant.id': {
+          equals: selectedTenantId,
+        },
       },
-    },
-  })
+    })
 
-  // Tenant settings exists only if user is logged in.
-  // This is when we fetch the icon meant inside the dashboard.
-  if (tenantSettings?.docs?.length) {
-    return await fetchDashboardIcon(tenantSettings)
+    // Tenant settings exists only if user is logged in.
+    // This is when we fetch the icon meant inside the dashboard.
+    if (tenantSettings?.docs?.length) {
+      return await fetchDashboardIcon(tenantSettings)
+    }
+  } catch (error) {
+  } finally {
+    return <>...</>
   }
-
-  return <>...</>
 }
 
 export default AdminLogoServer

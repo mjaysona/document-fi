@@ -3,7 +3,7 @@ import { getUserTenantIDs } from '../../../utilities/getUserTenantIDs'
 import { isSuperAdmin } from '@/collections/utilities/access/isSuperAdmin'
 import { User } from 'payload-types'
 import { getSelectedTenantId, getSelectedTenantToken } from '@/utilities/getSelectedTenant'
-import { ROLES } from '@/collections/Roles/roles.enum'
+import { ROLES } from '@/collections/UserRoles/roles.enum'
 
 export const createPages: Access<User> = async ({ req }) => {
   if (!req.user) {

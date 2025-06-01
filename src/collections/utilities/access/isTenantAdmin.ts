@@ -1,4 +1,4 @@
-import { ROLES } from '@/collections/Roles/roles.enum'
+import { ROLES } from '@/collections/UserRoles/roles.enum'
 import { getUserTenantIDs } from '@/utilities/getUserTenantIDs'
 import { User } from 'payload-types'
 

@@ -16,7 +16,7 @@ const Media: CollectionConfig = {
       label: 'Super Admin',
       name: 'super-admin',
     },
-    hidden: ({ user }) => !hasSuperAdminRole(user?.roles),
+    hidden: ({ user }) => !hasSuperAdminRole(user?.userRoles),
   },
   fields: [
     {

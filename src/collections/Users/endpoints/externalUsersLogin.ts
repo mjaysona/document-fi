@@ -17,26 +17,20 @@ export const externalUsersLogin: Endpoint = {
       // swallow error, data is already empty object
     }
 
-    const { password, tenantSlug, tenantDomain, username } = data
+    const { email, password, domain } = data
 
-    if (!username || !password) {
-      throw new APIError('Username and Password are required for login.', 400, null, true)
+    if (!email || !password) {
+      throw new APIError('Email and password are required for login.', 400, null, true)
     }
 
     const fullTenant = (
       await req.payload.find({
         collection: 'tenants',
-        where: tenantDomain
-          ? {
-              domain: {
-                equals: tenantDomain,
-              },
-            }
-          : {
-              slug: {
-                equals: tenantSlug,
-              },
-            },
+        where: {
+          domain: {
+            equals: domain,
+          },
+        },
       })
     ).docs[0]
 
@@ -48,31 +42,20 @@ export const externalUsersLogin: Endpoint = {
             and: [
               {
                 email: {
-                  equals: username,
+                  equals: email,
                 },
               },
-              {
-                'tenants.tenant': {
-                  equals: fullTenant.id,
-                },
-              },
+              ...(fullTenant
+                ? [
+                    {
+                      'tenants.tenant': {
+                        equals: fullTenant.id,
+                      },
+                    },
+                  ]
+                : []),
             ],
           },
-          // Add if username is allowed
-          // {
-          //   and: [
-          //     {
-          //       username: {
-          //         equals: username,
-          //       },
-          //     },
-          //     {
-          //       'tenants.tenant': {
-          //         equals: fullTenant.id,
-          //       },
-          //     },
-          //   ],
-          // },
         ],
       },
     })

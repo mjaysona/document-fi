@@ -1,13 +1,9 @@
 import type { CollectionConfig, CollectionSlug } from 'payload'
 import { isSuperAdmin } from '@/collections/utilities/access/isSuperAdmin'
-import { hasSuperAdminRole } from '@/utilities/getRole'
 import { updateAndDeleteTenants } from './access/updateAndDeleteTenants'
-import { createGlobalCollection } from './utilities/createGlobalCollection'
-import { createFirstTenantRole } from './utilities/createFirstTenantRole'
-import { createFirstTenantUser } from './utilities/createFirstTenantUser'
 import { slugField } from '@/fields/SlugField'
 import { ensureUniqueTenant } from './hooks/ensureUniqueTenant'
-import readTenants from './access/readTenants'
+import { readTenants } from './access/index'
 
 const Tenants: CollectionConfig = {
   slug: 'tenants',
@@ -23,7 +19,6 @@ const Tenants: CollectionConfig = {
       label: 'Super Admin',
       name: 'super-admin',
     },
-    hidden: ({ user }) => !hasSuperAdminRole(user?.roles),
   },
   orderable: true,
   fields: [
@@ -59,16 +54,13 @@ const Tenants: CollectionConfig = {
     afterChange: [
       async ({ doc, operation, req }) => {
         if (operation === 'create') {
-          const { id, slug } = doc
-
-          await createFirstTenantRole(req, { tenant: id, slug })
-          await createFirstTenantUser(req, { tenant: id, slug })
-
-          const collections: CollectionSlug[] = ['settings']
-
-          collections.forEach(async (collection) => {
-            await createGlobalCollection(req, id, collection)
-          })
+          // const { id, slug } = doc
+          // await createFirstRole(req?.payload, { tenant: id, slug })
+          // await createFirstTenantUser(req, { tenant: id, slug })
+          // const collections: CollectionSlug[] = ['settings']
+          // collections.forEach(async (collection) => {
+          //   await createGlobalCollection(req, id, collection)
+          // })
         }
       },
     ],

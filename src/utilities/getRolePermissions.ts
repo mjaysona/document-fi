@@ -13,28 +13,50 @@ const hasPermission = (
   const selectedTenant = user.tenants?.find(
     (tenant) => (tenant.tenant as Tenant)?.id === selectedTenantId,
   )
+
+  const userRoles = user.userRoles || []
   const selectedTenantRoles = selectedTenant?.roles
-  const isSuperAdmin = hasSuperAdminRole(user.roles)
+  const isSuperAdmin = hasSuperAdminRole(userRoles)
 
   if (!isAccessingViaSubdomain && !selectedTenantId && isSuperAdmin) return true
 
-  const hasPermission =
-    selectedTenantRoles?.some((role) => {
-      const collectionAccess = (role as TenantRole).permissions?.find(
-        (permission: { collectionSlug: string }) => permission.collectionSlug === collectionSlug,
-      )
+  // First check if permission exists in tenant roles
+  const hasTenantPermission = selectedTenantRoles?.some((role) => {
+    const collectionAccess = (role as TenantRole).permissions?.find(
+      (permission: { collectionSlug: string }) => permission.collectionSlug === collectionSlug,
+    )
 
-      if (collectionAccess?.access.includes(permission)) return true
+    if (collectionAccess?.access.includes(permission)) return true
 
-      const collectionGroupAccess = (role as TenantRole).groupedPermissions?.find(
-        (permission: { group: string; collections: string[] }) =>
-          permission.group === collectionSlug || permission.collections?.includes(collectionSlug),
-      )
+    const collectionGroupAccess = (role as TenantRole).groupedPermissions?.find(
+      (permission: { group: string; collections: string[] }) =>
+        permission.group === collectionSlug || permission.collections?.includes(collectionSlug),
+    )
 
-      return collectionGroupAccess?.access.includes(permission)
-    }) || isSuperAdmin
+    return collectionGroupAccess?.access.includes(permission)
+  })
 
-  return Boolean(hasPermission)
+  // If tenant permission exists, use it
+  if (hasTenantPermission) return true
+
+  // If no tenant permission, check user roles
+  const hasUserRolePermission = userRoles.some((role) => {
+    const collectionAccess = (role as TenantRole).permissions?.find(
+      (permission: { collectionSlug: string }) => permission.collectionSlug === collectionSlug,
+    )
+
+    if (collectionAccess?.access.includes(permission)) return true
+
+    const collectionGroupAccess = (role as TenantRole).groupedPermissions?.find(
+      (permission: { group: string; collections: string[] }) =>
+        permission.group === collectionSlug || permission.collections?.includes(collectionSlug),
+    )
+
+    return collectionGroupAccess?.access.includes(permission)
+  })
+
+  // Return true if either user role permission or super admin
+  return Boolean(hasUserRolePermission || isSuperAdmin)
 }
 
 export const hasCreatePermission = (

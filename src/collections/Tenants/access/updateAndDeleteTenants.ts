@@ -7,7 +7,7 @@ export const updateAndDeleteTenants: Access = ({ req, data }) => {
     return false
   }
 
-  if (hasSuperAdminRole(req.user?.roles)) {
+  if (hasSuperAdminRole(req.user?.userRoles)) {
     return {
       slug: {
         not_equals: 'platform',

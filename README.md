@@ -53,7 +53,7 @@ A comprehensive starter template for building web applications with Payload CMS 
    ```
    PAYLOAD_SECRET=your-secure-secret-key
    MONGODB_URI=mongodb://127.0.0.1:27017/your-database-name
-   SEED_DB=true  # Set to false after first run
+   SEED_USERS=true  # Set to false after first run
    # Optional: Set up S3 for media storage
    # S3_BUCKET=your-bucket-name
    # S3_ACCESS_KEY_ID=your-access-key
@@ -75,6 +75,33 @@ A comprehensive starter template for building web applications with Payload CMS 
 7. Access the application:
    - Front-end: [http://localhost:3000](http://localhost:3000)
    - Admin Panel: [http://localhost:3000/admin](http://localhost:3000/admin)
+
+### Data Seeding
+
+On initial build, if no users are detected in the database, the system automatically initiates seeding based on the `SEED_USERS` environment variable. You'll be prompted to choose between single-tenant or multi-tenant setup:
+
+- **Single-tenant setup**: Seeds users, user roles, and assigns roles
+- **Multi-tenant setup**: Additionally seeds tenants, tenant roles, and tenant users
+
+You can disable automatic seeding by setting `SEED_USERS=false` in your `.env.local` file.
+
+If any part of the seeding process fails, you can manually run the specific seed commands:
+
+```bash
+# Seed all data at once
+pnpm run seed -- all
+
+# Or seed specific collections
+pnpm run seed -- roles         # Create first role
+pnpm run seed -- tenants       # Seed tenant data
+pnpm run seed -- tenant-roles  # Seed tenant roles
+pnpm run seed -- tenant-user   # Seed tenant user data
+pnpm run seed -- user          # Seed user data
+
+# Assign roles after seeding
+pnpm run assign -- user        # Assign roles to users
+pnpm run assign -- tenant-user # Assign tenant roles
+```
 
 ## Project Structure
 
@@ -111,6 +138,8 @@ This boilerplate implements a multi-tenant architecture with these key features:
 - Tenant-specific media collections
 - Domain-based tenant identification
 - Easy switching between tenants in admin UI
+
+> **Note**: The multi-tenant plugin is currently disabled in the default configuration to allow creating items in collections without requiring a tenant. You can enable it by uncommenting the `multiTenantPlugin` configuration in `payload.config.ts`.
 
 ## Authentication and Authorization
 
@@ -249,7 +278,7 @@ git push origin main
 
 ## Development Notes
 
-- Enable `SEED_DB=true` only for initial setup
+- Enable `SEED_USERS=true` only for initial setup
 - Use TypeScript for type safety
 - Follow the established patterns for access control
 - Use the provided utilities for consistent implementation
