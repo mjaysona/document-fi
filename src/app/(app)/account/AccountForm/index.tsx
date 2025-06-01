@@ -12,7 +12,8 @@ import classes from './index.module.scss'
 
 type FormData = {
   email: string
-  name: string
+  firstName: string
+  lastName: string
   password: string
   passwordConfirm: string
 }
@@ -38,25 +39,23 @@ export const AccountForm: React.FC = () => {
   const onSubmit = useCallback(
     async (data: FormData) => {
       if (user) {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/users/${user.id}`, {
-          // Make sure to include cookies with fetch
+        const response = await fetch(`/api/users/account/${user.id}/update`, {
           body: JSON.stringify(data),
           credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           method: 'PATCH',
         })
 
         if (response.ok) {
           const json = await response.json()
           setUser(json.doc)
-          setSuccess('Successfully updated account.')
+          setSuccess('Successfully updated your account.')
           setError('')
           setChangePassword(false)
           reset({
-            name: json.doc.name,
             email: json.doc.email,
+            firstName: json.doc.personalDetails?.firstName || '',
+            lastName: json.doc.personalDetails?.lastName || '',
             password: '',
             passwordConfirm: '',
           })
@@ -106,6 +105,21 @@ export const AccountForm: React.FC = () => {
             register={register}
             required
             type="email"
+            disabled
+          />
+          <Input
+            error={errors.firstName}
+            label="First Name"
+            name="firstName"
+            register={register}
+            type="text"
+          />
+          <Input
+            error={errors.lastName}
+            label="Last Name"
+            name="lastName"
+            register={register}
+            type="text"
           />
         </Fragment>
       ) : (

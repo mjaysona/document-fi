@@ -43,14 +43,7 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({ tenant }) 
 
   const onSubmit = useCallback(
     async (data: FormData) => {
-      const responseBody: FormData = {
-        ...data,
-        tenant,
-      }
-
-      console.log('responseBody', responseBody)
-
-      const response = await fetch('/api/users/external-users/create-account', {
+      const response = await fetch('/api/account/users/create', {
         body: JSON.stringify(data),
         headers: {
           'Content-Type': 'application/json',
@@ -61,17 +54,17 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({ tenant }) 
       if (!response.ok) {
         try {
           const errorData = await response.json()
-          const { errors } = errorData || 'There was an error creating the account.'
+          const { errors } = errorData || 'There was a problem creating your account.'
 
           if (errors.length > 1) {
             setError(errors)
           } else {
-            setError(errors[0]?.message || 'There was an error creating the account.')
+            setError(errors[0]?.message || 'There was a problem creating your account.')
           }
 
           return
         } catch (error) {
-          const message = response.statusText || 'There was an error creating the account.'
+          const message = response.statusText || 'There was a problem creating your account.'
 
           setError(message)
 

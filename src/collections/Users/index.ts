@@ -13,9 +13,9 @@ import { ROLES } from '../UserRoles/roles.enum'
 import { hasSuperAdminRole } from '@/utilities/getRole'
 import { isDeepStrictEqual } from 'util'
 import { createUsers, deleteUsers, readUsers, updateUsers } from './access'
-import { externalUsersAccountCreation } from './endpoints/externalUsersAccountCreation'
-import { features } from '../Features'
+import { externalUsersCreateAccount } from './endpoints/externalUsersCreateAccount'
 import { hasMultiTenancyFeature } from '../utilities/hasMultitenancyFeature'
+import { externalUsersUpdateAccount } from './endpoints/externalUsersUpdateAccount'
 
 const defaultTenantArrayField = tenantsArrayField({
   tenantsArrayFieldName: 'tenants',
@@ -80,7 +80,7 @@ const Users: CollectionConfig = {
     defaultColumns: ['email', 'assignedRoles', 'tenants'],
   },
   auth: true,
-  endpoints: [externalUsersLogin, externalUsersAccountCreation],
+  endpoints: [externalUsersLogin, externalUsersCreateAccount, externalUsersUpdateAccount],
   fields: [
     {
       type: 'checkbox',
@@ -197,6 +197,29 @@ const Users: CollectionConfig = {
 
         return [defaultTenant]
       },
+    },
+    {
+      type: 'group',
+      name: 'personalDetails',
+      fields: [
+        {
+          type: 'row',
+          fields: [
+            {
+              name: 'firstName',
+              label: 'First Name',
+              type: 'text',
+              maxLength: 50,
+            },
+            {
+              name: 'lastName',
+              label: 'Last Name',
+              type: 'text',
+              maxLength: 50,
+            },
+          ],
+        },
+      ],
     },
   ],
   hooks: {

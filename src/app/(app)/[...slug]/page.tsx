@@ -8,45 +8,52 @@ import type { Page as PageType } from '@payload-types'
 import config from '@payload-config'
 import RichText from '@/app/(app)/components/RichText'
 import classes from './index.module.scss'
-import { home as homeStatic } from '@/seed/home'
-
-import { RenderBlocks } from '@/blocks/RenderBlocks'
 import { getSelectedTenantToken } from '@/utilities/getSelectedTenant'
 import { LivePreviewListener } from '@/app/(app)/components/LivePreviewListener'
 
-const queryPageByTenantSlug = cache(
-  async ({ slug, slugUrl, tenant }: { slug: string; slugUrl: string; tenant: string }) => {
-    const { isEnabled: draft } = await draftMode()
-    const payload = await getPayload({ config })
-    const result = await payload.find({
-      collection: 'pages',
-      draft,
-      limit: 1,
-      where: {
-        and: [
-          ...(draft ? [] : [{ allowPublicRead: { equals: true } }]),
-          {
-            'tenant.domain': {
-              equals: tenant,
-            },
+const queryPageByTenantSlug = async ({
+  slug,
+  slugUrl,
+  tenant,
+}: {
+  slug: string
+  slugUrl: string
+  tenant: string
+}) => {
+  const { isEnabled: draft } = await draftMode()
+  const payload = await getPayload({ config })
+  const result = await payload.find({
+    collection: 'pages',
+    draft,
+    limit: 1,
+    where: {
+      and: [
+        ...(draft ? [] : [{ allowPublicRead: { equals: true } }]),
+        ...(tenant
+          ? [
+              {
+                'tenant.domain': {
+                  equals: tenant,
+                },
+              },
+            ]
+          : []),
+        {
+          slug: {
+            equals: slug,
           },
-          {
-            slug: {
-              equals: slug,
-            },
+        },
+        {
+          'breadcrumbs.url': {
+            equals: slugUrl,
           },
-          {
-            'breadcrumbs.url': {
-              equals: slugUrl,
-            },
-          },
-        ],
-      },
-    })
+        },
+      ],
+    },
+  })
 
-    return result.docs?.[0] || null
-  },
-)
+  return result.docs?.[0] || null
+}
 
 interface PageParams {
   params: Promise<{

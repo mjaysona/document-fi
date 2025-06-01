@@ -148,6 +148,10 @@ export interface User {
         id?: string | null;
       }[]
     | null;
+  personalDetails?: {
+    firstName?: string | null;
+    lastName?: string | null;
+  };
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -481,6 +485,12 @@ export interface UsersSelect<T extends boolean = true> {
         tenant?: T;
         roles?: T;
         id?: T;
+      };
+  personalDetails?:
+    | T
+    | {
+        firstName?: T;
+        lastName?: T;
       };
   updatedAt?: T;
   createdAt?: T;

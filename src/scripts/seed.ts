@@ -11,7 +11,7 @@ async function run() {
   const params = process.argv.slice(2)
   const payload = await getPayload({ config })
 
-  switch (params[0]) {
+  switch (params[1]) {
     case 'all':
       await initialData(payload)
       break

@@ -12,7 +12,7 @@ export const initialData = async (payload: Payload) => {
     collection: 'users',
   })
 
-  if (users) return
+  if (users?.totalDocs > 0) return
 
   const { tenantMode } = await inquirer.prompt([
     {

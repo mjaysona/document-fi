@@ -1,11 +1,10 @@
 import type { Collection, Endpoint } from 'payload'
-
-import { headersWithCors } from '@payloadcms/next/utilities'
+import { headersWithCors } from 'payload'
 import { APIError, generatePayloadCookie } from 'payload'
 
 // A custom endpoint that can be reached by POST request
-// at: /api/users/external-users/create-account
-export const externalUsersAccountCreation: Endpoint = {
+// at: /api/account/create
+export const externalUsersCreateAccount: Endpoint = {
   handler: async (req) => {
     let data: { [key: string]: string } = {}
 
@@ -21,17 +20,6 @@ export const externalUsersAccountCreation: Endpoint = {
       throw new APIError('Email and password are required for account creation.', 400, null, true)
     }
 
-    const fullTenant = (
-      await req.payload.find({
-        collection: 'tenants',
-        where: {
-          domain: {
-            equals: domain,
-          },
-        },
-      })
-    ).docs[0]
-
     // Check if user already exists with this email for this tenant
     const existingUser = await req.payload.find({
       collection: 'users',
@@ -42,15 +30,6 @@ export const externalUsersAccountCreation: Endpoint = {
               equals: email,
             },
           },
-          ...(fullTenant
-            ? [
-                {
-                  'tenants.tenant': {
-                    equals: fullTenant.id,
-                  },
-                },
-              ]
-            : []),
         ],
       },
     })
@@ -66,7 +45,6 @@ export const externalUsersAccountCreation: Endpoint = {
         data: {
           email,
           password,
-          tenants: fullTenant ? [{ tenant: fullTenant.id }] : [],
         },
       })
 
@@ -121,9 +99,9 @@ export const externalUsersAccountCreation: Endpoint = {
         },
       )
     } catch (e) {
-      throw new APIError('Unable to create account.', 400, null, true)
+      throw new APIError('There was a problem creating your account.', 400, null, true)
     }
   },
   method: 'post',
-  path: '/external-users/create-account',
+  path: '/account/create',
 }

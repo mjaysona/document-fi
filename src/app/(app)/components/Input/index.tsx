@@ -1,13 +1,12 @@
 import type { FieldValues, UseFormRegister } from 'react-hook-form'
-
 import React from 'react'
-
 import classes from './index.module.scss'
 
 type Props = {
   error: any
   label: string
   name: string
+  disabled?: boolean
   register: UseFormRegister<any & FieldValues> // eslint-disable-line @typescript-eslint/no-redundant-type-constituents
   required?: boolean
   type?: 'email' | 'number' | 'password' | 'text'
@@ -19,6 +18,7 @@ export const Input: React.FC<Props> = ({
   type = 'text',
   error,
   label,
+  disabled = false,
   register,
   required,
   validate,
@@ -29,6 +29,7 @@ export const Input: React.FC<Props> = ({
         {`${label} ${required ? '*' : ''}`}
       </label>
       <input
+        disabled={disabled}
         className={[classes.input, error && classes.error].filter(Boolean).join(' ')}
         {...{ type }}
         {...register(name, {

@@ -27,7 +27,7 @@ export const Login = ({ tenantSlug, tenantDomain }: Props) => {
     if (!usernameRef?.current?.value || !passwordRef?.current?.value) {
       return
     }
-    const actionRes = await fetch('/api/users/external-users/login', {
+    const actionRes = await fetch('/api/users/login', {
       body: JSON.stringify({
         password: passwordRef.current.value,
         tenantSlug,

@@ -11,15 +11,12 @@ import classes from './index.module.scss'
 import { useForm } from 'react-hook-form'
 import { Tenant } from '~/payload-types'
 
-type LoginFormProps = {
-  domain?: Tenant['domain']
-}
 type FormData = {
   email: string
   password: string
 }
 
-export const LoginForm: React.FC<LoginFormProps> = ({ domain }) => {
+export const LoginForm: React.FC = () => {
   const searchParams = useSearchParams()
   const allParams = searchParams.toString() ? `?${searchParams.toString()}` : ''
   const redirect = useRef(searchParams.get('redirect'))
@@ -40,33 +37,43 @@ export const LoginForm: React.FC<LoginFormProps> = ({ domain }) => {
 
   const onSubmit = useCallback(
     async (data: FormData) => {
-      if (!data?.email || !data?.password) {
-        return
-      }
+      if (!data?.email || !data?.password) return
 
-      const actionRes = await fetch('/api/users/external-users/login', {
+      const response = await fetch('/api/users/account/login', {
         body: JSON.stringify({
           email: data.email,
           password: data.password,
-          domain,
         }),
         headers: {
           'content-type': 'application/json',
         },
         method: 'post',
       })
-      const json = await actionRes.json()
+      const responseData = await response.json()
 
-      if (actionRes.status === 200 && json.user) {
+      console.log('responseData', responseData)
+      console.log('response', response)
+
+      if (response?.status === 200 && responseData?.user) {
+        console.log('Login1')
         if (redirect?.current) {
           router.push(redirect.current)
         } else {
           router.push('/account')
         }
-      } else if (actionRes.status === 400 && json?.errors?.[0]?.message) {
-        setError(json.errors[0].message)
+      } else if (response.status === 401 && responseData?.errors?.[0]?.message) {
+        const { errors } = responseData || 'There was a problem logging in on your account.'
+
+        console.log('Login2')
+
+        if (errors.length > 1) {
+          setError(errors)
+        } else {
+          setError(errors[0]?.message || 'There was a problem logging in on your account.')
+        }
       } else {
-        throw new Error('Something went wrong, please try again.')
+        console.log('Login3')
+        throw new Error('There was a problem logging in on your account.')
       }
     },
     [login, router],
