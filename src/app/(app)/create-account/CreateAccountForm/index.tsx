@@ -1,16 +1,22 @@
 'use client'
 
-import Link from 'next/link'
+import React, { useCallback, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import React, { useCallback, useRef, useState } from 'react'
-import { useForm } from 'react-hook-form'
-
-import { Button } from '../../components/Button'
-import { Input } from '../../components/Input'
-import { Message } from '../../components/Message'
+import { hasLength, isEmail, useForm } from '@mantine/form'
 import { useAuth } from '../../providers/Auth'
-import classes from './index.module.scss'
 import { Tenant } from '@payload-types'
+import {
+  Alert,
+  Anchor,
+  Button,
+  FocusTrap,
+  PasswordInput,
+  Text,
+  TextInput,
+  Title,
+} from '@mantine/core'
+import { AtSign, CheckCircle, CircleAlert, KeySquare } from 'lucide-react'
+import { ErrorMessage } from '~/src/collections/Users/enums'
 
 type CreateAccountFormProps = {
   tenant?: Tenant['id']
@@ -25,120 +31,114 @@ type FormData = {
 
 export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({ tenant }) => {
   const searchParams = useSearchParams()
-  const allParams = searchParams.toString() ? `?${searchParams.toString()}` : ''
   const { login } = useAuth()
   const router = useRouter()
-  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<null | string | string[]>(null)
+  const [isCreatingAccount, setIsCreatingAccount] = useState(false)
 
-  const {
-    formState: { errors },
-    handleSubmit,
-    register,
-    watch,
-  } = useForm<FormData>()
+  const { errors, getInputProps, key, onSubmit } = useForm({
+    mode: 'uncontrolled',
+    initialValues: {
+      email: '',
+      password: '',
+      passwordConfirm: '',
+    },
+    validate: {
+      email: isEmail('Please enter a valid email address.'),
+      password: hasLength({ min: 4 }, 'Password must be at least 4 characters long.'),
+      passwordConfirm: (value, values) => {
+        if (value !== values.password) {
+          return ErrorMessage.MISMATCHING_PASSWORDS
+        }
+      },
+    },
+  })
 
-  const password = useRef({})
-  password.current = watch('password', '')
-
-  const onSubmit = useCallback(
+  const handleSubmit = useCallback(
     async (data: FormData) => {
-      const response = await fetch('/api/account/users/create', {
+      setIsCreatingAccount(true)
+
+      const rawResponse = await fetch('/api/users/account/create', {
         body: JSON.stringify(data),
         headers: {
           'Content-Type': 'application/json',
         },
         method: 'POST',
       })
+      const responseData = await rawResponse.json()
 
-      if (!response.ok) {
-        try {
-          const errorData = await response.json()
-          const { errors } = errorData || 'There was a problem creating your account.'
-
-          if (errors.length > 1) {
-            setError(errors)
-          } else {
-            setError(errors[0]?.message || 'There was a problem creating your account.')
-          }
-
-          return
-        } catch (error) {
-          const message = response.statusText || 'There was a problem creating your account.'
-
-          setError(message)
-
-          return
-        }
+      if ((rawResponse?.status === 200 || rawResponse?.status === 201) && responseData?.user) {
+        router.push(
+          `/login?success=${encodeURIComponent('You have successfully created an account, to continue please log in.')}`,
+        )
+      } else if (responseData?.errors?.[0]?.message) {
+        const { errors } = responseData
+        setError(errors[0]?.message)
+      } else {
+        setError(ErrorMessage.CREATE_ACCOUNT_TRY_AGAIN)
       }
 
-      const redirect = searchParams.get('redirect')
-
-      const timer = setTimeout(() => {
-        setLoading(true)
-      }, 1000)
-
-      try {
-        await login(data)
-        clearTimeout(timer)
-        if (redirect) {
-          router.push(redirect)
-        } else {
-          router.push(`/account?success=${encodeURIComponent('Account created successfully')}`)
-        }
-      } catch (_) {
-        clearTimeout(timer)
-        setError('There was an error with the credentials provided. Please try again.')
-      }
+      setIsCreatingAccount(false)
     },
     [login, router, searchParams],
   )
 
   return (
-    <form className={classes.form} onSubmit={handleSubmit(onSubmit)}>
-      <p>
-        {`This is where new customers can signup and create a new account. To manage all users, `}
-        <Link href={`${process.env.NEXT_PUBLIC_SERVER_URL}/admin/collections/users`}>
-          login to the admin dashboard
-        </Link>
-        .
-      </p>
-      <Message className={classes.message} error={error} />
-      <Input
-        error={errors.email}
-        label="Email Address"
-        name="email"
-        register={register}
-        required
-        type="email"
-      />
-      <Input
-        error={errors.password}
-        label="Password"
-        name="password"
-        register={register}
-        required
-        type="password"
-      />
-      <Input
-        error={errors.passwordConfirm}
-        label="Confirm Password"
-        name="passwordConfirm"
-        register={register}
-        required
-        type="password"
-        validate={(value) => value === password.current || 'The passwords do not match'}
-      />
-      <Button
-        appearance="primary"
-        className={classes.submit}
-        label={loading ? 'Processing' : 'Create Account'}
-        type="submit"
-      />
-      <div>
-        {'Already have an account? '}
-        <Link href={`/login${allParams}`}>Login</Link>
-      </div>
+    <form onSubmit={onSubmit(handleSubmit)}>
+      <FocusTrap>
+        <div>
+          {error && error.length > 0 && (
+            <Alert
+              variant="light"
+              color="red"
+              withCloseButton
+              icon={<CircleAlert />}
+              mb="md"
+              onClose={() => setError(null)}
+            >
+              {error}
+            </Alert>
+          )}
+          <TextInput
+            data-autofocus
+            label="Email"
+            leftSection={<AtSign size={12} />}
+            name="email"
+            size="md"
+            error={errors.email}
+            {...getInputProps('email')}
+          />
+          <PasswordInput
+            mt="md"
+            size="md"
+            label="Password"
+            leftSection={<KeySquare size={12} />}
+            name="password"
+            error={errors.password}
+            key={key('password')}
+            {...getInputProps('password')}
+          />
+          <PasswordInput
+            mt="md"
+            size="md"
+            label="Confirm Password"
+            leftSection={<KeySquare size={12} />}
+            name="passwordConfirm"
+            error={errors.passwordConfirm}
+            key={key('passwordConfirm')}
+            {...getInputProps('passwordConfirm')}
+          />
+          <Button mt="lg" mb="lg" size="md" type="submit" fullWidth loading={isCreatingAccount}>
+            Create my account
+          </Button>
+          <Text>
+            Already have an account?{' '}
+            <Anchor fw={500} href="/login">
+              Log in
+            </Anchor>
+          </Text>
+        </div>
+      </FocusTrap>
     </form>
   )
 }

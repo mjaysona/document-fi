@@ -1,90 +1,124 @@
 'use client'
 
-import Link from 'next/link'
-import React, { Fragment, useCallback, useState } from 'react'
-import { useForm } from 'react-hook-form'
-
-import { Button } from '../../components/Button'
-import { Input } from '../../components/Input'
-import { Message } from '../../components/Message'
-import classes from './index.module.scss'
+import React, { useCallback, useState } from 'react'
+import { Alert, Anchor, Button, FocusTrap, Text, TextInput, Title } from '@mantine/core'
+import { isEmail, useForm } from '@mantine/form'
+import { AtSign, CircleAlert } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { ErrorMessage } from '~/src/collections/Users/enums'
 
 type FormData = {
   email: string
 }
 
 export const RecoverPasswordForm: React.FC = () => {
-  const [error, setError] = useState('')
+  const [error, setError] = useState<null | string>(null)
   const [success, setSuccess] = useState(false)
+  const router = useRouter()
+  const [isSubmittingRequest, setIsSubmittingRequest] = useState(false)
 
-  const {
-    formState: { errors },
-    handleSubmit,
-    register,
-  } = useForm<FormData>()
+  const { errors, getInputProps, key, onSubmit } = useForm({
+    mode: 'uncontrolled',
+    initialValues: {
+      email: '',
+    },
+    validate: {
+      email: isEmail('Please enter a valid email address.'),
+    },
+  })
 
-  const onSubmit = useCallback(async (data: FormData) => {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_SERVER_URL}/api/users/forgot-password`,
-      {
-        body: JSON.stringify(data),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        method: 'POST',
+  const handleSubmit = useCallback(async (data: FormData) => {
+    setIsSubmittingRequest(true)
+
+    const rawResponse = await fetch('/api/users/account/forgot-password', {
+      body: JSON.stringify({
+        email: data.email,
+      }),
+      headers: {
+        'content-type': 'application/json',
       },
-    )
+      method: 'post',
+    })
+    const responseData = await rawResponse.json()
 
-    if (response.ok) {
+    if (rawResponse.ok) {
       setSuccess(true)
       setError('')
+    } else if (responseData?.errors?.[0]?.message) {
+      setSuccess(false)
+      setError(responseData.errors[0].message)
     } else {
-      setError(
-        'There was a problem while attempting to send you a password reset email. Please try again.',
-      )
+      setSuccess(false)
+      setError(ErrorMessage.LOGIN_TRY_AGAIN)
     }
+
+    setIsSubmittingRequest(false)
   }, [])
 
   return (
-    <Fragment>
+    <>
       {!success && (
-        <React.Fragment>
-          <h1>Recover Password</h1>
-          <div className={classes.formWrapper}>
-            <p>
-              {`Please enter your email below. You will receive an email message with instructions on
-              how to reset your password. To manage all of your users, `}
-              <Link href={`${process.env.NEXT_PUBLIC_SERVER_URL}/admin/collections/users`}>
-                login to the admin dashboard
-              </Link>
-              .
-            </p>
-            <form className={classes.form} onSubmit={handleSubmit(onSubmit)}>
-              <Message className={classes.message} error={error} />
-              <Input
-                error={errors.email}
-                label="Email Address"
+        <form onSubmit={onSubmit(handleSubmit)}>
+          <FocusTrap>
+            <div>
+              {error && error.length > 0 && (
+                <Alert
+                  variant="light"
+                  color="red"
+                  withCloseButton
+                  icon={<CircleAlert />}
+                  mb="md"
+                  onClose={() => setError(null)}
+                >
+                  {error}
+                </Alert>
+              )}
+              <Text>Please enter your email address below to receive a password reset link.</Text>
+              <TextInput
+                data-autofocus
+                label="Email"
+                leftSection={<AtSign size={12} />}
+                mt="md"
                 name="email"
-                register={register}
-                required
-                type="email"
+                size="md"
+                error={errors.email}
+                key={key('email')}
+                {...getInputProps('email')}
               />
               <Button
-                appearance="primary"
-                className={classes.submit}
-                label="Recover Password"
+                mt="lg"
+                mb="lg"
+                size="md"
                 type="submit"
-              />
-            </form>
-          </div>
-        </React.Fragment>
+                fullWidth
+                loading={isSubmittingRequest}
+              >
+                Reset my password
+              </Button>
+              <Anchor fw={500} mt="md" href={`/login`}>
+                Back to login
+              </Anchor>
+            </div>
+          </FocusTrap>
+        </form>
       )}
       {success && (
-        <React.Fragment>
-          <h1>Request submitted</h1>
-          <p>Check your email for a link that will allow you to securely reset your password.</p>
-        </React.Fragment>
+        <>
+          <Title order={5}>Your request to reset your password has been submitted.</Title>
+          <Text mt="md">
+            Check your email for a link that will allow you to securely reset your password.
+          </Text>
+          <Button
+            variant="outline"
+            mt="xl"
+            size="md"
+            fullWidth
+            onClick={() => router.push('/login')}
+          >
+            Back to login
+          </Button>
+        </>
       )}
-    </Fragment>
+    </>
   )
 }

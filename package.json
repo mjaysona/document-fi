@@ -25,6 +25,9 @@
   },
   "dependencies": {
     "@innovixx/payload-color-picker-field": "^2.0.1",
+    "@mantine/core": "^8.1.0",
+    "@mantine/form": "^8.1.0",
+    "@mantine/hooks": "^8.1.0",
     "@nouance/payload-better-fields-plugin": "^2.0.2",
     "@payloadcms/admin-bar": "3.39.1",
     "@payloadcms/db-mongodb": "3.39.1",
@@ -55,6 +58,9 @@
     "@types/react-dom": "19.0.1",
     "eslint": "^9.22.0",
     "eslint-config-next": "15.0.0-canary.173",
+    "postcss": "^8.5.5",
+    "postcss-preset-mantine": "^1.17.0",
+    "postcss-simple-vars": "^7.0.1",
     "typescript": "5.5.4"
   }
 }

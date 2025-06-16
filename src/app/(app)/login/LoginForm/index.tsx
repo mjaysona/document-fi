@@ -1,15 +1,13 @@
 'use client'
 
-import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import React, { useCallback, useRef } from 'react'
-import { Button } from '@/app/(app)/components/Button'
-import { Input } from '@/app/(app)/components/Input'
-import { Message } from '@/app/(app)/components/Message'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { Alert, Anchor, Button, Container, Divider, FocusTrap, PasswordInput } from '@mantine/core'
 import { useAuth } from '../../providers/Auth'
-import classes from './index.module.scss'
-import { useForm } from 'react-hook-form'
-import { Tenant } from '@payload-types'
+import { isEmail, isNotEmpty, useForm } from '@mantine/form'
+import { TextInput } from '@mantine/core'
+import { AtSign, CircleAlert, CircleCheck, KeySquare } from 'lucide-react'
+import { ErrorMessage } from '~/src/collections/Users/enums'
 
 type FormData = {
   email: string
@@ -18,28 +16,40 @@ type FormData = {
 
 export const LoginForm: React.FC = () => {
   const searchParams = useSearchParams()
-  const allParams = searchParams.toString() ? `?${searchParams.toString()}` : ''
-  const redirect = useRef(searchParams.get('redirect'))
   const { login } = useAuth()
   const router = useRouter()
-  const [error, setError] = React.useState<null | string>(null)
-
-  const {
-    formState: { errors, isLoading },
-    handleSubmit,
-    register,
-  } = useForm<FormData>({
-    defaultValues: {
-      email: 'demo@payloadcms.com',
-      password: 'demo',
+  const [error, setError] = useState<null | string>(null)
+  const [isAttemptingLogin, setIsAttemptingLogin] = useState(false)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const { errors, getInputProps, key, onSubmit } = useForm({
+    mode: 'uncontrolled',
+    initialValues: {
+      email: 'super@payloadcms.com',
+      password: 'test',
+    },
+    validate: {
+      email: isEmail('Please enter a valid email address.'),
+      password: isNotEmpty('Please enter a password.'),
     },
   })
 
-  const onSubmit = useCallback(
+  useEffect(() => {
+    const successMessage = searchParams.get('success')
+
+    if (successMessage) {
+      setSuccessMessage(decodeURIComponent(successMessage))
+      // Clear the success message from the URL
+      router.replace('/login')
+    }
+  }, [searchParams])
+
+  const handleSubmit = useCallback(
     async (data: FormData) => {
       if (!data?.email || !data?.password) return
 
-      const response = await fetch('/api/users/account/login', {
+      setIsAttemptingLogin(true)
+
+      const rawResponse = await fetch('/api/users/account/login', {
         body: JSON.stringify({
           email: data.email,
           password: data.password,
@@ -49,78 +59,85 @@ export const LoginForm: React.FC = () => {
         },
         method: 'post',
       })
-      const responseData = await response.json()
+      const responseData = await rawResponse.json()
 
-      console.log('responseData', responseData)
-      console.log('response', response)
-
-      if (response?.status === 200 && responseData?.user) {
-        console.log('Login1')
-        if (redirect?.current) {
-          router.push(redirect.current)
-        } else {
-          router.push('/account')
-        }
-      } else if (response.status === 401 && responseData?.errors?.[0]?.message) {
-        const { errors } = responseData || 'There was a problem logging in on your account.'
-
-        console.log('Login2')
-
-        if (errors.length > 1) {
-          setError(errors)
-        } else {
-          setError(errors[0]?.message || 'There was a problem logging in on your account.')
-        }
+      if (rawResponse?.status === 200 && responseData?.user) {
+        setTimeout(() => {
+          router.push('/app')
+        }, 1000)
+      } else if (responseData?.errors?.[0]?.message) {
+        const { errors } = responseData
+        setError(errors[0]?.message)
+        setIsAttemptingLogin(false)
       } else {
-        console.log('Login3')
-        throw new Error('There was a problem logging in on your account.')
+        setError(ErrorMessage.LOGIN_TRY_AGAIN)
+        setIsAttemptingLogin(false)
       }
     },
     [login, router],
   )
 
   return (
-    <form className={classes.form} onSubmit={handleSubmit(onSubmit)}>
-      <p>
-        {'To log in, use the email '}
-        <b>demo@payloadcms.com</b>
-        {' with the password '}
-        <b>demo</b>
-        {'. To manage your users, '}
-        <Link href={`${process.env.NEXT_PUBLIC_SERVER_URL}/admin/collections/users`}>
-          login to the admin dashboard
-        </Link>
-        .
-      </p>
-      <Message className={classes.message} error={error} />
-      <Input
-        error={errors.email}
-        label="Email Address"
-        name="email"
-        register={register}
-        required
-        type="email"
-      />
-      <Input
-        error={errors.password}
-        label="Password"
-        name="password"
-        register={register}
-        required
-        type="password"
-      />
-      <Button
-        appearance="primary"
-        className={classes.submit}
-        disabled={isLoading}
-        label={isLoading ? 'Processing' : 'Login'}
-        type="submit"
-      />
-      <div>
-        <Link href={`/create-account${allParams}`}>Create an account</Link>
-        <br />
-        <Link href={`/recover-password${allParams}`}>Recover your password</Link>
-      </div>
+    <form onSubmit={onSubmit(handleSubmit)}>
+      {successMessage && !error && (
+        <Alert
+          variant="light"
+          color="green"
+          withCloseButton
+          icon={<CircleCheck />}
+          mb="md"
+          onClose={() => setSuccessMessage(null)}
+        >
+          {successMessage}
+        </Alert>
+      )}
+      {error && error.length > 0 && (
+        <Alert
+          variant="light"
+          color="red"
+          withCloseButton
+          icon={<CircleAlert />}
+          mb="md"
+          onClose={() => setError(null)}
+        >
+          {error}
+        </Alert>
+      )}
+      <FocusTrap>
+        <div>
+          <TextInput
+            data-autofocus
+            label="Email"
+            leftSection={<AtSign size={12} />}
+            name="email"
+            size="md"
+            error={errors.email}
+            key={key('email')}
+            {...getInputProps('email')}
+          />
+          <PasswordInput
+            mt="md"
+            size="md"
+            label="Password"
+            leftSection={<KeySquare size={12} />}
+            name="password"
+            error={errors.password}
+            key={key('password')}
+            {...getInputProps('password')}
+          />
+          <Button mt="lg" mb="lg" size="md" type="submit" fullWidth loading={isAttemptingLogin}>
+            Log in
+          </Button>
+          <Anchor fw={500} href={'/recover-password'}>
+            Forgot password?
+          </Anchor>
+          <Divider my="md" />
+          Don't have an account?{' '}
+          <Anchor fw={500} href={'/create-account'}>
+            Sign up
+          </Anchor>
+        </div>
+      </FocusTrap>
     </form>
   )
 }

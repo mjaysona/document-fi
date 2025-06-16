@@ -17,8 +17,6 @@ type Leaf = {
 }
 
 const serialize = (children: Children): React.ReactNode[] => {
-  console.log('Serializing children:::', children)
-
   return children.map((node, i) => {
     if (Text.isText(node)) {
       let text = <span dangerouslySetInnerHTML={{ __html: escapeHTML(node.text) }} />

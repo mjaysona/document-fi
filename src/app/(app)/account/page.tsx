@@ -27,7 +27,6 @@ export default async function Account() {
     <Fragment>
       <HydrateClientUser permissions={permissions} user={user} />
       <Gutter className={classes.account}>
-        <RenderParams className={classes.params} />
         <h1>Account</h1>
         <p>
           {`This is your account dashboard. Here you can update your account information and more. To manage all users, `}
@@ -37,7 +36,11 @@ export default async function Account() {
           .
         </p>
         <AccountForm />
-        <Button appearance="secondary" href="/logout" label="Log out" />
+        <Button
+          appearance="secondary"
+          href={`/login?success=${encodeURIComponent('You have been logged out.')}`}
+          label="Log out"
+        />
       </Gutter>
     </Fragment>
   )

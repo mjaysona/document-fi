@@ -7,9 +7,9 @@ import type { Page as PageType } from '@payload-types'
 
 import config from '@payload-config'
 import RichText from '@/app/(app)/components/RichText'
-import classes from './index.module.scss'
 import { getSelectedTenantToken } from '@/utilities/getSelectedTenant'
 import { LivePreviewListener } from '@/app/(app)/components/LivePreviewListener'
+import { Header } from '../components/Header'
 
 const queryPageByTenantSlug = async ({
   slug,
@@ -109,7 +109,8 @@ export default async function Page({ params: paramsPromise }: PageParams) {
   return (
     <Fragment>
       {draft && <LivePreviewListener />}
-      <main className={classes.page}>
+      <Header />
+      <main>
         <h1>{page?.title}</h1>
         <RichText content={page?.richText} />
       </main>

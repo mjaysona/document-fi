@@ -20,8 +20,6 @@ export default async function Page() {
   })
   const articles = data.docs || []
 
-  console.log('Articles:', articles)
-
   if (!articles.length) {
     return <Gutter>No articles found</Gutter>
   }

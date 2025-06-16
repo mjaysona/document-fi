@@ -4,26 +4,25 @@ import React from 'react'
 
 import { Message } from '../Message'
 
-export const RenderParams: React.FC<{
-  className?: string
-  message?: string
-  params?: string[]
-}> = ({ className, message, params = ['error', 'message', 'success'] }) => {
+export const RenderParams: React.FC = () => {
   const searchParams = useSearchParams()
-  const paramValues = params.map((param) => searchParams.get(param)).filter(Boolean)
 
-  if (paramValues.length) {
-    return (
-      <div className={className}>
-        {paramValues.map((paramValue) => (
-          <Message
-            key={paramValue}
-            message={(message || 'PARAM')?.replace('PARAM', paramValue || '')}
-          />
-        ))}
-      </div>
-    )
-  }
+  console.log('searchParams', searchParams)
+
+  // console.log(paramValues)
+
+  // if (paramValues.length) {
+  //   return (
+  //     <div className={className}>
+  //       {paramValues.map((paramValue) => (
+  //         <Message
+  //           key={paramValue}
+  //           message={(message || 'PARAM')?.replace('PARAM', paramValue || '')}
+  //         />
+  //       ))}
+  //     </div>
+  //   )
+  // }
 
   return null
 }

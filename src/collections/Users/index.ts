@@ -16,6 +16,7 @@ import { createUsers, deleteUsers, readUsers, updateUsers } from './access'
 import { externalUsersCreateAccount } from './endpoints/externalUsersCreateAccount'
 import { hasMultiTenancyFeature } from '../utilities/hasMultitenancyFeature'
 import { externalUsersUpdateAccount } from './endpoints/externalUsersUpdateAccount'
+import { externalUsersForgotPassword } from './endpoints/externalUsersForgotPassword'
 
 const defaultTenantArrayField = tenantsArrayField({
   tenantsArrayFieldName: 'tenants',
@@ -80,7 +81,12 @@ const Users: CollectionConfig = {
     defaultColumns: ['email', 'assignedRoles', 'tenants'],
   },
   auth: true,
-  endpoints: [externalUsersLogin, externalUsersCreateAccount, externalUsersUpdateAccount],
+  endpoints: [
+    externalUsersLogin,
+    externalUsersCreateAccount,
+    externalUsersUpdateAccount,
+    externalUsersForgotPassword,
+  ],
   fields: [
     {
       type: 'checkbox',
@@ -189,7 +195,7 @@ const Users: CollectionConfig = {
       defaultValue: async ({ req }) => {
         const selectedTenant = getSelectedTenantId(req) || ''
 
-        if (!selectedTenant) return [{}]
+        if (!selectedTenant) return []
 
         const defaultTenant = {
           tenant: selectedTenant,

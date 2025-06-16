@@ -11,11 +11,11 @@ export const user: NonNullable<Config['onInit']> = async (payload): Promise<void
   })
 
   if (existingUser?.docs?.length) {
-    console.log('"Super Admin" user already exists, skipping creation.')
+    console.info('"Super Admin" user already exists, skipping creation.')
     return
   }
 
-  console.log('Creating the "Super Admin" user...')
+  console.info('Creating the "Super Admin" user...')
 
   try {
     await payload.create({
@@ -26,7 +26,7 @@ export const user: NonNullable<Config['onInit']> = async (payload): Promise<void
         isSystemAccount: true,
       },
     })
-    console.log('"Super Admin" user created successfully.')
+    console.info('"Super Admin" user created successfully.')
   } catch (error) {
     console.error('Error creating the first user:', error)
   }

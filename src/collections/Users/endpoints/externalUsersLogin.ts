@@ -1,6 +1,7 @@
 import type { Collection, Endpoint } from 'payload'
 import { headersWithCors } from 'payload'
 import { APIError, generatePayloadCookie } from 'payload'
+import { ErrorMessage } from '../enums'
 
 // A custom endpoint that can be reached by POST request
 // at: /api/users/account/login
@@ -12,14 +13,12 @@ export const externalUsersLogin: Endpoint = {
       if (typeof req.json === 'function') {
         data = await req.json()
       }
-    } catch (error) {
-      console.log('Error parsing JSON data:', error)
-    }
+    } catch (error) {}
 
     const { email, password } = data
 
     if (!email || !password) {
-      throw new APIError('Email and password are required for login.', 400, null, true)
+      throw new APIError(ErrorMessage.MISSING_EMAIL_OR_PASSWORD, 401, null, false)
     }
 
     const foundUser = await req.payload.find({
@@ -39,9 +38,15 @@ export const externalUsersLogin: Endpoint = {
       },
     })
 
+    if (foundUser.totalDocs === 0) {
+      throw new APIError(ErrorMessage.LOGIN_INCORRECT_EMAIL_OR_PASSWORD, 401)
+    }
+
     if (foundUser.totalDocs > 0) {
+      let loginAttempt
+
       try {
-        const loginAttempt = await req.payload.login({
+        loginAttempt = await req.payload.login({
           collection: 'users',
           data: {
             email: foundUser.docs[0].email,
@@ -49,35 +54,39 @@ export const externalUsersLogin: Endpoint = {
           },
           req,
         })
-
-        if (loginAttempt?.token) {
-          const collection: Collection = (req.payload.collections as { [key: string]: Collection })[
-            'users'
-          ]
-          const cookie = generatePayloadCookie({
-            collectionAuthConfig: collection.config.auth,
-            cookiePrefix: req.payload.config.cookiePrefix,
-            token: loginAttempt.token,
-          })
-
-          return Response.json(loginAttempt, {
-            headers: headersWithCors({
-              headers: new Headers({
-                'Set-Cookie': cookie,
-              }),
-              req,
-            }),
-            status: 200,
-          })
+      } catch (error) {
+        if (error?.name === 'LockedAuth') {
+          throw new APIError(ErrorMessage.LOGIN_ACCOUNT_LOCKED, 401)
         }
 
-        throw new APIError('There was a problem logging in with your account.', 400, null, true)
-      } catch (e) {
-        throw new APIError('There was a problem logging in with your account.', 400, null, true)
+        throw new APIError(ErrorMessage.LOGIN_INCORRECT_EMAIL_OR_PASSWORD, 401)
+      }
+
+      if (loginAttempt?.token) {
+        const collection: Collection = (req.payload.collections as { [key: string]: Collection })[
+          'users'
+        ]
+        const cookie = generatePayloadCookie({
+          collectionAuthConfig: collection.config.auth,
+          cookiePrefix: req.payload.config.cookiePrefix,
+          token: loginAttempt.token,
+        })
+
+        return Response.json(loginAttempt, {
+          headers: headersWithCors({
+            headers: new Headers({
+              'Set-Cookie': cookie,
+            }),
+            req,
+          }),
+          status: 200,
+        })
+      } else {
+        throw new APIError(ErrorMessage.LOGIN_TRY_AGAIN, 400, null, false)
       }
     }
 
-    throw new APIError('Unable to login with the provided username and password.', 401, null, true)
+    throw new APIError(ErrorMessage.GENERIC, 401)
   },
   method: 'post',
   path: '/account/login',

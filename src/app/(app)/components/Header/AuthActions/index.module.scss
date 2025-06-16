@@ -1,5 +1,3 @@
-@use '../../../css/queries.scss' as *;
-
 .nav {
   display: flex;
   gap: calc(var(--base) / 4) var(--base);

@@ -12,8 +12,6 @@ type Props = {
 }
 
 const DashboardClient = ({ user }: Props) => {
-  console.log('dashboard client')
-
   const {
     config: {
       routes: { admin: adminRoute },

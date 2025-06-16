@@ -1,6 +1,7 @@
 import type { Collection, Endpoint } from 'payload'
 import { headersWithCors } from 'payload'
 import { APIError, generatePayloadCookie } from 'payload'
+import { ErrorMessage } from '../enums'
 
 // A custom endpoint that can be reached by POST request
 // at: /api/account/create
@@ -14,10 +15,14 @@ export const externalUsersCreateAccount: Endpoint = {
       }
     } catch (error) {}
 
-    const { email, password, domain } = data
+    const { email, password, passwordConfirm } = data
 
-    if (!email || !password) {
-      throw new APIError('Email and password are required for account creation.', 400, null, true)
+    if (!email || !password || !passwordConfirm) {
+      if (password !== passwordConfirm) {
+        throw new APIError(ErrorMessage.MISMATCHING_PASSWORDS, 400)
+      }
+
+      throw new APIError(ErrorMessage.MISSING_EMAIL_OR_PASSWORD, 400)
     }
 
     // Check if user already exists with this email for this tenant
@@ -35,7 +40,7 @@ export const externalUsersCreateAccount: Endpoint = {
     })
 
     if (existingUser.totalDocs > 0) {
-      throw new APIError('A user with this email already exists.', 400, null, true)
+      throw new APIError(ErrorMessage.CREATE_ACCOUNT_EMAIL_ALREADY_EXISTS, 400)
     }
 
     try {
@@ -48,44 +53,7 @@ export const externalUsersCreateAccount: Endpoint = {
         },
       })
 
-      // Log in the user after creation
-      const loginAttempt = await req.payload.login({
-        collection: 'users',
-        data: {
-          email,
-          password,
-        },
-        req,
-      })
-
-      if (loginAttempt?.token) {
-        const collection: Collection = (req.payload.collections as { [key: string]: Collection })[
-          'users'
-        ]
-        const cookie = generatePayloadCookie({
-          collectionAuthConfig: collection.config.auth,
-          cookiePrefix: req.payload.config.cookiePrefix,
-          token: loginAttempt.token,
-        })
-
-        return Response.json(
-          {
-            ...loginAttempt,
-            user: newUser,
-          },
-          {
-            headers: headersWithCors({
-              headers: new Headers({
-                'Set-Cookie': cookie,
-              }),
-              req,
-            }),
-            status: 201,
-          },
-        )
-      }
-
-      // Return the user without login if token generation failed
+      // Return the user without login
       return Response.json(
         {
           user: newUser,
@@ -99,7 +67,7 @@ export const externalUsersCreateAccount: Endpoint = {
         },
       )
     } catch (e) {
-      throw new APIError('There was a problem creating your account.', 400, null, true)
+      throw new APIError(ErrorMessage.GENERIC, 400)
     }
   },
   method: 'post',

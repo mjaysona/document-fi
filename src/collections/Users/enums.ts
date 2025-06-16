@@ -1,0 +1,12 @@
+export enum ErrorMessage {
+  CREATE_ACCOUNT_TRY_AGAIN = 'There was a problem creating your account. Please try again.',
+  CREATE_ACCOUNT_EMAIL_ALREADY_EXISTS = 'A user with the submitted email address already exists.',
+  FORGOT_PASSWORD_EMAIL_NOT_FOUND = 'We are not able to find a user with the submitted email address. If you believe this is a mistake, please contact support.',
+  GENERIC = 'Something went wrong while processing your request. Please try again later or contact support.',
+  LOGIN_ACCOUNT_LOCKED = 'Your account is locked due to too many failed login attempts. Please contact support.',
+  LOGIN_INCORRECT_EMAIL_OR_PASSWORD = 'Email or password is incorrect.',
+  LOGIN_TRY_AGAIN = 'There was a problem logging in on your account. Please try again.',
+  MISMATCHING_PASSWORDS = 'Passwords do not match.',
+  MISSING_EMAIL = 'Email is missing.',
+  MISSING_EMAIL_OR_PASSWORD = 'Email and password are missing.',
+}

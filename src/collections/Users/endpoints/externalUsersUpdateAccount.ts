@@ -9,19 +9,15 @@ export const externalUsersUpdateAccount: Endpoint = {
     let data: { [key: string]: string } = {}
     const userId = req?.routeParams?.id
 
-    console.log('Updating user account with ID:', userId)
-
     if (!userId) {
-      throw new APIError('User ID is required to update account.', 400, null, true)
+      throw new APIError('User ID is required to update account.', 400)
     }
 
     try {
       if (typeof req.json === 'function') {
         data = await req.json()
       }
-    } catch (error) {
-      console.log('Error parsing JSON data:', error)
-    }
+    } catch (error) {}
 
     const { firstName, lastName } = data
 
@@ -64,7 +60,7 @@ export const externalUsersUpdateAccount: Endpoint = {
         },
       )
     } catch (e) {
-      throw new APIError('Unable to update account.', 400, null, true)
+      throw new APIError('Unable to update account.', 400)
     }
   },
   method: 'patch',

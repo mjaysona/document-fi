@@ -3,16 +3,16 @@ import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 import React from 'react'
 import config from '~/payload.config'
-import { Gutter } from '../components/Gutter'
 import { RenderParams } from '../components/RenderParams'
 import { CreateAccountForm } from './CreateAccountForm'
-import classes from './index.module.scss'
+import { AuthPageWrapper } from '../components/AuthPageWrapper'
 
 export default async function CreateAccount() {
   const headers = await getHeaders()
   const host = headers.get('host')
   const payload = await getPayload({ config })
   const { user } = await payload.auth({ headers })
+  const title = 'Create a new account'
 
   if (user) {
     redirect(
@@ -23,10 +23,8 @@ export default async function CreateAccount() {
   }
 
   return (
-    <Gutter className={classes.createAccount}>
-      <h1>Create Account</h1>
-      <RenderParams />
-      <CreateAccountForm tenant={host?.split(':')[0]} />
-    </Gutter>
+    <AuthPageWrapper title={title}>
+      <CreateAccountForm domain={host?.split(':')[0]} />
+    </AuthPageWrapper>
   )
 }
