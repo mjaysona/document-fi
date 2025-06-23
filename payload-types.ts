@@ -135,10 +135,8 @@ export interface UserAuthOperations {
  */
 export interface User {
   id: string;
-  /**
-   * This user is a system generated account and cannot be deleted.
-   */
   isSystemAccount?: boolean | null;
+  isEmailVerified?: boolean | null;
   userRoles?: (string | UserRole)[] | null;
   assignedRoles?: (string | TenantRole)[] | null;
   tenants?:
@@ -148,9 +146,13 @@ export interface User {
         id?: string | null;
       }[]
     | null;
-  personalDetails?: {
-    firstName?: string | null;
-    lastName?: string | null;
+  name?: string | null;
+  providers?: {
+    google?: {
+      id?: string | null;
+      email?: string | null;
+      linkedAt?: string | null;
+    };
   };
   updatedAt: string;
   createdAt: string;
@@ -497,6 +499,7 @@ export interface PayloadMigration {
  */
 export interface UsersSelect<T extends boolean = true> {
   isSystemAccount?: T;
+  isEmailVerified?: T;
   userRoles?: T;
   assignedRoles?: T;
   tenants?:
@@ -506,11 +509,17 @@ export interface UsersSelect<T extends boolean = true> {
         roles?: T;
         id?: T;
       };
-  personalDetails?:
+  name?: T;
+  providers?:
     | T
     | {
-        firstName?: T;
-        lastName?: T;
+        google?:
+          | T
+          | {
+              id?: T;
+              email?: T;
+              linkedAt?: T;
+            };
       };
   updatedAt?: T;
   createdAt?: T;

@@ -17,6 +17,7 @@ import { externalUsersCreateAccount } from './endpoints/externalUsersCreateAccou
 import { hasMultiTenancyFeature } from '../utilities/hasMultitenancyFeature'
 import { externalUsersUpdateAccount } from './endpoints/externalUsersUpdateAccount'
 import { externalUsersForgotPassword } from './endpoints/externalUsersForgotPassword'
+import { externalUsersAuthProvider } from './endpoints/externalUsersAuthProvider'
 
 const defaultTenantArrayField = tenantsArrayField({
   tenantsArrayFieldName: 'tenants',
@@ -82,20 +83,36 @@ const Users: CollectionConfig = {
   },
   auth: true,
   endpoints: [
-    externalUsersLogin,
+    externalUsersAuthProvider,
     externalUsersCreateAccount,
-    externalUsersUpdateAccount,
     externalUsersForgotPassword,
+    externalUsersLogin,
+    externalUsersUpdateAccount,
   ],
   fields: [
     {
-      type: 'checkbox',
-      name: 'isSystemAccount',
+      type: 'row',
       admin: {
         position: 'sidebar',
-        description: 'This user is a system generated account and cannot be deleted.',
       },
-      defaultValue: false,
+      fields: [
+        {
+          type: 'checkbox',
+          name: 'isSystemAccount',
+          admin: {
+            width: '50%',
+          },
+          defaultValue: false,
+        },
+        {
+          type: 'checkbox',
+          name: 'isEmailVerified',
+          admin: {
+            readOnly: true,
+          },
+          defaultValue: false,
+        },
+      ],
     },
     {
       type: 'relationship',
@@ -195,7 +212,7 @@ const Users: CollectionConfig = {
       defaultValue: async ({ req }) => {
         const selectedTenant = getSelectedTenantId(req) || ''
 
-        if (!selectedTenant) return []
+        if (!selectedTenant) return
 
         const defaultTenant = {
           tenant: selectedTenant,
@@ -206,22 +223,63 @@ const Users: CollectionConfig = {
     },
     {
       type: 'group',
-      name: 'personalDetails',
+      label: 'Personal Details',
+      admin: {},
       fields: [
         {
           type: 'row',
           fields: [
             {
-              name: 'firstName',
-              label: 'First Name',
+              name: 'name',
+              label: 'Name',
               type: 'text',
-              maxLength: 50,
+            },
+          ],
+        },
+      ],
+    },
+    {
+      type: 'group',
+      name: 'providers',
+      label: 'Authentication Providers',
+      admin: {
+        readOnly: true,
+      },
+      fields: [
+        {
+          type: 'group',
+          name: 'google',
+          label: 'Google',
+          admin: {
+            hideGutter: true,
+          },
+          fields: [
+            {
+              name: 'id',
+              label: 'ID',
+              type: 'text',
+              defaultValue: '',
             },
             {
-              name: 'lastName',
-              label: 'Last Name',
-              type: 'text',
-              maxLength: 50,
+              type: 'row',
+              fields: [
+                {
+                  name: 'email',
+                  label: 'Email',
+                  type: 'text',
+                  defaultValue: '',
+                },
+                {
+                  name: 'linkedAt',
+                  label: 'Linked At',
+                  type: 'date',
+                  admin: {
+                    date: {
+                      displayFormat: 'MM/dd/YYYY HH:mm:ss',
+                    },
+                  },
+                },
+              ],
             },
           ],
         },

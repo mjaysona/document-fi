@@ -1,5 +1,4 @@
 import { headers as getHeaders } from 'next/headers.js'
-import Link from 'next/link'
 import { getPayload } from 'payload'
 import React, { Fragment } from 'react'
 

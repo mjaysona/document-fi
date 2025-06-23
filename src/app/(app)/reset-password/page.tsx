@@ -1,26 +1,24 @@
-import { headers as getHeaders } from 'next/headers.js'
-import { redirect } from 'next/navigation'
-import { getPayload } from 'payload'
 import React from 'react'
-import config from '~/payload.config'
-import { Gutter } from '../components/Gutter'
-import classes from './index.module.scss'
+import { AuthPageWrapper } from '../components/AuthPageWrapper'
 import { ResetPasswordForm } from './ResetPasswordForm'
+import { redirect } from 'next/navigation'
 
-export default async function ResetPassword() {
-  const headers = await getHeaders()
-  const payload = await getPayload({ config })
-  const { user } = await payload.auth({ headers })
+interface PageParams {
+  token: string
+  email: string
+}
 
-  if (user) {
-    redirect(`/account?message=${encodeURIComponent('Cannot reset password while logged in.')}`)
+export default async function Page({ params }: { params: PageParams }) {
+  const title = 'Reset password'
+  const { token, email } = params
+
+  if (!token || !email) {
+    redirect('/recover-password')
   }
 
   return (
-    <Gutter className={classes.resetPassword}>
-      <h1>Reset Password</h1>
-      <p>Please enter a new password below.</p>
-      <ResetPasswordForm />
-    </Gutter>
+    <AuthPageWrapper title={title}>
+      <ResetPasswordForm token={token} email={email} />
+    </AuthPageWrapper>
   )
 }

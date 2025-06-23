@@ -6,6 +6,7 @@ import { isEmail, useForm } from '@mantine/form'
 import { AtSign, CircleAlert } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { ErrorMessage } from '~/src/collections/Users/enums'
+import { requestPasswordReset } from '../../lib/auth-client'
 
 type FormData = {
   email: string
@@ -30,29 +31,26 @@ export const RecoverPasswordForm: React.FC = () => {
   const handleSubmit = useCallback(async (data: FormData) => {
     setIsSubmittingRequest(true)
 
-    const rawResponse = await fetch('/api/users/account/forgot-password', {
-      body: JSON.stringify({
+    requestPasswordReset(
+      {
         email: data.email,
-      }),
-      headers: {
-        'content-type': 'application/json',
       },
-      method: 'post',
-    })
-    const responseData = await rawResponse.json()
+      {
+        onSuccess: (ctx) => {
+          setSuccess(true)
+          setError('')
+        },
+        onError: (ctx) => {
+          setSuccess(false)
 
-    if (rawResponse.ok) {
-      setSuccess(true)
-      setError('')
-    } else if (responseData?.errors?.[0]?.message) {
-      setSuccess(false)
-      setError(responseData.errors[0].message)
-    } else {
-      setSuccess(false)
-      setError(ErrorMessage.LOGIN_TRY_AGAIN)
-    }
-
-    setIsSubmittingRequest(false)
+          if (ctx.error?.message) {
+            setError(ctx.error.message)
+          } else {
+            setError(ErrorMessage.PASSWORD_RESET_GENERIC)
+          }
+        },
+      },
+    )
   }, [])
 
   return (
@@ -95,8 +93,8 @@ export const RecoverPasswordForm: React.FC = () => {
               >
                 Reset my password
               </Button>
-              <Anchor fw={500} mt="md" href={`/login`}>
-                Back to login
+              <Anchor fw={500} mt="md" href={'/login'}>
+                I already have an account
               </Anchor>
             </div>
           </FocusTrap>
@@ -104,10 +102,8 @@ export const RecoverPasswordForm: React.FC = () => {
       )}
       {success && (
         <>
-          <Title order={5}>Your request to reset your password has been submitted.</Title>
-          <Text mt="md">
-            Check your email for a link that will allow you to securely reset your password.
-          </Text>
+          <Title order={5}>Your password reset request has been received.</Title>
+          <Text mt="md">Please check your email for a link to securely reset your password.</Text>
           <Button
             variant="outline"
             mt="xl"

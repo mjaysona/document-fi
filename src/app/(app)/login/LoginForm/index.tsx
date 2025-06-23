@@ -8,6 +8,7 @@ import { isEmail, isNotEmpty, useForm } from '@mantine/form'
 import { TextInput } from '@mantine/core'
 import { AtSign, CircleAlert, CircleCheck, KeySquare } from 'lucide-react'
 import { ErrorMessage } from '~/src/collections/Users/enums'
+import { authClient, signIn } from '../../lib/auth-client'
 
 type FormData = {
   email: string
@@ -20,12 +21,13 @@ export const LoginForm: React.FC = () => {
   const router = useRouter()
   const [error, setError] = useState<null | string>(null)
   const [isAttemptingLogin, setIsAttemptingLogin] = useState(false)
+  const [isAttemptingGoogleLogin, setIsAttemptingGoogleLogin] = useState(false)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const { errors, getInputProps, key, onSubmit } = useForm({
     mode: 'uncontrolled',
     initialValues: {
-      email: 'super@payloadcms.com',
-      password: 'test',
+      email: '',
+      password: '',
     },
     validate: {
       email: isEmail('Please enter a valid email address.'),
@@ -44,38 +46,46 @@ export const LoginForm: React.FC = () => {
   }, [searchParams])
 
   const handleSubmit = useCallback(
-    async (data: FormData) => {
-      if (!data?.email || !data?.password) return
+    async (formData: FormData) => {
+      if (!formData?.email || !formData?.password) return
 
-      setIsAttemptingLogin(true)
-
-      const rawResponse = await fetch('/api/users/account/login', {
-        body: JSON.stringify({
-          email: data.email,
-          password: data.password,
-        }),
-        headers: {
-          'content-type': 'application/json',
+      await signIn.email(
+        {
+          email: formData.email,
+          password: formData.password,
         },
-        method: 'post',
-      })
-      const responseData = await rawResponse.json()
+        {
+          onRequest: (ctx) => {
+            setIsAttemptingLogin(true)
+          },
+          onSuccess: async (ctx) => {
+            setIsAttemptingLogin(false)
 
-      if (rawResponse?.status === 200 && responseData?.user) {
-        setTimeout(() => {
-          router.push('/app')
-        }, 1000)
-      } else if (responseData?.errors?.[0]?.message) {
-        const { errors } = responseData
-        setError(errors[0]?.message)
-        setIsAttemptingLogin(false)
-      } else {
-        setError(ErrorMessage.LOGIN_TRY_AGAIN)
-        setIsAttemptingLogin(false)
-      }
+            router.push('/app')
+          },
+          onError: (ctx) => {
+            setIsAttemptingLogin(false)
+
+            if (ctx.error?.message) {
+              setError(ctx.error.message)
+            } else {
+              setError(ErrorMessage.LOGIN_TRY_AGAIN)
+            }
+          },
+        },
+      )
     },
     [login, router],
   )
+
+  const loginWithGoogle = () => {
+    setIsAttemptingGoogleLogin(true)
+
+    authClient.signIn.social({
+      provider: 'google',
+      callbackURL: '/app',
+    })
+  }
 
   return (
     <form onSubmit={onSubmit(handleSubmit)}>
@@ -105,6 +115,19 @@ export const LoginForm: React.FC = () => {
       )}
       <FocusTrap>
         <div>
+          <Button
+            leftSection={<img src="/google-logo-01.svg" alt="Google Logo" width={20} height={20} />}
+            variant="default"
+            size="md"
+            fullWidth
+            loading={isAttemptingGoogleLogin}
+            mb="md"
+            type="button"
+            onClick={loginWithGoogle}
+          >
+            Continue with Google
+          </Button>
+          <Divider my="md" label="or" />
           <TextInput
             data-autofocus
             label="Email"
