@@ -1,9 +1,8 @@
 'use client'
 
-import React, { useCallback, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import React, { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { hasLength, isEmail, matchesField, useForm } from '@mantine/form'
-import { useAuth } from '../../providers/Auth'
 import { Tenant } from '@payload-types'
 import {
   Alert,
@@ -32,7 +31,6 @@ type FormData = {
 }
 
 export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({ defaultRole, tenant }) => {
-  const searchParams = useSearchParams()
   const router = useRouter()
   const [error, setError] = useState<null | string | string[]>(null)
   const [isCreatingAccount, setIsCreatingAccount] = useState(false)

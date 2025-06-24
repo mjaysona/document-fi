@@ -1,16 +1,25 @@
 'use client'
 
-import { AppShell, Burger, NavLink, Stack } from '@mantine/core'
+import { Alert, AppShell, Burger, NavLink, Stack, Text } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
-import { LogOut } from 'lucide-react'
+import { CircleCheck, LogOut } from 'lucide-react'
 import { signOut } from '../lib/auth-client'
-import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 export default function ({ params: paramsPromise }: { params: Promise<{ slug: string[] }> }) {
   const [opened, { toggle }] = useDisclosure()
   const [isSigningOut, setIsSigningOut] = useState<Boolean>(false)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const verified = searchParams.get('verified')
+
+  useEffect(() => {
+    if (verified) {
+      setSuccessMessage('Your account has been verified.')
+    }
+  }, [verified])
 
   const logout = async () => {
     await signOut({
@@ -59,7 +68,21 @@ export default function ({ params: paramsPromise }: { params: Promise<{ slug: st
         </Stack>
       </AppShell.Navbar>
 
-      <AppShell.Main>Main</AppShell.Main>
+      <AppShell.Main>
+        {successMessage && (
+          <Alert
+            variant="light"
+            color="green"
+            withCloseButton
+            icon={<CircleCheck />}
+            mb="md"
+            onClose={() => {}}
+          >
+            {successMessage}
+          </Alert>
+        )}
+        <Text>Welcome!</Text>
+      </AppShell.Main>
     </AppShell>
   )
 }

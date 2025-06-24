@@ -2,8 +2,7 @@
 
 import { useRouter, useSearchParams } from 'next/navigation'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { Alert, Anchor, Button, Container, Divider, FocusTrap, PasswordInput } from '@mantine/core'
-import { useAuth } from '../../providers/Auth'
+import { Alert, Anchor, Button, Divider, FocusTrap, PasswordInput, Text } from '@mantine/core'
 import { isEmail, isNotEmpty, useForm } from '@mantine/form'
 import { TextInput } from '@mantine/core'
 import { AtSign, CircleAlert, CircleCheck, KeySquare } from 'lucide-react'
@@ -17,13 +16,13 @@ type FormData = {
 
 export const LoginForm: React.FC = () => {
   const searchParams = useSearchParams()
-  const { login } = useAuth()
   const router = useRouter()
   const [error, setError] = useState<null | string>(null)
   const [isAttemptingLogin, setIsAttemptingLogin] = useState(false)
   const [isAttemptingGoogleLogin, setIsAttemptingGoogleLogin] = useState(false)
+  const [isEmailForVerification, setIsEmailForVerification] = useState(false)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
-  const { errors, getInputProps, key, onSubmit } = useForm({
+  const form = useForm({
     mode: 'uncontrolled',
     initialValues: {
       email: '',
@@ -34,6 +33,7 @@ export const LoginForm: React.FC = () => {
       password: isNotEmpty('Please enter a password.'),
     },
   })
+  const { errors, getInputProps, key, onSubmit } = form
 
   useEffect(() => {
     const successMessage = searchParams.get('success')
@@ -45,38 +45,42 @@ export const LoginForm: React.FC = () => {
     }
   }, [searchParams])
 
-  const handleSubmit = useCallback(
-    async (formData: FormData) => {
-      if (!formData?.email || !formData?.password) return
+  const handleSubmit = async (formData: FormData) => {
+    if (!formData?.email || !formData?.password) return
 
-      await signIn.email(
-        {
-          email: formData.email,
-          password: formData.password,
+    await signIn.email(
+      {
+        email: formData.email,
+        password: formData.password,
+      },
+      {
+        onRequest: (ctx) => {
+          setIsAttemptingLogin(true)
         },
-        {
-          onRequest: (ctx) => {
-            setIsAttemptingLogin(true)
-          },
-          onSuccess: async (ctx) => {
-            setIsAttemptingLogin(false)
+        onSuccess: async (ctx) => {
+          setIsAttemptingLogin(false)
 
-            router.push('/app')
-          },
-          onError: (ctx) => {
-            setIsAttemptingLogin(false)
+          router.push('/app')
+        },
+        onError: (ctx) => {
+          setIsAttemptingLogin(false)
 
-            if (ctx.error?.message) {
+          if (ctx.error) {
+            if (ctx.error.status === 403) {
+              setError(ErrorMessage.LOGIN_VERIFY_EMAIL)
+              setIsEmailForVerification(true)
+            } else if (ctx.error?.message) {
               setError(ctx.error.message)
             } else {
               setError(ErrorMessage.LOGIN_TRY_AGAIN)
             }
-          },
+          } else {
+            setError(ErrorMessage.LOGIN_TRY_AGAIN)
+          }
         },
-      )
-    },
-    [login, router],
-  )
+      },
+    )
+  }
 
   const loginWithGoogle = () => {
     setIsAttemptingGoogleLogin(true)
@@ -110,7 +114,13 @@ export const LoginForm: React.FC = () => {
           mb="md"
           onClose={() => setError(null)}
         >
-          {error}
+          {error}{' '}
+          {isEmailForVerification && (
+            <Text size="sm" component="span">
+              If you have not received an email, please check your spam folder or{' '}
+              <Anchor href={`/verify-account?email=${form.values.email}`}>verify it again</Anchor>.
+            </Text>
+          )}
         </Alert>
       )}
       <FocusTrap>

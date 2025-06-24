@@ -6,6 +6,7 @@ export const authClient = createAuthClient({
 export const {
   resetPassword,
   requestPasswordReset,
+  sendVerificationEmail,
   signIn,
   signOut,
   signUp,

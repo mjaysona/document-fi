@@ -3,7 +3,6 @@ import { getPayload } from 'payload'
 import React, { Fragment } from 'react'
 
 import config from '~/payload.config'
-import { HydrateClientUser } from '@/app/(app)/components/HydrateClientUser'
 import { Gutter } from './components/Gutter'
 import { Header } from './components/Header'
 
@@ -14,7 +13,6 @@ export default async function HomePage() {
 
   return (
     <Fragment>
-      <HydrateClientUser permissions={permissions} user={user} />
       <Header />
       <main>
         <Gutter>

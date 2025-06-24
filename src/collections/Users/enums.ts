@@ -7,9 +7,11 @@ export enum ErrorMessage {
   LOGIN_INCORRECT_EMAIL_OR_PASSWORD = 'Email or password is incorrect.',
   LOGIN_TRY_AGAIN = 'There was a problem logging in on your account. Please try again.',
   LOGIN_FAILED_GOOGLE = 'There was a problem logging in with Google. Please try again.',
+  LOGIN_VERIFY_EMAIL = 'Please verify your email address.',
   MISMATCHING_PASSWORDS = 'Passwords do not match.',
   MISSING_EMAIL = 'Email is missing.',
   MISSING_EMAIL_OR_PASSWORD = 'Email and password are missing.',
   PASSWORD_RESET_GENERIC = 'There was a problem resetting your password. Please try again.',
   INVALID_TOKEN_GENERIC = 'The password reset url is invalid or has expired.',
+  VERIFY_GENERIC = 'There was a problem sending the verification email. Please try again.',
 }
