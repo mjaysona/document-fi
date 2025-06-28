@@ -2,12 +2,12 @@
 
 import { useRouter, useSearchParams } from 'next/navigation'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { Alert, Anchor, Button, Container, Divider, FocusTrap, PasswordInput } from '@mantine/core'
-import { useAuth } from '../../providers/Auth'
+import { Alert, Anchor, Button, Divider, FocusTrap, PasswordInput, Text } from '@mantine/core'
 import { isEmail, isNotEmpty, useForm } from '@mantine/form'
 import { TextInput } from '@mantine/core'
 import { AtSign, CircleAlert, CircleCheck, KeySquare } from 'lucide-react'
 import { ErrorMessage } from '~/src/collections/Users/enums'
+import { authClient, signIn } from '../../lib/auth-client'
 
 type FormData = {
   email: string
@@ -16,22 +16,24 @@ type FormData = {
 
 export const LoginForm: React.FC = () => {
   const searchParams = useSearchParams()
-  const { login } = useAuth()
   const router = useRouter()
   const [error, setError] = useState<null | string>(null)
   const [isAttemptingLogin, setIsAttemptingLogin] = useState(false)
+  const [isAttemptingGoogleLogin, setIsAttemptingGoogleLogin] = useState(false)
+  const [isEmailForVerification, setIsEmailForVerification] = useState(false)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
-  const { errors, getInputProps, key, onSubmit } = useForm({
+  const form = useForm({
     mode: 'uncontrolled',
     initialValues: {
-      email: 'super@payloadcms.com',
-      password: 'test',
+      email: '',
+      password: '',
     },
     validate: {
       email: isEmail('Please enter a valid email address.'),
       password: isNotEmpty('Please enter a password.'),
     },
   })
+  const { errors, getInputProps, key, onSubmit } = form
 
   useEffect(() => {
     const successMessage = searchParams.get('success')
@@ -43,39 +45,51 @@ export const LoginForm: React.FC = () => {
     }
   }, [searchParams])
 
-  const handleSubmit = useCallback(
-    async (data: FormData) => {
-      if (!data?.email || !data?.password) return
+  const handleSubmit = async (formData: FormData) => {
+    if (!formData?.email || !formData?.password) return
 
-      setIsAttemptingLogin(true)
-
-      const rawResponse = await fetch('/api/users/account/login', {
-        body: JSON.stringify({
-          email: data.email,
-          password: data.password,
-        }),
-        headers: {
-          'content-type': 'application/json',
+    await signIn.email(
+      {
+        email: formData.email,
+        password: formData.password,
+      },
+      {
+        onRequest: (ctx) => {
+          setIsAttemptingLogin(true)
         },
-        method: 'post',
-      })
-      const responseData = await rawResponse.json()
+        onSuccess: async (ctx) => {
+          setIsAttemptingLogin(false)
 
-      if (rawResponse?.status === 200 && responseData?.user) {
-        setTimeout(() => {
           router.push('/app')
-        }, 1000)
-      } else if (responseData?.errors?.[0]?.message) {
-        const { errors } = responseData
-        setError(errors[0]?.message)
-        setIsAttemptingLogin(false)
-      } else {
-        setError(ErrorMessage.LOGIN_TRY_AGAIN)
-        setIsAttemptingLogin(false)
-      }
-    },
-    [login, router],
-  )
+        },
+        onError: (ctx) => {
+          setIsAttemptingLogin(false)
+
+          if (ctx.error) {
+            if (ctx.error.status === 403) {
+              setError(ErrorMessage.LOGIN_VERIFY_EMAIL)
+              setIsEmailForVerification(true)
+            } else if (ctx.error?.message) {
+              setError(ctx.error.message)
+            } else {
+              setError(ErrorMessage.LOGIN_TRY_AGAIN)
+            }
+          } else {
+            setError(ErrorMessage.LOGIN_TRY_AGAIN)
+          }
+        },
+      },
+    )
+  }
+
+  const loginWithGoogle = () => {
+    setIsAttemptingGoogleLogin(true)
+
+    authClient.signIn.social({
+      provider: 'google',
+      callbackURL: '/app',
+    })
+  }
 
   return (
     <form onSubmit={onSubmit(handleSubmit)}>
@@ -100,11 +114,30 @@ export const LoginForm: React.FC = () => {
           mb="md"
           onClose={() => setError(null)}
         >
-          {error}
+          {error}{' '}
+          {isEmailForVerification && (
+            <Text size="sm" component="span">
+              If you have not received an email, please check your spam folder or{' '}
+              <Anchor href={`/verify-account?email=${form.values.email}`}>verify it again</Anchor>.
+            </Text>
+          )}
         </Alert>
       )}
       <FocusTrap>
         <div>
+          <Button
+            leftSection={<img src="/google-logo-01.svg" alt="Google Logo" width={20} height={20} />}
+            variant="default"
+            size="md"
+            fullWidth
+            loading={isAttemptingGoogleLogin}
+            mb="md"
+            type="button"
+            onClick={loginWithGoogle}
+          >
+            Continue with Google
+          </Button>
+          <Divider my="md" label="or" />
           <TextInput
             data-autofocus
             label="Email"

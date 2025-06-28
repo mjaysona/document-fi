@@ -6,13 +6,17 @@ import { isEmail, useForm } from '@mantine/form'
 import { AtSign, CircleAlert } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { ErrorMessage } from '~/src/collections/Users/enums'
-import { requestPasswordReset } from '../../lib/auth-client'
+import { sendVerificationEmail } from '../../lib/auth-client'
+
+interface VerifyAccountFormProps {
+  email?: string
+}
 
 type FormData = {
   email: string
 }
 
-export const RecoverPasswordForm: React.FC = () => {
+export const VerifyAccountForm: React.FC<VerifyAccountFormProps> = ({ email }) => {
   const [error, setError] = useState<null | string>(null)
   const [success, setSuccess] = useState(false)
   const router = useRouter()
@@ -21,7 +25,7 @@ export const RecoverPasswordForm: React.FC = () => {
   const { errors, getInputProps, key, onSubmit } = useForm({
     mode: 'uncontrolled',
     initialValues: {
-      email: '',
+      email,
     },
     validate: {
       email: isEmail('Please enter a valid email address.'),
@@ -29,25 +33,25 @@ export const RecoverPasswordForm: React.FC = () => {
   })
 
   const handleSubmit = useCallback(async (data: FormData) => {
-    setIsSubmittingRequest(true)
-
-    requestPasswordReset(
+    sendVerificationEmail(
       {
         email: data.email,
+        callbackURL: '/app?verified=true',
       },
       {
-        onSuccess: (ctx) => {
-          setSuccess(true)
-          setError('')
+        onRequest: () => {
+          setIsSubmittingRequest(true)
+          setError(null)
         },
-        onError: (ctx) => {
+        onSuccess: () => {
+          setSuccess(true)
+          setError(null)
+          setIsSubmittingRequest(false)
+        },
+        onError: ({ error }) => {
           setSuccess(false)
-
-          if (ctx.error?.message) {
-            setError(ctx.error.message)
-          } else {
-            setError(ErrorMessage.PASSWORD_RESET_GENERIC)
-          }
+          setError(error?.message ? error.message : ErrorMessage.VERIFY_GENERIC)
+          setIsSubmittingRequest(false)
         },
       },
     )
@@ -71,7 +75,7 @@ export const RecoverPasswordForm: React.FC = () => {
                   {error}
                 </Alert>
               )}
-              <Text>Please enter your email address below to receive a password reset link.</Text>
+              <Text>Please enter your email address below to receive a verification link.</Text>
               <TextInput
                 data-autofocus
                 label="Email"
@@ -91,10 +95,10 @@ export const RecoverPasswordForm: React.FC = () => {
                 fullWidth
                 loading={isSubmittingRequest}
               >
-                Reset my password
+                Verify my email
               </Button>
               <Anchor fw={500} mt="md" href={'/login'}>
-                I already have an account
+                Back to login
               </Anchor>
             </div>
           </FocusTrap>
@@ -102,8 +106,8 @@ export const RecoverPasswordForm: React.FC = () => {
       )}
       {success && (
         <>
-          <Title order={5}>Your password reset request has been received.</Title>
-          <Text mt="md">Please check your email for a link to securely reset your password.</Text>
+          <Title order={5}>Your verification email has been sent.</Title>
+          <Text mt="md">Please check your email for a link to verify your account.</Text>
           <Button
             variant="outline"
             mt="xl"

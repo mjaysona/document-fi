@@ -1,12 +1,13 @@
 import type { Endpoint } from 'payload'
 import { headersWithCors } from 'payload'
 import { APIError } from 'payload'
+import { User } from '~/payload-types'
 
 // A custom endpoint that can be reached by POST request
 // at: /api/users/account/update
 export const externalUsersUpdateAccount: Endpoint = {
   handler: async (req) => {
-    let data: { [key: string]: string } = {}
+    let data: Partial<User> = {}
     const userId = req?.routeParams?.id
 
     if (!userId) {
@@ -19,8 +20,6 @@ export const externalUsersUpdateAccount: Endpoint = {
       }
     } catch (error) {}
 
-    const { firstName, lastName } = data
-
     try {
       // Find the user by email
       await req.payload.update({
@@ -30,12 +29,7 @@ export const externalUsersUpdateAccount: Endpoint = {
             equals: userId,
           },
         },
-        data: {
-          personalDetails: {
-            firstName,
-            lastName,
-          },
-        },
+        data,
       })
 
       const updatedUser = await req.payload.find({

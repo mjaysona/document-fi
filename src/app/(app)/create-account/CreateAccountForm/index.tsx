@@ -1,24 +1,25 @@
 'use client'
 
-import React, { useCallback, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { hasLength, isEmail, useForm } from '@mantine/form'
-import { useAuth } from '../../providers/Auth'
+import React, { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { hasLength, isEmail, matchesField, useForm } from '@mantine/form'
 import { Tenant } from '@payload-types'
 import {
   Alert,
   Anchor,
   Button,
+  Divider,
   FocusTrap,
   PasswordInput,
   Text,
   TextInput,
-  Title,
 } from '@mantine/core'
-import { AtSign, CheckCircle, CircleAlert, KeySquare } from 'lucide-react'
+import { AtSign, CircleAlert, KeySquare } from 'lucide-react'
 import { ErrorMessage } from '~/src/collections/Users/enums'
+import { signUp } from '@/app/(app)/lib/auth-client'
 
 type CreateAccountFormProps = {
+  defaultRole: string
   tenant?: Tenant['id']
 }
 
@@ -29,9 +30,7 @@ type FormData = {
   tenant?: CreateAccountFormProps['tenant']
 }
 
-export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({ tenant }) => {
-  const searchParams = useSearchParams()
-  const { login } = useAuth()
+export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({ defaultRole, tenant }) => {
   const router = useRouter()
   const [error, setError] = useState<null | string | string[]>(null)
   const [isCreatingAccount, setIsCreatingAccount] = useState(false)
@@ -46,42 +45,54 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({ tenant }) 
     validate: {
       email: isEmail('Please enter a valid email address.'),
       password: hasLength({ min: 4 }, 'Password must be at least 4 characters long.'),
-      passwordConfirm: (value, values) => {
-        if (value !== values.password) {
-          return ErrorMessage.MISMATCHING_PASSWORDS
-        }
-      },
+      passwordConfirm: matchesField('password', 'Passwords do not match.'),
     },
   })
 
-  const handleSubmit = useCallback(
-    async (data: FormData) => {
-      setIsCreatingAccount(true)
-
-      const rawResponse = await fetch('/api/users/account/create', {
-        body: JSON.stringify(data),
-        headers: {
-          'Content-Type': 'application/json',
+  const handleSubmit = async (formData: FormData) => {
+    await signUp.email(
+      {
+        email: formData.email,
+        password: formData.password,
+        name: '',
+        isSystemAccount: false,
+      },
+      {
+        onRequest: (ctx) => {
+          setIsCreatingAccount(true)
         },
-        method: 'POST',
-      })
-      const responseData = await rawResponse.json()
+        onSuccess: async (ctx) => {
+          setIsCreatingAccount(false)
 
-      if ((rawResponse?.status === 200 || rawResponse?.status === 201) && responseData?.user) {
-        router.push(
-          `/login?success=${encodeURIComponent('You have successfully created an account, to continue please log in.')}`,
-        )
-      } else if (responseData?.errors?.[0]?.message) {
-        const { errors } = responseData
-        setError(errors[0]?.message)
-      } else {
-        setError(ErrorMessage.CREATE_ACCOUNT_TRY_AGAIN)
-      }
+          const response = await fetch(`/api/users/account/${ctx?.data?.user?.id}/update`, {
+            body: JSON.stringify({
+              role: [defaultRole],
+            }),
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            method: 'PATCH',
+          })
 
-      setIsCreatingAccount(false)
-    },
-    [login, router, searchParams],
-  )
+          if (!response?.ok) {
+            console.error('Failed to update user role after account creation.')
+          }
+
+          router.push(
+            `/login?success=${encodeURIComponent('You have successfully created an account, to continue please log in.')}`,
+          )
+        },
+        onError: (ctx) => {
+          setIsCreatingAccount(false)
+
+          if (ctx.error?.message) {
+            setError(ctx.error.message)
+          } else {
+            setError(ErrorMessage.CREATE_ACCOUNT_TRY_AGAIN)
+          }
+        },
+      },
+    )
+  }
 
   return (
     <form onSubmit={onSubmit(handleSubmit)}>
@@ -99,6 +110,17 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({ tenant }) 
               {error}
             </Alert>
           )}
+          <Button
+            leftSection={<img src="/google-logo-01.svg" alt="Google Logo" width={20} height={20} />}
+            variant="default"
+            size="md"
+            fullWidth
+            mb="md"
+            type="button"
+          >
+            Continue with Google
+          </Button>
+          <Divider my="md" label="or" />
           <TextInput
             data-autofocus
             label="Email"

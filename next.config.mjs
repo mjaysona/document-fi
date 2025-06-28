@@ -21,16 +21,16 @@ const nextConfig = {
         source: '/admin/:path*',
         destination: '/admin/:path*',
       },
-      {
-        source: '/:path*',
-        destination: '/:tenant/:path*',
-        has: [
-          {
-            type: 'host',
-            value: '(?<tenant>.*)',
-          },
-        ],
-      },
+      // {
+      //   source: '/:path*',
+      //   destination: '/:tenant/:path*',
+      //   has: [
+      //     {
+      //       type: 'host',
+      //       value: '(?<tenant>.*)',
+      //     },
+      //   ],
+      // },
     ]
   },
 }

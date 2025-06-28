@@ -1,6 +1,6 @@
-import type { Collection, Endpoint } from 'payload'
+import type { Endpoint } from 'payload'
 import { headersWithCors } from 'payload'
-import { APIError, generatePayloadCookie } from 'payload'
+import { APIError } from 'payload'
 import { ErrorMessage } from '../enums'
 
 // A custom endpoint that can be reached by POST request
