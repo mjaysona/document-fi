@@ -1,31 +1,37 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import React from 'react'
-
-import { Gutter } from '../Gutter'
 import { AuthActions } from './AuthActions'
-import classes from './index.module.scss'
+import { auth } from '@/app/(app)/lib/auth'
+import { headers } from 'next/headers'
+import { Group } from '@mantine/core'
 
-export const Header = () => {
+export const Header: React.FC = async () => {
+  let session
+  let user
+
+  try {
+    session = await auth.api.getSession({
+      headers: await headers(),
+    })
+    user = session?.user
+  } catch (error) {
+    console.error('Error fetching session:', error)
+  }
+
   return (
-    <header className={classes.header}>
-      <Gutter className={classes.wrap}>
-        <Link className={classes.logo} href="/">
-          <picture>
-            <source
-              media="(prefers-color-scheme: dark)"
-              srcSet="/logo-placeholder-01-light--static.svg"
-            />
-            <Image
-              alt="Payload Logo"
-              height={30}
-              src="/logo-placeholder-01-dark--static.svg"
-              width={150}
-            />
-          </picture>
+    <header>
+      <Group justify="space-between" py={16}>
+        <Link href="/">
+          <Image
+            alt="Payload Logo"
+            height={30}
+            src="/logo-placeholder-01-dark--static.svg"
+            width={150}
+          />
         </Link>
         <AuthActions />
-      </Gutter>
+      </Group>
     </header>
   )
 }

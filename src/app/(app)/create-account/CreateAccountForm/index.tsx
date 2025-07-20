@@ -15,7 +15,7 @@ import {
   TextInput,
 } from '@mantine/core'
 import { AtSign, CircleAlert, KeySquare } from 'lucide-react'
-import { ErrorMessage } from '~/src/collections/Users/enums'
+import { BetterAuthStatusCode, ErrorMessage } from '~/src/collections/Users/enums'
 import { signUp } from '@/app/(app)/lib/auth-client'
 
 type CreateAccountFormProps = {
@@ -30,7 +30,7 @@ type FormData = {
   tenant?: CreateAccountFormProps['tenant']
 }
 
-export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({ defaultRole, tenant }) => {
+export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({ defaultRole }) => {
   const router = useRouter()
   const [error, setError] = useState<null | string | string[]>(null)
   const [isCreatingAccount, setIsCreatingAccount] = useState(false)
@@ -55,16 +55,13 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({ defaultRol
         email: formData.email,
         password: formData.password,
         name: '',
-        isSystemAccount: false,
       },
       {
-        onRequest: (ctx) => {
+        onRequest: () => {
           setIsCreatingAccount(true)
         },
-        onSuccess: async (ctx) => {
-          setIsCreatingAccount(false)
-
-          const response = await fetch(`/api/users/account/${ctx?.data?.user?.id}/update`, {
+        onSuccess: async ({ data }) => {
+          const response = await fetch(`/api/users/account/${data?.user?.id}/update`, {
             body: JSON.stringify({
               role: [defaultRole],
             }),
@@ -78,17 +75,21 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({ defaultRol
           }
 
           router.push(
-            `/login?success=${encodeURIComponent('You have successfully created an account, to continue please log in.')}`,
+            '/login?success=' +
+              encodeURIComponent(
+                'You have created an account. Please check your email to verify it.',
+              ),
           )
         },
-        onError: (ctx) => {
-          setIsCreatingAccount(false)
+        onError: ({ error }) => {
+          const errorMessage =
+            BetterAuthStatusCode[error?.code as keyof typeof BetterAuthStatusCode] ||
+            error?.code ||
+            error?.message ||
+            ErrorMessage.CREATE_ACCOUNT_TRY_AGAIN
 
-          if (ctx.error?.message) {
-            setError(ctx.error.message)
-          } else {
-            setError(ErrorMessage.CREATE_ACCOUNT_TRY_AGAIN)
-          }
+          setError(errorMessage)
+          setIsCreatingAccount(false)
         },
       },
     )
@@ -106,6 +107,7 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({ defaultRol
               icon={<CircleAlert />}
               mb="md"
               onClose={() => setError(null)}
+              style={{ wordBreak: 'break-word' }}
             >
               {error}
             </Alert>

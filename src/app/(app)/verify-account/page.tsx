@@ -8,7 +8,7 @@ interface SearchParams {
 
 export default async function Page({ searchParams }: { searchParams: SearchParams }) {
   const title = 'Verify Account'
-  const { email } = searchParams
+  const { email } = await searchParams
 
   return (
     <AuthPageWrapper title={title}>

@@ -34,6 +34,8 @@ import Pages from '@/collections/Pages'
 import { nestedDocsPlugin } from '@payloadcms/plugin-nested-docs'
 import UserRoles from './src/collections/UserRoles'
 import { initialData } from './src/seed/db'
+import Sessions from '@/collections/Sessions'
+import Accounts from '@/collections/Accounts'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -74,6 +76,8 @@ export default buildConfig({
     UserRoles,
     Features,
     Media,
+    Accounts,
+    Sessions,
   ],
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {

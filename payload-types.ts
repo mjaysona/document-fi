@@ -77,6 +77,8 @@ export interface Config {
     'user-roles': UserRole;
     features: Feature;
     media: Media;
+    accounts: Account;
+    sessions: Session;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -93,6 +95,8 @@ export interface Config {
     'user-roles': UserRolesSelect<false> | UserRolesSelect<true>;
     features: FeaturesSelect<false> | FeaturesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    accounts: AccountsSelect<false> | AccountsSelect<true>;
+    sessions: SessionsSelect<false> | SessionsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -135,8 +139,6 @@ export interface UserAuthOperations {
  */
 export interface User {
   id: string;
-  isSystemAccount?: boolean | null;
-  isEmailVerified?: boolean | null;
   userRoles?: (string | UserRole)[] | null;
   assignedRoles?: (string | TenantRole)[] | null;
   tenants?:
@@ -147,13 +149,10 @@ export interface User {
       }[]
     | null;
   name?: string | null;
-  providers?: {
-    google?: {
-      id?: string | null;
-      email?: string | null;
-      linkedAt?: string | null;
-    };
-  };
+  image?: string | null;
+  isSystemAccount?: boolean | null;
+  isEmailVerified?: boolean | null;
+  isFresh?: boolean | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -163,6 +162,13 @@ export interface User {
   hash?: string | null;
   loginAttempts?: number | null;
   lockUntil?: string | null;
+  sessions?:
+    | {
+        id: string;
+        createdAt?: string | null;
+        expiresAt: string;
+      }[]
+    | null;
   password?: string | null;
 }
 /**
@@ -406,6 +412,35 @@ export interface Media {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "accounts".
+ */
+export interface Account {
+  id: string;
+  userId?: (string | null) | User;
+  providerId: string;
+  accessToken: string;
+  idToken: string;
+  scope?: string | null;
+  accessTokenExpiresAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sessions".
+ */
+export interface Session {
+  id: string;
+  userId?: (string | null) | User;
+  token: string;
+  expiresAt: string;
+  ipAddress?: string | null;
+  userAgent?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
@@ -450,6 +485,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'media';
         value: string | Media;
+      } | null)
+    | ({
+        relationTo: 'accounts';
+        value: string | Account;
+      } | null)
+    | ({
+        relationTo: 'sessions';
+        value: string | Session;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -498,8 +541,6 @@ export interface PayloadMigration {
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
-  isSystemAccount?: T;
-  isEmailVerified?: T;
   userRoles?: T;
   assignedRoles?: T;
   tenants?:
@@ -510,17 +551,10 @@ export interface UsersSelect<T extends boolean = true> {
         id?: T;
       };
   name?: T;
-  providers?:
-    | T
-    | {
-        google?:
-          | T
-          | {
-              id?: T;
-              email?: T;
-              linkedAt?: T;
-            };
-      };
+  image?: T;
+  isSystemAccount?: T;
+  isEmailVerified?: T;
+  isFresh?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -530,6 +564,13 @@ export interface UsersSelect<T extends boolean = true> {
   hash?: T;
   loginAttempts?: T;
   lockUntil?: T;
+  sessions?:
+    | T
+    | {
+        id?: T;
+        createdAt?: T;
+        expiresAt?: T;
+      };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -743,6 +784,33 @@ export interface MediaSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "accounts_select".
+ */
+export interface AccountsSelect<T extends boolean = true> {
+  userId?: T;
+  providerId?: T;
+  accessToken?: T;
+  idToken?: T;
+  scope?: T;
+  accessTokenExpiresAt?: T;
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sessions_select".
+ */
+export interface SessionsSelect<T extends boolean = true> {
+  userId?: T;
+  token?: T;
+  expiresAt?: T;
+  ipAddress?: T;
+  userAgent?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

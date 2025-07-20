@@ -53,6 +53,14 @@ export const createFirstRole = async (
           access: ['read', 'create', 'update', 'delete'],
         },
         {
+          collectionSlug: 'user-roles',
+          access: ['read', 'create', 'update', 'delete'],
+        },
+        {
+          collectionSlug: 'media',
+          access: ['read', 'create', 'update', 'delete'],
+        },
+        {
           collectionSlug: 'pages',
           access: ['read', 'create', 'update', 'delete'],
         },
@@ -64,6 +72,14 @@ export const createFirstRole = async (
           group: 'admin',
           collectionSlug: 'settings',
           access: ['read', 'create', 'update', 'delete'],
+        },
+        {
+          collectionSlug: 'sessions',
+          access: ['read', 'delete'],
+        },
+        {
+          collectionSlug: 'accounts',
+          access: ['read', 'delete'],
         },
       ]
 

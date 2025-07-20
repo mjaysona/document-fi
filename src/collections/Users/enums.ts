@@ -13,5 +13,13 @@ export enum ErrorMessage {
   MISSING_EMAIL_OR_PASSWORD = 'Email and password are missing.',
   PASSWORD_RESET_GENERIC = 'There was a problem resetting your password. Please try again.',
   INVALID_TOKEN_GENERIC = 'The password reset url is invalid or has expired.',
+  UNAUTHORIZED = 'You are not authorized to perform this action. Please log in and try again.',
+  USER_NOT_FOUND = 'User not found.',
   VERIFY_GENERIC = 'There was a problem sending the verification email. Please try again.',
+}
+
+export enum BetterAuthStatusCode {
+  INVALID_EMAIL_OR_PASSWORD = 'Email or password is incorrect.',
+  USER_ALREADY_EXISTS = 'The email address you provided is already in use.',
+  YOU_CAN_ONLY_SEND_A_VERIFICATION_EMAIL_TO_AN_UNVERIFIED_EMAIL = 'The email address you provided is already verified.',
 }

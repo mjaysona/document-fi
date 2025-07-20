@@ -9,8 +9,7 @@ import config from '@payload-config'
 import RichText from '@/app/(app)/components/RichText'
 import { getSelectedTenantToken } from '@/utilities/getSelectedTenant'
 import { LivePreviewListener } from '@/app/(app)/components/LivePreviewListener'
-import { Header } from '../components/Header'
-
+import { Header } from '@/app/(app)/components/LandingPageHeader'
 const queryPageByTenantSlug = async ({
   slug,
   slugUrl,

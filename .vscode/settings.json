@@ -38,5 +38,7 @@
       "source.fixAll.eslint": "explicit"
     }
   },
-  "editor.rulers": [80, 120]
+  "editor.rulers": [80, 120],
+  "typescript.preferences.importModuleSpecifier": "non-relative",
+  "javascript.preferences.importModuleSpecifier": "non-relative"
 }

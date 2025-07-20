@@ -1,11 +1,8 @@
-import { headers as getHeaders } from 'next/headers.js'
-import { redirect } from 'next/navigation'
-import { getPayload } from 'payload'
-import React from 'react'
 import config from '~/payload.config'
 import { CreateAccountForm } from './CreateAccountForm'
 import { AuthPageWrapper } from '../components/AuthPageWrapper'
 import { ROLES } from '~/src/collections/UserRoles/roles.enum'
+import { getPayload } from 'payload'
 
 export default async function CreateAccount() {
   const payload = await getPayload({ config })

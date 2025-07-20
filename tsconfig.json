@@ -20,8 +20,8 @@
     ],
     "paths": {
       // a path alias for the root of the project
-      "~/*": ["./*"],
       "@/*": ["./src/*"],
+      "~/*": ["./*"],
       "@payload-config": ["./payload.config.ts"],
       "@payload-types": ["./payload-types.ts"]
     },

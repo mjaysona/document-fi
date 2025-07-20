@@ -1,0 +1,12 @@
+.header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  padding: var(--mantine-spacing-md);
+
+  > div {
+    align-items: center;
+    display: flex;
+    gap: var(--mantine-spacing-sm);
+  }
+}

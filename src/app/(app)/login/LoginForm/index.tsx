@@ -1,20 +1,24 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation'
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { Alert, Anchor, Button, Divider, FocusTrap, PasswordInput, Text } from '@mantine/core'
 import { isEmail, isNotEmpty, useForm } from '@mantine/form'
 import { TextInput } from '@mantine/core'
 import { AtSign, CircleAlert, CircleCheck, KeySquare } from 'lucide-react'
-import { ErrorMessage } from '~/src/collections/Users/enums'
+import { BetterAuthStatusCode, ErrorMessage } from '~/src/collections/Users/enums'
 import { authClient, signIn } from '../../lib/auth-client'
+
+type LoginFormProps = {
+  defaultRole: string
+}
 
 type FormData = {
   email: string
   password: string
 }
 
-export const LoginForm: React.FC = () => {
+export const LoginForm: React.FC<LoginFormProps> = ({ defaultRole }) => {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [error, setError] = useState<null | string>(null)
@@ -22,6 +26,7 @@ export const LoginForm: React.FC = () => {
   const [isAttemptingGoogleLogin, setIsAttemptingGoogleLogin] = useState(false)
   const [isEmailForVerification, setIsEmailForVerification] = useState(false)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+
   const form = useForm({
     mode: 'uncontrolled',
     initialValues: {
@@ -33,17 +38,22 @@ export const LoginForm: React.FC = () => {
       password: isNotEmpty('Please enter a password.'),
     },
   })
+
   const { errors, getInputProps, key, onSubmit } = form
 
-  useEffect(() => {
-    const successMessage = searchParams.get('success')
-
-    if (successMessage) {
-      setSuccessMessage(decodeURIComponent(successMessage))
-      // Clear the success message from the URL
-      router.replace('/login')
+  useMemo(() => {
+    if (searchParams) {
+      const successParam = searchParams.get('success')
+      if (successParam) {
+        setSuccessMessage(decodeURIComponent(successParam))
+      }
     }
   }, [searchParams])
+
+  const handleCloseAlert = () => {
+    router.replace('/login')
+    setSuccessMessage(null)
+  }
 
   const handleSubmit = async (formData: FormData) => {
     if (!formData?.email || !formData?.password) return
@@ -54,41 +64,50 @@ export const LoginForm: React.FC = () => {
         password: formData.password,
       },
       {
-        onRequest: (ctx) => {
+        onRequest: () => {
           setIsAttemptingLogin(true)
         },
-        onSuccess: async (ctx) => {
+        onSuccess: async () => {
           setIsAttemptingLogin(false)
-
           router.push('/app')
         },
-        onError: (ctx) => {
-          setIsAttemptingLogin(false)
+        onError: ({ error }) => {
+          const errorMessage =
+            BetterAuthStatusCode[error?.code as keyof typeof BetterAuthStatusCode] ||
+            error?.code ||
+            error?.message ||
+            ErrorMessage.PASSWORD_RESET_GENERIC
 
-          if (ctx.error) {
-            if (ctx.error.status === 403) {
-              setError(ErrorMessage.LOGIN_VERIFY_EMAIL)
-              setIsEmailForVerification(true)
-            } else if (ctx.error?.message) {
-              setError(ctx.error.message)
-            } else {
-              setError(ErrorMessage.LOGIN_TRY_AGAIN)
-            }
-          } else {
-            setError(ErrorMessage.LOGIN_TRY_AGAIN)
-          }
+          setError(errorMessage)
+          setIsAttemptingLogin(false)
         },
       },
     )
   }
 
   const loginWithGoogle = () => {
-    setIsAttemptingGoogleLogin(true)
+    authClient.signIn.social(
+      {
+        provider: 'google',
+        callbackURL: '/app',
+      },
+      {
+        onRequest: () => {
+          setIsAttemptingGoogleLogin(true)
+        },
+        onError: (ctx) => {
+          setIsAttemptingGoogleLogin(false)
 
-    authClient.signIn.social({
-      provider: 'google',
-      callbackURL: '/app',
-    })
+          if (ctx.error?.message) {
+            setError(ctx.error.message)
+          } else {
+            setError(ErrorMessage.LOGIN_TRY_AGAIN)
+          }
+
+          router.push('/login')
+        },
+      },
+    )
   }
 
   return (
@@ -100,7 +119,7 @@ export const LoginForm: React.FC = () => {
           withCloseButton
           icon={<CircleCheck />}
           mb="md"
-          onClose={() => setSuccessMessage(null)}
+          onClose={handleCloseAlert}
         >
           {successMessage}
         </Alert>

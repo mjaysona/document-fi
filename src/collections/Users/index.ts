@@ -18,6 +18,7 @@ import { hasMultiTenancyFeature } from '../utilities/hasMultitenancyFeature'
 import { externalUsersUpdateAccount } from './endpoints/externalUsersUpdateAccount'
 import { externalUsersForgotPassword } from './endpoints/externalUsersForgotPassword'
 import { externalUsersAuthProvider } from './endpoints/externalUsersAuthProvider'
+import { externalUsersMe } from '@/collections/Users/endpoints/externalUsersMe'
 
 const defaultTenantArrayField = tenantsArrayField({
   tenantsArrayFieldName: 'tenants',
@@ -87,33 +88,10 @@ const Users: CollectionConfig = {
     externalUsersCreateAccount,
     externalUsersForgotPassword,
     externalUsersLogin,
+    externalUsersMe,
     externalUsersUpdateAccount,
   ],
   fields: [
-    {
-      type: 'row',
-      admin: {
-        position: 'sidebar',
-      },
-      fields: [
-        {
-          type: 'checkbox',
-          name: 'isSystemAccount',
-          admin: {
-            width: '50%',
-          },
-          defaultValue: false,
-        },
-        {
-          type: 'checkbox',
-          name: 'isEmailVerified',
-          admin: {
-            readOnly: true,
-          },
-          defaultValue: false,
-        },
-      ],
-    },
     {
       type: 'relationship',
       admin: {
@@ -234,54 +212,44 @@ const Users: CollectionConfig = {
               label: 'Name',
               type: 'text',
             },
+            {
+              name: 'image',
+              label: 'Image',
+              type: 'text',
+            },
           ],
         },
       ],
     },
     {
       type: 'group',
-      name: 'providers',
-      label: 'Authentication Providers',
       admin: {
-        readOnly: true,
+        position: 'sidebar',
       },
       fields: [
         {
-          type: 'group',
-          name: 'google',
-          label: 'Google',
+          type: 'checkbox',
+          name: 'isSystemAccount',
           admin: {
-            hideGutter: true,
+            readOnly: true,
           },
-          fields: [
-            {
-              name: 'id',
-              label: 'ID',
-              type: 'text',
-              defaultValue: '',
-            },
-            {
-              type: 'row',
-              fields: [
-                {
-                  name: 'email',
-                  label: 'Email',
-                  type: 'text',
-                  defaultValue: '',
-                },
-                {
-                  name: 'linkedAt',
-                  label: 'Linked At',
-                  type: 'date',
-                  admin: {
-                    date: {
-                      displayFormat: 'MM/dd/YYYY HH:mm:ss',
-                    },
-                  },
-                },
-              ],
-            },
-          ],
+          defaultValue: false,
+        },
+        {
+          type: 'checkbox',
+          name: 'isEmailVerified',
+          admin: {
+            readOnly: true,
+          },
+          defaultValue: false,
+        },
+        {
+          type: 'checkbox',
+          name: 'isFresh',
+          // admin: {
+          //   readOnly: true,
+          // },
+          defaultValue: true,
         },
       ],
     },

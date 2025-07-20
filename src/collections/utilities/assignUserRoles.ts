@@ -40,13 +40,14 @@ export const assignUserRoles = async (payload: Payload): Promise<void> => {
 
   const userEmail = superAdminUser.docs[0].email
   const roleLabel = superAdminRoles.docs[0].label
+  const userRole = String(superAdminRoles.docs[0].id)
 
   try {
     await payload.update({
       collection: 'users',
       id: superAdminUser.docs[0].id,
       data: {
-        userRoles: [superAdminRoles.docs[0].id],
+        userRoles: [userRole],
       },
       overrideAccess: true,
     })

@@ -11,7 +11,16 @@ import deleteUserRoles from './access/delete'
 import { hasSuperAdminRole } from '@/utilities/getRole'
 import { selectedItemsField } from '@/fields/NonRepeatingArraySelectField'
 
-const configurableCollections = ['users', 'pages', 'posts', 'settings', 'media', 'user-roles']
+const configurableCollections = [
+  'accounts',
+  'media',
+  'pages',
+  'posts',
+  'sessions',
+  'settings',
+  'users',
+  'user-roles',
+]
 
 const UserRoles: CollectionConfig = {
   slug: 'user-roles',
@@ -176,6 +185,7 @@ const UserRoles: CollectionConfig = {
         selectFieldName: 'collectionSlug',
       }),
       admin: {
+        readOnly: true,
         position: 'sidebar',
       },
     },

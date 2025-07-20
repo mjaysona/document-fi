@@ -5,7 +5,7 @@ import { Alert, Anchor, Button, FocusTrap, Text, TextInput, Title } from '@manti
 import { isEmail, useForm } from '@mantine/form'
 import { AtSign, CircleAlert } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { ErrorMessage } from '~/src/collections/Users/enums'
+import { BetterAuthStatusCode, ErrorMessage } from '~/src/collections/Users/enums'
 import { sendVerificationEmail } from '../../lib/auth-client'
 
 interface VerifyAccountFormProps {
@@ -50,7 +50,14 @@ export const VerifyAccountForm: React.FC<VerifyAccountFormProps> = ({ email }) =
         },
         onError: ({ error }) => {
           setSuccess(false)
-          setError(error?.message ? error.message : ErrorMessage.VERIFY_GENERIC)
+
+          const errorMessage =
+            BetterAuthStatusCode[error?.code] ||
+            error?.code ||
+            error?.message ||
+            ErrorMessage.VERIFY_GENERIC
+
+          setError(errorMessage)
           setIsSubmittingRequest(false)
         },
       },
@@ -71,6 +78,7 @@ export const VerifyAccountForm: React.FC<VerifyAccountFormProps> = ({ email }) =
                   icon={<CircleAlert />}
                   mb="md"
                   onClose={() => setError(null)}
+                  style={{ wordBreak: 'break-word' }}
                 >
                   {error}
                 </Alert>

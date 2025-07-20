@@ -5,7 +5,7 @@ import { Alert, Anchor, Button, FocusTrap, Text, TextInput, Title } from '@manti
 import { isEmail, useForm } from '@mantine/form'
 import { AtSign, CircleAlert } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { ErrorMessage } from '~/src/collections/Users/enums'
+import { BetterAuthStatusCode, ErrorMessage } from '~/src/collections/Users/enums'
 import { requestPasswordReset } from '../../lib/auth-client'
 
 type FormData = {
@@ -36,18 +36,19 @@ export const RecoverPasswordForm: React.FC = () => {
         email: data.email,
       },
       {
-        onSuccess: (ctx) => {
+        onSuccess: () => {
           setSuccess(true)
           setError('')
         },
-        onError: (ctx) => {
-          setSuccess(false)
+        onError: ({ error }) => {
+          const errorMessage =
+            BetterAuthStatusCode[error?.code as keyof typeof BetterAuthStatusCode] ||
+            error?.code ||
+            error?.message ||
+            ErrorMessage.PASSWORD_RESET_GENERIC
 
-          if (ctx.error?.message) {
-            setError(ctx.error.message)
-          } else {
-            setError(ErrorMessage.PASSWORD_RESET_GENERIC)
-          }
+          setSuccess(false)
+          setError(errorMessage)
         },
       },
     )

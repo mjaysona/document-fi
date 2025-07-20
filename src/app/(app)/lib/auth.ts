@@ -5,12 +5,16 @@ import { mongodbAdapter } from 'better-auth/adapters/mongodb'
 import { Resend } from 'resend'
 import ResetPasswordEmail from '@/app/(app)/email-templates/ResetPasswordEmail'
 import VerifyEmail from '../email-templates/VerifyEmail'
+import { nextCookies } from 'better-auth/next-js'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 const client = new MongoClient(process.env.MONGODB_URI as string)
 const db = client.db()
 
 export const auth = betterAuth({
+  account: {
+    modelName: 'accounts',
+  },
   basePath: '/auth/provider',
   database: mongodbAdapter(db),
   emailAndPassword: {
@@ -31,8 +35,9 @@ export const auth = betterAuth({
     },
   },
   emailVerification: {
-    sendOnSignUp: true,
     autoSignInAfterVerification: true,
+    callbackURL: '/app?verified=true',
+    sendOnSignUp: true,
     sendVerificationEmail: async ({ user, url }) => {
       await resend.emails.send({
         from: 'onboarding@resend.dev',
@@ -42,7 +47,12 @@ export const auth = betterAuth({
       })
     },
   },
-  plugins: [openAPI()],
+  plugins: [openAPI(), nextCookies()],
+  session: {
+    modelName: 'sessions',
+    expiresIn: 604800, // 7 days,
+    updateAge: 86400, // 1 day
+  },
   socialProviders: {
     google: {
       prompt: 'select_account',
@@ -56,9 +66,9 @@ export const auth = betterAuth({
       emailVerified: 'isEmailVerified',
     },
     additionalFields: {
-      isSystemAccount: {
+      isFresh: {
         type: 'boolean',
-        defaultValue: false,
+        defaultValue: true,
       },
     },
   },
