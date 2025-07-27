@@ -71,6 +71,7 @@ export interface Config {
     'tenant-roles': TenantRole;
     pages: Page;
     posts: Post;
+    'user-preferences': UserPreference;
     settings: Setting;
     'tenant-media': TenantMedia;
     tenants: Tenant;
@@ -89,6 +90,7 @@ export interface Config {
     'tenant-roles': TenantRolesSelect<false> | TenantRolesSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
     posts: PostsSelect<false> | PostsSelect<true>;
+    'user-preferences': UserPreferencesSelect<false> | UserPreferencesSelect<true>;
     settings: SettingsSelect<false> | SettingsSelect<true>;
     'tenant-media': TenantMediaSelect<false> | TenantMediaSelect<true>;
     tenants: TenantsSelect<false> | TenantsSelect<true>;
@@ -303,6 +305,17 @@ export interface Post {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "user-preferences".
+ */
+export interface UserPreference {
+  id: string;
+  userId: string | User;
+  sidenavState?: ('expanded' | 'collapsed') | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "settings".
  */
 export interface Setting {
@@ -461,6 +474,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'posts';
         value: string | Post;
+      } | null)
+    | ({
+        relationTo: 'user-preferences';
+        value: string | UserPreference;
       } | null)
     | ({
         relationTo: 'settings';
@@ -631,6 +648,16 @@ export interface PostsSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "user-preferences_select".
+ */
+export interface UserPreferencesSelect<T extends boolean = true> {
+  userId?: T;
+  sidenavState?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

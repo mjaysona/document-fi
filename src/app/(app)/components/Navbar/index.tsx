@@ -1,8 +1,10 @@
 'use client'
 
 import { signOut } from '@/app/(app)/lib/auth-client'
-import { AppShell, Button, NavLink, Stack } from '@mantine/core'
+import { ActionIcon, AppShell, Button, Flex, NavLink, Stack, Tooltip } from '@mantine/core'
 import {
+  ArrowLeftToLine,
+  ArrowRightFromLine,
   ChartPie,
   LayoutDashboard,
   ListChecks,
@@ -14,7 +16,13 @@ import {
 import { useRouter, useSelectedLayoutSegment } from 'next/navigation'
 import { useState } from 'react'
 
-export const Navbar = () => {
+type NavbarProps = {
+  isExpanded: boolean
+  toggleExpandCollapse: () => void
+  mobileBreakpoint?: string
+}
+
+export const Navbar = ({ isExpanded, toggleExpandCollapse, mobileBreakpoint }: NavbarProps) => {
   const [isSigningOut, setIsSigningOut] = useState<Boolean>(false)
   const router = useRouter()
   const activePath = useSelectedLayoutSegment()
@@ -34,35 +42,35 @@ export const Navbar = () => {
     {
       id: 'dashboard',
       label: 'Dashboard',
-      icon: <LayoutDashboard size={16} />,
+      icon: LayoutDashboard,
       path: '/app/dashboard',
       active: activePath === 'dashboard',
     },
     {
       id: 'sets',
       label: 'Sets',
-      icon: <Rows3 size={16} />,
+      icon: Rows3,
       path: '/app/sets',
       active: activePath === 'sets',
     },
     {
       id: 'assessments',
       label: 'Assessments',
-      icon: <ListChecks size={16} />,
+      icon: ListChecks,
       path: '/app/assessments',
       active: activePath === 'assessments',
     },
     {
       id: 'analytics',
       label: 'Analytics',
-      icon: <ChartPie size={16} />,
+      icon: ChartPie,
       path: '/app/analytics',
       active: activePath === 'analytics',
     },
   ]
 
   return (
-    <AppShell.Navbar p="md">
+    <AppShell.Navbar p="xs">
       <Stack
         h={'100%'}
         bg="var(--mantine-color-body)"
@@ -70,36 +78,100 @@ export const Navbar = () => {
         justify="space-between"
         gap="md"
       >
-        <div>
-          <Button
-            mb="md"
-            fullWidth
-            variant="primary"
-            onClick={() => {}}
-            leftSection={<PlusCircle size={16} />}
+        <Flex gap={'sm'} direction="column">
+          <Flex gap={'sm'}>
+            <ActionIcon
+              variant="default"
+              aria-label="Collapse"
+              size={42}
+              onClick={toggleExpandCollapse}
+              display={{ base: 'none', [mobileBreakpoint || 'sm']: 'block' }}
+            >
+              {isExpanded ? <ArrowLeftToLine size={16} /> : <ArrowRightFromLine size={16} />}
+            </ActionIcon>
+            {isExpanded && (
+              <Button
+                fullWidth
+                variant="primary"
+                onClick={() => {}}
+                leftSection={<PlusCircle size={16} />}
+                size="md"
+              >
+                Start assessment
+              </Button>
+            )}
+          </Flex>
+          <Flex direction="column">
+            {navItems.map(({ id, label, path, active, icon: Icon }) => (
+              <Tooltip
+                key={id}
+                arrowOffset={30}
+                arrowSize={4}
+                label={label}
+                withArrow
+                position="right"
+                disabled={isExpanded}
+              >
+                <NavLink
+                  styles={{
+                    body: { display: isExpanded ? 'block' : 'none' },
+                    section: { marginInlineEnd: isExpanded ? 'var(--mantine-spacing-xs)' : '0' },
+                  }}
+                  active={active}
+                  label={isExpanded ? label : undefined}
+                  leftSection={<Icon size={16} />}
+                  onClick={() => router.push(path)}
+                  variant="subtle"
+                  h={40}
+                />
+              </Tooltip>
+            ))}
+          </Flex>
+        </Flex>
+        <Flex direction="column">
+          <Tooltip
+            arrowOffset={30}
+            arrowSize={4}
+            label="Settings"
+            withArrow
+            position="right"
+            disabled={isExpanded}
           >
-            Start an assessment
-          </Button>
-          {navItems.map((item) => (
             <NavLink
-              key={item.id}
-              active={item.active}
-              label={item.label}
-              leftSection={item.icon}
-              href={item.path}
+              styles={{
+                body: { display: isExpanded ? 'block' : 'none' },
+                section: { marginInlineEnd: isExpanded ? 'var(--mantine-spacing-xs)' : '0' },
+              }}
+              label={isExpanded ? 'Settings' : undefined}
+              leftSection={<Settings size={16} />}
+              onClick={() => router.push('/app/settings')}
               variant="subtle"
+              h={40}
             />
-          ))}
-        </div>
-        <div>
-          <NavLink label="Settings" leftSection={<Settings size={16} />} href="/app/settings" />
-          <NavLink
-            label={isSigningOut ? 'Logging out...' : 'Log out'}
-            leftSection={<LogOut style={{ transform: 'rotate(180deg)' }} size={16} />}
-            onClick={logout}
-            disabled={Boolean(isSigningOut)}
-          />
-        </div>
+          </Tooltip>
+          <Tooltip
+            arrowOffset={30}
+            arrowSize={4}
+            label="Settings"
+            withArrow
+            position="right"
+            disabled={isExpanded}
+          >
+            <NavLink
+              styles={{
+                root: { whiteSpace: 'nowrap' },
+                body: { display: isExpanded ? 'block' : 'none' },
+                section: { marginInlineEnd: isExpanded ? 'var(--mantine-spacing-xs)' : '0' },
+              }}
+              label={isExpanded ? (isSigningOut ? 'Logging out...' : 'Log out') : undefined}
+              leftSection={<LogOut style={{ transform: 'rotate(180deg)' }} size={16} />}
+              onClick={logout}
+              disabled={Boolean(isSigningOut)}
+              variant="subtle"
+              h={40}
+            />
+          </Tooltip>
+        </Flex>
       </Stack>
     </AppShell.Navbar>
   )

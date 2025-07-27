@@ -9,6 +9,7 @@ import { getPayload } from 'payload'
 import config from '~/payload.config'
 import { User } from '~/payload-types'
 import { ROLES } from '@/collections/UserRoles/roles.enum'
+import { QueryProvider } from '@/app/providers/Query'
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   let user: User | null = null
@@ -52,11 +53,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en" {...mantineHtmlProps}>
       <body>
-        <ThemeProvider>
-          <AuthProvider user={user} isValidSession={Boolean(session)}>
-            {children}
-          </AuthProvider>
-        </ThemeProvider>
+        <QueryProvider>
+          <ThemeProvider>
+            <AuthProvider user={user} isValidSession={Boolean(session)}>
+              {children}
+            </AuthProvider>
+          </ThemeProvider>
+        </QueryProvider>
       </body>
     </html>
   )

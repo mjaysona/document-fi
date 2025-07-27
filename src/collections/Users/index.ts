@@ -106,7 +106,7 @@ const Users: CollectionConfig = {
       relationTo: 'user-roles',
       hasMany: true,
       defaultValue: async ({ req }) => {
-        const selectedUserRole = await req.payload.find({
+        const selectedUserRole = await req.payload?.find({
           collection: 'user-roles',
           where: {
             label: {
@@ -153,7 +153,7 @@ const Users: CollectionConfig = {
       defaultValue: async ({ req, user }) => {
         const selectedTenant = getSelectedTenantId(req) || ''
         const userTenants = user?.tenants || []
-        const userTenant = userTenants.find(
+        const userTenant = userTenants?.find(
           ({ tenant }) => typeof tenant !== 'string' && tenant?.id === selectedTenant,
         )
         const assignedRoles = userTenant?.roles?.map((role) => role) || []
@@ -263,7 +263,7 @@ const Users: CollectionConfig = {
           selectedTenantId = (await getSelectedTenantToken()) || ''
         } catch {}
 
-        const selectedTenant = doc.tenants.find(({ tenant }) => {
+        const selectedTenant = doc.tenants?.find(({ tenant }) => {
           return tenant === selectedTenantId
         })
         const assignedTenantRoles = selectedTenant?.roles

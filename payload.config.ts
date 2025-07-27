@@ -36,6 +36,7 @@ import UserRoles from './src/collections/UserRoles'
 import { initialData } from './src/seed/db'
 import Sessions from '@/collections/Sessions'
 import Accounts from '@/collections/Accounts'
+import UserPreferences from '@/collections/UserPreferences'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -66,6 +67,7 @@ export default buildConfig({
     TenantRoles,
     Pages,
     Posts,
+    UserPreferences,
 
     // Tenant specific globals below
     Settings,
