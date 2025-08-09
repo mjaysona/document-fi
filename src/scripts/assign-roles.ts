@@ -1,6 +1,5 @@
 import { getPayload } from 'payload'
 import config from '@payload-config'
-import { assignTenantRoles } from '../collections/utilities/assignTenantRoles'
 import { assignUserRoles } from '../collections/utilities/assignUserRoles'
 
 async function run() {
@@ -9,10 +8,6 @@ async function run() {
 
   if (params.includes('user')) {
     await assignUserRoles(payload)
-  }
-
-  if (params.includes('tenant-user')) {
-    await assignTenantRoles(payload)
   }
 
   process.exit(0)

@@ -1,26 +1,19 @@
-import type { CollectionConfig, FieldAccess } from 'payload'
-import { readSettings, updateSettings } from './access'
-import { tenantGlobalTitle } from '@/fields/TenantGlobalTitle'
+import type { GlobalConfig } from 'payload'
+import readDashboardCustomization from '@/collections/DashboardCustomization/access/read'
+import updateDashboardCustomization from '@/collections/DashboardCustomization/access/update'
 
-const Settings: CollectionConfig = {
-  slug: 'settings',
-  labels: {
-    singular: 'Settings',
-    plural: 'Settings',
-  },
+const DashboardCustomization: GlobalConfig = {
+  slug: 'dashboard-customization',
+  label: 'Dashboard Customization',
   access: {
-    read: readSettings,
-    create: () => false,
-    update: updateSettings,
-    delete: () => false,
+    read: readDashboardCustomization,
+    update: updateDashboardCustomization,
   },
   admin: {
     group: {
       label: 'Admin',
       name: 'admin',
     },
-    useAsTitle: 'title',
-    hidden: true,
   },
   fields: [
     {
@@ -41,13 +34,13 @@ const Settings: CollectionConfig = {
                       name: 'fullSize',
                       label: 'Full Size Logo',
                       type: 'upload',
-                      relationTo: 'tenant-media',
+                      relationTo: 'media',
                     },
                     {
                       name: 'icon',
                       label: 'Icon',
                       type: 'upload',
-                      relationTo: 'tenant-media',
+                      relationTo: 'media',
                     },
                   ],
                 },
@@ -76,28 +69,21 @@ const Settings: CollectionConfig = {
         },
       ],
     },
-    tenantGlobalTitle('Admin Settings'),
   ],
   endpoints: [
     {
-      path: '/tenant-logo/:tenantHost',
+      path: '/brand/logo',
       method: 'get',
       handler: async (req) => {
         const payload = req.payload
-        const tenantSettings = await payload.find({
-          collection: 'settings',
-          where: {
-            'tenant.domain': {
-              equals: req.routeParams?.tenantHost,
-            },
-          },
+        const customization = await payload.findGlobal({
+          slug: 'dashboard-customization',
         })
+        const logo = customization?.dashboard?.logo
 
-        const tenantLogo = tenantSettings.docs[0]?.dashboard?.logo
-
-        return Response.json({ data: tenantLogo })
+        return Response.json({ data: logo })
       },
     },
   ],
 }
-export default Settings
+export default DashboardCustomization

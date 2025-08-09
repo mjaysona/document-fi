@@ -1,6 +1,7 @@
 import type { Access } from 'payload'
 import { getSelectedTenantId, getSelectedTenantToken } from '@/utilities/getSelectedTenant'
 import { hasUpdatePermission } from '@/utilities/getRolePermissions'
+import { hasSuperAdminRole } from '@/utilities/getRole'
 
 const updatePages: Access = async (args) => {
   const { req } = args
@@ -8,17 +9,10 @@ const updatePages: Access = async (args) => {
 
   if (!user) return false
 
+  const isSuperAdmin = hasSuperAdminRole(user?.userRoles)
   const isCreatedByActiveUser = user.id === data?.createdBy
-  const selectedTenant = getSelectedTenantId(req) || (await getSelectedTenantToken())
-  const canUpdate = hasUpdatePermission(user, selectedTenant, 'pages')
 
-  if (!selectedTenant) return false
-
-  if (canUpdate || isCreatedByActiveUser) {
-    return true
-  }
-
-  return false
+  return isSuperAdmin || isCreatedByActiveUser
 }
 
 export default updatePages

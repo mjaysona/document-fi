@@ -1,6 +1,4 @@
 import type { Access, Where } from 'payload'
-import { getSelectedTenantId, getSelectedTenantToken } from '@/utilities/getSelectedTenant'
-import { isAccessingViaSubdomain } from '@/collections/utilities/access/isAccessingViaSubdomain'
 import {
   hasCreatePermission,
   hasDeletePermission,
@@ -20,12 +18,10 @@ const readPages: Access = async (args) => {
     } as Where
   }
 
-  const selectedTenant = getSelectedTenantId(req) || (await getSelectedTenantToken())
-  const subdomainAccess = await isAccessingViaSubdomain(req)
-  const canCreate = hasCreatePermission(user, selectedTenant, 'pages', subdomainAccess)
-  const canRead = hasReadPermission(user, selectedTenant, 'pages', subdomainAccess)
-  const canUpdate = hasUpdatePermission(user, selectedTenant, 'pages', subdomainAccess)
-  const canDelete = hasDeletePermission(user, selectedTenant, 'pages', subdomainAccess)
+  const canCreate = hasCreatePermission(user, 'pages')
+  const canRead = hasReadPermission(user, 'pages')
+  const canUpdate = hasUpdatePermission(user, 'pages')
+  const canDelete = hasDeletePermission(user, 'pages')
 
   if (canRead) {
     if (canCreate || canUpdate || canDelete) return true

@@ -2,10 +2,7 @@ import { getPayload } from 'payload'
 import { user } from '../seed/user'
 import config from '@payload-config'
 import { createFirstRole } from '../collections/utilities/createFirstRole'
-import { tenants } from '../seed/tenants'
 import { initialData } from '../seed/db'
-import { tenantUser } from '../seed/tenant-user'
-import { tenantRoles } from '../seed/tenant-roles'
 import { posts } from '../seed/posts'
 
 async function run() {
@@ -21,15 +18,6 @@ async function run() {
       break
     case 'roles':
       await createFirstRole(payload)
-      break
-    case 'tenants':
-      await tenants(payload)
-      break
-    case 'tenant-roles':
-      await tenantRoles(payload)
-      break
-    case 'tenant-user':
-      await tenantUser(payload)
       break
     case 'user':
       await user(payload)

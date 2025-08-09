@@ -1,9 +1,9 @@
 import type { Access } from 'payload'
 import { Account } from 'payload-types'
-import getGenericTenantRoleBasedAccess from '@/collections/utilities/access/getGenericTenantRoleBasedAccess'
+import getGenericRoleBasedAccess from '@/collections/utilities/access/getGenericRoleBasedAccess'
 import { AccessType } from '@/enums'
 
 const readAccounts: Access<Account> = async (args) =>
-  await getGenericTenantRoleBasedAccess(args, 'accounts', AccessType.READ)
+  await getGenericRoleBasedAccess(args, 'accounts', AccessType.READ)
 
 export default readAccounts

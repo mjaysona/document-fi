@@ -17,10 +17,11 @@ const configurableCollections = [
   'pages',
   'posts',
   'sessions',
-  'settings',
   'users',
   'user-roles',
 ]
+
+const configurableGlobals = ['dashboard-customization']
 
 const UserRoles: CollectionConfig = {
   slug: 'user-roles',
@@ -28,12 +29,12 @@ const UserRoles: CollectionConfig = {
     singular: 'User Role',
     plural: 'User Roles',
   },
-  access: {
-    create: createUserRoles,
-    read: readUserRoles,
-    update: updateUserRoles,
-    delete: deleteUserRoles,
-  },
+  // access: {
+  //   create: createUserRoles,
+  //   read: readUserRoles,
+  //   update: updateUserRoles,
+  //   delete: deleteUserRoles,
+  // },
   admin: {
     description: 'User roles are used to control access to records in the system.',
     useAsTitle: 'label',
@@ -125,6 +126,7 @@ const UserRoles: CollectionConfig = {
                     path: '@/collections/UserRoles/components/CollectionsSelectField/index',
                     serverProps: {
                       configurableCollections,
+                      configurableGlobals,
                       permissionsPath: 'permissions',
                       selectFieldName: 'collectionSlug',
                       textFieldName: 'selectedFeatures',

@@ -1,8 +1,6 @@
 import type { Access, Where } from 'payload'
 import { User } from 'payload-types'
-import { isAccessingViaSubdomain } from '@/collections/utilities/access/isAccessingViaSubdomain'
 import { hasUpdatePermission } from '@/utilities/getRolePermissions'
-import { getSelectedTenantId, getSelectedTenantToken } from '@/utilities/getSelectedTenant'
 import { hasSuperAdminRole } from '@/utilities/getRole'
 
 const updateUsers: Access<User> = async (args) => {
@@ -12,9 +10,7 @@ const updateUsers: Access<User> = async (args) => {
   if (!user) return false
 
   const isSuperAdmin = hasSuperAdminRole(user?.userRoles)
-  const subdomainAccess = await isAccessingViaSubdomain(req)
-  const selectedTenant = getSelectedTenantId(req) || (await getSelectedTenantToken())
-  const hasPermission = hasUpdatePermission(user, selectedTenant, 'users', subdomainAccess)
+  const hasPermission = hasUpdatePermission(user, 'users')
 
   if (hasPermission) {
     if (isSuperAdmin) return true

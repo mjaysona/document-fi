@@ -1,6 +1,4 @@
 import type { Access } from 'payload'
-import { getSelectedTenantId, getSelectedTenantToken } from '@/utilities/getSelectedTenant'
-import { isAccessingViaSubdomain } from '@/collections/utilities/access/isAccessingViaSubdomain'
 import { hasUpdatePermission } from '@/utilities/getRolePermissions'
 import { hasSuperAdminRole } from '~/src/utilities/getRole'
 
@@ -12,18 +10,9 @@ const updatePosts: Access = async (args) => {
 
   const isCreatedByActiveUser = user.id === data?.createdBy
   const isSuperAdmin = hasSuperAdminRole(req?.user?.userRoles)
-  const selectedTenant = getSelectedTenantId(req) || (await getSelectedTenantToken())
-  const canUpdate = hasUpdatePermission(user, selectedTenant, 'posts')
+  const canUpdate = hasUpdatePermission(user, 'posts')
 
-  if (
-    isSuperAdmin ||
-    ((await isAccessingViaSubdomain(req)) && canUpdate) ||
-    isCreatedByActiveUser
-  ) {
-    return true
-  }
-
-  return false
+  return isSuperAdmin || canUpdate || isCreatedByActiveUser
 }
 
 export default updatePosts

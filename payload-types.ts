@@ -68,15 +68,10 @@ export interface Config {
   blocks: {};
   collections: {
     users: User;
-    'tenant-roles': TenantRole;
     pages: Page;
     posts: Post;
     'user-preferences': UserPreference;
-    settings: Setting;
-    'tenant-media': TenantMedia;
-    tenants: Tenant;
     'user-roles': UserRole;
-    features: Feature;
     media: Media;
     accounts: Account;
     sessions: Session;
@@ -87,15 +82,10 @@ export interface Config {
   collectionsJoins: {};
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
-    'tenant-roles': TenantRolesSelect<false> | TenantRolesSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
     posts: PostsSelect<false> | PostsSelect<true>;
     'user-preferences': UserPreferencesSelect<false> | UserPreferencesSelect<true>;
-    settings: SettingsSelect<false> | SettingsSelect<true>;
-    'tenant-media': TenantMediaSelect<false> | TenantMediaSelect<true>;
-    tenants: TenantsSelect<false> | TenantsSelect<true>;
     'user-roles': UserRolesSelect<false> | UserRolesSelect<true>;
-    features: FeaturesSelect<false> | FeaturesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     accounts: AccountsSelect<false> | AccountsSelect<true>;
     sessions: SessionsSelect<false> | SessionsSelect<true>;
@@ -106,8 +96,12 @@ export interface Config {
   db: {
     defaultIDType: string;
   };
-  globals: {};
-  globalsSelect: {};
+  globals: {
+    'dashboard-customization': DashboardCustomization;
+  };
+  globalsSelect: {
+    'dashboard-customization': DashboardCustomizationSelect<false> | DashboardCustomizationSelect<true>;
+  };
   locale: null;
   user: User & {
     collection: 'users';
@@ -142,14 +136,6 @@ export interface UserAuthOperations {
 export interface User {
   id: string;
   userRoles?: (string | UserRole)[] | null;
-  assignedRoles?: (string | TenantRole)[] | null;
-  tenants?:
-    | {
-        tenant: string | Tenant;
-        roles?: (string | TenantRole)[] | null;
-        id?: string | null;
-      }[]
-    | null;
   name?: string | null;
   image?: string | null;
   isSystemAccount?: boolean | null;
@@ -197,54 +183,6 @@ export interface UserRole {
    */
   isSystemRole?: boolean | null;
   selectedFeatures?: string[] | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * User roles are used to control access to records in the system.
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "tenant-roles".
- */
-export interface TenantRole {
-  id: string;
-  createdBy?: (string | null) | User;
-  updatedBy?: (string | null) | User;
-  label: string;
-  permissions?:
-    | {
-        group?: ('globals' | 'appearance' | 'admin') | null;
-        collectionSlug: string;
-        access: ('read' | 'create' | 'update' | 'delete')[];
-        id?: string | null;
-      }[]
-    | null;
-  /**
-   * This user is a system generated user and cannot be deleted.
-   */
-  isSystemRole?: boolean | null;
-  selectedFeatures?: string[] | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "tenants".
- */
-export interface Tenant {
-  id: string;
-  _order?: string | null;
-  name: string;
-  /**
-   * Domain of the tenant, example: tenant.example.com or tenant.com
-   */
-  domain?: string | null;
-  slug?: string | null;
-  slugLock?: boolean | null;
-  /**
-   * If checked, logging in is not required to read. Useful for building public pages.
-   */
-  allowPublicRead?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -316,94 +254,6 @@ export interface UserPreference {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "settings".
- */
-export interface Setting {
-  id: string;
-  dashboard?: {
-    logo?: {
-      fullSize?: (string | null) | TenantMedia;
-      icon?: (string | null) | TenantMedia;
-    };
-  };
-  website?: {
-    /**
-     * This functionality is under development
-     */
-    font?: string | null;
-  };
-  title?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "tenant-media".
- */
-export interface TenantMedia {
-  id: string;
-  createdBy?: (string | null) | User;
-  text?: string | null;
-  prefix?: string | null;
-  updatedAt: string;
-  createdAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
-  sizes?: {
-    thumbnail?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-    small?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-    medium?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-    large?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-  };
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "features".
- */
-export interface Feature {
-  id: string;
-  name: 'Multi Tenancy';
-  isEnabled?: boolean | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media".
  */
 export interface Media {
@@ -464,10 +314,6 @@ export interface PayloadLockedDocument {
         value: string | User;
       } | null)
     | ({
-        relationTo: 'tenant-roles';
-        value: string | TenantRole;
-      } | null)
-    | ({
         relationTo: 'pages';
         value: string | Page;
       } | null)
@@ -480,24 +326,8 @@ export interface PayloadLockedDocument {
         value: string | UserPreference;
       } | null)
     | ({
-        relationTo: 'settings';
-        value: string | Setting;
-      } | null)
-    | ({
-        relationTo: 'tenant-media';
-        value: string | TenantMedia;
-      } | null)
-    | ({
-        relationTo: 'tenants';
-        value: string | Tenant;
-      } | null)
-    | ({
         relationTo: 'user-roles';
         value: string | UserRole;
-      } | null)
-    | ({
-        relationTo: 'features';
-        value: string | Feature;
       } | null)
     | ({
         relationTo: 'media';
@@ -559,14 +389,6 @@ export interface PayloadMigration {
  */
 export interface UsersSelect<T extends boolean = true> {
   userRoles?: T;
-  assignedRoles?: T;
-  tenants?:
-    | T
-    | {
-        tenant?: T;
-        roles?: T;
-        id?: T;
-      };
   name?: T;
   image?: T;
   isSystemAccount?: T;
@@ -588,27 +410,6 @@ export interface UsersSelect<T extends boolean = true> {
         createdAt?: T;
         expiresAt?: T;
       };
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "tenant-roles_select".
- */
-export interface TenantRolesSelect<T extends boolean = true> {
-  createdBy?: T;
-  updatedBy?: T;
-  label?: T;
-  permissions?:
-    | T
-    | {
-        group?: T;
-        collectionSlug?: T;
-        access?: T;
-        id?: T;
-      };
-  isSystemRole?: T;
-  selectedFeatures?: T;
-  updatedAt?: T;
-  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -661,108 +462,6 @@ export interface UserPreferencesSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "settings_select".
- */
-export interface SettingsSelect<T extends boolean = true> {
-  dashboard?:
-    | T
-    | {
-        logo?:
-          | T
-          | {
-              fullSize?: T;
-              icon?: T;
-            };
-      };
-  website?:
-    | T
-    | {
-        font?: T;
-      };
-  title?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "tenant-media_select".
- */
-export interface TenantMediaSelect<T extends boolean = true> {
-  createdBy?: T;
-  text?: T;
-  prefix?: T;
-  updatedAt?: T;
-  createdAt?: T;
-  url?: T;
-  thumbnailURL?: T;
-  filename?: T;
-  mimeType?: T;
-  filesize?: T;
-  width?: T;
-  height?: T;
-  focalX?: T;
-  focalY?: T;
-  sizes?:
-    | T
-    | {
-        thumbnail?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-        small?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-        medium?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-        large?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-      };
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "tenants_select".
- */
-export interface TenantsSelect<T extends boolean = true> {
-  _order?: T;
-  name?: T;
-  domain?: T;
-  slug?: T;
-  slugLock?: T;
-  allowPublicRead?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "user-roles_select".
  */
 export interface UserRolesSelect<T extends boolean = true> {
@@ -779,16 +478,6 @@ export interface UserRolesSelect<T extends boolean = true> {
       };
   isSystemRole?: T;
   selectedFeatures?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "features_select".
- */
-export interface FeaturesSelect<T extends boolean = true> {
-  name?: T;
-  isEnabled?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -870,6 +559,51 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   batch?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "dashboard-customization".
+ */
+export interface DashboardCustomization {
+  id: string;
+  dashboard?: {
+    logo?: {
+      fullSize?: (string | null) | Media;
+      icon?: (string | null) | Media;
+    };
+  };
+  website?: {
+    /**
+     * This functionality is under development
+     */
+    font?: string | null;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "dashboard-customization_select".
+ */
+export interface DashboardCustomizationSelect<T extends boolean = true> {
+  dashboard?:
+    | T
+    | {
+        logo?:
+          | T
+          | {
+              fullSize?: T;
+              icon?: T;
+            };
+      };
+  website?:
+    | T
+    | {
+        font?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

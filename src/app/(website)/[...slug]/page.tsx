@@ -7,18 +7,9 @@ import type { Page as PageType } from '@payload-types'
 
 import config from '@payload-config'
 import RichText from '@/app/(app)/components/RichText'
-import { getSelectedTenantToken } from '@/utilities/getSelectedTenant'
 import { LivePreviewListener } from '@/app/(app)/components/LivePreviewListener'
 import { Header } from '@/app/(app)/components/LandingPageHeader'
-const queryPageByTenantSlug = async ({
-  slug,
-  slugUrl,
-  tenant,
-}: {
-  slug: string
-  slugUrl: string
-  tenant: string
-}) => {
+const queryPageBySlug = async ({ slug, slugUrl }: { slug: string; slugUrl: string }) => {
   const { isEnabled: draft } = await draftMode()
   const payload = await getPayload({ config })
   const result = await payload.find({
@@ -28,15 +19,6 @@ const queryPageByTenantSlug = async ({
     where: {
       and: [
         ...(draft ? [] : [{ allowPublicRead: { equals: true } }]),
-        ...(tenant
-          ? [
-              {
-                'tenant.domain': {
-                  equals: tenant,
-                },
-              },
-            ]
-          : []),
         {
           slug: {
             equals: slug,
@@ -57,41 +39,19 @@ const queryPageByTenantSlug = async ({
 interface PageParams {
   params: Promise<{
     slug?: string[]
-    tenant?: string
   }>
 }
 
 // eslint-disable-next-line no-restricted-exports
 export default async function Page({ params: paramsPromise }: PageParams) {
-  const selectedTenantId = await getSelectedTenantToken()
   const { isEnabled: draft } = await draftMode()
   const params = await paramsPromise
-
-  let tenant
-
-  if (selectedTenantId) {
-    const payload = await getPayload({ config })
-    const fullTenant = await payload.find({
-      collection: 'tenants',
-      where: {
-        id: {
-          equals: selectedTenantId,
-        },
-      },
-    })
-    tenant = fullTenant?.docs[0]?.domain
-  } else {
-    tenant = params?.tenant
-  }
-
   const slug = params?.slug?.length ? params?.slug[params?.slug.length - 1] : 'home'
-  // remove the first index not the last
   const removedRootSlug = params?.slug?.slice(1)
   const slugUrl = '/' + removedRootSlug?.join('/')
-  const page: null | PageType = await queryPageByTenantSlug({
+  const page: null | PageType = await queryPageBySlug({
     slug,
     slugUrl,
-    tenant: tenant || '',
   })
 
   // Remove this code once your website is seeded

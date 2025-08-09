@@ -25,7 +25,6 @@ export const externalUsersCreateAccount: Endpoint = {
       throw new APIError(ErrorMessage.MISSING_EMAIL_OR_PASSWORD, 400)
     }
 
-    // Check if user already exists with this email for this tenant
     const existingUser = await req.payload.find({
       collection: 'users',
       where: {

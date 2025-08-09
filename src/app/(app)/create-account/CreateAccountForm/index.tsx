@@ -3,7 +3,6 @@
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { hasLength, isEmail, matchesField, useForm } from '@mantine/form'
-import { Tenant } from '@payload-types'
 import {
   Alert,
   Anchor,
@@ -20,14 +19,12 @@ import { signUp } from '@/app/(app)/lib/auth-client'
 
 type CreateAccountFormProps = {
   defaultRole: string
-  tenant?: Tenant['id']
 }
 
 type FormData = {
   email: string
   password: string
   passwordConfirm: string
-  tenant?: CreateAccountFormProps['tenant']
 }
 
 export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({ defaultRole }) => {

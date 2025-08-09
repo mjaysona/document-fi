@@ -1,53 +1,24 @@
-import { Tenant, TenantRole } from '@payload-types'
+import { UserRole } from '@payload-types'
 import { Payload } from 'payload'
 import { ROLES } from '../UserRoles/roles.enum'
 
-type CreateFirstRoleParams = {
-  payload: Payload
-  tenantData?: {
-    tenant?: Tenant['id']
-    slug?: Tenant['slug']
-  }
-}
-
-export const createFirstRole = async (
-  payload: Payload,
-  { tenant, slug }: CreateFirstRoleParams['tenantData'] = { tenant: '', slug: '' },
-): Promise<void> => {
+export const createFirstRole = async (payload: Payload): Promise<void> => {
   const existingRoles = await payload.find({
-    collection: tenant ? 'tenant-roles' : 'user-roles',
+    collection: 'user-roles',
     where: {
       label: {
-        equals: tenant ? 'Admin' : 'Super Admin',
+        equals: 'Super Admin',
       },
-      ...(tenant && {
-        or: [
-          {
-            'tenant.id': {
-              equals: tenant,
-            },
-          },
-          {
-            'tenant.slug': {
-              equals: slug,
-            },
-          },
-        ],
-      }),
     },
   })
 
   if (existingRoles?.docs?.length) {
-    console.info(
-      `"${tenant ? 'Admin' : 'Super Admin'}" ${tenant && 'tenant '}role already exists, skipping creation.`,
-    )
+    console.info(`"Super Admin" role already exists, skipping creation.`)
   } else {
-    console.info(
-      `Attempting to create "${tenant ? 'Admin' : 'Super Admin'}" ${tenant && 'tenant '}role.`,
-    )
+    console.info(`Attempting to create "Super Admin" role.`)
 
     try {
-      const permissions: TenantRole['permissions'] = [
+      const permissions: UserRole['permissions'] = [
         {
           collectionSlug: 'users',
           access: ['read', 'create', 'update', 'delete'],
@@ -84,73 +55,65 @@ export const createFirstRole = async (
       ]
 
       await payload.create({
-        collection: tenant ? 'tenant-roles' : 'user-roles',
+        collection: 'user-roles',
         data: {
-          label: tenant ? 'Admin' : 'Super Admin',
-          tenant,
+          label: 'Super Admin',
           isSystemRole: true,
           permissions,
         },
       })
 
-      console.info(
-        `"${tenant ? 'Admin' : 'Super Admin'}" ${tenant && 'tenant '}role is created successfully`,
-      )
+      console.info(`"Super Admin" role is created successfully`)
     } catch (error) {
-      console.error(
-        `Error creating "${tenant ? 'Admin' : 'Super Admin'}" ${tenant && 'tenant '}role:`,
-        error,
-      )
+      console.error(`Error creating "Super Admin" role:`, error)
     }
   }
 
-  if (!tenant) {
-    const hasUserRole = await payload.find({
+  const hasUserRole = await payload.find({
+    collection: 'user-roles',
+    where: {
+      label: {
+        equals: ROLES.USER,
+      },
+    },
+  })
+
+  if (hasUserRole?.docs?.length) {
+    console.info('"User" role already exists, skipping creation.')
+    return
+  }
+
+  console.info('Creating "User" role for the first time.')
+  try {
+    await payload.create({
       collection: 'user-roles',
-      where: {
-        label: {
-          equals: ROLES.USER,
-        },
+      data: {
+        label: ROLES.USER,
+        isSystemRole: true,
+        permissions: [
+          {
+            collectionSlug: 'users',
+            access: ['read'],
+          },
+          {
+            collectionSlug: 'pages',
+            access: ['read'],
+          },
+          {
+            collectionSlug: 'posts',
+            access: ['read'],
+          },
+          {
+            group: 'admin',
+            collectionSlug: 'settings',
+            access: ['read'],
+          },
+        ],
       },
     })
 
-    if (hasUserRole?.docs?.length) {
-      console.info('"User" role already exists, skipping creation.')
-      return
-    }
-
-    console.info('Creating "User" role for the first time.')
-    try {
-      await payload.create({
-        collection: 'user-roles',
-        data: {
-          label: ROLES.USER,
-          isSystemRole: true,
-          permissions: [
-            {
-              collectionSlug: 'users',
-              access: ['read'],
-            },
-            {
-              collectionSlug: 'pages',
-              access: ['read'],
-            },
-            {
-              collectionSlug: 'posts',
-              access: ['read'],
-            },
-            {
-              group: 'admin',
-              collectionSlug: 'settings',
-              access: ['read'],
-            },
-          ],
-        },
-      })
-
-      console.info('"User" role created successfully.')
-    } catch (error) {
-      console.error('Error creating "User" role:', error)
-    }
+    console.info('"User" role created successfully.')
+  } catch (error) {
+    console.error('Error creating "User" role:', error)
   }
 }

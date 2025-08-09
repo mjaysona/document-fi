@@ -16,13 +16,11 @@ export const generatePreviewPath = async ({ data, collection, slug, req }: Props
   const breadcrumbs: Breadcrumb[] = (data?.breadcrumbs as Breadcrumb[]) || []
   const slugUrl = breadcrumbs?.length ? breadcrumbs[breadcrumbs.length - 1]?.url : ''
   const path = `${collectionPrefixMap[collection]}${slugUrl || `/${slug}`}`
-  const tenant = (data?.tenant as { id?: string })?.id || data?.tenant || ''
 
   const params = {
     slug,
     collection,
     path,
-    tenant,
   }
 
   const host = req.headers.get('host')
