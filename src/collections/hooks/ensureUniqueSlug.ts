@@ -1,5 +1,4 @@
 import { hasSuperAdminRole } from '@/utilities/getRole'
-import { getUserTenantIDs } from '@/utilities/getUserTenantIDs'
 import { FieldHook, ValidationError } from 'payload'
 
 export const ensureUniqueSlug: FieldHook = async ({

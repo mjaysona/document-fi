@@ -1,5 +1,4 @@
 import type { Access, Where } from 'payload'
-import { getSelectedTenantId, getSelectedTenantToken } from '@/utilities/getSelectedTenant'
 import {
   hasCreatePermission,
   hasDeletePermission,
@@ -18,11 +17,10 @@ const readPosts: Access = async (args) => {
       },
     } as Where
 
-  const selectedTenant = getSelectedTenantId(req) || (await getSelectedTenantToken())
-  const canCreate = hasCreatePermission(user, selectedTenant, 'posts')
-  const canRead = hasReadPermission(user, selectedTenant, 'posts')
-  const canUpdate = hasUpdatePermission(user, selectedTenant, 'posts')
-  const canDelete = hasDeletePermission(user, selectedTenant, 'posts')
+  const canCreate = hasCreatePermission(user, 'posts')
+  const canRead = hasReadPermission(user, 'posts')
+  const canUpdate = hasUpdatePermission(user, 'posts')
+  const canDelete = hasDeletePermission(user, 'posts')
 
   if (canRead) {
     if (canCreate || canUpdate || canDelete) return true

@@ -2,13 +2,13 @@ import type { Access } from 'payload'
 import { User } from 'payload-types'
 import getGenericRoleBasedAccess from '@/collections/utilities/access/getGenericRoleBasedAccess'
 import { AccessType } from '@/enums'
-import { isTenantPlatformSelected } from '@/fields/utilities/access/isTenantPlatformSelected'
+import { hasSuperAdminRole } from '@/utilities/getRole'
 
 const createUsers: Access<User> = async (args) => {
-  const hasAccessBasedOnRole = await getGenericRoleBasedAccess(args, 'users', AccessType.CREATE)
-  const isPlatformSelected = await isTenantPlatformSelected(args.req)
+  const hasPermission = await getGenericRoleBasedAccess(args, 'users', AccessType.CREATE)
+  const isSuperAdmin = hasSuperAdminRole(args.req.user?.userRoles)
 
-  return hasAccessBasedOnRole && !isPlatformSelected
+  return hasPermission || isSuperAdmin
 }
 
 export default createUsers

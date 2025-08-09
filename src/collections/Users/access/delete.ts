@@ -1,7 +1,6 @@
 import type { Access, Where } from 'payload'
 import { User } from 'payload-types'
 import { hasDeletePermission } from '@/utilities/getRolePermissions'
-import { getSelectedTenantId, getSelectedTenantToken } from '@/utilities/getSelectedTenant'
 import { hasSuperAdminRole } from '@/utilities/getRole'
 
 const deleteUsers: Access<User> = async (args) => {

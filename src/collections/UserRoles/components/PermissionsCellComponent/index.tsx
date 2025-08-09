@@ -1,12 +1,12 @@
 'use server'
 
 import type { ArrayField, DefaultServerCellComponentProps } from 'payload'
-import { TenantRole } from '@payload-types'
+import { UserRole } from '@payload-types'
 import { AccessTypeLabel } from '@/enums'
 import { Pill } from '@payloadcms/ui'
 import { PillProps } from '@payloadcms/ui/elements/Pill'
 
-type Permission = NonNullable<TenantRole['permissions'] | TenantRole['groupedPermissions']>[number]
+type Permission = NonNullable<UserRole['permissions'] | UserRole['groupedPermissions']>[number]
 
 const PermissionsCellComponentServer: React.FC<DefaultServerCellComponentProps> = async (props) => {
   const { field, cellData } = props

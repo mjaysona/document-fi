@@ -1,6 +1,4 @@
 import type { Access } from 'payload'
-import { getSelectedTenantId, getSelectedTenantToken } from '@/utilities/getSelectedTenant'
-import { hasUpdatePermission } from '@/utilities/getRolePermissions'
 import { hasSuperAdminRole } from '@/utilities/getRole'
 
 const updatePages: Access = async (args) => {

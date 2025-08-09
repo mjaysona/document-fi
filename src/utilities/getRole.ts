@@ -6,5 +6,3 @@ export const hasAdminRole = (userRoles: User['userRoles']): boolean =>
   checkUserRoles([ROLES.ADMIN], userRoles)
 export const hasSuperAdminRole = (userRoles: User['userRoles'] | undefined): boolean =>
   checkUserRoles([ROLES.SUPER_ADMIN], userRoles)
-export const hasTenantAdminRole = (userRoles: User['userRoles']): boolean =>
-  checkUserRoles([ROLES.ADMIN], userRoles)

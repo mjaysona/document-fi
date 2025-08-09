@@ -1,16 +1,10 @@
 import { type CollectionConfig, type Field } from 'payload'
 import { generatePreviewPath } from '@/utilities/generatePreviewPath'
-import { Hero } from '@/blocks/Hero/config'
 import { createdByField } from '@/fields/CreatedByField'
 import { createPages, deletePages, readPages, updatePages } from './access'
 import { updatedByField } from '@/fields/UpdatedByField'
 import { slugField } from '@/fields/SlugField'
-import { Feature } from '@payload-types'
-import { TwoColumn } from '@/blocks/TwoColumnBlock/config'
-import { ThreeColumnsBlock } from '@/blocks/ThreeColumnsBlock/config'
-import { getSelectedTenantId } from '@/utilities/getSelectedTenant'
 import { ensureUniqueSlug } from '@/collections/hooks/ensureUniqueSlug'
-import { createFirstTenantPage } from '../utilities/createFirstTenantPage'
 
 const Pages: CollectionConfig = {
   slug: 'pages',
