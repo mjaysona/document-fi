@@ -76,7 +76,7 @@ const NonRepeatingArraySelectField: React.FC<NonRepeatingArraySelectFieldClientP
     },
     path,
     value,
-    readOnly: permissions !== true && !permissions?.update,
+    readOnly: false,
   }
 
   return <SelectField {...selectFieldProps} />

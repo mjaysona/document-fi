@@ -11,6 +11,9 @@ export const createFirstRole = async (payload: Payload): Promise<void> => {
       },
     },
   })
+  const collectionSlugs = Object.values(payload.collections)
+    .map((collection) => collection.config.slug)
+    .filter((slug) => !slug.startsWith('payload'))
 
   if (existingRoles?.docs?.length) {
     console.info(`"Super Admin" role already exists, skipping creation.`)
@@ -18,41 +21,12 @@ export const createFirstRole = async (payload: Payload): Promise<void> => {
     console.info(`Attempting to create "Super Admin" role.`)
 
     try {
-      const permissions: UserRole['permissions'] = [
-        {
-          collectionSlug: 'users',
-          access: ['read', 'create', 'update', 'delete'],
-        },
-        {
-          collectionSlug: 'user-roles',
-          access: ['read', 'create', 'update', 'delete'],
-        },
-        {
-          collectionSlug: 'media',
-          access: ['read', 'create', 'update', 'delete'],
-        },
-        {
-          collectionSlug: 'pages',
-          access: ['read', 'create', 'update', 'delete'],
-        },
-        {
-          collectionSlug: 'posts',
-          access: ['read', 'create', 'update', 'delete'],
-        },
-        {
-          group: 'admin',
-          collectionSlug: 'settings',
-          access: ['read', 'create', 'update', 'delete'],
-        },
-        {
-          collectionSlug: 'sessions',
-          access: ['read', 'delete'],
-        },
-        {
-          collectionSlug: 'accounts',
-          access: ['read', 'delete'],
-        },
-      ]
+      const permissions = collectionSlugs.map((slug) => ({
+        collectionSlug: slug,
+        access: ['read', 'create', 'update', 'delete'],
+      }))
+
+      console.log('permissions:', JSON.stringify(permissions, null, 2))
 
       await payload.create({
         collection: 'user-roles',
@@ -104,8 +78,7 @@ export const createFirstRole = async (payload: Payload): Promise<void> => {
             access: ['read'],
           },
           {
-            group: 'admin',
-            collectionSlug: 'settings',
+            collectionSlug: 'dashboard-customization',
             access: ['read'],
           },
         ],

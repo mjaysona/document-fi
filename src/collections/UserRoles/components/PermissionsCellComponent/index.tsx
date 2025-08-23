@@ -5,6 +5,7 @@ import { UserRole } from '@payload-types'
 import { AccessTypeLabel } from '@/enums'
 import { Pill } from '@payloadcms/ui'
 import { PillProps } from '@payloadcms/ui/elements/Pill'
+import classes from './index.module.scss'
 
 type Permission = NonNullable<UserRole['permissions'] | UserRole['groupedPermissions']>[number]
 
@@ -44,11 +45,9 @@ const PermissionsCellComponentServer: React.FC<DefaultServerCellComponentProps> 
           <span key={accessLabel}>
             <Pill pillStyle={getPillType(accessLabel)} size="small">
               {accessLabel}
-            </Pill>
-            ,{' '}
+            </Pill>{' '}
           </span>
-        ))}{' '}
-        and{' '}
+        ))}
         <Pill pillStyle={getPillType(lastAccess || '')} size="small">
           {lastAccess}
         </Pill>
@@ -79,7 +78,7 @@ const PermissionsCellComponentServer: React.FC<DefaultServerCellComponentProps> 
   }
 
   return (
-    <div>
+    <div className={classes.table}>
       {cellData.map((permission: Permission) => {
         const permissionKey = 'collectionSlug' in permission ? 'collectionSlug' : 'group'
         if (!permission[permissionKey as keyof Permission]) {
@@ -87,10 +86,9 @@ const PermissionsCellComponentServer: React.FC<DefaultServerCellComponentProps> 
         }
 
         return (
-          <div key={`${permission[permissionKey as keyof Permission]}`}>
-            <div>
-              Can {getAccessPermissions(permission)} {getCollectionLabel(permission)}
-            </div>
+          <div className={classes.row} key={`${permission[permissionKey as keyof Permission]}`}>
+            <div>{getCollectionLabel(permission)}</div>
+            <div>{getAccessPermissions(permission)}</div>
           </div>
         )
       })}

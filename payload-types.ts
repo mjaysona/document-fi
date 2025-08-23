@@ -172,7 +172,6 @@ export interface UserRole {
   label: string;
   permissions?:
     | {
-        group?: ('globals' | 'appearance' | 'admin') | null;
         collectionSlug: string;
         access: ('read' | 'create' | 'update' | 'delete')[];
         id?: string | null;
@@ -471,7 +470,6 @@ export interface UserRolesSelect<T extends boolean = true> {
   permissions?:
     | T
     | {
-        group?: T;
         collectionSlug?: T;
         access?: T;
         id?: T;

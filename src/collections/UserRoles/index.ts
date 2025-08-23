@@ -73,45 +73,45 @@ const UserRoles: CollectionConfig = {
             width: '50%',
           },
           fields: [
-            {
-              name: 'group',
-              type: 'select',
-              admin: {
-                hidden: true,
-                readOnly: true,
-                width: '16%',
-              },
-              options: [
-                {
-                  label: 'Globals',
-                  value: 'globals',
-                },
-                {
-                  label: 'Appearance',
-                  value: 'appearance',
-                },
-                {
-                  label: 'Admin',
-                  value: 'admin',
-                },
-              ],
-              hooks: {
-                beforeChange: [
-                  ({ req, siblingData }) => {
-                    const { collectionSlug } = siblingData
-                    const { collections } = req.payload
+            // {
+            //   name: 'group',
+            //   type: 'select',
+            //   admin: {
+            //     hidden: true,
+            //     readOnly: true,
+            //     width: '16%',
+            //   },
+            //   options: [
+            //     {
+            //       label: 'Globals',
+            //       value: 'globals',
+            //     },
+            //     {
+            //       label: 'Appearance',
+            //       value: 'appearance',
+            //     },
+            //     {
+            //       label: 'Admin',
+            //       value: 'admin',
+            //     },
+            //   ],
+            //   hooks: {
+            //     beforeChange: [
+            //       ({ req, siblingData }) => {
+            //         const { collectionSlug } = siblingData
+            //         const { collections } = req.payload
 
-                    if (collectionSlug && collections[collectionSlug as CollectionSlug]) {
-                      const collection = collections[collectionSlug as CollectionSlug]
+            //         if (collectionSlug && collections[collectionSlug as CollectionSlug]) {
+            //           const collection = collections[collectionSlug as CollectionSlug]
 
-                      return (collection.config.admin.group as { name: string })?.name
-                    }
+            //           return (collection.config.admin.group as { name: string })?.name
+            //         }
 
-                    return null
-                  },
-                ],
-              },
-            },
+            //         return null
+            //       },
+            //     ],
+            //   },
+            // },
             {
               name: 'collectionSlug',
               label: 'Feature',

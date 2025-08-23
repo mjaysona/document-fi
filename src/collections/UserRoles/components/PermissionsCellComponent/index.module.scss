@@ -1,0 +1,15 @@
+.table {
+  border: var(--theme-elevation-100) 1px solid;
+}
+
+.row {
+  border-bottom: var(--theme-elevation-100) 1px solid;
+  display: flex;
+  justify-content: space-between;
+  &:last-of-type {
+    border-bottom: none;
+  }
+  > div {
+    padding: calc(var(--base) * 0.5);
+  }
+}

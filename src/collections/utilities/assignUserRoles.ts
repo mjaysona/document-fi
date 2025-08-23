@@ -1,6 +1,7 @@
 import { Payload } from 'payload'
 import { ROLES } from '../UserRoles/roles.enum'
 import { UserRole } from '@payload-types'
+import { createFirstRole } from '@/collections/utilities/createFirstRole'
 
 /*
  * Assigns the "Super Admin" role to the "Super Admin" user.
@@ -25,6 +26,7 @@ export const assignUserRoles = async (payload: Payload): Promise<void> => {
 
   if (!superAdminUser?.docs?.length || !superAdminRoles?.docs?.length) {
     console.error('"Super Admin" user or role not found, cannot assign role.')
+    await createFirstRole(payload)
     return
   }
 
