@@ -94,22 +94,31 @@ const Users: CollectionConfig = {
         {
           type: 'checkbox',
           name: 'isSystemAccount',
-          // admin: {
-          //   readOnly: true,
-          // },
+          admin: {
+            condition: (_data, _siblingData, { user }) => {
+              return hasSuperAdminRole(user?.userRoles)
+            },
+          },
           defaultValue: false,
         },
         {
           type: 'checkbox',
           name: 'isEmailVerified',
-          // admin: {
-          //   readOnly: true,
-          // },
+          admin: {
+            condition: (_data, _siblingData, { user }) => {
+              return hasSuperAdminRole(user?.userRoles)
+            },
+          },
           defaultValue: false,
         },
         {
           type: 'checkbox',
           name: 'isFresh',
+          admin: {
+            condition: (_data, _siblingData, { user }) => {
+              return hasSuperAdminRole(user?.userRoles)
+            },
+          },
           defaultValue: true,
         },
       ],
