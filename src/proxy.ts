@@ -6,7 +6,10 @@ export async function proxy(request: NextRequest) {
   const sessionCookie = getSessionCookie(request)
   const { pathname } = request.nextUrl
 
-  if (sessionCookie && authRoutes.includes(pathname)) {
+  if (
+    sessionCookie &&
+    ['/login', '/create-account', '/recover-password', '/reset-password'].includes(pathname)
+  ) {
     return NextResponse.redirect(new URL('/app', request.url))
   }
 

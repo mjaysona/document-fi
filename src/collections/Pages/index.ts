@@ -16,6 +16,7 @@ const Pages: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'title',
+    hidden: true,
     livePreview: {
       url: ({ data, req }) => {
         const path = generatePreviewPath({

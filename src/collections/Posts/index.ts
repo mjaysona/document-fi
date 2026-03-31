@@ -15,6 +15,7 @@ const Posts: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'title',
+    group: false,
   },
   fields: [
     {

@@ -19,6 +19,7 @@ export enum ErrorMessage {
 }
 
 export enum BetterAuthStatusCode {
+  EMAIL_NOT_VERIFIED = 'Your email address has not been verified. Please check your inbox and click the verification link.',
   INVALID_EMAIL_OR_PASSWORD = 'Email or password is incorrect.',
   USER_ALREADY_EXISTS = 'The email address you provided is already in use.',
   YOU_CAN_ONLY_SEND_A_VERIFICATION_EMAIL_TO_AN_UNVERIFIED_EMAIL = 'The email address you provided is already verified.',

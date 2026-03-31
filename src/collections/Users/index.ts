@@ -94,17 +94,17 @@ const Users: CollectionConfig = {
         {
           type: 'checkbox',
           name: 'isSystemAccount',
-          admin: {
-            readOnly: true,
-          },
+          // admin: {
+          //   readOnly: true,
+          // },
           defaultValue: false,
         },
         {
           type: 'checkbox',
           name: 'isEmailVerified',
-          admin: {
-            readOnly: true,
-          },
+          // admin: {
+          //   readOnly: true,
+          // },
           defaultValue: false,
         },
         {

@@ -4,6 +4,7 @@ const UserPreferences: CollectionConfig = {
   slug: 'user-preferences',
   admin: {
     useAsTitle: 'userId',
+    hidden: true,
     defaultColumns: ['userId', 'theme', 'sidenavState'],
   },
   fields: [
