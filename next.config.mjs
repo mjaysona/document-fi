@@ -3,10 +3,9 @@ import { withPayload } from '@payloadcms/next/withPayload'
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Your Next.js config here
-  experimental: {
-    reactCompiler: false,
-  },
+  reactCompiler: false,
   // Your Next.js config here
+  turbopack: { root: process.cwd() },
   async rewrites() {
     return [
       {
