@@ -7,7 +7,6 @@ import {
   ArrowRightFromLine,
   ChartPie,
   LayoutDashboard,
-  ListChecks,
   LogOut,
   PlusCircle,
   Rows3,
@@ -40,32 +39,11 @@ export const Navbar = ({ isExpanded, toggleExpandCollapse, mobileBreakpoint }: N
   }
   const navItems = [
     {
-      id: 'dashboard',
-      label: 'Dashboard',
+      id: 'records',
+      label: 'Records',
       icon: LayoutDashboard,
-      path: '/app/dashboard',
-      active: activePath === 'dashboard',
-    },
-    {
-      id: 'sets',
-      label: 'Sets',
-      icon: Rows3,
-      path: '/app/sets',
-      active: activePath === 'sets',
-    },
-    {
-      id: 'assessments',
-      label: 'Assessments',
-      icon: ListChecks,
-      path: '/app/assessments',
-      active: activePath === 'assessments',
-    },
-    {
-      id: 'analytics',
-      label: 'Analytics',
-      icon: ChartPie,
-      path: '/app/analytics',
-      active: activePath === 'analytics',
+      path: '/app/records',
+      active: activePath === 'records',
     },
   ]
 
@@ -93,11 +71,11 @@ export const Navbar = ({ isExpanded, toggleExpandCollapse, mobileBreakpoint }: N
               <Button
                 fullWidth
                 variant="primary"
-                onClick={() => {}}
+                onClick={() => router.push('/app/records/new')}
                 leftSection={<PlusCircle size={16} />}
                 size="md"
               >
-                Start assessment
+                New record
               </Button>
             )}
           </Flex>

@@ -6,7 +6,7 @@
   "scripts": {
     "build": "cross-env NODE_OPTIONS=--no-deprecation next build",
     "ci": "payload migrate && pnpm build",
-    "dev": "cross-env NODE_OPTIONS=\"${NODE_OPTIONS} --no-deprecation\" next dev",
+    "dev": "cross-env NODE_OPTIONS=\"${NODE_OPTIONS} --no-deprecation\" next dev --no-server-fast-refresh",
     "devsafe": "rm -rf .next && pnpm dev",
     "generate:importmap": "payload generate:importmap",
     "generate:schema": "cross-env NODE_OPTIONS=--no-deprecation payload-graphql generate:schema",
@@ -24,9 +24,11 @@
   },
   "dependencies": {
     "@innovixx/payload-color-picker-field": "^2.0.1",
-    "@mantine/core": "^8.1.0",
-    "@mantine/form": "^8.1.0",
-    "@mantine/hooks": "^8.1.0",
+    "@mantine/core": "^8.3.18",
+    "@mantine/dropzone": "^8.3.18",
+    "@mantine/form": "^8.3.18",
+    "@mantine/hooks": "^8.3.18",
+    "@mistralai/mistralai": "^2.1.2",
     "@nouance/payload-better-fields-plugin": "^2.0.2",
     "@payloadcms/admin-bar": "3.80.0",
     "@payloadcms/db-mongodb": "3.80.0",

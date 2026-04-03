@@ -30,6 +30,7 @@ import Sessions from '@/collections/Sessions'
 import Accounts from '@/collections/Accounts'
 import UserPreferences from '@/collections/UserPreferences'
 import DashboardCustomization from '@/collections/DashboardCustomization'
+import WeightBills from '@/collections/WeightBills'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -60,6 +61,7 @@ export default buildConfig({
     Pages,
     Posts,
     UserPreferences,
+    WeightBills,
 
     // Super Admin specific collections below
     UserRoles,

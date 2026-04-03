@@ -71,6 +71,7 @@ export interface Config {
     pages: Page;
     posts: Post;
     'user-preferences': UserPreference;
+    'weight-bills': WeightBill;
     'user-roles': UserRole;
     media: Media;
     accounts: Account;
@@ -86,6 +87,7 @@ export interface Config {
     pages: PagesSelect<false> | PagesSelect<true>;
     posts: PostsSelect<false> | PostsSelect<true>;
     'user-preferences': UserPreferencesSelect<false> | UserPreferencesSelect<true>;
+    'weight-bills': WeightBillsSelect<false> | WeightBillsSelect<true>;
     'user-roles': UserRolesSelect<false> | UserRolesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     accounts: AccountsSelect<false> | AccountsSelect<true>;
@@ -258,6 +260,25 @@ export interface UserPreference {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "weight-bills".
+ */
+export interface WeightBill {
+  id: string;
+  weightBillNumber?: number | null;
+  date?: string | null;
+  customerName?: string | null;
+  vehicle?: string | null;
+  amount?: number | null;
+  paymentStatus?: string | null;
+  proofOfReceipt?: (string | null) | Media;
+  isVerified?: boolean | null;
+  createdBy?: (string | null) | User;
+  updatedBy?: (string | null) | User;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media".
  */
 export interface Media {
@@ -345,6 +366,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'user-preferences';
         value: string | UserPreference;
+      } | null)
+    | ({
+        relationTo: 'weight-bills';
+        value: string | WeightBill;
       } | null)
     | ({
         relationTo: 'user-roles';
@@ -478,6 +503,24 @@ export interface PostsSelect<T extends boolean = true> {
 export interface UserPreferencesSelect<T extends boolean = true> {
   userId?: T;
   sidenavState?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "weight-bills_select".
+ */
+export interface WeightBillsSelect<T extends boolean = true> {
+  weightBillNumber?: T;
+  date?: T;
+  customerName?: T;
+  vehicle?: T;
+  amount?: T;
+  paymentStatus?: T;
+  proofOfReceipt?: T;
+  isVerified?: T;
+  createdBy?: T;
+  updatedBy?: T;
   updatedAt?: T;
   createdAt?: T;
 }

@@ -1,0 +1,83 @@
+import type { CollectionConfig, Field } from 'payload'
+import { createdByField } from '@/fields/CreatedByField'
+import { createWeightBills, readWeightBills, updateWeightBills } from './access'
+import { updatedByField } from '@/fields/UpdatedByField'
+
+const WeightBills: CollectionConfig = {
+  slug: 'weight-bills',
+  access: {
+    create: createWeightBills,
+    read: readWeightBills,
+    update: updateWeightBills,
+    delete: () => true,
+  },
+  admin: {
+    useAsTitle: 'weightBillNumber',
+  },
+  fields: [
+    {
+      name: 'weightBillNumber',
+      label: 'Weight Bill #',
+      type: 'number',
+    },
+    {
+      name: 'date',
+      label: 'Date',
+      type: 'date',
+    },
+    {
+      name: 'customerName',
+      label: 'Customer Name',
+      type: 'text',
+    },
+    {
+      name: 'vehicle',
+      label: 'Vehicle',
+      type: 'text',
+    },
+    {
+      name: 'amount',
+      label: 'Amount',
+      type: 'number',
+    },
+    {
+      name: 'paymentStatus',
+      label: 'Payment Status',
+      type: 'text',
+    },
+    {
+      name: 'proofOfReceipt',
+      label: 'Proof of Receipt',
+      type: 'upload',
+      relationTo: 'media',
+    },
+    {
+      name: 'isVerified',
+      label: 'Is Verified',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: {
+        position: 'sidebar',
+      },
+    },
+    {
+      ...createdByField,
+      admin: {
+        ...createdByField.admin,
+        hidden: false,
+        position: 'sidebar',
+      },
+    } as Field,
+    {
+      ...updatedByField,
+      admin: {
+        ...updatedByField.admin,
+        hidden: false,
+        position: 'sidebar',
+      },
+    } as Field,
+  ],
+  versions: true,
+}
+
+export default WeightBills

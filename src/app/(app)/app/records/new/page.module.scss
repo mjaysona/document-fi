@@ -1,0 +1,26 @@
+.card {
+  background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7));
+}
+
+.wrapper {
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.dropzone {
+  border-width: 1px;
+  padding: 24px 0 40px;
+  color: var(--mantine-color-bright);
+}
+
+.icon {
+  color: light-dark(var(--mantine-color-gray-4), var(--mantine-color-white));
+}
+
+.description {
+  text-align: center;
+  font-size: var(--mantine-font-size-sm);
+  color: var(--mantine-color-dimmed);
+  margin-top: var(--mantine-spacing-xs);
+}
