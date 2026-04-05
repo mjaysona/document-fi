@@ -60,7 +60,8 @@ export default function DropzoneButton() {
       if (result.success) {
         // Get the first upload's media ID to pass in query
         const firstUpload = result.data.uploads[0]
-        const mediaId = typeof firstUpload.media === 'string' ? firstUpload.media : firstUpload.media?.id
+        const mediaId =
+          typeof firstUpload.media === 'string' ? firstUpload.media : firstUpload.media?.id
         router.push(`/app/records/new/verify?id=${mediaId}`)
       } else {
         console.error('Failed to create session:', result.error)
