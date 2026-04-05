@@ -43,7 +43,11 @@ const WeightBills: CollectionConfig = {
     {
       name: 'paymentStatus',
       label: 'Payment Status',
-      type: 'text',
+      type: 'select',
+      options: [
+        { label: 'PAID', value: 'PAID' },
+        { label: 'CANCELLED', value: 'CANCELLED' },
+      ],
     },
     {
       name: 'proofOfReceipt',

@@ -31,6 +31,7 @@ import Accounts from '@/collections/Accounts'
 import UserPreferences from '@/collections/UserPreferences'
 import DashboardCustomization from '@/collections/DashboardCustomization'
 import WeightBills from '@/collections/WeightBills'
+import SessionUploads from '@/collections/SessionUploads'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -62,6 +63,7 @@ export default buildConfig({
     Posts,
     UserPreferences,
     WeightBills,
+    SessionUploads,
 
     // Super Admin specific collections below
     UserRoles,
@@ -145,27 +147,27 @@ export default buildConfig({
       generateURL: (docs) =>
         docs.reduce((url, doc) => `${url}/${doc.slug}`.replace(/^\/+/, '/'), ''),
     }),
-    s3Storage({
-      collections: {
-        media: {
-          prefix: 'admin',
-        },
-        // 'tenant-media': {
-        //   disableLocalStorage: true,
-        //   generateFileURL: ({ filename, prefix }) => {
-        //     return `${process.env.S3_URL}/${process.env.S3_BUCKET}/${prefix}/${filename}`
-        //   },
-        // },
-      },
-      bucket: process.env.S3_BUCKET || '',
-      config: {
-        credentials: {
-          accessKeyId: process.env.S3_ACCESS_KEY_ID || '',
-          secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || '',
-        },
-        region: process.env.S3_REGION || 'auto',
-        endpoint: process.env.S3_ENDPOINT || '',
-      },
-    }),
+    // Only use S3Storage in production when credentials are available
+    ...(process.env.S3_BUCKET
+      ? [
+          s3Storage({
+            collections: {
+              media: {
+                prefix: 'admin',
+              },
+            },
+            bucket: process.env.S3_BUCKET,
+            config: {
+              credentials: {
+                accessKeyId: process.env.S3_ACCESS_KEY_ID || '',
+                secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || '',
+              },
+              region: process.env.S3_REGION || 'auto',
+              endpoint: process.env.S3_ENDPOINT || '',
+            },
+          }),
+        ]
+      : []),
+    // For local development without S3, files are stored locally (default behavior)
   ],
 })

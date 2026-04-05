@@ -15,7 +15,6 @@ import { BlockquoteFeatureClient as BlockquoteFeatureClient_e70f5e05f09f93e00b99
 import { default as default_21770b7cd4c377f531de5c3939766e77 } from '@/collections/UserRoles/components/CollectionsSelectField/index'
 import { default as default_9d1d0206a6be1ee07676dfd7d0f72d73 } from '@/collections/UserRoles/components/PermissionsCellComponent/index'
 import { default as default_ed3cbed3b52ba9e0c712bb19e7066c56 } from '@/app/(payload)/components/Logo'
-import { S3ClientUploadHandler as S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24 } from '@payloadcms/storage-s3/client'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
 export const importMap = {
@@ -36,6 +35,5 @@ export const importMap = {
   "@/collections/UserRoles/components/CollectionsSelectField/index#default": default_21770b7cd4c377f531de5c3939766e77,
   "@/collections/UserRoles/components/PermissionsCellComponent/index#default": default_9d1d0206a6be1ee07676dfd7d0f72d73,
   "@/app/(payload)/components/Logo#default": default_ed3cbed3b52ba9e0c712bb19e7066c56,
-  "@payloadcms/storage-s3/client#S3ClientUploadHandler": S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }

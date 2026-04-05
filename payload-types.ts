@@ -72,6 +72,7 @@ export interface Config {
     posts: Post;
     'user-preferences': UserPreference;
     'weight-bills': WeightBill;
+    'session-uploads': SessionUpload;
     'user-roles': UserRole;
     media: Media;
     accounts: Account;
@@ -88,6 +89,7 @@ export interface Config {
     posts: PostsSelect<false> | PostsSelect<true>;
     'user-preferences': UserPreferencesSelect<false> | UserPreferencesSelect<true>;
     'weight-bills': WeightBillsSelect<false> | WeightBillsSelect<true>;
+    'session-uploads': SessionUploadsSelect<false> | SessionUploadsSelect<true>;
     'user-roles': UserRolesSelect<false> | UserRolesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     accounts: AccountsSelect<false> | AccountsSelect<true>;
@@ -269,7 +271,7 @@ export interface WeightBill {
   customerName?: string | null;
   vehicle?: string | null;
   amount?: number | null;
-  paymentStatus?: string | null;
+  paymentStatus?: ('PAID' | 'CANCELLED') | null;
   proofOfReceipt?: (string | null) | Media;
   isVerified?: boolean | null;
   createdBy?: (string | null) | User;
@@ -285,7 +287,6 @@ export interface Media {
   id: string;
   createdBy?: (string | null) | User;
   text?: string | null;
-  prefix?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -297,6 +298,25 @@ export interface Media {
   height?: number | null;
   focalX?: number | null;
   focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "session-uploads".
+ */
+export interface SessionUpload {
+  id: string;
+  userId: string | User;
+  documentType: 'weight-bill';
+  uploads?:
+    | {
+        fileName?: string | null;
+        media: string | Media;
+        id?: string | null;
+      }[]
+    | null;
+  createdBy?: (string | null) | User;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -370,6 +390,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'weight-bills';
         value: string | WeightBill;
+      } | null)
+    | ({
+        relationTo: 'session-uploads';
+        value: string | SessionUpload;
       } | null)
     | ({
         relationTo: 'user-roles';
@@ -526,6 +550,24 @@ export interface WeightBillsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "session-uploads_select".
+ */
+export interface SessionUploadsSelect<T extends boolean = true> {
+  userId?: T;
+  documentType?: T;
+  uploads?:
+    | T
+    | {
+        fileName?: T;
+        media?: T;
+        id?: T;
+      };
+  createdBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "user-roles_select".
  */
 export interface UserRolesSelect<T extends boolean = true> {
@@ -551,7 +593,6 @@ export interface UserRolesSelect<T extends boolean = true> {
 export interface MediaSelect<T extends boolean = true> {
   createdBy?: T;
   text?: T;
-  prefix?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;

@@ -1,59 +1,69 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button, Card, Group, Text } from '@mantine/core'
 import { Dropzone, MIME_TYPES } from '@mantine/dropzone'
 import classes from './page.module.scss'
 import { Ban, PlusCircle, Upload } from 'lucide-react'
+import { parseWeightBillOCR, type ParsedWeightBill } from '@/lib/parseWeightBillOCR'
 
 export default function DropzoneButton() {
-  const [files, setFiles] = useState<File[]>([])
-  const [ocrResult, setOcrResult] = useState<string>('')
-  const [imagePreviewUrl, setImagePreviewUrl] = useState<string>('')
+  const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const openRef = useRef<() => void>(null)
+  const previewUrlsRef = useRef<Set<string>>(new Set())
 
-  const toBase64 = (file: File): Promise<string> =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = () => {
-        const result = reader.result as string
-        const base64 = result.split(',')[1] ?? ''
-        resolve(base64)
-      }
-      reader.onerror = reject
-      reader.readAsDataURL(file)
-    })
+  useEffect(() => {
+    return () => {
+      previewUrlsRef.current.forEach((url) => URL.revokeObjectURL(url))
+    }
+  }, [])
+
+  const getAmountForVehicle = (vehicleType: string): number | undefined => {
+    const vehicleAmountMap: Record<string, number> = {
+      ELF: 100,
+      FORWARD: 150,
+      'TEN WHEELER': 250,
+      'KOLONG-KOLONG': 100,
+      'KONLONG-KOLONG': 100,
+    }
+    return vehicleAmountMap[vehicleType.toUpperCase()]
+  }
 
   const handleDrop = async (droppedFiles: File[]) => {
     console.log('Dropped files:', droppedFiles)
     if (!droppedFiles.length) return
 
-    if (imagePreviewUrl) {
-      URL.revokeObjectURL(imagePreviewUrl)
-    }
-
-    setFiles(droppedFiles)
-    setImagePreviewUrl(URL.createObjectURL(droppedFiles[0]))
     setIsLoading(true)
+
     try {
-      const base64 = await toBase64(droppedFiles[0])
-      const response = await fetch('/api/mistral-ocr', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ base64Image: base64 }),
+      // Create FormData with actual files (no base64 conversion)
+      const formData = new FormData()
+      droppedFiles.forEach((file) => {
+        formData.append('files', file)
       })
 
-      const data = await response.json()
+      // Send to Route Handler
+      const response = await fetch('/api/session-uploads/create', {
+        method: 'POST',
+        body: formData,
+      })
+
       if (!response.ok) {
-        throw new Error(data?.error || 'OCR API error')
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to create session')
       }
 
-      setOcrResult(JSON.stringify(data.ocrResult, null, 2))
-      console.log('Mistral OCR response:', data)
+      const result = await response.json()
+
+      if (result.success) {
+        router.push('/app/records/new/verify?index=0')
+      } else {
+        console.error('Failed to create session:', result.error)
+      }
     } catch (error) {
-      console.error('OCR integration error:', error)
-      setOcrResult('OCR error: ' + (error as Error).message)
+      console.error('Error creating session:', error)
     } finally {
       setIsLoading(false)
     }
@@ -105,23 +115,7 @@ export default function DropzoneButton() {
           Select files
         </Button>
 
-        {isLoading && <Text mt="md">Analyzing image with Mistral OCR...</Text>}
-        {imagePreviewUrl && (
-          <Card withBorder radius="md" mt="md" style={{ maxWidth: 500 }}>
-            <Text fw={700}>Image preview</Text>
-            <img
-              src={imagePreviewUrl}
-              alt="Dropped file preview"
-              style={{ width: '100%', height: 'auto', objectFit: 'contain', marginTop: 8 }}
-            />
-          </Card>
-        )}
-        {ocrResult && (
-          <Card withBorder radius="md" mt="md" style={{ whiteSpace: 'pre-wrap' }}>
-            <Text fw={700}>OCR result</Text>
-            <Text fz="sm">{ocrResult}</Text>
-          </Card>
-        )}
+        {isLoading && <Text mt="md">Uploading files...</Text>}
       </Card>
     </div>
   )
