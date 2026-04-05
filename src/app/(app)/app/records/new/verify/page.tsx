@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Button, Card, Group, NumberInput, Select, Text, TextInput } from '@mantine/core'
+import { Alert, Button, Card, Group, NumberInput, Select, Text, TextInput } from '@mantine/core'
 import classes from '../page.module.scss'
 import { parseWeightBillOCR, type ParsedWeightBill } from '@/lib/parseWeightBillOCR'
-import { getSessionUploads, verifyAndSaveWeightBill } from './actions'
+import { getSessionUploads, verifyAndSaveWeightBill, saveWeightBill } from './actions'
 
 type FileRecord = {
   id?: string
@@ -18,7 +18,7 @@ type FileRecord = {
   weightBillNumber: number | undefined
   vehicle: string
   amount: number | undefined
-  paymentStatus: string
+  paymentStatus: 'PAID' | 'CANCELLED' | ''
   analyzed: boolean
 }
 
@@ -26,6 +26,7 @@ export default function VerifyPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [records, setRecords] = useState<FileRecord[]>([])
+  const [uploads, setUploads] = useState<any[]>([])
   const [activeIndex, setActiveIndex] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
 
@@ -120,11 +121,11 @@ export default function VerifyPage() {
           return
         }
         const sessionData = result.data
-        const uploads = sessionData.uploads || []
+        const uploadsData = sessionData.uploads || []
 
-        console.log('uploads', uploads)
+        console.log('uploads', uploadsData)
 
-        const records: FileRecord[] = uploads.map((upload: any, idx: number) => {
+        const records: FileRecord[] = uploadsData.map((upload: any, idx: number) => {
           const media = upload.media
           const mediaUrl = typeof media === 'string' ? `/api/media/${media}` : media?.url || ''
           return {
@@ -143,15 +144,28 @@ export default function VerifyPage() {
           }
         })
         setRecords(records)
-        setActiveIndex(0)
-        if (records[0]) await analyzeRecord(records[0], 0)
+        setUploads(uploadsData)
+
+        // Find the index based on id query param
+        const id = searchParams.get('id')
+        let initialIndex = 0
+        if (id) {
+          const foundIndex = uploadsData.findIndex((upload: any) => {
+            const mediaId = typeof upload.media === 'string' ? upload.media : upload.media?.id
+            return mediaId === id
+          })
+          initialIndex = foundIndex !== -1 ? foundIndex : 0
+        }
+
+        setActiveIndex(initialIndex)
+        if (records[initialIndex]) await analyzeRecord(records[initialIndex], initialIndex)
       } catch (error) {
         console.error('Failed to load session:', error)
         router.push('/app/records/new')
       }
     }
     loadSession()
-  }, [router])
+  }, [router, searchParams])
 
   const currentRecord = records[activeIndex]
   const canGoPrev = activeIndex > 0
@@ -167,6 +181,16 @@ export default function VerifyPage() {
   const goToIndex = async (index: number) => {
     if (index < 0 || index >= records.length) return
     setActiveIndex(index)
+
+    // Update URL with the media ID of the new upload
+    const upload = uploads[index]
+    if (upload) {
+      const mediaId = typeof upload.media === 'string' ? upload.media : upload.media?.id
+      if (mediaId) {
+        window.history.replaceState({}, '', `/app/records/new/verify?id=${mediaId}`)
+      }
+    }
+
     if (!records[index]?.analyzed) {
       await analyzeRecord(records[index], index)
     }
@@ -190,20 +214,66 @@ export default function VerifyPage() {
     }
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!currentRecord) return
-    console.log('Save clicked', {
-      date: currentRecord.date,
-      customerName: currentRecord.customerName,
-      weightBillNumber: currentRecord.weightBillNumber,
-      vehicle: currentRecord.vehicle,
-      amount: currentRecord.amount,
-      paymentStatus: currentRecord.paymentStatus,
-    })
+
+    setIsLoading(true)
+    try {
+      const result = await saveWeightBill(
+        activeIndex,
+        {
+          date: currentRecord.date,
+          customerName: currentRecord.customerName,
+          weightBillNumber: currentRecord.weightBillNumber,
+          vehicle: currentRecord.vehicle,
+          amount: currentRecord.amount,
+          paymentStatus: currentRecord.paymentStatus || undefined,
+        },
+        currentRecord.fileName,
+        false,
+      )
+      if (result.success) {
+        // Update uploads with saved status
+        setUploads((prev) =>
+          prev.map((u, idx) => (idx === activeIndex ? { ...u, savedStatus: 'saved' } : u)),
+        )
+
+        // Auto-advance after saving
+        setTimeout(() => {
+          const nextUnsavedIndex = uploads.findIndex(
+            (u, idx) => idx > activeIndex && (!u.savedStatus || u.savedStatus === 'unsaved'),
+          )
+          if (nextUnsavedIndex !== -1) {
+            const upload = uploads[nextUnsavedIndex]
+            const mediaId = typeof upload.media === 'string' ? upload.media : upload.media?.id
+            if (mediaId) {
+              window.history.replaceState({}, '', `/app/records/new/verify?id=${mediaId}`)
+            }
+            setActiveIndex(nextUnsavedIndex)
+          } else if (canGoNext) {
+            const nextUpload = uploads[activeIndex + 1]
+            const mediaId =
+              typeof nextUpload.media === 'string' ? nextUpload.media : nextUpload.media?.id
+            if (mediaId) {
+              window.history.replaceState({}, '', `/app/records/new/verify?id=${mediaId}`)
+            }
+            setActiveIndex(activeIndex + 1)
+          }
+        }, 500)
+      } else {
+        console.error('Save failed:', result.error)
+      }
+    } catch (error) {
+      console.error('Save failed:', error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleVerify = async () => {
     if (!currentRecord) return
+
+    setIsLoading(true)
     try {
       const result = await verifyAndSaveWeightBill(
         activeIndex,
@@ -213,27 +283,70 @@ export default function VerifyPage() {
           weightBillNumber: currentRecord.weightBillNumber,
           vehicle: currentRecord.vehicle,
           amount: currentRecord.amount,
-          paymentStatus: currentRecord.paymentStatus,
+          paymentStatus: currentRecord.paymentStatus || undefined,
         },
         currentRecord.fileName,
       )
       if (result.success) {
-        if (canGoNext) {
-          await goToIndex(activeIndex + 1)
-        } else {
-          router.push('/app/weight-bills')
-        }
+        // Update uploads with verified status
+        setUploads((prev) =>
+          prev.map((u, idx) => (idx === activeIndex ? { ...u, savedStatus: 'verified' } : u)),
+        )
+
+        // Auto-advance after verifying
+        setTimeout(() => {
+          const nextUnsavedIndex = uploads.findIndex(
+            (u, idx) => idx > activeIndex && (!u.savedStatus || u.savedStatus === 'unsaved'),
+          )
+          if (nextUnsavedIndex !== -1) {
+            const upload = uploads[nextUnsavedIndex]
+            const mediaId = typeof upload.media === 'string' ? upload.media : upload.media?.id
+            if (mediaId) {
+              window.history.replaceState({}, '', `/app/records/new/verify?id=${mediaId}`)
+            }
+            setActiveIndex(nextUnsavedIndex)
+          } else if (canGoNext) {
+            const nextUpload = uploads[activeIndex + 1]
+            const mediaId =
+              typeof nextUpload.media === 'string' ? nextUpload.media : nextUpload.media?.id
+            if (mediaId) {
+              window.history.replaceState({}, '', `/app/records/new/verify?id=${mediaId}`)
+            }
+            setActiveIndex(activeIndex + 1)
+          }
+        }, 500)
       } else {
         console.error('Verify failed:', result.error)
       }
     } catch (error) {
       console.error('Verify failed:', error)
+    } finally {
+      setIsLoading(false)
     }
   }
 
   return (
     <div className={classes.wrapper}>
       <Card withBorder radius="md" className={classes.card}>
+        {currentRecord &&
+          uploads[activeIndex] &&
+          uploads[activeIndex].savedStatus &&
+          uploads[activeIndex].savedStatus !== 'unsaved' && (
+            <Alert
+              title={
+                uploads[activeIndex].savedStatus === 'verified'
+                  ? 'Already Verified'
+                  : uploads?.length > 1
+                    ? 'Already Saved'
+                    : 'Saved successfully'
+              }
+              color={uploads?.length > 1 ? 'blue' : 'green'}
+              mb="md"
+            >
+              Saving or verifying again will overwrite the previous entry.
+            </Alert>
+          )}
+
         {isLoading && <Text mt="md">Analyzing image with Mistral OCR...</Text>}
 
         <Group grow align="flex-start" wrap="nowrap">
@@ -296,7 +409,9 @@ export default function VerifyPage() {
                 <Select
                   label="Payment Status"
                   value={currentRecord.paymentStatus || undefined}
-                  onChange={(value) => updateActiveRecord({ paymentStatus: value || '' })}
+                  onChange={(value) =>
+                    updateActiveRecord({ paymentStatus: (value as 'PAID' | 'CANCELLED') || '' })
+                  }
                   data={[
                     { value: 'PAID', label: 'PAID' },
                     { value: 'CANCELLED', label: 'CANCELLED' },

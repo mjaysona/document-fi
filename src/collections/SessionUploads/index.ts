@@ -39,6 +39,16 @@ const SessionUploads: CollectionConfig = {
           relationTo: 'media',
           required: true,
         },
+        {
+          name: 'savedStatus',
+          type: 'select',
+          options: [
+            { label: 'Unsaved', value: 'unsaved' },
+            { label: 'Saved', value: 'saved' },
+            { label: 'Verified', value: 'verified' },
+          ],
+          defaultValue: 'unsaved',
+        },
       ],
     },
     createdByField,

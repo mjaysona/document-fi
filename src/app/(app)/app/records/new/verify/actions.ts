@@ -11,7 +11,7 @@ type VerifiedData = {
   weightBillNumber?: number
   vehicle: string
   amount?: number
-  paymentStatus: string
+  paymentStatus?: 'PAID' | 'CANCELLED'
 }
 
 export async function getSessionUploads() {
@@ -41,10 +41,11 @@ export async function getSessionUploads() {
   }
 }
 
-export async function verifyAndSaveWeightBill(
+export async function saveWeightBill(
   index: number,
-  verifiedData: VerifiedData,
+  weightBillData: VerifiedData,
   fileName: string,
+  isVerified: boolean = false,
 ) {
   try {
     const session = await auth.api.getSession({ headers: await headers() })
@@ -75,39 +76,69 @@ export async function verifyAndSaveWeightBill(
       throw new Error('Upload not found')
     }
 
-    // Create weight bill with media relationship
-    const weightBill = await payload.create({
+    // Check if weight bill with the same number already exists
+    let weightBill
+    const existingBills = await payload.find({
       collection: 'weight-bills',
-      data: {
-        ...verifiedData,
-        proofOfReceipt: upload.media,
-        isVerified: true,
+      where: {
+        weightBillNumber: { equals: weightBillData.weightBillNumber },
       },
+      limit: 1,
     })
 
-    // Remove the upload from the array
-    const newUploads = uploads.filter((_: any, i: number) => i !== index)
-
-    if (newUploads.length === 0) {
-      // Delete session if no more uploads
-      await payload.delete({
-        collection: 'session-uploads',
-        id: sessionDoc.id,
+    if (existingBills.docs.length > 0) {
+      // Update existing weight bill
+      weightBill = await payload.update({
+        collection: 'weight-bills',
+        id: existingBills.docs[0].id,
+        data: {
+          ...weightBillData,
+          proofOfReceipt: upload.media,
+          isVerified,
+        },
       })
     } else {
-      // Update session with remaining uploads
-      await payload.update({
-        collection: 'session-uploads',
-        id: sessionDoc.id,
+      // Create new weight bill
+      weightBill = await payload.create({
+        collection: 'weight-bills',
         data: {
-          uploads: newUploads,
+          ...weightBillData,
+          proofOfReceipt: upload.media,
+          isVerified,
         },
       })
     }
 
+    // Update the upload's savedStatus instead of removing it
+    const newUploads = uploads.map((u: any, i: number) =>
+      i === index
+        ? {
+            ...u,
+            savedStatus: isVerified ? 'verified' : 'saved',
+          }
+        : u,
+    )
+
+    // Update session with updated uploads
+    await payload.update({
+      collection: 'session-uploads',
+      id: sessionDoc.id,
+      data: {
+        uploads: newUploads,
+      },
+    })
+
     return { success: true, data: weightBill }
   } catch (error) {
-    console.error('Verify error:', error)
+    console.error('Save weight bill error:', error)
     return { success: false, error: String(error) }
   }
+}
+
+export async function verifyAndSaveWeightBill(
+  index: number,
+  verifiedData: VerifiedData,
+  fileName: string,
+) {
+  return saveWeightBill(index, verifiedData, fileName, true)
 }

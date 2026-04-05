@@ -311,6 +311,7 @@ export interface SessionUpload {
     | {
         fileName?: string | null;
         media: string | Media;
+        savedStatus?: ('unsaved' | 'saved' | 'verified') | null;
         id?: string | null;
       }[]
     | null;
@@ -560,6 +561,7 @@ export interface SessionUploadsSelect<T extends boolean = true> {
     | {
         fileName?: T;
         media?: T;
+        savedStatus?: T;
         id?: T;
       };
   createdBy?: T;
