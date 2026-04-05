@@ -1,10 +1,14 @@
+'use client'
+
 import { Card, Group, SimpleGrid, Text, UnstyledButton } from '@mantine/core'
 import { Fragment } from 'react'
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import classes from './page.module.scss'
 import { Weight } from 'lucide-react'
 
-export default async function Page() {
+export default function Page() {
+  const router = useRouter()
+
   return (
     <Fragment>
       <Card withBorder radius="md" className={classes.card}>
@@ -15,14 +19,15 @@ export default async function Page() {
           </Anchor> */}
         </Group>
         <SimpleGrid cols={8} mt="md">
-          <Link href="/app/records/weight-bills">
-            <UnstyledButton className={classes.item}>
-              <Weight size={32} />
-              <Text size="xs" mt={7}>
-                Weight Bill
-              </Text>
-            </UnstyledButton>
-          </Link>
+          <UnstyledButton
+            className={classes.item}
+            onClick={() => router.push('/app/records/weight-bills')}
+          >
+            <Weight size={32} />
+            <Text size="xs" mt={7}>
+              Weight Bill
+            </Text>
+          </UnstyledButton>
         </SimpleGrid>
       </Card>
     </Fragment>

@@ -44,18 +44,19 @@ export default function Layout({ children, userPreferences }: LayoutProps) {
 
   const logout = async () => {
     if (!isValidSession) {
-      signOut({
-        fetchOptions: {
-          onRequest: () => {
-            setIsSigningOut(true)
-          },
-          onSuccess: () => {
-            router.push(
-              `/login?success=${encodeURIComponent('Your session has expired. Please log in again.')}`,
-            )
-          },
-        },
-      })
+      // TODO: FIX TIHS
+      // signOut({
+      //   fetchOptions: {
+      //     onRequest: () => {
+      //       setIsSigningOut(true)
+      //     },
+      //     onSuccess: () => {
+      //       router.push(
+      //         `/login?success=${encodeURIComponent('Your session has expired. Please log in again.')}`,
+      //       )
+      //     },
+      //   },
+      // })
     }
   }
 

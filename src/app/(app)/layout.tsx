@@ -18,6 +18,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     headers: await headers(),
   })
 
+  console.log('[AUTH DEBUG] activeSession:', activeSession)
+  console.log('[AUTH DEBUG] cookies from headers:', (await headers()).get('cookie'))
+
   if (activeSession) {
     const payload = await getPayload({ config })
 
