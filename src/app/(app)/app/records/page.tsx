@@ -1,5 +1,6 @@
 import { Card, Group, SimpleGrid, Text, UnstyledButton } from '@mantine/core'
 import { Fragment } from 'react'
+import Link from 'next/link'
 import classes from './page.module.scss'
 import { Weight } from 'lucide-react'
 
@@ -14,12 +15,14 @@ export default async function Page() {
           </Anchor> */}
         </Group>
         <SimpleGrid cols={8} mt="md">
-          <UnstyledButton className={classes.item}>
-            <Weight size={32} />
-            <Text size="xs" mt={7}>
-              Weight Bill
-            </Text>
-          </UnstyledButton>
+          <Link href="/app/records/weight-bills">
+            <UnstyledButton className={classes.item}>
+              <Weight size={32} />
+              <Text size="xs" mt={7}>
+                Weight Bill
+              </Text>
+            </UnstyledButton>
+          </Link>
         </SimpleGrid>
       </Card>
     </Fragment>
