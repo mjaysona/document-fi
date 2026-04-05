@@ -91,7 +91,7 @@ export default function WeightBillsPage() {
 
   const handleSearchInput = (value: string) => {
     setSearchInput(value)
-    
+
     // Clear existing timeout
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current)
