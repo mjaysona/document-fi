@@ -125,9 +125,19 @@ export default function VerifyPage() {
 
         console.log('uploads', uploadsData)
 
-        const records: FileRecord[] = uploadsData.map((upload: any, idx: number) => {
+        // Preserve analyzed data from existing records
+        const recordsMap = new Map(records.map((r, idx) => [idx, r]))
+
+        const newRecords: FileRecord[] = uploadsData.map((upload: any, idx: number) => {
           const media = upload.media
           const mediaUrl = typeof media === 'string' ? `/api/media/${media}` : media?.url || ''
+          
+          // Reuse existing record if it exists to preserve analyzed state
+          const existingRecord = recordsMap.get(idx)
+          if (existingRecord) {
+            return { ...existingRecord, imagePreviewUrl: mediaUrl }
+          }
+
           return {
             id: `${sessionData.id}-${idx}`,
             fileName: upload.fileName,
@@ -143,7 +153,7 @@ export default function VerifyPage() {
             analyzed: false,
           }
         })
-        setRecords(records)
+        setRecords(newRecords)
         setUploads(uploadsData)
 
         // Find the index based on id query param
@@ -158,7 +168,10 @@ export default function VerifyPage() {
         }
 
         setActiveIndex(initialIndex)
-        if (records[initialIndex]) await analyzeRecord(records[initialIndex], initialIndex)
+        // Only analyze if not already analyzed
+        if (newRecords[initialIndex] && !newRecords[initialIndex].analyzed) {
+          await analyzeRecord(newRecords[initialIndex], initialIndex)
+        }
       } catch (error) {
         console.error('Failed to load session:', error)
         router.push('/app/records/new')
@@ -335,7 +348,9 @@ export default function VerifyPage() {
             <Alert
               title={
                 uploads[activeIndex].savedStatus === 'verified'
-                  ? 'Already Verified'
+                  ? uploads?.length > 1
+                    ? 'Already Verified'
+                    : 'Verified successfully'
                   : uploads?.length > 1
                     ? 'Already Saved'
                     : 'Saved successfully'
