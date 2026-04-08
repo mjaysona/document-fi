@@ -12,8 +12,8 @@ import {
   Flex,
   Text,
 } from '@mantine/core'
-import { Search } from 'lucide-react'
-import { getWeightBills, type WeightBillsQuery } from './actions'
+import { Search, Download } from 'lucide-react'
+import { getWeightBills, exportWeightBillsToCSV, type WeightBillsQuery } from './actions'
 import classes from '../page.module.scss'
 
 interface WeightBill {
@@ -45,6 +45,7 @@ const DEBOUNCE_DELAY = 500
 export default function WeightBillsPage() {
   const [weightBills, setWeightBills] = useState<WeightBill[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isExporting, setIsExporting] = useState(false)
   const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState<SortBy>('date')
@@ -77,6 +78,29 @@ export default function WeightBillsPage() {
   const handleEdit = (billId: string) => {
     // TODO: Implement edit functionality
     console.log('Edit bill:', billId)
+  }
+
+  const handleExport = async () => {
+    setIsExporting(true)
+    try {
+      const result = await exportWeightBillsToCSV({ search, sortBy, sortOrder })
+      if (result.success) {
+        // Create blob and download
+        const blob = new Blob([result.data], { type: 'text/csv;charset=utf-8;' })
+        const link = document.createElement('a')
+        const url = URL.createObjectURL(blob)
+        link.setAttribute('href', url)
+        link.setAttribute('download', result.filename)
+        link.style.visibility = 'hidden'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+      }
+    } catch (error) {
+      console.error('Failed to export weight bills:', error)
+    } finally {
+      setIsExporting(false)
+    }
   }
 
   const toggleSort = (field: SortBy) => {
@@ -163,6 +187,16 @@ export default function WeightBillsPage() {
             onClick={() => toggleSort('lastModified')}
           >
             Last Modified {sortBy === 'lastModified' && (sortOrder === 'asc' ? '↑' : '↓')}
+          </Button>
+          <Button
+            variant="default"
+            size="sm"
+            leftSection={<Download size={16} />}
+            onClick={handleExport}
+            loading={isExporting}
+            ml="auto"
+          >
+            Export to CSV
           </Button>
         </Group>
       </div>
