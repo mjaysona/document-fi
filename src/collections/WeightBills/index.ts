@@ -7,7 +7,7 @@ const WeightBills: CollectionConfig = {
   slug: 'weight-bills',
   access: {
     create: createWeightBills,
-    read: readWeightBills,
+    read: () => true,
     update: updateWeightBills,
     delete: () => true,
   },
@@ -33,7 +33,12 @@ const WeightBills: CollectionConfig = {
     {
       name: 'vehicle',
       label: 'Vehicle',
-      type: 'text',
+      type: 'select',
+      options: [
+        { label: 'ELF', value: 'ELF' },
+        { label: 'FORWARD', value: 'FORWARD' },
+        { label: 'KOLONG-KOLONG', value: 'KOLONG-KOLONG' },
+      ],
     },
     {
       name: 'amount',

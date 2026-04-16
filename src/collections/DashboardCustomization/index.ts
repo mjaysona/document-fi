@@ -14,7 +14,6 @@ const DashboardCustomization: GlobalConfig = {
       label: 'Admin',
       name: 'admin',
     },
-    hidden: true,
   },
   fields: [
     {

@@ -4,6 +4,9 @@ import { hasSuperAdminRole } from '@/utilities/getRole'
 
 const Media: CollectionConfig = {
   slug: 'media',
+  access: {
+    read: () => true,
+  },
   labels: {
     singular: 'Media',
     plural: 'Media',
@@ -17,7 +20,6 @@ const Media: CollectionConfig = {
       name: 'super-admin',
     },
     // hidden: ({ user }) => !hasSuperAdminRole(user?.userRoles),
-    hidden: true,
   },
   fields: [
     {

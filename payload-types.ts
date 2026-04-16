@@ -269,7 +269,7 @@ export interface WeightBill {
   weightBillNumber?: number | null;
   date?: string | null;
   customerName?: string | null;
-  vehicle?: string | null;
+  vehicle?: ('ELF' | 'FORWARD' | 'KOLONG-KOLONG') | null;
   amount?: number | null;
   paymentStatus?: ('PAID' | 'CANCELLED') | null;
   proofOfReceipt?: (string | null) | Media;

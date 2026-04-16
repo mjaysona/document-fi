@@ -1,14 +1,7 @@
 'use client'
 
 import { RingLoader } from '@/app/(app)/components/RingLoader'
-import {
-  CSSVariablesResolver,
-  MantineProvider,
-  createTheme,
-  Loader,
-  NavLink,
-  ColorSchemeScript,
-} from '@mantine/core'
+import { CSSVariablesResolver, MantineProvider, createTheme, Loader, NavLink } from '@mantine/core'
 
 export const metadata = {
   title: 'Next.js',
@@ -59,11 +52,8 @@ const resolver: CSSVariablesResolver = (theme) => ({
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
-    <>
-      <ColorSchemeScript />
-      <MantineProvider theme={theme} cssVariablesResolver={resolver}>
-        {children}
-      </MantineProvider>
-    </>
+    <MantineProvider theme={theme} cssVariablesResolver={resolver}>
+      {children}
+    </MantineProvider>
   )
 }

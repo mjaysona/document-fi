@@ -1,5 +1,5 @@
 import '@mantine/core/styles.css'
-import { mantineHtmlProps } from '@mantine/core'
+import { mantineHtmlProps, ColorSchemeScript } from '@mantine/core'
 import { ThemeProvider } from '@/app/providers/Theme'
 import { AuthProvider } from '@/app/providers/Auth'
 import './app.css'
@@ -55,6 +55,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang="en" {...mantineHtmlProps}>
+      <head>
+        <ColorSchemeScript />
+      </head>
       <body>
         <QueryProvider>
           <ThemeProvider>

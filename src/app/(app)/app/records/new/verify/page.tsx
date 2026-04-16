@@ -407,10 +407,21 @@ export default function VerifyPage() {
                   min={0}
                   disabled={isFormDisabled}
                 />
-                <TextInput
+                <Select
                   label="Vehicle"
-                  value={currentRecord.vehicle}
-                  onChange={(e) => handleVehicleChange(e.currentTarget.value)}
+                  value={currentRecord.vehicle || undefined}
+                  onChange={(value) =>
+                    updateActiveRecord({
+                      vehicle: (value as 'ELF' | 'FORWARD' | 'KOLONG-KOLONG') || '',
+                    })
+                  }
+                  data={[
+                    { value: 'ELF', label: 'ELF' },
+                    { value: 'FORWARD', label: 'FORWARD' },
+                    { value: 'KOLONG-KOLONG', label: 'KOLONG-KOLONG' },
+                  ]}
+                  clearable
+                  placeholder="Select vehicle"
                   disabled={isFormDisabled}
                 />
                 <NumberInput
