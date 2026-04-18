@@ -71,6 +71,7 @@ export interface Config {
     pages: Page;
     posts: Post;
     'user-preferences': UserPreference;
+    vehicles: Vehicle;
     'weight-bills': WeightBill;
     'session-uploads': SessionUpload;
     'user-roles': UserRole;
@@ -88,6 +89,7 @@ export interface Config {
     pages: PagesSelect<false> | PagesSelect<true>;
     posts: PostsSelect<false> | PostsSelect<true>;
     'user-preferences': UserPreferencesSelect<false> | UserPreferencesSelect<true>;
+    vehicles: VehiclesSelect<false> | VehiclesSelect<true>;
     'weight-bills': WeightBillsSelect<false> | WeightBillsSelect<true>;
     'session-uploads': SessionUploadsSelect<false> | SessionUploadsSelect<true>;
     'user-roles': UserRolesSelect<false> | UserRolesSelect<true>;
@@ -262,6 +264,17 @@ export interface UserPreference {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "vehicles".
+ */
+export interface Vehicle {
+  id: string;
+  name: string;
+  amount: number;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "weight-bills".
  */
 export interface WeightBill {
@@ -269,7 +282,7 @@ export interface WeightBill {
   weightBillNumber?: number | null;
   date?: string | null;
   customerName?: string | null;
-  vehicle?: ('ELF' | 'FORWARD' | 'KOLONG-KOLONG') | null;
+  vehicle?: (string | null) | Vehicle;
   amount?: number | null;
   paymentStatus?: ('PAID' | 'CANCELLED') | null;
   proofOfReceipt?: (string | null) | Media;
@@ -387,6 +400,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'user-preferences';
         value: string | UserPreference;
+      } | null)
+    | ({
+        relationTo: 'vehicles';
+        value: string | Vehicle;
       } | null)
     | ({
         relationTo: 'weight-bills';
@@ -528,6 +545,16 @@ export interface PostsSelect<T extends boolean = true> {
 export interface UserPreferencesSelect<T extends boolean = true> {
   userId?: T;
   sidenavState?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "vehicles_select".
+ */
+export interface VehiclesSelect<T extends boolean = true> {
+  name?: T;
+  amount?: T;
   updatedAt?: T;
   createdAt?: T;
 }

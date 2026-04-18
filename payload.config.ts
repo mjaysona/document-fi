@@ -32,6 +32,7 @@ import UserPreferences from '@/collections/UserPreferences'
 import DashboardCustomization from '@/collections/DashboardCustomization'
 import WeightBills from '@/collections/WeightBills'
 import SessionUploads from '@/collections/SessionUploads'
+import Vehicles from '@/collections/Vehicles'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -62,6 +63,7 @@ export default buildConfig({
     Pages,
     Posts,
     UserPreferences,
+    Vehicles,
     WeightBills,
     SessionUploads,
 

@@ -33,12 +33,8 @@ const WeightBills: CollectionConfig = {
     {
       name: 'vehicle',
       label: 'Vehicle',
-      type: 'select',
-      options: [
-        { label: 'ELF', value: 'ELF' },
-        { label: 'FORWARD', value: 'FORWARD' },
-        { label: 'KOLONG-KOLONG', value: 'KOLONG-KOLONG' },
-      ],
+      type: 'relationship',
+      relationTo: 'vehicles',
     },
     {
       name: 'amount',

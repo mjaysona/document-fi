@@ -15,27 +15,9 @@ const PAGE_SIZE = 10
 export async function getWeightBills(query: WeightBillsQuery = {}) {
   try {
     const { search = '', sortBy = 'date', sortOrder = 'desc', page = 1 } = query
+    const normalizedSearch = search.trim().toLowerCase()
 
     const payload = await getPayload({ config })
-
-    // Build where clause for search
-    let where: any = undefined
-    if (search) {
-      where = {
-        or: [
-          {
-            customerName: {
-              contains: search,
-            },
-          },
-          {
-            vehicle: {
-              contains: search,
-            },
-          },
-        ],
-      }
-    }
 
     // Map sortBy to actual field names
     let sort = 'updatedAt'
@@ -47,26 +29,62 @@ export async function getWeightBills(query: WeightBillsQuery = {}) {
       sort = 'updatedAt'
     }
 
-    const skip = (page - 1) * PAGE_SIZE
-
     const result = await payload.find({
       collection: 'weight-bills',
-      where,
       sort: sortOrder === 'asc' ? sort : `-${sort}`,
-      limit: PAGE_SIZE,
-      skip,
+      limit: normalizedSearch ? 10000 : PAGE_SIZE,
+      page: normalizedSearch ? 1 : page,
+      depth: 0,
     })
+
+    const vehiclesById = new Map<string, string>()
+
+    const vehiclesResult = await payload.find({
+      collection: 'vehicles',
+      limit: 1000,
+      depth: 0,
+    })
+
+    for (const vehicle of vehiclesResult.docs as any[]) {
+      vehiclesById.set(String(vehicle.id), vehicle.name || '')
+    }
+
+    const transformedDocs = result.docs.map((bill: any) => {
+      const resolvedVehicle =
+        typeof bill.vehicle === 'string' ? vehiclesById.get(bill.vehicle) || bill.vehicle : ''
+
+      return {
+        ...bill,
+        vehicle: resolvedVehicle,
+      }
+    })
+
+    const docs = normalizedSearch
+      ? transformedDocs.filter((bill: any) => {
+          const customerName = String(bill.customerName || '').toLowerCase()
+          const vehicleName = String(bill.vehicle || '').toLowerCase()
+
+          return customerName.includes(normalizedSearch) || vehicleName.includes(normalizedSearch)
+        })
+      : transformedDocs
+
+    const totalDocs = normalizedSearch ? docs.length : result.totalDocs
+    const totalPages = Math.max(1, Math.ceil(totalDocs / PAGE_SIZE))
+    const safePage = Math.min(Math.max(page, 1), totalPages)
+    const pagedDocs = normalizedSearch
+      ? docs.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
+      : docs
 
     return {
       success: true,
-      data: result.docs,
+      data: pagedDocs,
       pagination: {
-        page,
+        page: safePage,
         pageSize: PAGE_SIZE,
-        totalDocs: result.totalDocs,
-        totalPages: Math.ceil(result.totalDocs / PAGE_SIZE),
-        hasNextPage: page < Math.ceil(result.totalDocs / PAGE_SIZE),
-        hasPrevPage: page > 1,
+        totalDocs,
+        totalPages,
+        hasNextPage: safePage < totalPages,
+        hasPrevPage: safePage > 1,
       },
     }
   } catch (error) {
@@ -81,27 +99,9 @@ export async function getWeightBills(query: WeightBillsQuery = {}) {
 export async function exportWeightBillsToCSV(query: WeightBillsQuery = {}) {
   try {
     const { search = '', sortBy = 'date', sortOrder = 'desc' } = query
+    const normalizedSearch = search.trim().toLowerCase()
 
     const payload = await getPayload({ config })
-
-    // Build where clause for search
-    let where: any = undefined
-    if (search) {
-      where = {
-        or: [
-          {
-            customerName: {
-              contains: search,
-            },
-          },
-          {
-            vehicle: {
-              contains: search,
-            },
-          },
-        ],
-      }
-    }
 
     // Map sortBy to actual field names
     let sort = 'updatedAt'
@@ -116,10 +116,37 @@ export async function exportWeightBillsToCSV(query: WeightBillsQuery = {}) {
     // Fetch all bills without pagination for export
     const result = await payload.find({
       collection: 'weight-bills',
-      where,
       sort: sortOrder === 'asc' ? sort : `-${sort}`,
       limit: 10000, // Large limit for export
+      depth: 0,
     })
+
+    const vehiclesById = new Map<string, string>()
+
+    const vehiclesResult = await payload.find({
+      collection: 'vehicles',
+      limit: 1000,
+      depth: 0,
+    })
+
+    for (const vehicle of vehiclesResult.docs as any[]) {
+      vehiclesById.set(String(vehicle.id), vehicle.name || '')
+    }
+
+    const transformedDocs = result.docs
+      .map((bill: any) => ({
+        ...bill,
+        vehicle:
+          typeof bill.vehicle === 'string' ? vehiclesById.get(bill.vehicle) || bill.vehicle : '',
+      }))
+      .filter((bill: any) => {
+        if (!normalizedSearch) return true
+
+        const customerName = String(bill.customerName || '').toLowerCase()
+        const vehicleName = String(bill.vehicle || '').toLowerCase()
+
+        return customerName.includes(normalizedSearch) || vehicleName.includes(normalizedSearch)
+      })
 
     // Convert to CSV format
     const headers = [
@@ -131,7 +158,7 @@ export async function exportWeightBillsToCSV(query: WeightBillsQuery = {}) {
       'Payment Status',
       'Verified',
     ]
-    const rows = result.docs.map((bill: any) => [
+    const rows = transformedDocs.map((bill: any) => [
       bill.weightBillNumber || '',
       bill.date ? new Date(bill.date).toLocaleDateString() : '',
       bill.customerName || '',

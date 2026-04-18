@@ -7,6 +7,12 @@ import classes from '../page.module.scss'
 import { parseWeightBillOCR, type ParsedWeightBill } from '@/lib/parseWeightBillOCR'
 import { getSessionUploads, verifyAndSaveWeightBill, saveWeightBill } from './actions'
 
+type VehicleOption = {
+  id: string
+  name: string
+  amount: number
+}
+
 type FileRecord = {
   id?: string
   fileName: string
@@ -27,21 +33,35 @@ export default function VerifyPage() {
   const searchParams = useSearchParams()
   const [records, setRecords] = useState<FileRecord[]>([])
   const [uploads, setUploads] = useState<any[]>([])
+  const [vehicles, setVehicles] = useState<VehicleOption[]>([])
   const [activeIndex, setActiveIndex] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
 
-  const getAmountForVehicle = (vehicleType: string): number | undefined => {
-    const vehicleAmountMap: Record<string, number> = {
-      ELF: 100,
-      FORWARD: 150,
-      'TEN WHEELER': 250,
-      'KOLONG-KOLONG': 100,
-      'KONLONG-KOLONG': 100,
-    }
-    return vehicleAmountMap[vehicleType.toUpperCase()]
+  const findVehicleByName = (
+    vehicleName: string,
+    vehicleOptions: VehicleOption[] = vehicles,
+  ): VehicleOption | undefined => {
+    return vehicleOptions.find((vehicleOption) => vehicleOption.name === vehicleName)
   }
 
-  const analyzeRecord = async (record: FileRecord, index: number) => {
+  const getAmountForVehicle = (
+    vehicleIdOrName: string,
+    vehicleOptions: VehicleOption[] = vehicles,
+  ): number | undefined => {
+    const vehicleById = vehicleOptions.find((vehicleOption) => vehicleOption.id === vehicleIdOrName)
+
+    if (vehicleById) {
+      return vehicleById.amount
+    }
+
+    return findVehicleByName(vehicleIdOrName, vehicleOptions)?.amount
+  }
+
+  const analyzeRecord = async (
+    record: FileRecord,
+    index: number,
+    vehicleOptions: VehicleOption[] = vehicles,
+  ) => {
     if (!record || record.analyzed || isLoading) return
 
     setIsLoading(true)
@@ -79,7 +99,8 @@ export default function VerifyPage() {
 
       console.log('Raw Weight Bill:', data.ocrResult)
       const parsed = parseWeightBillOCR(data.ocrResult)
-      const amount = getAmountForVehicle(parsed.vehicle)
+      const matchedVehicle = findVehicleByName(parsed.vehicle, vehicleOptions)
+      const amount = matchedVehicle?.amount ?? getAmountForVehicle(parsed.vehicle, vehicleOptions)
 
       setRecords((prev) =>
         prev.map((item, idx) =>
@@ -92,7 +113,7 @@ export default function VerifyPage() {
                 weightBillNumber: parsed.weightBillNumber
                   ? Number(parsed.weightBillNumber)
                   : undefined,
-                vehicle: parsed.vehicle,
+                vehicle: matchedVehicle?.id || item.vehicle,
                 amount: amount ?? item.amount,
                 analyzed: true,
               }
@@ -121,7 +142,14 @@ export default function VerifyPage() {
           router.push('/app/records/new')
           return
         }
-        const sessionData = result.data
+        const { session: sessionData, vehicles: vehicleOptions } = result.data
+        setVehicles(vehicleOptions)
+
+        if (!sessionData) {
+          router.push('/app/records/new')
+          return
+        }
+
         const uploadsData = sessionData.uploads || []
 
         console.log('uploads', uploadsData)
@@ -171,7 +199,7 @@ export default function VerifyPage() {
         setActiveIndex(initialIndex)
         // Only analyze if not already analyzed
         if (newRecords[initialIndex] && !newRecords[initialIndex].analyzed) {
-          await analyzeRecord(newRecords[initialIndex], initialIndex)
+          await analyzeRecord(newRecords[initialIndex], initialIndex, vehicleOptions)
         }
       } catch (error) {
         console.error('Failed to load session:', error)
@@ -211,8 +239,9 @@ export default function VerifyPage() {
   }
 
   const handleVehicleChange = (value: string) => {
-    const amount = getAmountForVehicle(value)
-    updateActiveRecord({ vehicle: value, amount: amount ?? currentRecord?.amount })
+    const vehicleId = value || ''
+    const amount = getAmountForVehicle(vehicleId)
+    updateActiveRecord({ vehicle: vehicleId, amount: amount ?? currentRecord?.amount })
   }
 
   const handleSkip = async () => {
@@ -410,16 +439,11 @@ export default function VerifyPage() {
                 <Select
                   label="Vehicle"
                   value={currentRecord.vehicle || undefined}
-                  onChange={(value) =>
-                    updateActiveRecord({
-                      vehicle: (value as 'ELF' | 'FORWARD' | 'KOLONG-KOLONG') || '',
-                    })
-                  }
-                  data={[
-                    { value: 'ELF', label: 'ELF' },
-                    { value: 'FORWARD', label: 'FORWARD' },
-                    { value: 'KOLONG-KOLONG', label: 'KOLONG-KOLONG' },
-                  ]}
+                  onChange={(value) => handleVehicleChange(value || '')}
+                  data={vehicles.map((vehicleOption) => ({
+                    value: vehicleOption.id,
+                    label: vehicleOption.name,
+                  }))}
                   clearable
                   placeholder="Select vehicle"
                   disabled={isFormDisabled}

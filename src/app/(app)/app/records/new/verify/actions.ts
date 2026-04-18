@@ -5,13 +5,47 @@ import { getPayload } from 'payload'
 import config from '~/payload.config'
 import { headers } from 'next/headers'
 
+type VehicleOption = {
+  id: string
+  name: string
+  amount: number
+}
+
 type VerifiedData = {
   date: string
   customerName: string
   weightBillNumber?: number
-  vehicle: string
+  vehicle?: string
   amount?: number
   paymentStatus?: 'PAID' | 'CANCELLED'
+}
+
+async function resolveVehicleId(payload: any, vehicleValue?: string): Promise<string | undefined> {
+  if (!vehicleValue) return undefined
+
+  const trimmedVehicleValue = vehicleValue.trim()
+
+  const vehicles = await payload.find({
+    collection: 'vehicles',
+    limit: 1000,
+    depth: 0,
+  })
+
+  const matchedById = vehicles.docs.find(
+    (vehicle: any) => String(vehicle.id) === trimmedVehicleValue,
+  )
+
+  if (matchedById) {
+    return String(matchedById.id)
+  }
+
+  const matchedByName = vehicles.docs.find((vehicle: any) => vehicle.name === trimmedVehicleValue)
+
+  if (matchedByName) {
+    return String(matchedByName.id)
+  }
+
+  return undefined
 }
 
 export async function getSessionUploads() {
@@ -22,6 +56,11 @@ export async function getSessionUploads() {
     }
 
     const payload = await getPayload({ config })
+    const vehicles = await payload.find({
+      collection: 'vehicles',
+      sort: 'name',
+      limit: 100,
+    })
     const sessionUploads = await payload.find({
       collection: 'session-uploads',
       where: {
@@ -31,10 +70,30 @@ export async function getSessionUploads() {
     })
 
     if (sessionUploads.docs.length === 0) {
-      return { success: true, data: null }
+      return {
+        success: true,
+        data: {
+          session: null,
+          vehicles: vehicles.docs.map((vehicle) => ({
+            id: String(vehicle.id),
+            name: vehicle.name,
+            amount: vehicle.amount,
+          })) as VehicleOption[],
+        },
+      }
     }
 
-    return { success: true, data: sessionUploads.docs[0] }
+    return {
+      success: true,
+      data: {
+        session: sessionUploads.docs[0],
+        vehicles: vehicles.docs.map((vehicle) => ({
+          id: String(vehicle.id),
+          name: vehicle.name,
+          amount: vehicle.amount,
+        })) as VehicleOption[],
+      },
+    }
   } catch (error) {
     console.error('Get session uploads error:', error)
     return { success: false, error: String(error) }
@@ -76,6 +135,12 @@ export async function saveWeightBill(
       throw new Error('Upload not found')
     }
 
+    const resolvedVehicleId = await resolveVehicleId(payload, weightBillData.vehicle)
+    const normalizedWeightBillData = {
+      ...weightBillData,
+      vehicle: resolvedVehicleId,
+    }
+
     // Check if weight bill with the same number already exists
     let weightBill
     const existingBills = await payload.find({
@@ -84,6 +149,7 @@ export async function saveWeightBill(
         weightBillNumber: { equals: weightBillData.weightBillNumber },
       },
       limit: 1,
+      depth: 0,
     })
 
     if (existingBills.docs.length > 0) {
@@ -92,20 +158,22 @@ export async function saveWeightBill(
         collection: 'weight-bills',
         id: existingBills.docs[0].id,
         data: {
-          ...weightBillData,
+          ...normalizedWeightBillData,
           proofOfReceipt: upload.media,
           isVerified,
         },
+        depth: 0,
       })
     } else {
       // Create new weight bill
       weightBill = await payload.create({
         collection: 'weight-bills',
         data: {
-          ...weightBillData,
+          ...normalizedWeightBillData,
           proofOfReceipt: upload.media,
           isVerified,
         },
+        depth: 0,
       })
     }
 

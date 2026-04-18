@@ -55,9 +55,12 @@ export default function WeightBillsPage() {
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const loadWeightBills = async (query: WeightBillsQuery) => {
+    console.log('test:::')
     setIsLoading(true)
     try {
       const result = await getWeightBills(query)
+
+      console.log('result:::', result)
       if (result.success) {
         setWeightBills(result.data as WeightBill[])
         if ('pagination' in result && result.pagination) {
@@ -84,7 +87,7 @@ export default function WeightBillsPage() {
     setIsExporting(true)
     try {
       const result = await exportWeightBillsToCSV({ search, sortBy, sortOrder })
-      if (result.success) {
+      if (result.success && result.data && result.filename) {
         // Create blob and download
         const blob = new Blob([result.data], { type: 'text/csv;charset=utf-8;' })
         const link = document.createElement('a')
