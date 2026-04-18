@@ -40,15 +40,47 @@ export async function POST(request: NextRequest) {
 
     const uploads = await Promise.all(uploadPromises)
 
-    // Delete existing session for user
-    await payload.delete({
+    const existingSessionResult = await payload.find({
       collection: 'session-uploads',
       where: {
         userId: { equals: session.user.id },
       },
+      limit: 1,
+      depth: 0,
     })
 
-    // Create new session with media relationships
+    const existingSession = existingSessionResult.docs[0]
+
+    if (existingSession) {
+      const previousMediaIds = (existingSession.uploads || [])
+        .map((upload) =>
+          typeof upload.media === 'string'
+            ? upload.media
+            : upload.media && typeof upload.media === 'object' && 'id' in upload.media
+              ? String(upload.media.id)
+              : '',
+        )
+        .filter((id) => Boolean(id))
+
+      await payload.delete({
+        collection: 'session-uploads',
+        id: existingSession.id,
+        depth: 0,
+      })
+
+      for (const mediaId of previousMediaIds) {
+        try {
+          await payload.delete({
+            collection: 'media',
+            id: mediaId,
+            depth: 0,
+          })
+        } catch (deleteError) {
+          console.error('Failed to delete previous session media:', mediaId, deleteError)
+        }
+      }
+    }
+
     const sessionUpload = await payload.create({
       collection: 'session-uploads',
       data: {
@@ -57,8 +89,10 @@ export async function POST(request: NextRequest) {
         uploads: uploads.map((u) => ({
           fileName: u.fileName,
           media: u.mediaId,
+          savedStatus: 'unsaved',
         })),
       },
+      depth: 0,
     })
 
     return NextResponse.json({ success: true, data: sessionUpload })

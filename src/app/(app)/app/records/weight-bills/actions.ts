@@ -187,3 +187,44 @@ export async function exportWeightBillsToCSV(query: WeightBillsQuery = {}) {
     }
   }
 }
+
+export async function deleteWeightBill(id: string) {
+  try {
+    const payload = await getPayload({ config })
+
+    const weightBill = await payload.findByID({
+      collection: 'weight-bills',
+      id,
+      depth: 0,
+    })
+
+    const proofOfReceiptId =
+      typeof weightBill.proofOfReceipt === 'string'
+        ? weightBill.proofOfReceipt
+        : weightBill.proofOfReceipt && typeof weightBill.proofOfReceipt === 'object'
+          ? String((weightBill.proofOfReceipt as { id?: string }).id || '')
+          : ''
+
+    await payload.delete({
+      collection: 'weight-bills',
+      id,
+      depth: 0,
+    })
+
+    if (proofOfReceiptId) {
+      await payload.delete({
+        collection: 'media',
+        id: proofOfReceiptId,
+        depth: 0,
+      })
+    }
+
+    return { success: true }
+  } catch (error) {
+    console.error('Failed to delete weight bill:', error)
+    return {
+      success: false,
+      error: 'Failed to delete weight bill',
+    }
+  }
+}

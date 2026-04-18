@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   Button,
   Group,
@@ -13,7 +14,12 @@ import {
   Text,
 } from '@mantine/core'
 import { Search, Download } from 'lucide-react'
-import { getWeightBills, exportWeightBillsToCSV, type WeightBillsQuery } from './actions'
+import {
+  deleteWeightBill,
+  getWeightBills,
+  exportWeightBillsToCSV,
+  type WeightBillsQuery,
+} from './actions'
 import classes from '../page.module.scss'
 
 interface WeightBill {
@@ -43,9 +49,11 @@ interface PaginationData {
 const DEBOUNCE_DELAY = 500
 
 export default function WeightBillsPage() {
+  const router = useRouter()
   const [weightBills, setWeightBills] = useState<WeightBill[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isExporting, setIsExporting] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState<SortBy>('date')
@@ -79,8 +87,7 @@ export default function WeightBillsPage() {
   }, [search, sortBy, sortOrder, page])
 
   const handleEdit = (billId: string) => {
-    // TODO: Implement edit functionality
-    console.log('Edit bill:', billId)
+    router.push(`/app/records/edit?id=${billId}`)
   }
 
   const handleExport = async () => {
@@ -103,6 +110,26 @@ export default function WeightBillsPage() {
       console.error('Failed to export weight bills:', error)
     } finally {
       setIsExporting(false)
+    }
+  }
+
+  const handleDelete = async (billId: string) => {
+    const isConfirmed = window.confirm('Delete this weight bill? This cannot be undone.')
+    if (!isConfirmed) return
+
+    setDeletingId(billId)
+    try {
+      const result = await deleteWeightBill(billId)
+      if (!result.success) {
+        console.error('Failed to delete weight bill:', result.error)
+        return
+      }
+
+      await loadWeightBills({ search, sortBy, sortOrder, page })
+    } catch (error) {
+      console.error('Failed to delete weight bill:', error)
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -150,9 +177,21 @@ export default function WeightBillsPage() {
       <Table.Td>{bill.paymentStatus || '-'}</Table.Td>
       <Table.Td>{bill.isVerified ? '✓' : '✗'}</Table.Td>
       <Table.Td>
-        <Button variant="light" size="sm" onClick={() => handleEdit(bill.id)}>
-          Edit
-        </Button>
+        <Group gap="xs">
+          <Button variant="light" size="sm" onClick={() => handleEdit(bill.id)}>
+            Edit
+          </Button>
+          <Button
+            variant="light"
+            color="red"
+            size="sm"
+            onClick={() => handleDelete(bill.id)}
+            loading={deletingId === bill.id}
+            disabled={deletingId !== null && deletingId !== bill.id}
+          >
+            Delete
+          </Button>
+        </Group>
       </Table.Td>
     </Table.Tr>
   ))

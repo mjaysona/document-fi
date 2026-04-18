@@ -311,6 +311,8 @@ export default function VerifyPage() {
         return
       }
 
+      console.log('currentRecord.date', currentRecord.date)
+
       const result = await saveWeightBill(
         activeIndex,
         {
