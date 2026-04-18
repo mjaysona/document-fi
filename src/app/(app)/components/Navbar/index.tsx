@@ -1,15 +1,14 @@
 'use client'
 
 import { signOut } from '@/app/(app)/lib/auth-client'
-import { ActionIcon, AppShell, Button, Flex, NavLink, Stack, Tooltip } from '@mantine/core'
+import { ActionIcon, AppShell, Button, Flex, Menu, NavLink, Stack, Tooltip } from '@mantine/core'
 import {
   ArrowLeftToLine,
   ArrowRightFromLine,
-  ChartPie,
+  ChevronDown,
   LayoutDashboard,
   LogOut,
   PlusCircle,
-  Rows3,
   Settings,
 } from 'lucide-react'
 import { useRouter, useSelectedLayoutSegment } from 'next/navigation'
@@ -68,15 +67,28 @@ export const Navbar = ({ isExpanded, toggleExpandCollapse, mobileBreakpoint }: N
               {isExpanded ? <ArrowLeftToLine size={16} /> : <ArrowRightFromLine size={16} />}
             </ActionIcon>
             {isExpanded && (
-              <Button
-                fullWidth
-                variant="primary"
-                onClick={() => router.push('/app/records/new')}
-                leftSection={<PlusCircle size={16} />}
-                size="md"
-              >
-                New record
-              </Button>
+              <Menu shadow="md" width={220} position="bottom-start">
+                <Menu.Target>
+                  <Button
+                    fullWidth
+                    variant="primary"
+                    rightSection={<ChevronDown size={16} />}
+                    justify="space-between"
+                    size="md"
+                  >
+                    New record
+                  </Button>
+                </Menu.Target>
+
+                <Menu.Dropdown>
+                  <Menu.Item
+                    leftSection={<LayoutDashboard size={16} />}
+                    onClick={() => router.push('/app/records/new')}
+                  >
+                    Weight Bill
+                  </Menu.Item>
+                </Menu.Dropdown>
+              </Menu>
             )}
           </Flex>
           <Flex direction="column">
