@@ -2,6 +2,25 @@
   background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7));
 }
 
+.wrapper {
+  width: 100%;
+}
+
+.footer--fixed {
+  position: sticky;
+  bottom: 24px;
+  z-index: 200;
+  padding: 12px;
+}
+
+.footer__actions {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
 .title {
   font-family: Outfit, var(--mantine-font-family);
   font-weight: 500;

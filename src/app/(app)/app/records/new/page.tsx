@@ -1,50 +1,34 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button, Card, Group, Text } from '@mantine/core'
 import { Dropzone, MIME_TYPES } from '@mantine/dropzone'
 import classes from './page.module.scss'
-import { Ban, PlusCircle, Upload } from 'lucide-react'
-import { parseWeightBillOCR, type ParsedWeightBill } from '@/lib/parseWeightBillOCR'
+import { Ban, CheckCircle, PencilLine, PlusCircle, Upload } from 'lucide-react'
 
 export default function DropzoneButton() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
+  const [droppedFiles, setDroppedFiles] = useState<File[]>([])
   const openRef = useRef<() => void>(null)
-  const previewUrlsRef = useRef<Set<string>>(new Set())
 
-  useEffect(() => {
-    return () => {
-      previewUrlsRef.current.forEach((url) => URL.revokeObjectURL(url))
-    }
-  }, [])
-
-  const getAmountForVehicle = (vehicleType: string): number | undefined => {
-    const vehicleAmountMap: Record<string, number> = {
-      ELF: 100,
-      FORWARD: 150,
-      'TEN WHEELER': 250,
-      'KOLONG-KOLONG': 100,
-      'KONLONG-KOLONG': 100,
-    }
-    return vehicleAmountMap[vehicleType.toUpperCase()]
+  const handleDrop = (files: File[]) => {
+    if (!files.length) return
+    setDroppedFiles(files)
   }
 
-  const handleDrop = async (droppedFiles: File[]) => {
-    console.log('Dropped files:', droppedFiles)
+  const handleUploadAndAnalyze = async () => {
     if (!droppedFiles.length) return
 
     setIsLoading(true)
 
     try {
-      // Create FormData with actual files (no base64 conversion)
       const formData = new FormData()
       droppedFiles.forEach((file) => {
         formData.append('files', file)
       })
 
-      // Send to Route Handler
       const response = await fetch('/api/session-uploads/create', {
         method: 'POST',
         body: formData,
@@ -58,7 +42,6 @@ export default function DropzoneButton() {
       const result = await response.json()
 
       if (result.success) {
-        // Get the first upload's media ID to pass in query
         const firstUpload = result.data.uploads[0]
         const mediaId =
           typeof firstUpload.media === 'string' ? firstUpload.media : firstUpload.media?.id
@@ -69,6 +52,19 @@ export default function DropzoneButton() {
     } catch (error) {
       console.error('Error creating session:', error)
     } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleEnterManually = async () => {
+    setIsLoading(true)
+
+    try {
+      await fetch('/api/session-uploads/reset', { method: 'POST' })
+    } catch (error) {
+      console.error('Error resetting session upload:', error)
+    } finally {
+      router.push('/app/records/add?manual=true')
       setIsLoading(false)
     }
   }
@@ -84,6 +80,7 @@ export default function DropzoneButton() {
           accept={[MIME_TYPES.pdf, MIME_TYPES.jpeg, MIME_TYPES.png]}
           maxSize={30 * 1024 ** 2}
           aria-label="Drop files here"
+          disabled={isLoading}
         >
           <div style={{ pointerEvents: 'none' }}>
             <Group justify="center">
@@ -94,32 +91,54 @@ export default function DropzoneButton() {
                 <Ban size={50} />
               </Dropzone.Reject>
               <Dropzone.Idle>
-                <Upload size={50} />
+                {droppedFiles.length ? <CheckCircle size={50} /> : <Upload size={50} />}
               </Dropzone.Idle>
             </Group>
 
             <Text ta="center" fw={700} fz="lg" mt="xl">
               <Dropzone.Accept>Drop files here</Dropzone.Accept>
               <Dropzone.Reject>File is invalid</Dropzone.Reject>
-              <Dropzone.Idle>Upload</Dropzone.Idle>
+              <Dropzone.Idle>
+                {droppedFiles.length === 0
+                  ? 'Upload proof of receipt'
+                  : droppedFiles.length === 1
+                    ? droppedFiles[0]?.name
+                    : `${droppedFiles.length} files selected`}
+              </Dropzone.Idle>
             </Text>
 
             <Text className={classes.description}>
-              Drag&apos;n&apos;drop files here to upload. We can accept only <i>.pdf</i> files that
-              are less than 30mb in size.
+              {droppedFiles.length
+                ? 'Files ready. Click "Upload and analyze?" to extract data via OCR, or enter details manually.'
+                : 'Drag & drop an image or PDF here, or click to select a file.'}
             </Text>
           </div>
         </Dropzone>
-        <Button
-          className={classes.control}
-          size="md"
-          radius="xl"
-          onClick={() => openRef.current?.()}
-        >
-          Select files
-        </Button>
 
-        {isLoading && <Text mt="md">Uploading files...</Text>}
+        <Group mt="md" justify="center" gap="sm">
+          <Button
+            className={classes.control}
+            size="md"
+            radius="xl"
+            leftSection={<PlusCircle size={16} />}
+            onClick={droppedFiles.length ? handleUploadAndAnalyze : () => openRef.current?.()}
+            loading={droppedFiles.length > 0 && isLoading}
+            disabled={droppedFiles.length === 0 && isLoading}
+          >
+            {droppedFiles.length ? 'Upload and analyze?' : 'Select file'}
+          </Button>
+
+          <Button
+            size="md"
+            radius="xl"
+            variant="subtle"
+            leftSection={<PencilLine size={16} />}
+            onClick={handleEnterManually}
+            disabled={isLoading}
+          >
+            Enter manually
+          </Button>
+        </Group>
       </Card>
     </div>
   )

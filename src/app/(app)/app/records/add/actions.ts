@@ -18,6 +18,7 @@ type VerifiedData = {
   vehicle?: string
   amount?: number
   paymentStatus?: 'PAID' | 'CANCELLED'
+  proofOfReceipt?: string
 }
 
 async function resolveVehicleId(payload: any, vehicleValue?: string): Promise<string | undefined> {
@@ -150,6 +151,7 @@ export async function saveWeightBill(
     const normalizedWeightBillData = {
       ...weightBillData,
       vehicle: resolvedVehicleId,
+      proofOfReceipt: weightBillData.proofOfReceipt || upload.media,
     }
 
     // Check if weight bill with the same number already exists
@@ -170,7 +172,6 @@ export async function saveWeightBill(
         id: existingBills.docs[0].id,
         data: {
           ...normalizedWeightBillData,
-          proofOfReceipt: upload.media,
           isVerified,
         },
         depth: 0,
@@ -181,7 +182,6 @@ export async function saveWeightBill(
         collection: 'weight-bills',
         data: {
           ...normalizedWeightBillData,
-          proofOfReceipt: upload.media,
           isVerified,
         },
         depth: 0,
@@ -260,9 +260,11 @@ export async function getWeightBillForEdit(weightBillId: string) {
 
     let imagePreviewUrl = ''
     let fileName = 'Weight Bill'
+    let proofOfReceiptMediaId: string | undefined
 
     if (typeof weightBill.proofOfReceipt === 'string' && weightBill.proofOfReceipt) {
       imagePreviewUrl = `/api/media/${weightBill.proofOfReceipt}`
+      proofOfReceiptMediaId = String(weightBill.proofOfReceipt)
 
       const mediaDoc = await payload.findByID({
         collection: 'media',
@@ -280,6 +282,8 @@ export async function getWeightBillForEdit(weightBillId: string) {
         record: {
           id: String(weightBill.id),
           fileName,
+          proofOfReceiptFileName: fileName,
+          proofOfReceiptMediaId,
           fileData: '',
           imagePreviewUrl,
           parsedResult: null,
@@ -295,6 +299,53 @@ export async function getWeightBillForEdit(weightBillId: string) {
     }
   } catch (error) {
     console.error('Get weight bill for edit error:', error)
+    return { success: false, error: String(error) }
+  }
+}
+
+export async function saveWeightBillManual(
+  weightBillData: VerifiedData,
+  isVerified: boolean = false,
+) {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() })
+    if (!session?.user?.id) {
+      throw new Error('Unauthorized')
+    }
+
+    const payload = await getPayload({ config })
+    const resolvedVehicleId = await resolveVehicleId(payload, weightBillData.vehicle)
+
+    const existingBills = await payload.find({
+      collection: 'weight-bills',
+      where: {
+        weightBillNumber: { equals: weightBillData.weightBillNumber },
+      },
+      limit: 1,
+      depth: 0,
+    })
+
+    let weightBill
+    const normalizedData = { ...weightBillData, vehicle: resolvedVehicleId, isVerified }
+
+    if (existingBills.docs.length > 0) {
+      weightBill = await payload.update({
+        collection: 'weight-bills',
+        id: existingBills.docs[0].id,
+        data: normalizedData,
+        depth: 0,
+      })
+    } else {
+      weightBill = await payload.create({
+        collection: 'weight-bills',
+        data: normalizedData,
+        depth: 0,
+      })
+    }
+
+    return { success: true, data: weightBill }
+  } catch (error) {
+    console.error('Save weight bill manual error:', error)
     return { success: false, error: String(error) }
   }
 }
@@ -319,6 +370,7 @@ export async function updateWeightBillById(
       data: {
         ...weightBillData,
         vehicle: resolvedVehicleId,
+        proofOfReceipt: weightBillData.proofOfReceipt,
         ...(typeof isVerified === 'boolean' ? { isVerified } : {}),
       },
       depth: 0,

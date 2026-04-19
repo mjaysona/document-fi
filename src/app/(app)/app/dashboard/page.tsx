@@ -33,14 +33,14 @@ export default function Page() {
 
   return (
     <Fragment>
-      <Card withBorder radius="md" p="md" className={classes.card}>
-        <Card.Section className={classes.section} pt="md">
+      <Card withBorder radius="md" p="md" className={classes.dashboard__card}>
+        <Card.Section className={classes.dashboard__section} pt="md">
           <Group justify="apart">
             <Text fz="lg" fw={500}>
               {title}
             </Text>
           </Group>
-          <Text mt="md" className={classes.label} c="dimmed">
+          <Text mt="md" className={classes.dashboard__label} c="dimmed">
             Fields
           </Text>
           <Group gap={7} mt={5}>

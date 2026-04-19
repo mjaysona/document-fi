@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Alert, Button, Card, Group, NumberInput, Select, Text, TextInput } from '@mantine/core'
 import classes from '../page.module.scss'
@@ -11,6 +11,7 @@ import {
   updateWeightBillById,
   verifyAndSaveWeightBill,
   saveWeightBill,
+  saveWeightBillManual,
 } from './actions'
 
 type VehicleOption = {
@@ -22,6 +23,8 @@ type VehicleOption = {
 type FileRecord = {
   id?: string
   fileName: string
+  proofOfReceiptFileName: string
+  proofOfReceiptMediaId?: string
   fileData: string // base64
   imagePreviewUrl: string
   parsedResult: ParsedWeightBill | null
@@ -40,11 +43,15 @@ export default function VerifyPage() {
   const searchParams = useSearchParams()
   const editId = searchParams.get('editId') || searchParams.get('id')
   const isEditMode = pathname === '/app/records/edit' || Boolean(searchParams.get('editId'))
+  const isManualMode = searchParams.get('manual') === 'true'
   const [records, setRecords] = useState<FileRecord[]>([])
   const [uploads, setUploads] = useState<any[]>([])
   const [vehicles, setVehicles] = useState<VehicleOption[]>([])
   const [activeIndex, setActiveIndex] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [isUploadingProof, setIsUploadingProof] = useState(false)
+  const proofInputRef = useRef<HTMLInputElement | null>(null)
 
   const findVehicleByName = (
     vehicleName: string,
@@ -71,9 +78,9 @@ export default function VerifyPage() {
     index: number,
     vehicleOptions: VehicleOption[] = vehicles,
   ) => {
-    if (!record || record.analyzed || isLoading) return
+    if (!record || isLoading) return
 
-    setIsLoading(true)
+    setIsAnalyzing(true)
 
     try {
       // Fetch image from URL and convert to base64
@@ -139,6 +146,7 @@ export default function VerifyPage() {
         ),
       )
     } finally {
+      setIsAnalyzing(false)
       setIsLoading(false)
     }
   }
@@ -159,6 +167,37 @@ export default function VerifyPage() {
           setUploads([{ savedStatus: editResult.data.record.paymentStatus ? 'saved' : 'unsaved' }])
           setActiveIndex(0)
 
+          return
+        }
+
+        if (isManualMode) {
+          const manualResult = await getSessionUploads()
+          if (!manualResult.success || !manualResult.data) {
+            router.push('/app/records/new')
+            return
+          }
+
+          setVehicles(manualResult.data.vehicles)
+          setRecords([
+            {
+              id: 'manual',
+              fileName: 'Manual entry',
+              proofOfReceiptFileName: '',
+              proofOfReceiptMediaId: undefined,
+              fileData: '',
+              imagePreviewUrl: '',
+              parsedResult: null,
+              date: '',
+              customerName: '',
+              weightBillNumber: undefined,
+              vehicle: '',
+              amount: undefined,
+              paymentStatus: '',
+              analyzed: true,
+            },
+          ])
+          setUploads([{ savedStatus: 'unsaved' }])
+          setActiveIndex(0)
           return
         }
 
@@ -195,6 +234,9 @@ export default function VerifyPage() {
           return {
             id: `${sessionData.id}-${idx}`,
             fileName: upload.fileName,
+            proofOfReceiptFileName: upload.fileName,
+            proofOfReceiptMediaId:
+              typeof media === 'string' ? media : media?.id ? String(media.id) : undefined,
             fileData: '', // Not needed anymore
             imagePreviewUrl: mediaUrl,
             parsedResult: null,
@@ -222,22 +264,18 @@ export default function VerifyPage() {
         }
 
         setActiveIndex(initialIndex)
-        // Only analyze if not already analyzed
-        if (newRecords[initialIndex] && !newRecords[initialIndex].analyzed) {
-          await analyzeRecord(newRecords[initialIndex], initialIndex, vehicleOptions)
-        }
       } catch (error) {
         console.error('Failed to load verify data:', error)
         router.push(isEditMode ? '/app/records/weight-bills' : '/app/records/new')
       }
     }
     loadData()
-  }, [router, searchParams, editId, isEditMode])
+  }, [router, searchParams, editId, isEditMode, isManualMode])
 
   const currentRecord = records[activeIndex]
   const canGoPrev = activeIndex > 0
   const canGoNext = activeIndex < records.length - 1
-  const isFormDisabled = isLoading
+  const isFormDisabled = isLoading || isUploadingProof
 
   const updateActiveRecord = (updates: Partial<FileRecord>) => {
     setRecords((prev) =>
@@ -257,10 +295,6 @@ export default function VerifyPage() {
       if (mediaId) {
         window.history.replaceState({}, '', `/app/records/add?id=${mediaId}`)
       }
-    }
-
-    if (!records[index]?.analyzed) {
-      await analyzeRecord(records[index], index)
     }
   }
 
@@ -283,6 +317,47 @@ export default function VerifyPage() {
     }
   }
 
+  const handleProofOfReceiptSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const inputEl = event.currentTarget
+    const selectedFile = inputEl.files?.[0]
+    if (!selectedFile || !currentRecord) return
+
+    setIsUploadingProof(true)
+
+    try {
+      const formData = new FormData()
+      formData.append('file', selectedFile)
+
+      const response = await fetch('/api/media/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const result = await response.json()
+
+      if (!response.ok || !result?.success || !result?.data?.id) {
+        throw new Error(result?.error || 'Failed to upload proof of receipt')
+      }
+
+      updateActiveRecord({
+        proofOfReceiptMediaId: String(result.data.id),
+        proofOfReceiptFileName: result.data.fileName || selectedFile.name,
+        imagePreviewUrl: result.data.url || '',
+        analyzed: false,
+      })
+    } catch (error) {
+      console.error('Proof of receipt upload failed:', error)
+    } finally {
+      setIsUploadingProof(false)
+      inputEl.value = ''
+    }
+  }
+
+  const handleAnalyzeCurrent = async () => {
+    if (!currentRecord?.imagePreviewUrl || isUploadingProof || isLoading) return
+    await analyzeRecord(currentRecord, activeIndex)
+  }
+
   const handleSave = async () => {
     if (!currentRecord) return
 
@@ -298,6 +373,7 @@ export default function VerifyPage() {
             vehicle: currentRecord.vehicle,
             amount: currentRecord.amount,
             paymentStatus: currentRecord.paymentStatus || undefined,
+            proofOfReceipt: currentRecord.proofOfReceiptMediaId || undefined,
           },
           false,
         )
@@ -313,19 +389,33 @@ export default function VerifyPage() {
 
       console.log('currentRecord.date', currentRecord.date)
 
-      const result = await saveWeightBill(
-        activeIndex,
-        {
-          date: currentRecord.date,
-          customerName: currentRecord.customerName,
-          weightBillNumber: currentRecord.weightBillNumber,
-          vehicle: currentRecord.vehicle,
-          amount: currentRecord.amount,
-          paymentStatus: currentRecord.paymentStatus || undefined,
-        },
-        currentRecord.fileName,
-        false,
-      )
+      const result = isManualMode
+        ? await saveWeightBillManual(
+            {
+              date: currentRecord.date,
+              customerName: currentRecord.customerName,
+              weightBillNumber: currentRecord.weightBillNumber,
+              vehicle: currentRecord.vehicle,
+              amount: currentRecord.amount,
+              paymentStatus: currentRecord.paymentStatus || undefined,
+              proofOfReceipt: currentRecord.proofOfReceiptMediaId || undefined,
+            },
+            false,
+          )
+        : await saveWeightBill(
+            activeIndex,
+            {
+              date: currentRecord.date,
+              customerName: currentRecord.customerName,
+              weightBillNumber: currentRecord.weightBillNumber,
+              vehicle: currentRecord.vehicle,
+              amount: currentRecord.amount,
+              paymentStatus: currentRecord.paymentStatus || undefined,
+              proofOfReceipt: currentRecord.proofOfReceiptMediaId || undefined,
+            },
+            currentRecord.fileName,
+            false,
+          )
       if (result.success) {
         // Update uploads with saved status
         setUploads((prev) =>
@@ -379,6 +469,7 @@ export default function VerifyPage() {
             vehicle: currentRecord.vehicle,
             amount: currentRecord.amount,
             paymentStatus: currentRecord.paymentStatus || undefined,
+            proofOfReceipt: currentRecord.proofOfReceiptMediaId || undefined,
           },
           true,
         )
@@ -392,18 +483,32 @@ export default function VerifyPage() {
         return
       }
 
-      const result = await verifyAndSaveWeightBill(
-        activeIndex,
-        {
-          date: currentRecord.date,
-          customerName: currentRecord.customerName,
-          weightBillNumber: currentRecord.weightBillNumber,
-          vehicle: currentRecord.vehicle,
-          amount: currentRecord.amount,
-          paymentStatus: currentRecord.paymentStatus || undefined,
-        },
-        currentRecord.fileName,
-      )
+      const result = isManualMode
+        ? await saveWeightBillManual(
+            {
+              date: currentRecord.date,
+              customerName: currentRecord.customerName,
+              weightBillNumber: currentRecord.weightBillNumber,
+              vehicle: currentRecord.vehicle,
+              amount: currentRecord.amount,
+              paymentStatus: currentRecord.paymentStatus || undefined,
+              proofOfReceipt: currentRecord.proofOfReceiptMediaId || undefined,
+            },
+            true,
+          )
+        : await verifyAndSaveWeightBill(
+            activeIndex,
+            {
+              date: currentRecord.date,
+              customerName: currentRecord.customerName,
+              weightBillNumber: currentRecord.weightBillNumber,
+              vehicle: currentRecord.vehicle,
+              amount: currentRecord.amount,
+              paymentStatus: currentRecord.paymentStatus || undefined,
+              proofOfReceipt: currentRecord.proofOfReceiptMediaId || undefined,
+            },
+            currentRecord.fileName,
+          )
       if (result.success) {
         // Update uploads with verified status
         setUploads((prev) =>
@@ -444,7 +549,7 @@ export default function VerifyPage() {
 
   return (
     <div className={classes.wrapper}>
-      <Card withBorder radius="md" className={classes.card}>
+      <div className={classes.card}>
         {currentRecord &&
           uploads[activeIndex] &&
           uploads[activeIndex].savedStatus &&
@@ -466,26 +571,11 @@ export default function VerifyPage() {
             </Alert>
           )}
 
-        {isLoading && (
-          <Text mt="md">
-            {isEditMode ? 'Saving changes...' : 'Analyzing image with Mistral OCR...'}
-          </Text>
-        )}
+        {isLoading && <Text mt="md">Processing...</Text>}
 
-        <Group grow align="flex-start" wrap="nowrap">
-          {currentRecord?.imagePreviewUrl && (
-            <div>
-              <Text fw={700}>Image preview ({currentRecord.fileName})</Text>
-              <img
-                src={currentRecord.imagePreviewUrl}
-                alt="Dropped file preview"
-                style={{ width: '100%', height: 'auto', objectFit: 'contain', marginTop: 8 }}
-              />
-            </div>
-          )}
-
+        <Group grow align="flex-start" wrap="nowrap" gap="lg">
           {currentRecord && (
-            <div style={{ flex: 1 }}>
+            <Card withBorder radius="md" style={{ flex: 1 }}>
               <Text fw={700} mb="md">
                 Weight Bill Form
               </Text>
@@ -549,39 +639,92 @@ export default function VerifyPage() {
                   placeholder="Select payment status"
                   disabled={isFormDisabled}
                 />
-                <Group justify="apart" mt="md">
-                  <Group>
-                    <Button
-                      variant="outline"
-                      color="gray"
-                      onClick={handleBack}
-                      disabled={isEditMode || !canGoPrev || isFormDisabled}
-                    >
-                      BACK
-                    </Button>
-                  </Group>
-                  <Group>
-                    <Button
-                      variant="outline"
-                      color="gray"
-                      onClick={handleSkip}
-                      disabled={isEditMode || !canGoNext || isFormDisabled}
-                    >
-                      NEXT
-                    </Button>
-                    <Button variant="outline" onClick={handleSave} disabled={isFormDisabled}>
-                      SAVE
-                    </Button>
-                    <Button onClick={handleVerify} disabled={isFormDisabled}>
-                      VERIFY
-                    </Button>
-                  </Group>
+                <Group justify="end" mt="md">
+                  <Button variant="outline" onClick={handleSave} disabled={isFormDisabled}>
+                    SAVE
+                  </Button>
+                  <Button onClick={handleVerify} disabled={isFormDisabled}>
+                    VERIFY
+                  </Button>
                 </Group>
               </div>
+            </Card>
+          )}
+
+          {currentRecord && (
+            <div style={{ minWidth: 320 }}>
+              <input
+                ref={proofInputRef}
+                type="file"
+                hidden
+                accept="image/*,.pdf"
+                onChange={handleProofOfReceiptSelect}
+              />
+              <Group gap="sm" mb="md" grow>
+                <Button
+                  variant="light"
+                  onClick={() => proofInputRef.current?.click()}
+                  disabled={isFormDisabled}
+                  loading={isUploadingProof}
+                >
+                  {currentRecord.proofOfReceiptMediaId || currentRecord.proofOfReceiptFileName
+                    ? 'UPDATE RECEIPT'
+                    : 'ADD RECEIPT'}
+                </Button>
+                <Button
+                  onClick={handleAnalyzeCurrent}
+                  disabled={!currentRecord.imagePreviewUrl || isFormDisabled || isAnalyzing}
+                  loading={isAnalyzing}
+                >
+                  {isAnalyzing ? 'ANALYZING' : 'ANALYZE'}
+                </Button>
+              </Group>
+
+              {currentRecord.imagePreviewUrl && (
+                <>
+                  <Text fw={700}>
+                    Image preview ({currentRecord.proofOfReceiptFileName || currentRecord.fileName})
+                  </Text>
+                  <img
+                    src={currentRecord.imagePreviewUrl}
+                    alt="Dropped file preview"
+                    style={{ width: '100%', height: 'auto', objectFit: 'contain', marginTop: 8 }}
+                  />
+                </>
+              )}
             </div>
           )}
         </Group>
-      </Card>
+
+        {currentRecord && (
+          <Card withBorder radius="md" className={classes['footer--fixed']}>
+            <div className={classes.footer__items}></div>
+            <div className={classes.footer__actions}>
+              <Button
+                variant="filled"
+                onClick={handleBack}
+                disabled={isEditMode || !canGoPrev || isFormDisabled}
+              >
+                BACK
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleSkip}
+                disabled={isEditMode || !canGoNext || isFormDisabled}
+              >
+                NEXT
+              </Button>
+              <Button
+                variant="filled"
+                onClick={handleSkip}
+                disabled={isEditMode || !canGoNext || isFormDisabled}
+              >
+                FINISH
+              </Button>
+            </div>
+          </Card>
+        )}
+      </div>
     </div>
   )
 }
