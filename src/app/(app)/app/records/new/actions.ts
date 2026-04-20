@@ -67,6 +67,21 @@ export async function createSessionUpload(records: FileRecord[]) {
 
       for (const mediaId of previousMediaIds) {
         try {
+          const mediaInUse = await payload.find({
+            collection: 'weight-bills',
+            where: {
+              proofOfReceipt: {
+                equals: mediaId,
+              },
+            },
+            limit: 1,
+            depth: 0,
+          })
+
+          if (mediaInUse.docs.length > 0) {
+            continue
+          }
+
           await payload.delete({
             collection: 'media',
             id: mediaId,
