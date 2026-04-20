@@ -228,3 +228,56 @@ export async function deleteWeightBill(id: string) {
     }
   }
 }
+
+export async function deleteWeightBills(ids: string[]) {
+  try {
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return {
+        success: false,
+        error: 'No records selected for deletion',
+      }
+    }
+
+    const payload = await getPayload({ config })
+
+    for (const id of ids) {
+      const weightBill = await payload.findByID({
+        collection: 'weight-bills',
+        id,
+        depth: 0,
+      })
+
+      const proofOfReceiptId =
+        typeof weightBill.proofOfReceipt === 'string'
+          ? weightBill.proofOfReceipt
+          : weightBill.proofOfReceipt && typeof weightBill.proofOfReceipt === 'object'
+            ? String((weightBill.proofOfReceipt as { id?: string }).id || '')
+            : ''
+
+      await payload.delete({
+        collection: 'weight-bills',
+        id,
+        depth: 0,
+      })
+
+      if (proofOfReceiptId) {
+        await payload.delete({
+          collection: 'media',
+          id: proofOfReceiptId,
+          depth: 0,
+        })
+      }
+    }
+
+    return {
+      success: true,
+      count: ids.length,
+    }
+  } catch (error) {
+    console.error('Failed to delete selected weight bills:', error)
+    return {
+      success: false,
+      error: 'Failed to delete selected weight bills',
+    }
+  }
+}

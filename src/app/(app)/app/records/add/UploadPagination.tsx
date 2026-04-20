@@ -141,8 +141,11 @@ export default function UploadPagination({
             variant={isActive ? 'filled' : 'outline'}
             color={isSaved || isVerified ? 'green' : 'gray'}
             onClick={() => handlePageClick(pageIndex)}
-            disabled={disabled}
             px={10}
+            style={{
+              opacity: disabled ? (isActive ? 0.9 : 0.7) : 1,
+              cursor: disabled ? 'not-allowed' : undefined,
+            }}
           >
             {isVerified ? <Check size={14} /> : pageIndex + 1}
           </Button>

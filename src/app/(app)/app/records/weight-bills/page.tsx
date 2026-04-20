@@ -2,20 +2,11 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import {
-  Button,
-  Group,
-  Table,
-  TextInput,
-  Select,
-  Card,
-  Pagination,
-  Flex,
-  Text,
-} from '@mantine/core'
+import { Button, Checkbox, Group, Table, TextInput, Pagination, Flex, Text } from '@mantine/core'
 import { Search, Download } from 'lucide-react'
 import {
   deleteWeightBill,
+  deleteWeightBills,
   getWeightBills,
   exportWeightBillsToCSV,
   type WeightBillsQuery,
@@ -54,6 +45,8 @@ export default function WeightBillsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isExporting, setIsExporting] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState<SortBy>('date')
@@ -120,16 +113,44 @@ export default function WeightBillsPage() {
     setDeletingId(billId)
     try {
       const result = await deleteWeightBill(billId)
+      console.log('result', result)
+
       if (!result.success) {
         console.error('Failed to delete weight bill:', result.error)
         return
       }
 
       await loadWeightBills({ search, sortBy, sortOrder, page })
+      setSelectedIds((prev) => prev.filter((id) => id !== billId))
     } catch (error) {
       console.error('Failed to delete weight bill:', error)
     } finally {
       setDeletingId(null)
+    }
+  }
+
+  const handleDeleteSelected = async () => {
+    if (selectedIds.length === 0) return
+
+    const isConfirmed = window.confirm(
+      `Delete ${selectedIds.length} selected weight bill${selectedIds.length > 1 ? 's' : ''}? This cannot be undone.`,
+    )
+    if (!isConfirmed) return
+
+    setIsBulkDeleting(true)
+    try {
+      const result = await deleteWeightBills(selectedIds)
+      if (!result.success) {
+        console.error('Failed to delete selected weight bills:', result.error)
+        return
+      }
+
+      setSelectedIds([])
+      await loadWeightBills({ search, sortBy, sortOrder, page })
+    } catch (error) {
+      console.error('Failed to delete selected weight bills:', error)
+    } finally {
+      setIsBulkDeleting(false)
     }
   }
 
@@ -167,8 +188,47 @@ export default function WeightBillsPage() {
     }
   }, [])
 
+  useEffect(() => {
+    setSelectedIds((prev) => prev.filter((id) => weightBills.some((bill) => bill.id === id)))
+  }, [weightBills])
+
+  const visibleIds = weightBills.map((bill) => bill.id)
+  const allVisibleSelected =
+    visibleIds.length > 0 && visibleIds.every((id) => selectedIds.includes(id))
+  const someVisibleSelected = visibleIds.some((id) => selectedIds.includes(id))
+
+  const handleToggleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedIds(visibleIds)
+      return
+    }
+
+    setSelectedIds([])
+  }
+
+  const handleToggleSelectRow = (id: string, checked: boolean) => {
+    setSelectedIds((prev) => {
+      if (checked) {
+        if (prev.includes(id)) return prev
+        return [...prev, id]
+      }
+
+      return prev.filter((selectedId) => selectedId !== id)
+    })
+  }
+
   const rows = weightBills.map((bill) => (
-    <Table.Tr key={bill.id}>
+    <Table.Tr
+      key={bill.id}
+      bg={selectedIds.includes(bill.id) ? 'var(--mantine-color-blue-light)' : undefined}
+    >
+      <Table.Td>
+        <Checkbox
+          aria-label={`Select weight bill ${bill.weightBillNumber}`}
+          checked={selectedIds.includes(bill.id)}
+          onChange={(event) => handleToggleSelectRow(bill.id, event.currentTarget.checked)}
+        />
+      </Table.Td>
       <Table.Td>{bill.weightBillNumber}</Table.Td>
       <Table.Td>{bill.date ? new Date(bill.date).toLocaleDateString() : '-'}</Table.Td>
       <Table.Td>{bill.customerName}</Table.Td>
@@ -187,7 +247,7 @@ export default function WeightBillsPage() {
             size="sm"
             onClick={() => handleDelete(bill.id)}
             loading={deletingId === bill.id}
-            disabled={deletingId !== null && deletingId !== bill.id}
+            disabled={isBulkDeleting || (deletingId !== null && deletingId !== bill.id)}
           >
             Delete
           </Button>
@@ -231,6 +291,16 @@ export default function WeightBillsPage() {
             Last Modified {sortBy === 'lastModified' && (sortOrder === 'asc' ? '↑' : '↓')}
           </Button>
           <Button
+            variant="light"
+            color="red"
+            size="sm"
+            onClick={handleDeleteSelected}
+            disabled={selectedIds.length === 0 || deletingId !== null}
+            loading={isBulkDeleting}
+          >
+            Delete selected ({selectedIds.length})
+          </Button>
+          <Button
             variant="default"
             size="sm"
             leftSection={<Download size={16} />}
@@ -252,6 +322,14 @@ export default function WeightBillsPage() {
           <Table striped highlightOnHover>
             <Table.Thead>
               <Table.Tr>
+                <Table.Th>
+                  <Checkbox
+                    aria-label="Select all rows"
+                    checked={allVisibleSelected}
+                    indeterminate={!allVisibleSelected && someVisibleSelected}
+                    onChange={(event) => handleToggleSelectAll(event.currentTarget.checked)}
+                  />
+                </Table.Th>
                 <Table.Th>Bill #</Table.Th>
                 <Table.Th>Date</Table.Th>
                 <Table.Th>Customer Name</Table.Th>
