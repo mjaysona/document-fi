@@ -8,6 +8,7 @@ import {
   Button,
   Card,
   Group,
+  Modal,
   NumberInput,
   Select,
   Text,
@@ -67,6 +68,14 @@ export default function VerifyPage() {
   const [isFetching, setIsFetching] = useState(true)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [isUploadingProof, setIsUploadingProof] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [isVerifying, setIsVerifying] = useState(false)
+  const [actionFeedback, setActionFeedback] = useState<{
+    type: 'success' | 'error'
+    message: string
+  } | null>(null)
+  const [weightBillTouched, setWeightBillTouched] = useState(false)
+  const [pendingAction, setPendingAction] = useState<'save' | 'verify' | null>(null)
   const proofInputRef = useRef<HTMLInputElement | null>(null)
 
   const findVehicleByName = (
@@ -311,8 +320,13 @@ export default function VerifyPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentRecord?.id, activeIndex])
 
+  useEffect(() => {
+    setWeightBillTouched(false)
+  }, [activeIndex])
+
   const canGoPrev = activeIndex > 0
   const canGoNext = activeIndex < records.length - 1
+  const shouldShowActionFeedback = isManualMode || uploads.length === 1
   const allSaved =
     uploads.length > 0 &&
     uploads.every((u) => u.savedStatus === 'saved' || u.savedStatus === 'verified')
@@ -414,10 +428,35 @@ export default function VerifyPage() {
     })
   }
 
+  const weightBillNumberError =
+    currentRecord &&
+    (currentRecord.weightBillNumber === undefined ||
+      currentRecord.weightBillNumber === null ||
+      String(currentRecord.weightBillNumber).trim() === '')
+      ? 'Weight Bill # is required'
+      : null
+
   const handleSave = async () => {
     if (!currentRecord) return
+    if (weightBillNumberError) {
+      setWeightBillTouched(true)
+      return
+    }
+    const currentStatus = uploads[activeIndex]?.savedStatus
+    if (currentStatus === 'saved' || currentStatus === 'verified') {
+      setPendingAction('save')
+      return
+    }
+    await executeSave()
+  }
 
+  const executeSave = async () => {
+    if (!currentRecord) return
+
+    setActionFeedback(null)
+    setIsSaving(true)
     setIsLoading(true)
+
     try {
       if (isEditMode && editId) {
         const result = await updateWeightBillById(
@@ -436,10 +475,16 @@ export default function VerifyPage() {
 
         if (result.success) {
           setUploads([{ savedStatus: 'saved' }])
+          setActionFeedback({ type: 'success', message: 'Saving was successful.' })
         } else {
           console.error('Save failed:', result.error)
+          setActionFeedback({
+            type: 'error',
+            message: result.error || 'Saving failed. Please try again.',
+          })
         }
 
+        setIsSaving(false)
         setIsLoading(false)
         return
       }
@@ -476,6 +521,7 @@ export default function VerifyPage() {
         setUploads((prev) =>
           prev.map((u, idx) => (idx === activeIndex ? { ...u, savedStatus: 'saved' } : u)),
         )
+        setActionFeedback({ type: 'success', message: 'Saving was successful.' })
 
         // Auto-advance after saving
         setTimeout(() => {
@@ -498,23 +544,48 @@ export default function VerifyPage() {
             }
             setActiveIndex(activeIndex + 1)
           }
+          setIsSaving(false)
           setIsLoading(false)
         }, 500)
         return
       } else {
         console.error('Save failed:', result.error)
+        setActionFeedback({
+          type: 'error',
+          message: result.error || 'Saving failed. Please try again.',
+        })
+        setIsSaving(false)
         setIsLoading(false)
       }
     } catch (error) {
       console.error('Save failed:', error)
+      setActionFeedback({ type: 'error', message: 'Saving failed. Please try again.' })
+      setIsSaving(false)
       setIsLoading(false)
     }
   }
 
   const handleVerify = async () => {
     if (!currentRecord) return
+    if (weightBillNumberError) {
+      setWeightBillTouched(true)
+      return
+    }
+    const currentStatus = uploads[activeIndex]?.savedStatus
+    if (currentStatus === 'saved' || currentStatus === 'verified') {
+      setPendingAction('verify')
+      return
+    }
+    await executeVerify()
+  }
 
+  const executeVerify = async () => {
+    if (!currentRecord) return
+
+    setActionFeedback(null)
+    setIsVerifying(true)
     setIsLoading(true)
+
     try {
       if (isEditMode && editId) {
         const result = await updateWeightBillById(
@@ -533,10 +604,16 @@ export default function VerifyPage() {
 
         if (result.success) {
           setUploads([{ savedStatus: 'verified' }])
+          setActionFeedback({ type: 'success', message: 'Verifying was successful.' })
         } else {
           console.error('Verify failed:', result.error)
+          setActionFeedback({
+            type: 'error',
+            message: result.error || 'Verifying failed. Please try again.',
+          })
         }
 
+        setIsVerifying(false)
         setIsLoading(false)
         return
       }
@@ -572,6 +649,7 @@ export default function VerifyPage() {
         setUploads((prev) =>
           prev.map((u, idx) => (idx === activeIndex ? { ...u, savedStatus: 'verified' } : u)),
         )
+        setActionFeedback({ type: 'success', message: 'Verifying was successful.' })
 
         // Auto-advance after verifying
         setTimeout(() => {
@@ -594,15 +672,23 @@ export default function VerifyPage() {
             }
             setActiveIndex(activeIndex + 1)
           }
+          setIsVerifying(false)
           setIsLoading(false)
         }, 500)
         return
       } else {
         console.error('Verify failed:', result.error)
+        setActionFeedback({
+          type: 'error',
+          message: result.error || 'Verifying failed. Please try again.',
+        })
+        setIsVerifying(false)
         setIsLoading(false)
       }
     } catch (error) {
       console.error('Verify failed:', error)
+      setActionFeedback({ type: 'error', message: 'Verifying failed. Please try again.' })
+      setIsVerifying(false)
       setIsLoading(false)
     }
   }
@@ -610,28 +696,15 @@ export default function VerifyPage() {
   return (
     <div className={classes.wrapper}>
       <div className={classes.card} style={{ flex: 1 }}>
-        {currentRecord &&
-          uploads[activeIndex] &&
-          uploads[activeIndex].savedStatus &&
-          uploads[activeIndex].savedStatus !== 'unsaved' && (
-            <Alert
-              title={
-                uploads[activeIndex].savedStatus === 'verified'
-                  ? uploads?.length > 1
-                    ? 'Already Verified'
-                    : 'Verified successfully'
-                  : uploads?.length > 1
-                    ? 'Already Saved'
-                    : 'Saved successfully'
-              }
-              color={uploads?.length > 1 ? 'blue' : 'green'}
-              mb="md"
-            >
-              Saving or verifying again will overwrite the previous entry.
-            </Alert>
-          )}
-
-        {isLoading && <Text mt="md">Processing...</Text>}
+        {shouldShowActionFeedback && actionFeedback && (
+          <Alert
+            color={actionFeedback.type === 'success' ? 'green' : 'red'}
+            title={actionFeedback.type === 'success' ? 'Success' : 'Error'}
+            mb="md"
+          >
+            {actionFeedback.message}
+          </Alert>
+        )}
 
         <Group grow align="flex-start" wrap="nowrap" gap="md">
           {currentRecord && (
@@ -661,8 +734,12 @@ export default function VerifyPage() {
                       weightBillNumber: typeof val === 'number' ? val : undefined,
                     })
                   }
+                  onBlur={() => setWeightBillTouched(true)}
                   min={0}
                   disabled={isFormDisabled}
+                  error={weightBillTouched ? weightBillNumberError : null}
+                  required
+                  hideControls
                 />
                 <Select
                   label="Vehicle"
@@ -684,6 +761,11 @@ export default function VerifyPage() {
                   }
                   min={0}
                   disabled={isFormDisabled}
+                  leftSection="₱"
+                  decimalScale={2}
+                  fixedDecimalScale
+                  thousandSeparator=","
+                  hideControls
                 />
                 <Select
                   label="Payment Status"
@@ -700,10 +782,15 @@ export default function VerifyPage() {
                   disabled={isFormDisabled}
                 />
                 <Group justify="end" mt="md">
-                  <Button variant="outline" onClick={handleSave} disabled={isFormDisabled}>
+                  <Button
+                    variant="outline"
+                    onClick={handleSave}
+                    disabled={isFormDisabled}
+                    loading={isSaving}
+                  >
                     SAVE
                   </Button>
-                  <Button onClick={handleVerify} disabled={isFormDisabled}>
+                  <Button onClick={handleVerify} disabled={isFormDisabled} loading={isVerifying}>
                     VERIFY
                   </Button>
                 </Group>
@@ -864,6 +951,36 @@ export default function VerifyPage() {
           </Group>
         </Card>
       )}
+
+      <Modal
+        opened={pendingAction !== null}
+        onClose={() => setPendingAction(null)}
+        title="Overwrite existing record?"
+        centered
+      >
+        <Text size="sm" mb="lg">
+          This item has already been {pendingAction === 'verify' ? 'verified' : 'saved'}. Proceeding
+          will overwrite the existing entry.
+        </Text>
+        <Group justify="end" gap="sm">
+          <Button variant="outline" onClick={() => setPendingAction(null)}>
+            Cancel
+          </Button>
+          <Button
+            color="red"
+            onClick={() => {
+              setPendingAction(null)
+              if (pendingAction === 'verify') {
+                void executeVerify()
+              } else {
+                void executeSave()
+              }
+            }}
+          >
+            Overwrite
+          </Button>
+        </Group>
+      </Modal>
     </div>
   )
 }

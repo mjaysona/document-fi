@@ -115,7 +115,7 @@ export default function DropzoneButton() {
           </div>
         </Dropzone>
 
-        <Group mt="md" justify="center" gap="sm">
+        <Group mt="md" mb="lg" justify="center" gap="sm">
           <Button
             className={classes.control}
             size="md"
@@ -125,7 +125,7 @@ export default function DropzoneButton() {
             loading={droppedFiles.length > 0 && isLoading}
             disabled={droppedFiles.length === 0 && isLoading}
           >
-            {droppedFiles.length ? 'Upload and analyze?' : 'Select file'}
+            {droppedFiles.length ? 'Upload and analyze?' : 'Select file/s'}
           </Button>
 
           <Button
