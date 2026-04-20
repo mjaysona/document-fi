@@ -263,16 +263,27 @@ export async function getWeightBillForEdit(weightBillId: string) {
     let proofOfReceiptMediaId: string | undefined
 
     if (typeof weightBill.proofOfReceipt === 'string' && weightBill.proofOfReceipt) {
-      imagePreviewUrl = `/api/media/${weightBill.proofOfReceipt}`
-      proofOfReceiptMediaId = String(weightBill.proofOfReceipt)
+      try {
+        const mediaDoc = await payload.findByID({
+          collection: 'media',
+          id: weightBill.proofOfReceipt,
+          depth: 0,
+        })
 
-      const mediaDoc = await payload.findByID({
-        collection: 'media',
-        id: weightBill.proofOfReceipt,
-        depth: 0,
-      })
-
-      fileName = mediaDoc.filename || fileName
+        imagePreviewUrl = `/api/media/${weightBill.proofOfReceipt}`
+        proofOfReceiptMediaId = String(weightBill.proofOfReceipt)
+        fileName = mediaDoc.filename || fileName
+      } catch (error) {
+        const status = (error as { status?: number })?.status
+        if (status === 404) {
+          // The related media was removed. Keep edit mode functional by treating it as no receipt.
+          imagePreviewUrl = ''
+          proofOfReceiptMediaId = undefined
+          fileName = 'Weight Bill'
+        } else {
+          throw error
+        }
+      }
     }
 
     return {
