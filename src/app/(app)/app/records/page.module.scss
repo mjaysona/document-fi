@@ -6,6 +6,38 @@
   width: 100%;
 }
 
+.uploadCard {
+  border: 2px dashed light-dark(var(--mantine-color-gray-4), var(--mantine-color-dark-3));
+  background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-6));
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease;
+
+  &:hover {
+    border-color: light-dark(var(--mantine-color-blue-5), var(--mantine-color-blue-4));
+    background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-5));
+  }
+}
+
+.dropzone {
+  min-height: 220px;
+  padding: 24px 0 40px;
+  color: var(--mantine-color-bright);
+  background-color: transparent;
+  border: 0;
+}
+
+.icon {
+  color: light-dark(var(--mantine-color-gray-4), var(--mantine-color-white));
+}
+
+.description {
+  text-align: center;
+  font-size: var(--mantine-font-size-sm);
+  color: var(--mantine-color-dimmed);
+  margin-top: var(--mantine-spacing-xs);
+}
+
 .footer--fixed {
   position: sticky;
   bottom: 24px;
@@ -13,10 +45,15 @@
   padding: 12px;
 }
 
-.footer__actions {
-  max-width: 1200px;
-  margin: 0 auto;
+.footer__items {
   display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.footer__actions {
+  display: flex;
+  align-items: center;
   justify-content: flex-end;
   gap: 12px;
 }

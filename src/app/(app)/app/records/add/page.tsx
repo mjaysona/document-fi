@@ -3,8 +3,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Alert, Button, Card, Group, NumberInput, Select, Text, TextInput } from '@mantine/core'
+import { Dropzone, MIME_TYPES } from '@mantine/dropzone'
+import { Ban, CheckCircle, Upload } from 'lucide-react'
 import classes from '../page.module.scss'
 import { parseWeightBillOCR, type ParsedWeightBill } from '@/lib/parseWeightBillOCR'
+import UploadPagination from './UploadPagination'
 import {
   getSessionUploads,
   getWeightBillForEdit,
@@ -320,6 +323,12 @@ export default function VerifyPage() {
   const handleProofOfReceiptSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const inputEl = event.currentTarget
     const selectedFile = inputEl.files?.[0]
+    if (!selectedFile) return
+    await handleProofOfReceiptUpload(selectedFile)
+    inputEl.value = ''
+  }
+
+  const handleProofOfReceiptUpload = async (selectedFile: File) => {
     if (!selectedFile || !currentRecord) return
 
     setIsUploadingProof(true)
@@ -349,7 +358,6 @@ export default function VerifyPage() {
       console.error('Proof of receipt upload failed:', error)
     } finally {
       setIsUploadingProof(false)
-      inputEl.value = ''
     }
   }
 
@@ -660,68 +668,128 @@ export default function VerifyPage() {
                 accept="image/*,.pdf"
                 onChange={handleProofOfReceiptSelect}
               />
-              <Group gap="sm" mb="md" grow>
-                <Button
-                  variant="light"
-                  onClick={() => proofInputRef.current?.click()}
-                  disabled={isFormDisabled}
-                  loading={isUploadingProof}
-                >
-                  {currentRecord.proofOfReceiptMediaId || currentRecord.proofOfReceiptFileName
-                    ? 'UPDATE RECEIPT'
-                    : 'ADD RECEIPT'}
-                </Button>
-                <Button
-                  onClick={handleAnalyzeCurrent}
-                  disabled={!currentRecord.imagePreviewUrl || isFormDisabled || isAnalyzing}
-                  loading={isAnalyzing}
-                >
-                  {isAnalyzing ? 'ANALYZING' : 'ANALYZE'}
-                </Button>
-              </Group>
 
-              {currentRecord.imagePreviewUrl && (
-                <>
-                  <Text fw={700}>
+              <Button
+                onClick={handleAnalyzeCurrent}
+                disabled={!currentRecord.imagePreviewUrl || isFormDisabled || isAnalyzing}
+                loading={isAnalyzing}
+                fullWidth
+                mb="md"
+              >
+                {isAnalyzing ? 'ANALYZING' : 'ANALYZE'}
+              </Button>
+
+              {!currentRecord.imagePreviewUrl ? (
+                <Card withBorder radius="md" className={classes.uploadCard}>
+                  <Dropzone
+                    className={classes.dropzone}
+                    radius="md"
+                    onDrop={(files) => {
+                      const file = files[0]
+                      if (file) {
+                        void handleProofOfReceiptUpload(file)
+                      }
+                    }}
+                    disabled={isFormDisabled}
+                    maxSize={30 * 1024 ** 2}
+                    accept={[MIME_TYPES.pdf, MIME_TYPES.jpeg, MIME_TYPES.png]}
+                    aria-label="Drop receipt here"
+                  >
+                    <div style={{ pointerEvents: 'none' }}>
+                      <Group justify="center">
+                        <Dropzone.Accept>
+                          <CheckCircle size={50} className={classes.icon} />
+                        </Dropzone.Accept>
+                        <Dropzone.Reject>
+                          <Ban size={50} className={classes.icon} />
+                        </Dropzone.Reject>
+                        <Dropzone.Idle>
+                          <Upload size={50} className={classes.icon} />
+                        </Dropzone.Idle>
+                      </Group>
+
+                      <Text ta="center" fw={700} fz="lg" mt="xl">
+                        <Dropzone.Accept>Drop receipt here</Dropzone.Accept>
+                        <Dropzone.Reject>File is invalid</Dropzone.Reject>
+                        <Dropzone.Idle>Upload proof of receipt</Dropzone.Idle>
+                      </Text>
+
+                      <Text className={classes.description}>
+                        Drag & drop an image or PDF here, or click to select a file.
+                      </Text>
+                    </div>
+                  </Dropzone>
+                </Card>
+              ) : (
+                <Card withBorder radius="md">
+                  <Text fw={700} mb="md">
                     Image preview ({currentRecord.proofOfReceiptFileName || currentRecord.fileName})
                   </Text>
-                  <img
-                    src={currentRecord.imagePreviewUrl}
-                    alt="Dropped file preview"
-                    style={{ width: '100%', height: 'auto', objectFit: 'contain', marginTop: 8 }}
-                  />
-                </>
+                  <div
+                    onClick={() => proofInputRef.current?.click()}
+                    style={{
+                      cursor: 'pointer',
+                      position: 'relative',
+                      width: '100%',
+                    }}
+                  >
+                    <img
+                      src={currentRecord.imagePreviewUrl}
+                      alt="Receipt preview"
+                      style={{
+                        width: '100%',
+                        height: 'auto',
+                        objectFit: 'contain',
+                        marginTop: 8,
+                        borderRadius: 4,
+                        opacity: 0.9,
+                        transition: 'opacity 0.2s',
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
+                      onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.9')}
+                    />
+                  </div>
+                </Card>
               )}
             </div>
           )}
         </Group>
 
-        {currentRecord && (
+        {currentRecord && uploads.length > 1 && (
           <Card withBorder radius="md" className={classes['footer--fixed']}>
-            <div className={classes.footer__items}></div>
-            <div className={classes.footer__actions}>
-              <Button
-                variant="filled"
-                onClick={handleBack}
-                disabled={isEditMode || !canGoPrev || isFormDisabled}
-              >
-                BACK
-              </Button>
-              <Button
-                variant="outline"
-                onClick={handleSkip}
-                disabled={isEditMode || !canGoNext || isFormDisabled}
-              >
-                NEXT
-              </Button>
-              <Button
-                variant="filled"
-                onClick={handleSkip}
-                disabled={isEditMode || !canGoNext || isFormDisabled}
-              >
-                FINISH
-              </Button>
-            </div>
+            <Group justify="space-between">
+              <div className={classes.footer__items}>
+                <UploadPagination
+                  uploads={uploads}
+                  activeIndex={activeIndex}
+                  onPageChange={goToIndex}
+                  disabled={isEditMode || isFormDisabled}
+                />
+              </div>
+              <div className={classes.footer__actions}>
+                <Button
+                  variant="filled"
+                  onClick={handleBack}
+                  disabled={isEditMode || !canGoPrev || isFormDisabled}
+                >
+                  BACK
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleSkip}
+                  disabled={isEditMode || !canGoNext || isFormDisabled}
+                >
+                  NEXT
+                </Button>
+                <Button
+                  variant="filled"
+                  onClick={handleSkip}
+                  disabled={isEditMode || !canGoNext || isFormDisabled}
+                >
+                  FINISH
+                </Button>
+              </div>
+            </Group>
           </Card>
         )}
       </div>

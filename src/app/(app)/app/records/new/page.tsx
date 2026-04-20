@@ -71,7 +71,7 @@ export default function DropzoneButton() {
 
   return (
     <div className={classes.wrapper}>
-      <Card withBorder radius="md" className={classes.card}>
+      <Card withBorder radius="md" className={`${classes.card} ${classes.uploadCard}`}>
         <Dropzone
           openRef={openRef}
           onDrop={handleDrop}
