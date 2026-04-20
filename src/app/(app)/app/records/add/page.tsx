@@ -2,9 +2,20 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { Alert, Button, Card, Group, NumberInput, Select, Text, TextInput } from '@mantine/core'
+import {
+  ActionIcon,
+  Alert,
+  Button,
+  Card,
+  Group,
+  NumberInput,
+  Select,
+  Text,
+  TextInput,
+  Tooltip,
+} from '@mantine/core'
 import { Dropzone, MIME_TYPES } from '@mantine/dropzone'
-import { Ban, CheckCircle, Upload } from 'lucide-react'
+import { Ban, CheckCircle, Trash2, Upload } from 'lucide-react'
 import classes from '../page.module.scss'
 import { parseWeightBillOCR, type ParsedWeightBill } from '@/lib/parseWeightBillOCR'
 import UploadPagination from './UploadPagination'
@@ -30,6 +41,7 @@ type FileRecord = {
   proofOfReceiptMediaId?: string
   fileData: string // base64
   imagePreviewUrl: string
+  sourceImageUrl: string
   parsedResult: ParsedWeightBill | null
   date: string
   customerName: string
@@ -52,6 +64,7 @@ export default function VerifyPage() {
   const [vehicles, setVehicles] = useState<VehicleOption[]>([])
   const [activeIndex, setActiveIndex] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
+  const [isFetching, setIsFetching] = useState(true)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [isUploadingProof, setIsUploadingProof] = useState(false)
   const proofInputRef = useRef<HTMLInputElement | null>(null)
@@ -156,6 +169,7 @@ export default function VerifyPage() {
 
   useEffect(() => {
     const loadData = async () => {
+      setIsFetching(true)
       try {
         if (isEditMode && editId) {
           const editResult = await getWeightBillForEdit(editId)
@@ -166,7 +180,9 @@ export default function VerifyPage() {
           }
 
           setVehicles(editResult.data.vehicles)
-          setRecords([editResult.data.record])
+          setRecords([
+            { ...editResult.data.record, sourceImageUrl: editResult.data.record.imagePreviewUrl },
+          ])
           setUploads([{ savedStatus: editResult.data.record.paymentStatus ? 'saved' : 'unsaved' }])
           setActiveIndex(0)
 
@@ -189,6 +205,7 @@ export default function VerifyPage() {
               proofOfReceiptMediaId: undefined,
               fileData: '',
               imagePreviewUrl: '',
+              sourceImageUrl: '',
               parsedResult: null,
               date: '',
               customerName: '',
@@ -219,8 +236,6 @@ export default function VerifyPage() {
 
         const uploadsData = sessionData.uploads || []
 
-        console.log('uploads', uploadsData)
-
         // Preserve analyzed data from existing records
         const recordsMap = new Map(records.map((r, idx) => [idx, r]))
 
@@ -242,6 +257,7 @@ export default function VerifyPage() {
               typeof media === 'string' ? media : media?.id ? String(media.id) : undefined,
             fileData: '', // Not needed anymore
             imagePreviewUrl: mediaUrl,
+            sourceImageUrl: mediaUrl,
             parsedResult: null,
             date: '',
             customerName: '',
@@ -270,15 +286,37 @@ export default function VerifyPage() {
       } catch (error) {
         console.error('Failed to load verify data:', error)
         router.push(isEditMode ? '/app/records/weight-bills' : '/app/records/new')
+      } finally {
+        setIsFetching(false)
       }
     }
     loadData()
   }, [router, searchParams, editId, isEditMode, isManualMode])
 
   const currentRecord = records[activeIndex]
+
+  // Auto-analyze when a new unanalyzed record becomes active (e.g. after Upload and Analyze)
+  useEffect(() => {
+    if (
+      !currentRecord ||
+      currentRecord.analyzed ||
+      !currentRecord.imagePreviewUrl ||
+      isAnalyzing ||
+      isLoading ||
+      isEditMode ||
+      isManualMode
+    )
+      return
+    analyzeRecord(currentRecord, activeIndex)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentRecord?.id, activeIndex])
+
   const canGoPrev = activeIndex > 0
   const canGoNext = activeIndex < records.length - 1
-  const isFormDisabled = isLoading || isUploadingProof
+  const allSaved =
+    uploads.length > 0 &&
+    uploads.every((u) => u.savedStatus === 'saved' || u.savedStatus === 'verified')
+  const isFormDisabled = isLoading || isFetching || isUploadingProof || isAnalyzing
 
   const updateActiveRecord = (updates: Partial<FileRecord>) => {
     setRecords((prev) =>
@@ -366,6 +404,16 @@ export default function VerifyPage() {
     await analyzeRecord(currentRecord, activeIndex)
   }
 
+  const handleRemoveAttachedImage = () => {
+    if (!currentRecord) return
+    updateActiveRecord({
+      proofOfReceiptMediaId: undefined,
+      proofOfReceiptFileName: currentRecord.sourceImageUrl ? currentRecord.fileName : '',
+      imagePreviewUrl: currentRecord.sourceImageUrl,
+      analyzed: false,
+    })
+  }
+
   const handleSave = async () => {
     if (!currentRecord) return
 
@@ -392,10 +440,9 @@ export default function VerifyPage() {
           console.error('Save failed:', result.error)
         }
 
+        setIsLoading(false)
         return
       }
-
-      console.log('currentRecord.date', currentRecord.date)
 
       const result = isManualMode
         ? await saveWeightBillManual(
@@ -451,13 +498,15 @@ export default function VerifyPage() {
             }
             setActiveIndex(activeIndex + 1)
           }
+          setIsLoading(false)
         }, 500)
+        return
       } else {
         console.error('Save failed:', result.error)
+        setIsLoading(false)
       }
     } catch (error) {
       console.error('Save failed:', error)
-    } finally {
       setIsLoading(false)
     }
   }
@@ -488,6 +537,7 @@ export default function VerifyPage() {
           console.error('Verify failed:', result.error)
         }
 
+        setIsLoading(false)
         return
       }
 
@@ -544,13 +594,15 @@ export default function VerifyPage() {
             }
             setActiveIndex(activeIndex + 1)
           }
+          setIsLoading(false)
         }, 500)
+        return
       } else {
         console.error('Verify failed:', result.error)
+        setIsLoading(false)
       }
     } catch (error) {
       console.error('Verify failed:', error)
-    } finally {
       setIsLoading(false)
     }
   }
@@ -581,7 +633,7 @@ export default function VerifyPage() {
 
         {isLoading && <Text mt="md">Processing...</Text>}
 
-        <Group grow align="flex-start" wrap="nowrap" gap="lg">
+        <Group grow align="flex-start" wrap="nowrap" gap="md">
           {currentRecord && (
             <Card withBorder radius="md" style={{ flex: 1 }}>
               <Text fw={700} mb="md">
@@ -722,9 +774,22 @@ export default function VerifyPage() {
                 </Card>
               ) : (
                 <Card withBorder radius="md">
-                  <Text fw={700} mb="md">
-                    Image preview ({currentRecord.proofOfReceiptFileName || currentRecord.fileName})
-                  </Text>
+                  <Group justify="space-between" align="center" mb="md">
+                    <Text fw={700}>
+                      Image preview (
+                      {currentRecord.proofOfReceiptFileName || currentRecord.fileName})
+                    </Text>
+                    <ActionIcon
+                      variant="subtle"
+                      color="red"
+                      size="sm"
+                      onClick={handleRemoveAttachedImage}
+                      disabled={isFormDisabled}
+                      aria-label="Remove attached image"
+                    >
+                      <Trash2 size={14} />
+                    </ActionIcon>
+                  </Group>
                   <div
                     onClick={() => proofInputRef.current?.click()}
                     style={{
@@ -768,7 +833,7 @@ export default function VerifyPage() {
               </div>
               <div className={classes.footer__actions}>
                 <Button
-                  variant="filled"
+                  variant="outline"
                   onClick={handleBack}
                   disabled={isEditMode || !canGoPrev || isFormDisabled}
                 >
@@ -781,13 +846,18 @@ export default function VerifyPage() {
                 >
                   NEXT
                 </Button>
-                <Button
-                  variant="filled"
-                  onClick={handleSkip}
-                  disabled={isEditMode || !canGoNext || isFormDisabled}
+                <Tooltip
+                  label="Save or verify all items before finishing"
+                  disabled={allSaved || isFormDisabled}
                 >
-                  FINISH
-                </Button>
+                  <Button
+                    variant="filled"
+                    onClick={handleSkip}
+                    disabled={isEditMode || !allSaved || isFormDisabled}
+                  >
+                    FINISH
+                  </Button>
+                </Tooltip>
               </div>
             </Group>
           </Card>

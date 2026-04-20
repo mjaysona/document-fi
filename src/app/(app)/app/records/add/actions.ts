@@ -286,6 +286,7 @@ export async function getWeightBillForEdit(weightBillId: string) {
           proofOfReceiptMediaId,
           fileData: '',
           imagePreviewUrl,
+          sourceImageUrl: imagePreviewUrl,
           parsedResult: null,
           date: formatDateForInput(weightBill.date),
           customerName: weightBill.customerName || '',
