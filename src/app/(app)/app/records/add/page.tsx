@@ -609,7 +609,7 @@ export default function VerifyPage() {
 
   return (
     <div className={classes.wrapper}>
-      <div className={classes.card}>
+      <div className={classes.card} style={{ flex: 1 }}>
         {currentRecord &&
           uploads[activeIndex] &&
           uploads[activeIndex].savedStatus &&
@@ -796,6 +796,8 @@ export default function VerifyPage() {
                       cursor: 'pointer',
                       position: 'relative',
                       width: '100%',
+                      maxHeight: '400px',
+                      overflow: 'auto',
                     }}
                   >
                     <img
@@ -819,50 +821,49 @@ export default function VerifyPage() {
             </div>
           )}
         </Group>
-
-        {currentRecord && uploads.length > 1 && (
-          <Card withBorder radius="md" className={classes['footer--fixed']}>
-            <Group justify="space-between">
-              <div className={classes.footer__items}>
-                <UploadPagination
-                  uploads={uploads}
-                  activeIndex={activeIndex}
-                  onPageChange={goToIndex}
-                  disabled={isEditMode || isFormDisabled}
-                />
-              </div>
-              <div className={classes.footer__actions}>
-                <Button
-                  variant="outline"
-                  onClick={handleBack}
-                  disabled={isEditMode || !canGoPrev || isFormDisabled}
-                >
-                  BACK
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={handleSkip}
-                  disabled={isEditMode || !canGoNext || isFormDisabled}
-                >
-                  NEXT
-                </Button>
-                <Tooltip
-                  label="Save or verify all items before finishing"
-                  disabled={allSaved || isFormDisabled}
-                >
-                  <Button
-                    variant="filled"
-                    onClick={handleSkip}
-                    disabled={isEditMode || !allSaved || isFormDisabled}
-                  >
-                    FINISH
-                  </Button>
-                </Tooltip>
-              </div>
-            </Group>
-          </Card>
-        )}
       </div>
+      {currentRecord && uploads.length > 1 && (
+        <Card withBorder radius="md" className={classes['footer--fixed']}>
+          <Group justify="space-between">
+            <div className={classes.footer__items}>
+              <UploadPagination
+                uploads={uploads}
+                activeIndex={activeIndex}
+                onPageChange={goToIndex}
+                disabled={isEditMode || isFormDisabled}
+              />
+            </div>
+            <div className={classes.footer__actions}>
+              <Button
+                variant="outline"
+                onClick={handleBack}
+                disabled={isEditMode || !canGoPrev || isFormDisabled}
+              >
+                BACK
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleSkip}
+                disabled={isEditMode || !canGoNext || isFormDisabled}
+              >
+                NEXT
+              </Button>
+              <Tooltip
+                label="Save or verify all items before finishing"
+                disabled={allSaved || isFormDisabled}
+              >
+                <Button
+                  variant="filled"
+                  onClick={handleSkip}
+                  disabled={isEditMode || !allSaved || isFormDisabled}
+                >
+                  FINISH
+                </Button>
+              </Tooltip>
+            </div>
+          </Group>
+        </Card>
+      )}
     </div>
   )
 }

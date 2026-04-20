@@ -137,7 +137,7 @@ export default function Layout({ children, userPreferences }: LayoutProps) {
         toggleExpandCollapse={handleToggleExpandCollapse}
         mobileBreakpoint={mobileBreakpoint}
       />
-      <AppShell.Main>
+      <AppShell.Main style={{ display: 'flex', flexDirection: 'column' }}>
         {!isValidSession ? (
           <>
             <Flex align="center" gap="xs" pb="xl">
