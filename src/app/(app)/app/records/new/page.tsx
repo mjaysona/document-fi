@@ -109,7 +109,7 @@ export default function DropzoneButton() {
 
             <Text className={classes.description}>
               {droppedFiles.length
-                ? 'Files ready. Click "Upload and analyze?" to extract data via OCR, or enter details manually.'
+                ? 'Files ready. Click "Upload and analyze" to extract data via OCR, or enter details manually.'
                 : 'Drag & drop an image or PDF here, or click to select a file.'}
             </Text>
           </div>
@@ -125,7 +125,7 @@ export default function DropzoneButton() {
             loading={droppedFiles.length > 0 && isLoading}
             disabled={droppedFiles.length === 0 && isLoading}
           >
-            {droppedFiles.length ? 'Upload and analyze?' : 'Select file/s'}
+            {droppedFiles.length ? 'Upload and analyze' : 'Select file/s'}
           </Button>
 
           <Button
