@@ -8,6 +8,8 @@ import {
   Button,
   Card,
   Group,
+  Loader,
+  LoadingOverlay,
   Modal,
   NumberInput,
   Select,
@@ -74,9 +76,16 @@ export default function VerifyPage() {
     type: 'success' | 'error'
     message: string
   } | null>(null)
-  const [weightBillTouched, setWeightBillTouched] = useState(false)
+  const [weightBillValidationAction, setWeightBillValidationAction] = useState<
+    'save' | 'verify' | null
+  >(null)
+  const [verifyValidationActive, setVerifyValidationActive] = useState(false)
   const [pendingAction, setPendingAction] = useState<'save' | 'verify' | null>(null)
+  const [isMagnifierVisible, setIsMagnifierVisible] = useState(false)
+  const magnifierLensRef = useRef<HTMLDivElement | null>(null)
   const proofInputRef = useRef<HTMLInputElement | null>(null)
+  const MAGNIFIER_SIZE = 200
+  const MAGNIFIER_ZOOM = 1.75
 
   const findVehicleByName = (
     vehicleName: string,
@@ -321,7 +330,8 @@ export default function VerifyPage() {
   }, [currentRecord?.id, activeIndex])
 
   useEffect(() => {
-    setWeightBillTouched(false)
+    setWeightBillValidationAction(null)
+    setVerifyValidationActive(false)
   }, [activeIndex])
 
   const canGoPrev = activeIndex > 0
@@ -428,18 +438,81 @@ export default function VerifyPage() {
     })
   }
 
-  const weightBillNumberError =
+  const handlePreviewMouseMove = (event: React.MouseEvent<HTMLImageElement>) => {
+    const image = event.currentTarget
+    const lens = magnifierLensRef.current
+    if (!lens) return
+
+    const rect = image.getBoundingClientRect()
+    const rawX = event.clientX - rect.left
+    const rawY = event.clientY - rect.top
+
+    const x = Math.max(0, Math.min(rawX, rect.width))
+    const y = Math.max(0, Math.min(rawY, rect.height))
+
+    const bgX = x * MAGNIFIER_ZOOM
+    const bgY = y * MAGNIFIER_ZOOM
+    const bgWidth = rect.width * MAGNIFIER_ZOOM
+    const bgHeight = rect.height * MAGNIFIER_ZOOM
+
+    lens.style.left = `${x - MAGNIFIER_SIZE / 2}px`
+    lens.style.top = `${y - MAGNIFIER_SIZE / 2}px`
+    lens.style.backgroundSize = `${bgWidth}px ${bgHeight}px`
+    lens.style.backgroundPosition = `${-bgX + MAGNIFIER_SIZE / 2}px ${-bgY + MAGNIFIER_SIZE / 2}px`
+  }
+
+  const isWeightBillNumberMissing = Boolean(
     currentRecord &&
-    (currentRecord.weightBillNumber === undefined ||
-      currentRecord.weightBillNumber === null ||
-      String(currentRecord.weightBillNumber).trim() === '')
-      ? 'Weight Bill # is required'
+      (currentRecord.weightBillNumber === undefined ||
+        currentRecord.weightBillNumber === null ||
+        String(currentRecord.weightBillNumber).trim() === ''),
+  )
+
+  const weightBillNumberError = isWeightBillNumberMissing
+    ? weightBillValidationAction === 'save'
+      ? 'Weight Bill # is required to save this record'
+      : weightBillValidationAction === 'verify'
+        ? 'Weight Bill # is required to verify this record'
+        : null
+    : null
+
+  const dateError =
+    currentRecord && !currentRecord.date?.trim() ? 'Date is required to verify this record' : null
+
+  const customerNameError =
+    currentRecord && !currentRecord.customerName?.trim()
+      ? 'Customer Name is required to verify this record'
       : null
+
+  const vehicleError =
+    currentRecord && !currentRecord.vehicle?.trim()
+      ? 'Vehicle is required to verify this record'
+      : null
+
+  const amountError =
+    currentRecord && (currentRecord.amount === undefined || currentRecord.amount === null)
+      ? 'Amount is required to verify this record'
+      : null
+
+  const paymentStatusError =
+    currentRecord && !currentRecord.paymentStatus
+      ? 'Payment Status is required to verify this record'
+      : null
+
+  const hasVerifyValidationErrors = Boolean(
+    dateError ||
+      customerNameError ||
+      isWeightBillNumberMissing ||
+      vehicleError ||
+      amountError ||
+      paymentStatusError,
+  )
 
   const handleSave = async () => {
     if (!currentRecord) return
-    if (weightBillNumberError) {
-      setWeightBillTouched(true)
+    setWeightBillValidationAction('save')
+
+    if (isWeightBillNumberMissing) {
       return
     }
     const currentStatus = uploads[activeIndex]?.savedStatus
@@ -567,10 +640,15 @@ export default function VerifyPage() {
 
   const handleVerify = async () => {
     if (!currentRecord) return
-    if (weightBillNumberError) {
-      setWeightBillTouched(true)
+
+    setWeightBillValidationAction('verify')
+
+    setVerifyValidationActive(true)
+
+    if (hasVerifyValidationErrors) {
       return
     }
+
     const currentStatus = uploads[activeIndex]?.savedStatus
     if (currentStatus === 'saved' || currentStatus === 'verified') {
       setPendingAction('verify')
@@ -708,7 +786,29 @@ export default function VerifyPage() {
 
         <Group grow align="flex-start" wrap="nowrap" gap="md">
           {currentRecord && (
-            <Card withBorder radius="md" style={{ flex: 1 }}>
+            <Card withBorder radius="md" style={{ flex: 1, position: 'relative' }}>
+              <LoadingOverlay
+                visible={isAnalyzing}
+                zIndex={100}
+                overlayProps={{ radius: 'md', blur: 2 }}
+              />
+              {isAnalyzing && (
+                <Text
+                  size="sm"
+                  fw={600}
+                  c="white"
+                  style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, 28px)',
+                    zIndex: 101,
+                    pointerEvents: 'none',
+                  }}
+                >
+                  Analyzing image
+                </Text>
+              )}
               <Text fw={700} mb="md">
                 Weight Bill Form
               </Text>
@@ -719,12 +819,14 @@ export default function VerifyPage() {
                   value={currentRecord.date}
                   onChange={(e) => updateActiveRecord({ date: e.currentTarget.value })}
                   disabled={isFormDisabled}
+                  error={verifyValidationActive ? dateError : null}
                 />
                 <TextInput
                   label="Customer Name"
                   value={currentRecord.customerName}
                   onChange={(e) => updateActiveRecord({ customerName: e.currentTarget.value })}
                   disabled={isFormDisabled}
+                  error={verifyValidationActive ? customerNameError : null}
                 />
                 <NumberInput
                   label="Weight Bill #"
@@ -734,10 +836,9 @@ export default function VerifyPage() {
                       weightBillNumber: typeof val === 'number' ? val : undefined,
                     })
                   }
-                  onBlur={() => setWeightBillTouched(true)}
                   min={0}
                   disabled={isFormDisabled}
-                  error={weightBillTouched ? weightBillNumberError : null}
+                  error={weightBillNumberError}
                   required
                   hideControls
                 />
@@ -752,6 +853,7 @@ export default function VerifyPage() {
                   clearable
                   placeholder="Select vehicle"
                   disabled={isFormDisabled}
+                  error={verifyValidationActive ? vehicleError : null}
                 />
                 <NumberInput
                   label="Amount"
@@ -766,6 +868,7 @@ export default function VerifyPage() {
                   fixedDecimalScale
                   thousandSeparator=","
                   hideControls
+                  error={verifyValidationActive ? amountError : null}
                 />
                 <Select
                   label="Payment Status"
@@ -780,6 +883,7 @@ export default function VerifyPage() {
                   clearable
                   placeholder="Select payment status"
                   disabled={isFormDisabled}
+                  error={verifyValidationActive ? paymentStatusError : null}
                 />
                 <Group justify="end" mt="md">
                   <Button
@@ -811,7 +915,7 @@ export default function VerifyPage() {
               <Button
                 onClick={handleAnalyzeCurrent}
                 disabled={!currentRecord.imagePreviewUrl || isFormDisabled || isAnalyzing}
-                loading={isAnalyzing}
+                leftSection={isAnalyzing ? <Loader size="xs" color="white" /> : undefined}
                 fullWidth
                 mb="md"
               >
@@ -819,7 +923,34 @@ export default function VerifyPage() {
               </Button>
 
               {!currentRecord.imagePreviewUrl ? (
-                <Card withBorder radius="md" className={classes.uploadCard}>
+                <Card
+                  withBorder
+                  radius="md"
+                  className={classes.uploadCard}
+                  style={{ position: 'relative' }}
+                >
+                  <LoadingOverlay
+                    visible={isAnalyzing}
+                    zIndex={100}
+                    overlayProps={{ radius: 'md', blur: 2 }}
+                  />
+                  {isAnalyzing && (
+                    <Text
+                      size="sm"
+                      fw={600}
+                      c="white"
+                      style={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, 28px)',
+                        zIndex: 101,
+                        pointerEvents: 'none',
+                      }}
+                    >
+                      Analyzing image
+                    </Text>
+                  )}
                   <Dropzone
                     className={classes.dropzone}
                     radius="md"
@@ -860,7 +991,29 @@ export default function VerifyPage() {
                   </Dropzone>
                 </Card>
               ) : (
-                <Card withBorder radius="md">
+                <Card withBorder radius="md" style={{ position: 'relative' }}>
+                  <LoadingOverlay
+                    visible={isAnalyzing}
+                    zIndex={100}
+                    overlayProps={{ radius: 'md', blur: 2 }}
+                  />
+                  {isAnalyzing && (
+                    <Text
+                      size="sm"
+                      fw={600}
+                      c="white"
+                      style={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, 28px)',
+                        zIndex: 101,
+                        pointerEvents: 'none',
+                      }}
+                    >
+                      Analyzing image
+                    </Text>
+                  )}
                   <Group justify="space-between" align="center" mb="md">
                     <Text fw={700}>
                       Image preview (
@@ -899,9 +1052,36 @@ export default function VerifyPage() {
                         opacity: 0.9,
                         transition: 'opacity 0.2s',
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
-                      onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.9')}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.opacity = '0.7'
+                        setIsMagnifierVisible(true)
+                      }}
+                      onMouseMove={handlePreviewMouseMove}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.opacity = '0.9'
+                        setIsMagnifierVisible(false)
+                      }}
                     />
+                    {isMagnifierVisible && (
+                      <div
+                        ref={magnifierLensRef}
+                        style={{
+                          position: 'absolute',
+                          left: 0,
+                          top: 0,
+                          width: MAGNIFIER_SIZE,
+                          height: MAGNIFIER_SIZE,
+                          borderRadius: '50%',
+                          border: '3px solid rgba(255, 255, 255, 0.9)',
+                          pointerEvents: 'none',
+                          zIndex: 3,
+                          backgroundImage: `url(${currentRecord.imagePreviewUrl})`,
+                          backgroundRepeat: 'no-repeat',
+                          backgroundSize: '0px 0px',
+                          backgroundPosition: '0px 0px',
+                        }}
+                      />
+                    )}
                   </div>
                 </Card>
               )}
