@@ -2,13 +2,28 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Button, Checkbox, Group, Table, TextInput, Pagination, Flex, Text } from '@mantine/core'
-import { Search, Download } from 'lucide-react'
+import {
+  ActionIcon,
+  Button,
+  Checkbox,
+  Collapse,
+  Group,
+  MultiSelect,
+  Table,
+  TextInput,
+  Pagination,
+  Flex,
+  Text,
+  Modal,
+  Stack,
+} from '@mantine/core'
+import { Filter, Search, Download } from 'lucide-react'
 import {
   deleteWeightBill,
   deleteWeightBills,
   getWeightBills,
   exportWeightBillsToCSV,
+  getVehicleOptions,
   type WeightBillsQuery,
 } from './actions'
 import classes from '../page.module.scss'
@@ -53,6 +68,13 @@ export default function WeightBillsPage() {
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
   const [page, setPage] = useState(1)
   const [pagination, setPagination] = useState<PaginationData | null>(null)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [deleteTargetIds, setDeleteTargetIds] = useState<string[]>([])
+  const [filterOpen, setFilterOpen] = useState(false)
+  const [filterVehicles, setFilterVehicles] = useState<string[]>([])
+  const [filterPaymentStatus, setFilterPaymentStatus] = useState<string[]>([])
+  const [filterVerificationStatus, setFilterVerificationStatus] = useState<string[]>([])
+  const [vehicleOptions, setVehicleOptions] = useState<{ value: string; label: string }[]>([])
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const loadWeightBills = async (query: WeightBillsQuery) => {
@@ -76,8 +98,32 @@ export default function WeightBillsPage() {
   }
 
   useEffect(() => {
-    loadWeightBills({ search, sortBy, sortOrder, page })
-  }, [search, sortBy, sortOrder, page])
+    loadWeightBills({
+      search,
+      sortBy,
+      sortOrder,
+      page,
+      filterVehicles,
+      filterPaymentStatus,
+      filterVerificationStatus,
+    })
+  }, [
+    search,
+    sortBy,
+    sortOrder,
+    page,
+    filterVehicles,
+    filterPaymentStatus,
+    filterVerificationStatus,
+  ])
+
+  useEffect(() => {
+    getVehicleOptions().then((result) => {
+      if (result.success && result.data) {
+        setVehicleOptions(result.data)
+      }
+    })
+  }, [])
 
   const handleEdit = (billId: string) => {
     router.push(`/app/records/edit?id=${billId}`)
@@ -86,7 +132,14 @@ export default function WeightBillsPage() {
   const handleExport = async () => {
     setIsExporting(true)
     try {
-      const result = await exportWeightBillsToCSV({ search, sortBy, sortOrder })
+      const result = await exportWeightBillsToCSV({
+        search,
+        sortBy,
+        sortOrder,
+        filterVehicles,
+        filterPaymentStatus,
+        filterVerificationStatus,
+      })
       if (result.success && result.data && result.filename) {
         // Create blob and download
         const blob = new Blob([result.data], { type: 'text/csv;charset=utf-8;' })
@@ -107,50 +160,74 @@ export default function WeightBillsPage() {
   }
 
   const handleDelete = async (billId: string) => {
-    const isConfirmed = window.confirm('Delete this weight bill? This cannot be undone.')
-    if (!isConfirmed) return
-
-    setDeletingId(billId)
-    try {
-      const result = await deleteWeightBill(billId)
-      console.log('result', result)
-
-      if (!result.success) {
-        console.error('Failed to delete weight bill:', result.error)
-        return
-      }
-
-      await loadWeightBills({ search, sortBy, sortOrder, page })
-      setSelectedIds((prev) => prev.filter((id) => id !== billId))
-    } catch (error) {
-      console.error('Failed to delete weight bill:', error)
-    } finally {
-      setDeletingId(null)
-    }
+    setDeleteTargetIds([billId])
+    setDeleteConfirmOpen(true)
   }
 
   const handleDeleteSelected = async () => {
     if (selectedIds.length === 0) return
 
-    const isConfirmed = window.confirm(
-      `Delete ${selectedIds.length} selected weight bill${selectedIds.length > 1 ? 's' : ''}? This cannot be undone.`,
-    )
-    if (!isConfirmed) return
+    setDeleteTargetIds(selectedIds)
+    setDeleteConfirmOpen(true)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (deleteTargetIds.length === 0) return
+
+    setDeleteConfirmOpen(false)
+
+    if (deleteTargetIds.length === 1) {
+      const billId = deleteTargetIds[0]
+      setDeletingId(billId)
+      try {
+        const result = await deleteWeightBill(billId)
+        if (!result.success) {
+          console.error('Failed to delete weight bill:', result.error)
+          return
+        }
+
+        await loadWeightBills({
+          search,
+          sortBy,
+          sortOrder,
+          page,
+          filterVehicles,
+          filterPaymentStatus,
+          filterVerificationStatus,
+        })
+        setSelectedIds((prev) => prev.filter((id) => id !== billId))
+      } catch (error) {
+        console.error('Failed to delete weight bill:', error)
+      } finally {
+        setDeletingId(null)
+        setDeleteTargetIds([])
+      }
+      return
+    }
 
     setIsBulkDeleting(true)
     try {
-      const result = await deleteWeightBills(selectedIds)
+      const result = await deleteWeightBills(deleteTargetIds)
       if (!result.success) {
         console.error('Failed to delete selected weight bills:', result.error)
         return
       }
 
       setSelectedIds([])
-      await loadWeightBills({ search, sortBy, sortOrder, page })
+      await loadWeightBills({
+        search,
+        sortBy,
+        sortOrder,
+        page,
+        filterVehicles,
+        filterPaymentStatus,
+        filterVerificationStatus,
+      })
     } catch (error) {
       console.error('Failed to delete selected weight bills:', error)
     } finally {
       setIsBulkDeleting(false)
+      setDeleteTargetIds([])
     }
   }
 
@@ -193,6 +270,8 @@ export default function WeightBillsPage() {
   }, [weightBills])
 
   const visibleIds = weightBills.map((bill) => bill.id)
+  const activeFilterCount =
+    filterVehicles.length + filterPaymentStatus.length + filterVerificationStatus.length
   const allVisibleSelected =
     visibleIds.length > 0 && visibleIds.every((id) => selectedIds.includes(id))
   const someVisibleSelected = visibleIds.some((id) => selectedIds.includes(id))
@@ -259,13 +338,94 @@ export default function WeightBillsPage() {
   return (
     <div className={classes.wrapper}>
       <div style={{ marginBottom: 24 }}>
-        <TextInput
-          placeholder="Search by vehicle or name..."
-          leftSection={<Search size={16} />}
-          value={searchInput}
-          onChange={(e) => handleSearchInput(e.currentTarget.value)}
-          mb="md"
-        />
+        <Group mb="md" gap="xs" align="flex-end">
+          <TextInput
+            placeholder="Search by bill #, vehicle, or name..."
+            leftSection={<Search size={16} />}
+            value={searchInput}
+            onChange={(e) => handleSearchInput(e.currentTarget.value)}
+            style={{ flex: 1 }}
+          />
+          <ActionIcon
+            variant={filterOpen || activeFilterCount > 0 ? 'filled' : 'default'}
+            size={36}
+            aria-label="Toggle filters"
+            onClick={() => setFilterOpen((o) => !o)}
+          >
+            <Filter size={16} />
+          </ActionIcon>
+        </Group>
+
+        <Collapse in={filterOpen}>
+          <Stack
+            gap="sm"
+            mb="md"
+            p="sm"
+            style={{
+              border: '1px solid var(--mantine-color-default-border)',
+              borderRadius: 'var(--mantine-radius-sm)',
+            }}
+          >
+            <Group grow gap="sm" align="flex-end">
+              <MultiSelect
+                label="Vehicle"
+                placeholder="All vehicles"
+                data={vehicleOptions}
+                value={filterVehicles}
+                onChange={(val) => {
+                  setFilterVehicles(val)
+                  setPage(1)
+                }}
+                clearable
+                searchable
+              />
+              <MultiSelect
+                label="Payment Status"
+                placeholder="All statuses"
+                data={[
+                  { value: 'PAID', label: 'PAID' },
+                  { value: 'CANCELLED', label: 'CANCELLED' },
+                ]}
+                value={filterPaymentStatus}
+                onChange={(val) => {
+                  setFilterPaymentStatus(val)
+                  setPage(1)
+                }}
+                clearable
+              />
+              <MultiSelect
+                label="Verification Status"
+                placeholder="All"
+                data={[
+                  { value: 'verified', label: 'Verified' },
+                  { value: 'unverified', label: 'Unverified' },
+                ]}
+                value={filterVerificationStatus}
+                onChange={(val) => {
+                  setFilterVerificationStatus(val)
+                  setPage(1)
+                }}
+                clearable
+              />
+            </Group>
+            {activeFilterCount > 0 && (
+              <Group justify="flex-end">
+                <Button
+                  variant="subtle"
+                  size="xs"
+                  onClick={() => {
+                    setFilterVehicles([])
+                    setFilterPaymentStatus([])
+                    setFilterVerificationStatus([])
+                    setPage(1)
+                  }}
+                >
+                  Clear filters ({activeFilterCount})
+                </Button>
+              </Group>
+            )}
+          </Stack>
+        </Collapse>
 
         <Group justify="flex-start" gap="xs">
           <span style={{ fontSize: 14, fontWeight: 500 }}>Sort by:</span>
@@ -360,6 +520,41 @@ export default function WeightBillsPage() {
           )}
         </>
       )}
+
+      <Modal
+        opened={deleteConfirmOpen}
+        onClose={() => {
+          setDeleteConfirmOpen(false)
+          setDeleteTargetIds([])
+        }}
+        title="Confirm deletion"
+        centered
+      >
+        <Text size="sm" mb="lg">
+          {deleteTargetIds.length > 1
+            ? `Delete ${deleteTargetIds.length} selected weight bills? This cannot be undone.`
+            : 'Delete this weight bill? This cannot be undone.'}
+        </Text>
+        <Group justify="end" gap="sm">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setDeleteConfirmOpen(false)
+              setDeleteTargetIds([])
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            color="red"
+            onClick={handleConfirmDelete}
+            loading={deletingId !== null || isBulkDeleting}
+            disabled={deletingId !== null || isBulkDeleting}
+          >
+            Delete
+          </Button>
+        </Group>
+      </Modal>
     </div>
   )
 }

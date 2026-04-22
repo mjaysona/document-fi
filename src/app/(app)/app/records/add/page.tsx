@@ -18,7 +18,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { Dropzone, MIME_TYPES } from '@mantine/dropzone'
-import { Ban, CheckCircle, Trash2, Upload } from 'lucide-react'
+import { Ban, CheckCircle, Pencil, Trash2, Upload } from 'lucide-react'
 import classes from '../page.module.scss'
 import { parseWeightBillOCR, type ParsedWeightBill } from '@/lib/parseWeightBillOCR'
 import UploadPagination from './UploadPagination'
@@ -81,6 +81,7 @@ export default function VerifyPage() {
   >(null)
   const [verifyValidationActive, setVerifyValidationActive] = useState(false)
   const [pendingAction, setPendingAction] = useState<'save' | 'verify' | null>(null)
+  const [finishConfirmOpen, setFinishConfirmOpen] = useState(false)
   const [isMagnifierVisible, setIsMagnifierVisible] = useState(false)
   const magnifierLensRef = useRef<HTMLDivElement | null>(null)
   const proofInputRef = useRef<HTMLInputElement | null>(null)
@@ -337,6 +338,9 @@ export default function VerifyPage() {
   const canGoPrev = activeIndex > 0
   const canGoNext = activeIndex < records.length - 1
   const shouldShowActionFeedback = isManualMode || uploads.length === 1
+  const hasSavedOrVerified =
+    uploads.length > 0 &&
+    uploads.some((u) => u.savedStatus === 'saved' || u.savedStatus === 'verified')
   const allSaved =
     uploads.length > 0 &&
     uploads.every((u) => u.savedStatus === 'saved' || u.savedStatus === 'verified')
@@ -380,6 +384,17 @@ export default function VerifyPage() {
     if (canGoPrev) {
       await goToIndex(activeIndex - 1)
     }
+  }
+
+  const handleFinish = () => {
+    if (!hasSavedOrVerified) return
+
+    if (allSaved) {
+      router.push('/app/records/weight-bills')
+      return
+    }
+
+    setFinishConfirmOpen(true)
   }
 
   const handleProofOfReceiptSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -436,6 +451,11 @@ export default function VerifyPage() {
       imagePreviewUrl: currentRecord.sourceImageUrl,
       analyzed: false,
     })
+  }
+
+  const handleEditAttachedImage = () => {
+    if (isFormDisabled) return
+    proofInputRef.current?.click()
   }
 
   const handlePreviewMouseMove = (event: React.MouseEvent<HTMLImageElement>) => {
@@ -1019,21 +1039,32 @@ export default function VerifyPage() {
                       Image preview (
                       {currentRecord.proofOfReceiptFileName || currentRecord.fileName})
                     </Text>
-                    <ActionIcon
-                      variant="subtle"
-                      color="red"
-                      size="sm"
-                      onClick={handleRemoveAttachedImage}
-                      disabled={isFormDisabled}
-                      aria-label="Remove attached image"
-                    >
-                      <Trash2 size={14} />
-                    </ActionIcon>
+                    <Group gap="xs">
+                      <ActionIcon
+                        variant="subtle"
+                        color="blue"
+                        size="sm"
+                        onClick={handleEditAttachedImage}
+                        disabled={isFormDisabled}
+                        aria-label="Edit attached image"
+                      >
+                        <Pencil size={14} />
+                      </ActionIcon>
+                      <ActionIcon
+                        variant="subtle"
+                        color="red"
+                        size="sm"
+                        onClick={handleRemoveAttachedImage}
+                        disabled={isFormDisabled}
+                        aria-label="Remove attached image"
+                      >
+                        <Trash2 size={14} />
+                      </ActionIcon>
+                    </Group>
                   </Group>
                   <div
-                    onClick={() => proofInputRef.current?.click()}
                     style={{
-                      cursor: 'pointer',
+                      cursor: 'none',
                       position: 'relative',
                       width: '100%',
                       maxHeight: '400px',
@@ -1116,13 +1147,13 @@ export default function VerifyPage() {
                 NEXT
               </Button>
               <Tooltip
-                label="Save or verify all items before finishing"
-                disabled={allSaved || isFormDisabled}
+                label="Save or verify at least one item to finish"
+                disabled={hasSavedOrVerified || isFormDisabled}
               >
                 <Button
                   variant="filled"
-                  onClick={handleSkip}
-                  disabled={isEditMode || !allSaved || isFormDisabled}
+                  onClick={handleFinish}
+                  disabled={isEditMode || !hasSavedOrVerified || isFormDisabled}
                 >
                   FINISH
                 </Button>
@@ -1158,6 +1189,31 @@ export default function VerifyPage() {
             }}
           >
             Overwrite
+          </Button>
+        </Group>
+      </Modal>
+
+      <Modal
+        opened={finishConfirmOpen}
+        onClose={() => setFinishConfirmOpen(false)}
+        title="Finish and discard unsaved items?"
+        centered
+      >
+        <Text size="sm" mb="lg">
+          All items not saved or verified will be discarded. Do you want to continue?
+        </Text>
+        <Group justify="end" gap="sm">
+          <Button variant="outline" onClick={() => setFinishConfirmOpen(false)}>
+            Cancel
+          </Button>
+          <Button
+            color="red"
+            onClick={() => {
+              setFinishConfirmOpen(false)
+              router.push('/app/records/weight-bills')
+            }}
+          >
+            Confirm
           </Button>
         </Group>
       </Modal>

@@ -8,14 +8,30 @@ export interface WeightBillsQuery {
   sortBy?: 'name' | 'date' | 'lastModified'
   sortOrder?: 'asc' | 'desc'
   page?: number
+  filterVehicles?: string[]
+  filterPaymentStatus?: string[]
+  filterVerificationStatus?: string[]
 }
 
 const PAGE_SIZE = 10
 
 export async function getWeightBills(query: WeightBillsQuery = {}) {
   try {
-    const { search = '', sortBy = 'date', sortOrder = 'desc', page = 1 } = query
+    const {
+      search = '',
+      sortBy = 'date',
+      sortOrder = 'desc',
+      page = 1,
+      filterVehicles = [],
+      filterPaymentStatus = [],
+      filterVerificationStatus = [],
+    } = query
     const normalizedSearch = search.trim().toLowerCase()
+    const hasFilter =
+      filterVehicles.length > 0 ||
+      filterPaymentStatus.length > 0 ||
+      filterVerificationStatus.length > 0
+    const hasSearchOrFilter = Boolean(normalizedSearch) || hasFilter
 
     const payload = await getPayload({ config })
 
@@ -32,8 +48,8 @@ export async function getWeightBills(query: WeightBillsQuery = {}) {
     const result = await payload.find({
       collection: 'weight-bills',
       sort: sortOrder === 'asc' ? sort : `-${sort}`,
-      limit: normalizedSearch ? 10000 : PAGE_SIZE,
-      page: normalizedSearch ? 1 : page,
+      limit: hasSearchOrFilter ? 10000 : PAGE_SIZE,
+      page: hasSearchOrFilter ? 1 : page,
       depth: 0,
     })
 
@@ -59,19 +75,38 @@ export async function getWeightBills(query: WeightBillsQuery = {}) {
       }
     })
 
-    const docs = normalizedSearch
+    const docs = hasSearchOrFilter
       ? transformedDocs.filter((bill: any) => {
-          const customerName = String(bill.customerName || '').toLowerCase()
-          const vehicleName = String(bill.vehicle || '').toLowerCase()
-
-          return customerName.includes(normalizedSearch) || vehicleName.includes(normalizedSearch)
+          if (normalizedSearch) {
+            const customerName = String(bill.customerName || '').toLowerCase()
+            const vehicleName = String(bill.vehicle || '').toLowerCase()
+            const billNumber = String(bill.weightBillNumber || '').toLowerCase()
+            if (
+              !customerName.includes(normalizedSearch) &&
+              !vehicleName.includes(normalizedSearch) &&
+              !billNumber.includes(normalizedSearch)
+            ) {
+              return false
+            }
+          }
+          if (filterVehicles.length > 0 && !filterVehicles.includes(bill.vehicle)) return false
+          if (
+            filterPaymentStatus.length > 0 &&
+            !filterPaymentStatus.includes(bill.paymentStatus || '')
+          )
+            return false
+          if (filterVerificationStatus.length > 0) {
+            const status = bill.isVerified ? 'verified' : 'unverified'
+            if (!filterVerificationStatus.includes(status)) return false
+          }
+          return true
         })
       : transformedDocs
 
-    const totalDocs = normalizedSearch ? docs.length : result.totalDocs
+    const totalDocs = hasSearchOrFilter ? docs.length : result.totalDocs
     const totalPages = Math.max(1, Math.ceil(totalDocs / PAGE_SIZE))
     const safePage = Math.min(Math.max(page, 1), totalPages)
-    const pagedDocs = normalizedSearch
+    const pagedDocs = hasSearchOrFilter
       ? docs.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
       : docs
 
@@ -98,7 +133,14 @@ export async function getWeightBills(query: WeightBillsQuery = {}) {
 
 export async function exportWeightBillsToCSV(query: WeightBillsQuery = {}) {
   try {
-    const { search = '', sortBy = 'date', sortOrder = 'desc' } = query
+    const {
+      search = '',
+      sortBy = 'date',
+      sortOrder = 'desc',
+      filterVehicles = [],
+      filterPaymentStatus = [],
+      filterVerificationStatus = [],
+    } = query
     const normalizedSearch = search.trim().toLowerCase()
 
     const payload = await getPayload({ config })
@@ -140,12 +182,29 @@ export async function exportWeightBillsToCSV(query: WeightBillsQuery = {}) {
           typeof bill.vehicle === 'string' ? vehiclesById.get(bill.vehicle) || bill.vehicle : '',
       }))
       .filter((bill: any) => {
-        if (!normalizedSearch) return true
-
-        const customerName = String(bill.customerName || '').toLowerCase()
-        const vehicleName = String(bill.vehicle || '').toLowerCase()
-
-        return customerName.includes(normalizedSearch) || vehicleName.includes(normalizedSearch)
+        if (normalizedSearch) {
+          const customerName = String(bill.customerName || '').toLowerCase()
+          const vehicleName = String(bill.vehicle || '').toLowerCase()
+          const billNumber = String(bill.weightBillNumber || '').toLowerCase()
+          if (
+            !customerName.includes(normalizedSearch) &&
+            !vehicleName.includes(normalizedSearch) &&
+            !billNumber.includes(normalizedSearch)
+          ) {
+            return false
+          }
+        }
+        if (filterVehicles.length > 0 && !filterVehicles.includes(bill.vehicle)) return false
+        if (
+          filterPaymentStatus.length > 0 &&
+          !filterPaymentStatus.includes(bill.paymentStatus || '')
+        )
+          return false
+        if (filterVerificationStatus.length > 0) {
+          const status = bill.isVerified ? 'verified' : 'unverified'
+          if (!filterVerificationStatus.includes(status)) return false
+        }
+        return true
       })
 
     // Convert to CSV format
@@ -185,6 +244,28 @@ export async function exportWeightBillsToCSV(query: WeightBillsQuery = {}) {
       success: false,
       error: 'Failed to export weight bills',
     }
+  }
+}
+
+export async function getVehicleOptions() {
+  try {
+    const payload = await getPayload({ config })
+    const result = await payload.find({
+      collection: 'vehicles',
+      sort: 'name',
+      limit: 1000,
+      depth: 0,
+    })
+    return {
+      success: true,
+      data: (result.docs as any[]).map((v) => ({
+        value: v.name as string,
+        label: v.name as string,
+      })),
+    }
+  } catch (error) {
+    console.error('Failed to fetch vehicle options:', error)
+    return { success: false, error: String(error), data: [] as { value: string; label: string }[] }
   }
 }
 

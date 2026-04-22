@@ -262,16 +262,21 @@ export async function getWeightBillForEdit(weightBillId: string) {
     let fileName = 'Weight Bill'
     let proofOfReceiptMediaId: string | undefined
 
-    if (typeof weightBill.proofOfReceipt === 'string' && weightBill.proofOfReceipt) {
+    const proofOfReceiptId =
+      typeof weightBill.proofOfReceipt === 'string' || typeof weightBill.proofOfReceipt === 'number'
+        ? String(weightBill.proofOfReceipt)
+        : undefined
+
+    if (proofOfReceiptId) {
       try {
         const mediaDoc = await payload.findByID({
           collection: 'media',
-          id: weightBill.proofOfReceipt,
+          id: proofOfReceiptId,
           depth: 0,
         })
 
-        imagePreviewUrl = `/api/media/${weightBill.proofOfReceipt}`
-        proofOfReceiptMediaId = String(weightBill.proofOfReceipt)
+        imagePreviewUrl = mediaDoc.url || (mediaDoc.filename ? `/media/${mediaDoc.filename}` : '')
+        proofOfReceiptMediaId = proofOfReceiptId
         fileName = mediaDoc.filename || fileName
       } catch (error) {
         const status = (error as { status?: number })?.status
