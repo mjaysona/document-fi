@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   ActionIcon,
+  Badge,
   Button,
   Checkbox,
   Collapse,
@@ -17,7 +18,7 @@ import {
   Modal,
   Stack,
 } from '@mantine/core'
-import { Filter, Search, Download } from 'lucide-react'
+import { Filter, Search, Download, Pencil, Trash2 } from 'lucide-react'
 import {
   deleteWeightBill,
   deleteWeightBills,
@@ -34,6 +35,8 @@ interface WeightBill {
   date: string
   customerName: string
   vehicle: string
+  submittedBy?: string
+  verifiedBy?: string
   amount: number
   paymentStatus?: 'PAID' | 'CANCELLED'
   isVerified: boolean
@@ -312,24 +315,43 @@ export default function WeightBillsPage() {
       <Table.Td>{bill.date ? new Date(bill.date).toLocaleDateString() : '-'}</Table.Td>
       <Table.Td>{bill.customerName}</Table.Td>
       <Table.Td>{bill.vehicle}</Table.Td>
+      <Table.Td>{bill.submittedBy || '-'}</Table.Td>
+      <Table.Td>{bill.verifiedBy || '-'}</Table.Td>
       <Table.Td>₱{bill.amount?.toFixed(2) || '0.00'}</Table.Td>
-      <Table.Td>{bill.paymentStatus || '-'}</Table.Td>
-      <Table.Td>{bill.isVerified ? '✓' : '✗'}</Table.Td>
+      <Table.Td>
+        <Group gap="xs" wrap="nowrap">
+          <Badge
+            color={
+              bill.paymentStatus === 'PAID'
+                ? 'green'
+                : bill.paymentStatus === 'CANCELLED'
+                  ? 'red'
+                  : 'gray'
+            }
+            variant="light"
+          >
+            {bill.paymentStatus || 'No payment status'}
+          </Badge>
+          <Badge color={bill.isVerified ? 'green' : 'red'} variant="light">
+            {bill.isVerified ? 'VERIFIED' : 'UNVERIFIED'}
+          </Badge>
+        </Group>
+      </Table.Td>
       <Table.Td>
         <Group gap="xs">
-          <Button variant="light" size="sm" onClick={() => handleEdit(bill.id)}>
-            Edit
-          </Button>
-          <Button
-            variant="light"
+          <ActionIcon variant="subtle" color="blue" onClick={() => handleEdit(bill.id)}>
+            <Pencil size={16} />
+          </ActionIcon>
+          <ActionIcon
+            variant="subtle"
             color="red"
-            size="sm"
             onClick={() => handleDelete(bill.id)}
             loading={deletingId === bill.id}
             disabled={isBulkDeleting || (deletingId !== null && deletingId !== bill.id)}
+            aria-label={`Delete weight bill ${bill.weightBillNumber}`}
           >
-            Delete
-          </Button>
+            <Trash2 size={16} />
+          </ActionIcon>
         </Group>
       </Table.Td>
     </Table.Tr>
@@ -494,9 +516,10 @@ export default function WeightBillsPage() {
                 <Table.Th>Date</Table.Th>
                 <Table.Th>Customer Name</Table.Th>
                 <Table.Th>Vehicle</Table.Th>
+                <Table.Th>Submitted By</Table.Th>
+                <Table.Th>Verified By</Table.Th>
                 <Table.Th>Amount</Table.Th>
-                <Table.Th>Payment Status</Table.Th>
-                <Table.Th>Verified</Table.Th>
+                <Table.Th>Status</Table.Th>
                 <Table.Th>Action</Table.Th>
               </Table.Tr>
             </Table.Thead>

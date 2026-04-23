@@ -124,6 +124,7 @@ export async function saveWeightBill(
     }
 
     const payload = await getPayload({ config })
+    const currentUserId = String(session.user.id)
 
     // Get current session
     const sessionUploads = await payload.find({
@@ -150,6 +151,7 @@ export async function saveWeightBill(
     const normalizedWeightBillData = {
       ...weightBillData,
       vehicle: resolvedVehicleId,
+      ...(isVerified ? { verifiedBy: currentUserId } : { submittedBy: currentUserId }),
     }
 
     // Check if weight bill with the same number already exists
@@ -311,6 +313,7 @@ export async function updateWeightBillById(
     }
 
     const payload = await getPayload({ config })
+    const currentUserId = String(session.user.id)
     const resolvedVehicleId = await resolveVehicleId(payload, weightBillData.vehicle)
 
     const updatedWeightBill = await payload.update({
@@ -319,6 +322,8 @@ export async function updateWeightBillById(
       data: {
         ...weightBillData,
         vehicle: resolvedVehicleId,
+        ...(isVerified === true ? { verifiedBy: currentUserId } : {}),
+        ...(isVerified === false ? { submittedBy: currentUserId } : {}),
         ...(typeof isVerified === 'boolean' ? { isVerified } : {}),
       },
       depth: 0,

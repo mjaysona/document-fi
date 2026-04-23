@@ -120,11 +120,13 @@ export async function saveWeightBill(
 ) {
   try {
     const session = await auth.api.getSession({ headers: await headers() })
+
     if (!session?.user?.id) {
       throw new Error('Unauthorized')
     }
 
     const payload = await getPayload({ config })
+    const currentUserId = String(session.user.id)
 
     // Get current session
     const sessionUploads = await payload.find({
@@ -152,6 +154,7 @@ export async function saveWeightBill(
       ...weightBillData,
       vehicle: resolvedVehicleId,
       proofOfReceipt: weightBillData.proofOfReceipt || upload.media,
+      ...(isVerified ? { verifiedBy: currentUserId } : { submittedBy: currentUserId }),
     }
 
     // Check if weight bill with the same number already exists
@@ -331,6 +334,7 @@ export async function saveWeightBillManual(
     }
 
     const payload = await getPayload({ config })
+    const currentUserId = String(session.user.id)
     const resolvedVehicleId = await resolveVehicleId(payload, weightBillData.vehicle)
 
     const existingBills = await payload.find({
@@ -343,7 +347,12 @@ export async function saveWeightBillManual(
     })
 
     let weightBill
-    const normalizedData = { ...weightBillData, vehicle: resolvedVehicleId, isVerified }
+    const normalizedData = {
+      ...weightBillData,
+      vehicle: resolvedVehicleId,
+      isVerified,
+      ...(isVerified ? { verifiedBy: currentUserId } : { submittedBy: currentUserId }),
+    }
 
     if (existingBills.docs.length > 0) {
       weightBill = await payload.update({
@@ -379,6 +388,7 @@ export async function updateWeightBillById(
     }
 
     const payload = await getPayload({ config })
+    const currentUserId = String(session.user.id)
     const resolvedVehicleId = await resolveVehicleId(payload, weightBillData.vehicle)
 
     const updatedWeightBill = await payload.update({
@@ -388,6 +398,8 @@ export async function updateWeightBillById(
         ...weightBillData,
         vehicle: resolvedVehicleId,
         proofOfReceipt: weightBillData.proofOfReceipt,
+        ...(isVerified === true ? { verifiedBy: currentUserId } : {}),
+        ...(isVerified === false ? { submittedBy: currentUserId } : {}),
         ...(typeof isVerified === 'boolean' ? { isVerified } : {}),
       },
       depth: 0,

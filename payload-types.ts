@@ -287,6 +287,8 @@ export interface WeightBill {
   paymentStatus?: ('PAID' | 'CANCELLED') | null;
   proofOfReceipt?: (string | null) | Media;
   isVerified?: boolean | null;
+  submittedBy?: (string | null) | User;
+  verifiedBy?: (string | null) | User;
   createdBy?: (string | null) | User;
   updatedBy?: (string | null) | User;
   updatedAt: string;
@@ -571,6 +573,8 @@ export interface WeightBillsSelect<T extends boolean = true> {
   paymentStatus?: T;
   proofOfReceipt?: T;
   isVerified?: T;
+  submittedBy?: T;
+  verifiedBy?: T;
   createdBy?: T;
   updatedBy?: T;
   updatedAt?: T;

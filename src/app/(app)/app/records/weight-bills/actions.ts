@@ -65,13 +65,67 @@ export async function getWeightBills(query: WeightBillsQuery = {}) {
       vehiclesById.set(String(vehicle.id), vehicle.name || '')
     }
 
+    const usersById = new Map<string, string>()
+    const userIds = new Set<string>()
+
+    for (const bill of result.docs as any[]) {
+      const submittedById =
+        typeof bill.submittedBy === 'string'
+          ? bill.submittedBy
+          : bill.submittedBy && typeof bill.submittedBy === 'object'
+            ? String((bill.submittedBy as { id?: string | number }).id || '')
+            : ''
+      const verifiedById =
+        typeof bill.verifiedBy === 'string'
+          ? bill.verifiedBy
+          : bill.verifiedBy && typeof bill.verifiedBy === 'object'
+            ? String((bill.verifiedBy as { id?: string | number }).id || '')
+            : ''
+
+      if (submittedById) userIds.add(submittedById)
+      if (verifiedById) userIds.add(verifiedById)
+    }
+
+    if (userIds.size > 0) {
+      const usersResult = await payload.find({
+        collection: 'users',
+        where: {
+          id: {
+            in: Array.from(userIds),
+          },
+        },
+        limit: userIds.size,
+        depth: 0,
+      })
+
+      for (const user of usersResult.docs as any[]) {
+        const displayName = user.name || user.email || String(user.id)
+        usersById.set(String(user.id), displayName)
+      }
+    }
+
     const transformedDocs = result.docs.map((bill: any) => {
       const resolvedVehicle =
         typeof bill.vehicle === 'string' ? vehiclesById.get(bill.vehicle) || bill.vehicle : ''
 
+      const submittedById =
+        typeof bill.submittedBy === 'string'
+          ? bill.submittedBy
+          : bill.submittedBy && typeof bill.submittedBy === 'object'
+            ? String((bill.submittedBy as { id?: string | number }).id || '')
+            : ''
+      const verifiedById =
+        typeof bill.verifiedBy === 'string'
+          ? bill.verifiedBy
+          : bill.verifiedBy && typeof bill.verifiedBy === 'object'
+            ? String((bill.verifiedBy as { id?: string | number }).id || '')
+            : ''
+
       return {
         ...bill,
         vehicle: resolvedVehicle,
+        submittedBy: submittedById ? usersById.get(submittedById) || submittedById : '',
+        verifiedBy: verifiedById ? usersById.get(verifiedById) || verifiedById : '',
       }
     })
 

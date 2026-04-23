@@ -13,6 +13,15 @@ const WeightBills: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'weightBillNumber',
+    defaultColumns: [
+      'weightBillNumber',
+      'customerName',
+      'vehicle',
+      'submittedBy',
+      'verifiedBy',
+      'isVerified',
+      'updatedAt',
+    ],
   },
   fields: [
     {
@@ -62,6 +71,46 @@ const WeightBills: CollectionConfig = {
       type: 'checkbox',
       defaultValue: false,
       admin: {
+        position: 'sidebar',
+      },
+    },
+    {
+      name: 'submittedBy',
+      label: 'Submitted By',
+      type: 'relationship',
+      relationTo: 'users',
+      maxDepth: 1,
+      defaultValue: ({ req }) => req.user?.id,
+      hooks: {
+        beforeChange: [
+          ({ operation, previousValue, value }) => {
+            return operation === 'create' ? value : previousValue
+          },
+        ],
+      },
+      admin: {
+        readOnly: true,
+        position: 'sidebar',
+      },
+    },
+    {
+      name: 'verifiedBy',
+      label: 'Verified By',
+      type: 'relationship',
+      relationTo: 'users',
+      maxDepth: 1,
+      hooks: {
+        beforeChange: [
+          ({ data, req, previousValue }) => {
+            if (data?.isVerified) {
+              return req.user?.id || previousValue
+            }
+            return previousValue
+          },
+        ],
+      },
+      admin: {
+        readOnly: true,
         position: 'sidebar',
       },
     },
