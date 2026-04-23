@@ -129,7 +129,7 @@ export default function WeightBillsPage() {
   }, [])
 
   const handleEdit = (billId: string) => {
-    router.push(`/app/records/edit?id=${billId}`)
+    router.push(`/app/records/weight-bills/edit?id=${billId}`)
   }
 
   const handleExport = async () => {

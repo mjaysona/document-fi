@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Button, Card, Group, Text } from '@mantine/core'
+import { Button, Card, Group, Stack, Text, Title } from '@mantine/core'
 import { Dropzone, MIME_TYPES } from '@mantine/dropzone'
 import classes from './page.module.scss'
 import { Ban, CheckCircle, PencilLine, PlusCircle, Upload } from 'lucide-react'
@@ -45,7 +45,7 @@ export default function DropzoneButton() {
         const firstUpload = result.data.uploads[0]
         const mediaId =
           typeof firstUpload.media === 'string' ? firstUpload.media : firstUpload.media?.id
-        router.push(`/app/records/add?id=${mediaId}`)
+        router.push(`/app/records/weight-bills/add?id=${mediaId}`)
       } else {
         console.error('Failed to create session:', result.error)
       }
@@ -64,13 +64,14 @@ export default function DropzoneButton() {
     } catch (error) {
       console.error('Error resetting session upload:', error)
     } finally {
-      router.push('/app/records/add?manual=true')
+      router.push('/app/records/weight-bills/add?manual=true')
       setIsLoading(false)
     }
   }
 
   return (
-    <div className={classes.wrapper}>
+    <Stack gap="md">
+      <Title order={4}>Add Weight Bill/s</Title>
       <Card withBorder radius="md" className={`${classes.card} ${classes.uploadCard}`}>
         <Dropzone
           openRef={openRef}
@@ -140,6 +141,6 @@ export default function DropzoneButton() {
           </Button>
         </Group>
       </Card>
-    </div>
+    </Stack>
   )
 }

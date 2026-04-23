@@ -39,7 +39,7 @@ export default function VerifyPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const editId = searchParams.get('editId') || searchParams.get('id')
-  const isEditMode = pathname === '/app/records/edit' || Boolean(searchParams.get('editId'))
+  const isEditMode = pathname === '/app/records/weight-bills/edit' || Boolean(searchParams.get('editId'))
   const [records, setRecords] = useState<FileRecord[]>([])
   const [uploads, setUploads] = useState<any[]>([])
   const [vehicles, setVehicles] = useState<VehicleOption[]>([])
@@ -164,14 +164,14 @@ export default function VerifyPage() {
 
         const result = await getSessionUploads()
         if (!result.success || !result.data) {
-          router.push('/app/records/new')
+          router.push('/app/records/weight-bills/new')
           return
         }
         const { session: sessionData, vehicles: vehicleOptions } = result.data
         setVehicles(vehicleOptions)
 
         if (!sessionData) {
-          router.push('/app/records/new')
+          router.push('/app/records/weight-bills/new')
           return
         }
 
@@ -228,7 +228,7 @@ export default function VerifyPage() {
         }
       } catch (error) {
         console.error('Failed to load verify data:', error)
-        router.push(isEditMode ? '/app/records/weight-bills' : '/app/records/new')
+        router.push(isEditMode ? '/app/records/weight-bills' : '/app/records/weight-bills/new')
       }
     }
     loadData()
@@ -255,7 +255,7 @@ export default function VerifyPage() {
     if (upload) {
       const mediaId = typeof upload.media === 'string' ? upload.media : upload.media?.id
       if (mediaId) {
-        window.history.replaceState({}, '', `/app/records/add?id=${mediaId}`)
+        window.history.replaceState({}, '', `/app/records/weight-bills/add?id=${mediaId}`)
       }
     }
 
@@ -339,7 +339,7 @@ export default function VerifyPage() {
             const upload = uploads[nextUnsavedIndex]
             const mediaId = typeof upload.media === 'string' ? upload.media : upload.media?.id
             if (mediaId) {
-              window.history.replaceState({}, '', `/app/records/add?id=${mediaId}`)
+              window.history.replaceState({}, '', `/app/records/weight-bills/add?id=${mediaId}`)
             }
             setActiveIndex(nextUnsavedIndex)
           } else if (canGoNext) {
@@ -347,7 +347,7 @@ export default function VerifyPage() {
             const mediaId =
               typeof nextUpload.media === 'string' ? nextUpload.media : nextUpload.media?.id
             if (mediaId) {
-              window.history.replaceState({}, '', `/app/records/add?id=${mediaId}`)
+              window.history.replaceState({}, '', `/app/records/weight-bills/add?id=${mediaId}`)
             }
             setActiveIndex(activeIndex + 1)
           }
@@ -417,7 +417,7 @@ export default function VerifyPage() {
             const upload = uploads[nextUnsavedIndex]
             const mediaId = typeof upload.media === 'string' ? upload.media : upload.media?.id
             if (mediaId) {
-              window.history.replaceState({}, '', `/app/records/add?id=${mediaId}`)
+              window.history.replaceState({}, '', `/app/records/weight-bills/add?id=${mediaId}`)
             }
             setActiveIndex(nextUnsavedIndex)
           } else if (canGoNext) {
@@ -425,7 +425,7 @@ export default function VerifyPage() {
             const mediaId =
               typeof nextUpload.media === 'string' ? nextUpload.media : nextUpload.media?.id
             if (mediaId) {
-              window.history.replaceState({}, '', `/app/records/add?id=${mediaId}`)
+              window.history.replaceState({}, '', `/app/records/weight-bills/add?id=${mediaId}`)
             }
             setActiveIndex(activeIndex + 1)
           }

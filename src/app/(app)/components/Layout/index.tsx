@@ -10,7 +10,7 @@ import {
   useMantineColorScheme,
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
-import { Menu, Moon, Sun, X } from 'lucide-react'
+import { Menu, Moon, Sun, UserCircle, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import classes from './index.module.css'
 import { Logo } from '@/app/(app)/components/Logo'
@@ -115,6 +115,15 @@ export default function Layout({ children, userPreferences }: LayoutProps) {
           >
             <Sun size={16} className="light" />
             <Moon size={16} className="dark" />
+          </ActionIcon>
+          <ActionIcon
+            onClick={() => router.push('/app/user')}
+            variant="default"
+            size="lg"
+            radius="sm"
+            aria-label="Profile"
+          >
+            <UserCircle size={16} />
           </ActionIcon>
           <ActionIcon
             onClick={() => {

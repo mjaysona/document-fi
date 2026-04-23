@@ -2,7 +2,7 @@
 
 import { Button, Group } from '@mantine/core'
 import { ChevronLeft, ChevronRight, Check } from 'lucide-react'
-import classes from '../page.module.scss'
+import classes from '../../page.module.scss'
 
 type UploadStatus = 'unsaved' | 'saved' | 'verified' | undefined
 

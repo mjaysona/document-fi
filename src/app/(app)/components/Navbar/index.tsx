@@ -83,7 +83,7 @@ export const Navbar = ({ isExpanded, toggleExpandCollapse, mobileBreakpoint }: N
                 <Menu.Dropdown>
                   <Menu.Item
                     leftSection={<LayoutDashboard size={16} />}
-                    onClick={() => router.push('/app/records/new')}
+                    onClick={() => router.push('/app/records/weight-bills/new')}
                   >
                     Weight Bill
                   </Menu.Item>
