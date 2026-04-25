@@ -12,6 +12,7 @@ import { IndentFeatureClient as IndentFeatureClient_e70f5e05f09f93e00b997edb1ef0
 import { HeadingFeatureClient as HeadingFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { BoldFeatureClient as BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { BlockquoteFeatureClient as BlockquoteFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
+import { default as default_8356743afc2593deaf789a209469933f } from '@/collections/APIConnections/components/GoogleOAuthConnectField/index'
 import { default as default_21770b7cd4c377f531de5c3939766e77 } from '@/collections/UserRoles/components/CollectionsSelectField/index'
 import { default as default_9d1d0206a6be1ee07676dfd7d0f72d73 } from '@/collections/UserRoles/components/PermissionsCellComponent/index'
 import { default as default_ed3cbed3b52ba9e0c712bb19e7066c56 } from '@/app/(payload)/components/Logo'
@@ -32,6 +33,7 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#HeadingFeatureClient": HeadingFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#BoldFeatureClient": BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#BlockquoteFeatureClient": BlockquoteFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
+  "@/collections/APIConnections/components/GoogleOAuthConnectField/index#default": default_8356743afc2593deaf789a209469933f,
   "@/collections/UserRoles/components/CollectionsSelectField/index#default": default_21770b7cd4c377f531de5c3939766e77,
   "@/collections/UserRoles/components/PermissionsCellComponent/index#default": default_9d1d0206a6be1ee07676dfd7d0f72d73,
   "@/app/(payload)/components/Logo#default": default_ed3cbed3b52ba9e0c712bb19e7066c56,

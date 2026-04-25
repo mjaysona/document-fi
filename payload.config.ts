@@ -33,6 +33,7 @@ import DashboardCustomization from '@/collections/DashboardCustomization'
 import WeightBills from '@/collections/WeightBills'
 import SessionUploads from '@/collections/SessionUploads'
 import Vehicles from '@/collections/Vehicles'
+import APIConnections from '@/collections/APIConnections'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -68,6 +69,7 @@ export default buildConfig({
     SessionUploads,
 
     // Super Admin specific collections below
+    APIConnections,
     UserRoles,
     Media,
     Accounts,

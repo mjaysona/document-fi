@@ -74,6 +74,7 @@ export interface Config {
     vehicles: Vehicle;
     'weight-bills': WeightBill;
     'session-uploads': SessionUpload;
+    'api-connections': ApiConnection;
     'user-roles': UserRole;
     media: Media;
     accounts: Account;
@@ -92,6 +93,7 @@ export interface Config {
     vehicles: VehiclesSelect<false> | VehiclesSelect<true>;
     'weight-bills': WeightBillsSelect<false> | WeightBillsSelect<true>;
     'session-uploads': SessionUploadsSelect<false> | SessionUploadsSelect<true>;
+    'api-connections': ApiConnectionsSelect<false> | ApiConnectionsSelect<true>;
     'user-roles': UserRolesSelect<false> | UserRolesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     accounts: AccountsSelect<false> | AccountsSelect<true>;
@@ -335,6 +337,33 @@ export interface SessionUpload {
   createdAt: string;
 }
 /**
+ * Configure third-party API integrations used by system records.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "api-connections".
+ */
+export interface ApiConnection {
+  id: string;
+  sourceType: 'weight-bills';
+  serviceType: 'google-sheets';
+  googleOAuthConnect?: string | null;
+  googleAccountEmail?: string | null;
+  googleOAuthConnected?: boolean | null;
+  googleOAuthAccessToken?: string | null;
+  googleOAuthRefreshToken?: string | null;
+  googleOAuthExpiresAt?: string | null;
+  /**
+   * The file location identifier from the Google Sheet URL.
+   */
+  spreadsheetId?: string | null;
+  sheetName?: string | null;
+  isEnabled?: boolean | null;
+  createdBy?: (string | null) | User;
+  updatedBy?: (string | null) | User;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "accounts".
  */
@@ -414,6 +443,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'session-uploads';
         value: string | SessionUpload;
+      } | null)
+    | ({
+        relationTo: 'api-connections';
+        value: string | ApiConnection;
       } | null)
     | ({
         relationTo: 'user-roles';
@@ -596,6 +629,27 @@ export interface SessionUploadsSelect<T extends boolean = true> {
         id?: T;
       };
   createdBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "api-connections_select".
+ */
+export interface ApiConnectionsSelect<T extends boolean = true> {
+  sourceType?: T;
+  serviceType?: T;
+  googleOAuthConnect?: T;
+  googleAccountEmail?: T;
+  googleOAuthConnected?: T;
+  googleOAuthAccessToken?: T;
+  googleOAuthRefreshToken?: T;
+  googleOAuthExpiresAt?: T;
+  spreadsheetId?: T;
+  sheetName?: T;
+  isEnabled?: T;
+  createdBy?: T;
+  updatedBy?: T;
   updatedAt?: T;
   createdAt?: T;
 }
