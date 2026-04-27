@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   ActionIcon,
+  Alert,
   Badge,
   Button,
   Checkbox,
@@ -19,7 +20,7 @@ import {
   Modal,
   Stack,
 } from '@mantine/core'
-import { Filter, Search, Download, Pencil, Trash2 } from 'lucide-react'
+import { Filter, Search, Download, Pencil, Trash2, CircleCheck } from 'lucide-react'
 import {
   deleteWeightBill,
   deleteWeightBills,
@@ -866,13 +867,18 @@ export default function WeightBillsPage() {
         </Group>
 
         {feedback && (
-          <Text
-            size="sm"
+          <Alert
             mt="sm"
-            c={feedback.tone === 'success' ? 'green' : feedback.tone === 'error' ? 'red' : 'yellow'}
+            variant="light"
+            icon={<CircleCheck size={16} />}
+            withCloseButton
+            onClose={() => setFeedback(null)}
+            color={
+              feedback.tone === 'success' ? 'green' : feedback.tone === 'error' ? 'red' : 'yellow'
+            }
           >
             {feedback.message}
-          </Text>
+          </Alert>
         )}
       </div>
 
