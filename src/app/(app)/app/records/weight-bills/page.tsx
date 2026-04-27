@@ -7,6 +7,7 @@ import {
   Badge,
   Button,
   Checkbox,
+  Chip,
   Collapse,
   Group,
   MultiSelect,
@@ -25,7 +26,11 @@ import {
   getWeightBills,
   exportWeightBillsToCSV,
   getVehicleOptions,
+  parseAndCompareImportedRows,
+  applyImportDecisions,
+  syncWeightBillsToGoogleSheet,
   type WeightBillsQuery,
+  type ImportRowComparison,
 } from './actions'
 import classes from '../page.module.scss'
 
@@ -55,13 +60,27 @@ interface PaginationData {
   hasPrevPage: boolean
 }
 
+type FeedbackState = {
+  tone: 'success' | 'error' | 'info'
+  message: string
+}
+
 const DEBOUNCE_DELAY = 500
+
+const formatDateForDisplay = (dateValue: string | undefined): string => {
+  if (!dateValue) return '-'
+  const normalized = dateValue.includes('T') ? dateValue.split('T')[0] : dateValue
+  return normalized
+}
 
 export default function WeightBillsPage() {
   const router = useRouter()
   const [weightBills, setWeightBills] = useState<WeightBill[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isExporting, setIsExporting] = useState(false)
+  const [isSyncing, setIsSyncing] = useState(false)
+  const [isImporting, setIsImporting] = useState(false)
+  const [isApplyingImport, setIsApplyingImport] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [isBulkDeleting, setIsBulkDeleting] = useState(false)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -78,15 +97,29 @@ export default function WeightBillsPage() {
   const [filterPaymentStatus, setFilterPaymentStatus] = useState<string[]>([])
   const [filterVerificationStatus, setFilterVerificationStatus] = useState<string[]>([])
   const [vehicleOptions, setVehicleOptions] = useState<{ value: string; label: string }[]>([])
+  const [feedback, setFeedback] = useState<FeedbackState | null>(null)
+  const [importMode, setImportMode] = useState(false)
+  const [importedRows, setImportedRows] = useState<ImportRowComparison[]>([])
+  const [importDecisions, setImportDecisions] = useState<Record<number, 'accepted' | 'rejected'>>(
+    {},
+  )
+  const [importResult, setImportResult] = useState<{
+    createdCount: number
+    updatedCount: number
+    createdRows: number[]
+    updatedRows: number[]
+  } | null>(null)
+  const [showImportResultsFirst, setShowImportResultsFirst] = useState(false)
+  const [importModeSortBy, setImportModeSortBy] = useState<SortBy>('date')
+  const [importModeSortOrder, setImportModeSortOrder] = useState<SortOrder>('desc')
+  const [importModeShowImportedFirst, setImportModeShowImportedFirst] = useState(true)
+  const importInputRef = useRef<HTMLInputElement | null>(null)
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const loadWeightBills = async (query: WeightBillsQuery) => {
-    console.log('test:::')
     setIsLoading(true)
     try {
       const result = await getWeightBills(query)
-
-      console.log('result:::', result)
       if (result.success) {
         setWeightBills(result.data as WeightBill[])
         if ('pagination' in result && result.pagination) {
@@ -160,6 +193,196 @@ export default function WeightBillsPage() {
     } finally {
       setIsExporting(false)
     }
+  }
+
+  const handleSync = async () => {
+    setFeedback(null)
+    setIsSyncing(true)
+    try {
+      const result = await syncWeightBillsToGoogleSheet()
+
+      if (!result.success) {
+        setFeedback({
+          tone: 'error',
+          message: result.message || 'Google Sheet sync failed.',
+        })
+        return
+      }
+
+      const rowCount = result.summary?.rowCount
+      const details = typeof rowCount === 'number' ? ` (${rowCount} row(s) written)` : ''
+      setFeedback({
+        tone: 'success',
+        message: `${result.message}${details}`,
+      })
+    } catch (error) {
+      console.error('Failed to sync weight bills from Google Sheet:', error)
+      setFeedback({ tone: 'error', message: 'Google Sheet sync failed.' })
+    } finally {
+      setIsSyncing(false)
+    }
+  }
+
+  const handleImportFileSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.currentTarget.files?.[0]
+    event.currentTarget.value = ''
+
+    if (!file) {
+      return
+    }
+
+    setFeedback(null)
+    setIsImporting(true)
+
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const result = await parseAndCompareImportedRows(formData)
+
+      if (!result.success) {
+        setFeedback({
+          tone: 'error',
+          message: result.error || 'Failed to parse spreadsheet.',
+        })
+        return
+      }
+
+      if (result.rows.length === 0) {
+        setFeedback({
+          tone: result.errors.length > 0 ? 'info' : 'success',
+          message:
+            result.errors.length > 0
+              ? `No importable rows found. ${result.errors.length} error(s).`
+              : 'Spreadsheet is empty.',
+        })
+        return
+      }
+
+      // Enter import mode
+      setImportedRows(result.rows)
+      setImportDecisions({})
+      setImportMode(true)
+      setFeedback({
+        tone: 'info',
+        message: `Import preview ready: ${result.totalNew} new, ${result.totalChanged} changed, ${result.totalUnchanged} unchanged.`,
+      })
+    } catch (error) {
+      console.error('Failed to parse spreadsheet:', error)
+      setFeedback({ tone: 'error', message: 'Spreadsheet import failed.' })
+    } finally {
+      setIsImporting(false)
+    }
+  }
+
+  const handleApplyImport = async () => {
+    if (Object.keys(importDecisions).length === 0) {
+      setFeedback({ tone: 'error', message: 'No changes accepted or rejected.' })
+      return
+    }
+
+    setIsApplyingImport(true)
+    try {
+      const result = await applyImportDecisions({
+        rows: importedRows,
+        decisions: importDecisions,
+      })
+
+      if (!result.success) {
+        setFeedback({
+          tone: 'error',
+          message: result.error || 'Failed to apply import.',
+        })
+        return
+      }
+
+      // Determine which rows were created vs updated
+      const createdRows: number[] = []
+      const updatedRows: number[] = []
+
+      for (const row of importedRows) {
+        const decision = importDecisions[row.weightBillNumber]
+        if (decision === 'accepted') {
+          if (row.status === 'new') {
+            createdRows.push(row.weightBillNumber)
+          } else if (row.status === 'changed') {
+            updatedRows.push(row.weightBillNumber)
+          }
+        }
+      }
+
+      setImportResult({
+        createdCount: result.createdCount,
+        updatedCount: result.updatedCount,
+        createdRows,
+        updatedRows,
+      })
+
+      // Exit import mode immediately and show results in normal table view
+      setImportMode(false)
+      setImportedRows([])
+      setImportDecisions({})
+
+      setFeedback({
+        tone: 'success',
+        message: `Changes applied: ${result.createdCount} created, ${result.updatedCount} updated.`,
+      })
+
+      // Reload data to show the newly created/updated records
+      await loadWeightBills({
+        search,
+        sortBy,
+        sortOrder,
+        page,
+        filterVehicles,
+        filterPaymentStatus,
+        filterVerificationStatus,
+      })
+    } catch (error) {
+      console.error('Failed to apply import:', error)
+      setFeedback({ tone: 'error', message: 'Failed to apply import.' })
+    } finally {
+      setIsApplyingImport(false)
+    }
+  }
+
+  const handleCancelImport = () => {
+    setImportMode(false)
+    setImportedRows([])
+    setImportDecisions({})
+    setFeedback(null)
+  }
+
+  const toggleImportDecision = (billNumber: number, decision: 'accepted' | 'rejected') => {
+    setImportDecisions((prev) => {
+      const newDecisions = { ...prev }
+      if (newDecisions[billNumber] === decision) {
+        delete newDecisions[billNumber]
+      } else {
+        newDecisions[billNumber] = decision
+      }
+      return newDecisions
+    })
+  }
+
+  const acceptAllImportedRows = () => {
+    const newDecisions: Record<number, 'accepted' | 'rejected'> = {}
+    for (const row of importedRows) {
+      newDecisions[row.weightBillNumber] = 'accepted'
+    }
+    setImportDecisions(newDecisions)
+  }
+
+  const rejectAllImportedRows = () => {
+    const newDecisions: Record<number, 'accepted' | 'rejected'> = {}
+    for (const row of importedRows) {
+      newDecisions[row.weightBillNumber] = 'rejected'
+    }
+    setImportDecisions(newDecisions)
+  }
+
+  const handleImportClick = () => {
+    importInputRef.current?.click()
   }
 
   const handleDelete = async (billId: string) => {
@@ -244,6 +467,15 @@ export default function WeightBillsPage() {
     setPage(1) // Reset to first page when changing sort
   }
 
+  const toggleImportModeSort = (field: SortBy) => {
+    if (importModeSortBy === field) {
+      setImportModeSortOrder(importModeSortOrder === 'asc' ? 'desc' : 'asc')
+    } else {
+      setImportModeSortBy(field)
+      setImportModeSortOrder('desc')
+    }
+  }
+
   const handleSearchInput = (value: string) => {
     setSearchInput(value)
 
@@ -272,7 +504,31 @@ export default function WeightBillsPage() {
     setSelectedIds((prev) => prev.filter((id) => weightBills.some((bill) => bill.id === id)))
   }, [weightBills])
 
-  const visibleIds = weightBills.map((bill) => bill.id)
+  const displayBills =
+    showImportResultsFirst && importResult
+      ? [...weightBills].sort((a, b) => {
+          const aIsCreated = importResult.createdRows.includes(a.weightBillNumber)
+          const bIsCreated = importResult.createdRows.includes(b.weightBillNumber)
+          const aIsUpdated = importResult.updatedRows.includes(a.weightBillNumber)
+          const bIsUpdated = importResult.updatedRows.includes(b.weightBillNumber)
+
+          // Created and updated rows first (combined)
+          const aIsModified = aIsCreated || aIsUpdated
+          const bIsModified = bIsCreated || bIsUpdated
+
+          if (aIsModified && !bIsModified) return -1
+          if (!aIsModified && bIsModified) return 1
+
+          // If both modified, created first
+          if (aIsCreated && !bIsCreated) return -1
+          if (!aIsCreated && bIsCreated) return 1
+
+          // Otherwise maintain original order
+          return 0
+        })
+      : weightBills
+
+  const visibleIds = displayBills.map((bill) => bill.id)
   const activeFilterCount =
     filterVehicles.length + filterPaymentStatus.length + filterVerificationStatus.length
   const allVisibleSelected =
@@ -299,7 +555,7 @@ export default function WeightBillsPage() {
     })
   }
 
-  const rows = weightBills.map((bill) => (
+  const rows = displayBills.map((bill) => (
     <Table.Tr
       key={bill.id}
       bg={selectedIds.includes(bill.id) ? 'var(--mantine-color-blue-light)' : undefined}
@@ -312,7 +568,7 @@ export default function WeightBillsPage() {
         />
       </Table.Td>
       <Table.Td>{bill.weightBillNumber}</Table.Td>
-      <Table.Td>{bill.date ? new Date(bill.date).toLocaleDateString() : '-'}</Table.Td>
+      <Table.Td>{formatDateForDisplay(bill.date)}</Table.Td>
       <Table.Td>{bill.customerName}</Table.Td>
       <Table.Td>{bill.vehicle}</Table.Td>
       <Table.Td>{bill.submittedBy || '-'}</Table.Td>
@@ -335,6 +591,16 @@ export default function WeightBillsPage() {
           <Badge color={bill.isVerified ? 'green' : 'red'} variant="light">
             {bill.isVerified ? 'VERIFIED' : 'UNVERIFIED'}
           </Badge>
+          {importResult &&
+            (importResult.createdRows.includes(bill.weightBillNumber) ? (
+              <Badge color="green" variant="filled" size="sm">
+                ✓ Created
+              </Badge>
+            ) : importResult.updatedRows.includes(bill.weightBillNumber) ? (
+              <Badge color="blue" variant="filled" size="sm">
+                ✓ Updated
+              </Badge>
+            ) : null)}
         </Group>
       </Table.Td>
       <Table.Td>
@@ -450,55 +716,467 @@ export default function WeightBillsPage() {
         </Collapse>
 
         <Group justify="flex-start" gap="xs">
-          <span style={{ fontSize: 14, fontWeight: 500 }}>Sort by:</span>
-          <Button
-            variant={sortBy === 'name' ? 'filled' : 'default'}
-            size="sm"
-            onClick={() => toggleSort('name')}
-          >
-            Name {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
-          </Button>
-          <Button
-            variant={sortBy === 'date' ? 'filled' : 'default'}
-            size="sm"
-            onClick={() => toggleSort('date')}
-          >
-            Date {sortBy === 'date' && (sortOrder === 'asc' ? '↑' : '↓')}
-          </Button>
-          <Button
-            variant={sortBy === 'lastModified' ? 'filled' : 'default'}
-            size="sm"
-            onClick={() => toggleSort('lastModified')}
-          >
-            Last Modified {sortBy === 'lastModified' && (sortOrder === 'asc' ? '↑' : '↓')}
-          </Button>
-          <Button
-            variant="light"
-            color="red"
-            size="sm"
-            onClick={handleDeleteSelected}
-            disabled={selectedIds.length === 0 || deletingId !== null}
-            loading={isBulkDeleting}
-          >
-            Delete selected ({selectedIds.length})
-          </Button>
-          <Button
-            variant="default"
-            size="sm"
-            leftSection={<Download size={16} />}
-            onClick={handleExport}
-            loading={isExporting}
-            ml="auto"
-          >
-            Export to CSV
-          </Button>
+          {importMode ? (
+            <>
+              <Text fw={500} c="blue">
+                Import Mode: {Object.keys(importDecisions).length} decision(s)
+              </Text>
+              <span style={{ fontSize: 14, fontWeight: 500 }}>Sort by:</span>
+              <Button
+                variant={importModeSortBy === 'name' ? 'filled' : 'default'}
+                size="sm"
+                onClick={() => toggleImportModeSort('name')}
+              >
+                Name {importModeSortBy === 'name' && (importModeSortOrder === 'asc' ? '↑' : '↓')}
+              </Button>
+              <Button
+                variant={importModeSortBy === 'date' ? 'filled' : 'default'}
+                size="sm"
+                onClick={() => toggleImportModeSort('date')}
+              >
+                Date {importModeSortBy === 'date' && (importModeSortOrder === 'asc' ? '↑' : '↓')}
+              </Button>
+              <Button
+                variant={importModeShowImportedFirst ? 'filled' : 'light'}
+                color="green"
+                size="sm"
+                onClick={() => setImportModeShowImportedFirst(!importModeShowImportedFirst)}
+              >
+                {importModeShowImportedFirst ? '✓ ' : ''}Imported First
+              </Button>
+              <Button variant="light" color="green" size="sm" onClick={acceptAllImportedRows}>
+                Accept All
+              </Button>
+              <Button variant="light" color="red" size="sm" onClick={rejectAllImportedRows}>
+                Reject All
+              </Button>
+              <Button
+                variant="filled"
+                color="green"
+                size="sm"
+                onClick={handleApplyImport}
+                loading={isApplyingImport}
+                disabled={Object.keys(importDecisions).length === 0}
+              >
+                Apply Changes
+              </Button>
+              <Button
+                variant="default"
+                size="sm"
+                onClick={handleCancelImport}
+                disabled={isApplyingImport}
+              >
+                Cancel
+              </Button>
+            </>
+          ) : (
+            <>
+              <span style={{ fontSize: 14, fontWeight: 500 }}>Sort by:</span>
+              <Button
+                variant={sortBy === 'name' ? 'filled' : 'default'}
+                size="sm"
+                onClick={() => toggleSort('name')}
+              >
+                Name {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
+              </Button>
+              <Button
+                variant={sortBy === 'date' ? 'filled' : 'default'}
+                size="sm"
+                onClick={() => toggleSort('date')}
+              >
+                Date {sortBy === 'date' && (sortOrder === 'asc' ? '↑' : '↓')}
+              </Button>
+              <Button
+                variant={sortBy === 'lastModified' ? 'filled' : 'default'}
+                size="sm"
+                onClick={() => toggleSort('lastModified')}
+              >
+                Last Modified {sortBy === 'lastModified' && (sortOrder === 'asc' ? '↑' : '↓')}
+              </Button>
+              {importResult && (
+                <>
+                  <Button
+                    variant={showImportResultsFirst ? 'filled' : 'light'}
+                    color="blue"
+                    size="sm"
+                    onClick={() => setShowImportResultsFirst(!showImportResultsFirst)}
+                  >
+                    {showImportResultsFirst ? '✓ ' : ''}Recently Modified
+                  </Button>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    color="gray"
+                    onClick={() => {
+                      setImportResult(null)
+                      setShowImportResultsFirst(false)
+                    }}
+                  >
+                    Clear Import Results
+                  </Button>
+                </>
+              )}
+              <Button
+                variant="light"
+                color="red"
+                size="sm"
+                onClick={handleDeleteSelected}
+                disabled={selectedIds.length === 0 || deletingId !== null}
+                loading={isBulkDeleting}
+              >
+                Delete selected ({selectedIds.length})
+              </Button>
+              <Button
+                variant="default"
+                size="sm"
+                onClick={handleSync}
+                loading={isSyncing}
+                disabled={isImporting}
+              >
+                Sync Google Sheet
+              </Button>
+              <Button
+                variant="default"
+                size="sm"
+                onClick={handleImportClick}
+                loading={isImporting}
+                disabled={isSyncing}
+              >
+                Import Spreadsheet
+              </Button>
+              <input
+                ref={importInputRef}
+                type="file"
+                accept=".csv,.xlsx,.xls"
+                style={{ display: 'none' }}
+                onChange={handleImportFileSelected}
+              />
+              <Button
+                variant="default"
+                size="sm"
+                leftSection={<Download size={16} />}
+                onClick={handleExport}
+                loading={isExporting}
+                ml="auto"
+              >
+                Export to CSV
+              </Button>
+            </>
+          )}
         </Group>
+
+        {feedback && (
+          <Text
+            size="sm"
+            mt="sm"
+            c={feedback.tone === 'success' ? 'green' : feedback.tone === 'error' ? 'red' : 'yellow'}
+          >
+            {feedback.message}
+          </Text>
+        )}
       </div>
 
       {isLoading ? (
         <div style={{ padding: '20px', textAlign: 'center' }}>Loading weight bills...</div>
       ) : weightBills.length === 0 ? (
         <div style={{ padding: '20px', textAlign: 'center' }}>No weight bills found.</div>
+      ) : importMode ? (
+        <>
+          {/* Create sorted list for import mode table */}
+          {(() => {
+            // Combine all rows (existing DB records with imported changes + new imported records)
+            const allRows: Array<{
+              type: 'existing' | 'new'
+              bill?: WeightBill
+              importedRow?: ImportRowComparison
+            }> = []
+
+            // Add existing bills with their imported rows
+            weightBills.forEach((bill) => {
+              const importedRow = importedRows.find(
+                (r) => r.weightBillNumber === bill.weightBillNumber,
+              )
+              if (importedRow) {
+                allRows.push({ type: 'existing', bill, importedRow })
+              }
+            })
+
+            // Add new imported rows (not in DB)
+            importedRows
+              .filter(
+                (row) =>
+                  row.status === 'new' &&
+                  !weightBills.some((b) => b.weightBillNumber === row.weightBillNumber),
+              )
+              .forEach((importedRow) => {
+                allRows.push({ type: 'new', importedRow })
+              })
+
+            // Sort by preference
+            const sortedRows = [...allRows].sort((a, b) => {
+              // If "Imported First" is enabled, prioritize imported records (new and changed)
+              if (importModeShowImportedFirst) {
+                const aIsImported =
+                  a.importedRow &&
+                  (a.importedRow.status === 'new' || a.importedRow.status === 'changed')
+                const bIsImported =
+                  b.importedRow &&
+                  (b.importedRow.status === 'new' || b.importedRow.status === 'changed')
+
+                if (aIsImported && !bIsImported) return -1
+                if (!aIsImported && bIsImported) return 1
+
+                // If both imported, sort new before changed
+                if (aIsImported && bIsImported) {
+                  const aIsNew = a.importedRow?.status === 'new'
+                  const bIsNew = b.importedRow?.status === 'new'
+                  if (aIsNew && !bIsNew) return -1
+                  if (!aIsNew && bIsNew) return 1
+                }
+              }
+
+              // Sort by selected field
+              let aValue: string | number = ''
+              let bValue: string | number = ''
+
+              if (importModeSortBy === 'date') {
+                aValue = a.bill?.date || a.importedRow?.new.date || ''
+                bValue = b.bill?.date || b.importedRow?.new.date || ''
+              } else if (importModeSortBy === 'name') {
+                aValue = a.bill?.customerName || a.importedRow?.new.customerName || ''
+                bValue = b.bill?.customerName || b.importedRow?.new.customerName || ''
+              }
+
+              if (aValue < bValue) return importModeSortOrder === 'asc' ? -1 : 1
+              if (aValue > bValue) return importModeSortOrder === 'asc' ? 1 : -1
+              return 0
+            })
+
+            return (
+              <div style={{ overflowX: 'auto' }}>
+                <Table striped={false} highlightOnHover>
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th>Bill #</Table.Th>
+                      <Table.Th>Date</Table.Th>
+                      <Table.Th>Customer Name</Table.Th>
+                      <Table.Th>Vehicle</Table.Th>
+                      <Table.Th>Amount</Table.Th>
+                      <Table.Th>Status</Table.Th>
+                      <Table.Th>Action</Table.Th>
+                    </Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {sortedRows.map((row) => {
+                      const importedRow = row.importedRow
+                      const bill = row.bill
+                      const decision = importedRow
+                        ? importDecisions[importedRow.weightBillNumber]
+                        : undefined
+
+                      if (row.type === 'existing' && !importedRow) {
+                        // Non-imported record: show normally without chips
+                        return (
+                          <Table.Tr key={bill!.id}>
+                            <Table.Td fw={500}>{bill!.weightBillNumber}</Table.Td>
+                            <Table.Td>{formatDateForDisplay(bill!.date)}</Table.Td>
+                            <Table.Td>{bill!.customerName}</Table.Td>
+                            <Table.Td>{bill!.vehicle}</Table.Td>
+                            <Table.Td>₱{bill!.amount?.toFixed(2) || '0.00'}</Table.Td>
+                            <Table.Td>
+                              <Badge
+                                color={
+                                  bill!.paymentStatus === 'PAID'
+                                    ? 'green'
+                                    : bill!.paymentStatus === 'CANCELLED'
+                                      ? 'red'
+                                      : 'gray'
+                                }
+                                variant="light"
+                                size="sm"
+                              >
+                                {bill!.paymentStatus || 'No payment status'}
+                              </Badge>
+                            </Table.Td>
+                            <Table.Td>-</Table.Td>
+                          </Table.Tr>
+                        )
+                      }
+
+                      // Imported record: show with diffs and chips
+                      const rowBg =
+                        importedRow!.status === 'new' ? 'rgba(34, 139, 34, 0.1)' : undefined
+
+                      return (
+                        <Table.Tr
+                          key={
+                            row.type === 'new' ? `new-${importedRow!.weightBillNumber}` : bill!.id
+                          }
+                          bg={rowBg}
+                        >
+                          <Table.Td fw={500}>{importedRow!.weightBillNumber}</Table.Td>
+                          <Table.Td>
+                            {importedRow!.status === 'changed' &&
+                            importedRow!.changes?.some((c) => c.field === 'date') ? (
+                              <div>
+                                <span style={{ color: '#b00020', textDecoration: 'line-through' }}>
+                                  {importedRow!.old?.date}
+                                </span>
+                                <div>{importedRow!.new.date}</div>
+                              </div>
+                            ) : (
+                              importedRow!.new.date
+                            )}
+                          </Table.Td>
+                          <Table.Td>
+                            {importedRow!.status === 'changed' &&
+                            importedRow!.changes?.some((c) => c.field === 'customerName') ? (
+                              <div>
+                                <span style={{ color: '#b00020', textDecoration: 'line-through' }}>
+                                  {importedRow!.old?.customerName}
+                                </span>
+                                <div>{importedRow!.new.customerName}</div>
+                              </div>
+                            ) : (
+                              importedRow!.new.customerName
+                            )}
+                          </Table.Td>
+                          <Table.Td>
+                            {importedRow!.status === 'changed' &&
+                            importedRow!.changes?.some((c) => c.field === 'vehicle') ? (
+                              <div>
+                                <span style={{ color: '#b00020', textDecoration: 'line-through' }}>
+                                  {importedRow!.old?.vehicle}
+                                </span>
+                                <div>{importedRow!.new.vehicle}</div>
+                              </div>
+                            ) : (
+                              importedRow!.new.vehicle
+                            )}
+                          </Table.Td>
+                          <Table.Td>
+                            {importedRow!.status === 'changed' &&
+                            importedRow!.changes?.some((c) => c.field === 'amount') ? (
+                              <div>
+                                <span style={{ color: '#b00020', textDecoration: 'line-through' }}>
+                                  ₱{importedRow!.old?.amount.toFixed(2)}
+                                </span>
+                                <div>₱{importedRow!.new.amount.toFixed(2)}</div>
+                              </div>
+                            ) : (
+                              `₱${importedRow!.new.amount.toFixed(2)}`
+                            )}
+                          </Table.Td>
+                          <Table.Td>
+                            {importedRow!.status === 'changed' &&
+                            importedRow!.changes?.some((c) => c.field === 'paymentStatus') ? (
+                              <div>
+                                <div style={{ marginBottom: 4 }}>
+                                  <Badge
+                                    color="red"
+                                    variant="light"
+                                    size="xs"
+                                    styles={{
+                                      label: {
+                                        textDecoration: 'line-through',
+                                      },
+                                    }}
+                                  >
+                                    {importedRow!.old?.paymentStatus || 'No payment status'}
+                                  </Badge>
+                                </div>
+                                <div>
+                                  <Badge
+                                    color={
+                                      importedRow!.new.paymentStatus === 'PAID'
+                                        ? 'green'
+                                        : importedRow!.new.paymentStatus === 'CANCELLED'
+                                          ? 'red'
+                                          : 'gray'
+                                    }
+                                    variant="light"
+                                    size="sm"
+                                  >
+                                    {importedRow!.new.paymentStatus || 'No payment status'}
+                                  </Badge>
+                                </div>
+                              </div>
+                            ) : (
+                              <Badge
+                                color={
+                                  importedRow!.new.paymentStatus === 'PAID'
+                                    ? 'green'
+                                    : importedRow!.new.paymentStatus === 'CANCELLED'
+                                      ? 'red'
+                                      : 'gray'
+                                }
+                                variant="light"
+                                size="sm"
+                              >
+                                {importedRow!.new.paymentStatus || 'No payment status'}
+                              </Badge>
+                            )}
+                          </Table.Td>
+                          <Table.Td>
+                            {importResult ? (
+                              // Show result indicator instead of chips
+                              <Badge
+                                color={
+                                  importResult.createdRows.includes(importedRow!.weightBillNumber)
+                                    ? 'green'
+                                    : importResult.updatedRows.includes(
+                                          importedRow!.weightBillNumber,
+                                        )
+                                      ? 'blue'
+                                      : 'gray'
+                                }
+                                variant="filled"
+                                size="sm"
+                              >
+                                {importResult.createdRows.includes(importedRow!.weightBillNumber)
+                                  ? '✓ Created'
+                                  : importResult.updatedRows.includes(importedRow!.weightBillNumber)
+                                    ? '✓ Updated'
+                                    : 'Rejected'}
+                              </Badge>
+                            ) : importedRow!.status === 'unchanged' ? (
+                              <Text size="sm" c="dimmed">
+                                Unchanged
+                              </Text>
+                            ) : (
+                              <Group gap={4} wrap="nowrap">
+                                <Chip
+                                  variant="light"
+                                  color={decision === 'accepted' ? 'green' : 'default'}
+                                  checked={decision === 'accepted'}
+                                  onChange={() =>
+                                    toggleImportDecision(importedRow!.weightBillNumber, 'accepted')
+                                  }
+                                >
+                                  Accept
+                                </Chip>
+                                <Chip
+                                  variant="light"
+                                  color={decision === 'rejected' ? 'red' : 'default'}
+                                  checked={decision === 'rejected'}
+                                  onChange={() =>
+                                    toggleImportDecision(importedRow!.weightBillNumber, 'rejected')
+                                  }
+                                >
+                                  Reject
+                                </Chip>
+                              </Group>
+                            )}
+                          </Table.Td>
+                        </Table.Tr>
+                      )
+                    })}
+                  </Table.Tbody>
+                </Table>
+              </div>
+            )
+          })()}
+        </>
       ) : (
         <>
           <Table striped highlightOnHover>
