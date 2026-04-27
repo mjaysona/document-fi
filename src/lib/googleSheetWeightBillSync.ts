@@ -1,4 +1,5 @@
 import type { Payload } from 'payload'
+import { ensureGoogleOAuthAccessTokenForPayload } from '@/collections/APIConnections/oauth'
 
 type ApiConnectionDoc = {
   id: number | string
@@ -7,6 +8,8 @@ type ApiConnectionDoc = {
   isEnabled?: boolean | null
   googleOAuthConnected?: boolean | null
   googleOAuthAccessToken?: string | null
+  googleOAuthRefreshToken?: string | null
+  googleOAuthExpiresAt?: string | null
   spreadsheetId?: string | null
   sheetName?: string | null
 }
@@ -132,16 +135,17 @@ const buildWeightBillRows = async (payload: Payload): Promise<WeightBillSheetBui
 const getSheetIdByTitle = async (args: {
   spreadsheetId: string
   sheetName: string
-  accessToken: string
+  executeGoogleRequest: (request: {
+    url: string
+    method: 'GET' | 'POST' | 'PUT'
+    body?: unknown
+  }) => Promise<Response>
 }): Promise<number | null> => {
   const metadataEndpoint = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(args.spreadsheetId)}?fields=sheets(properties(sheetId,title))`
 
-  const metadataResponse = await fetch(metadataEndpoint, {
+  const metadataResponse = await args.executeGoogleRequest({
+    url: metadataEndpoint,
     method: 'GET',
-    headers: {
-      Authorization: `Bearer ${args.accessToken}`,
-      'Content-Type': 'application/json',
-    },
   })
 
   if (!metadataResponse.ok) {
@@ -170,7 +174,11 @@ const applyUnverifiedRowFormatting = async (args: {
   headerCount: number
   totalRows: number
   unverifiedSheetRowIndexes: number[]
-  accessToken: string
+  executeGoogleRequest: (request: {
+    url: string
+    method: 'GET' | 'POST' | 'PUT'
+    body?: unknown
+  }) => Promise<Response>
 }): Promise<boolean> => {
   if (args.headerCount <= 0 || args.totalRows <= 1) {
     return true
@@ -226,13 +234,10 @@ const applyUnverifiedRowFormatting = async (args: {
   }
 
   const batchUpdateEndpoint = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(args.spreadsheetId)}:batchUpdate`
-  const batchUpdateResponse = await fetch(batchUpdateEndpoint, {
+  const batchUpdateResponse = await args.executeGoogleRequest({
+    url: batchUpdateEndpoint,
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${args.accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ requests }),
+    body: { requests },
   })
 
   return batchUpdateResponse.ok
@@ -283,26 +288,57 @@ export async function updateGoogleSheetFromWeightBillsService(
       }
     }
 
-    const accessToken = String(connection.googleOAuthAccessToken || '').trim()
-    if (!accessToken) {
+    let accessToken = ''
+    try {
+      const ensuredToken = await ensureGoogleOAuthAccessTokenForPayload(payload, connection)
+      accessToken = ensuredToken.accessToken
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Google OAuth token is invalid.'
       payload.logger.warn({ msg: 'Weight bill sync skipped: OAuth access token is missing.' })
       return {
         success: false,
         status: 'missing_token',
-        message: 'Google OAuth access token is missing. Reconnect your Google account.',
+        message: `Google OAuth token could not be refreshed. ${errorMessage}`,
       }
+    }
+
+    const executeGoogleRequest = async (request: {
+      url: string
+      method: 'GET' | 'POST' | 'PUT'
+      body?: unknown
+    }): Promise<Response> => {
+      const send = async (token: string): Promise<Response> => {
+        return fetch(request.url, {
+          method: request.method,
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: request.body === undefined ? undefined : JSON.stringify(request.body),
+        })
+      }
+
+      let response = await send(accessToken)
+      if (response.status !== 401) {
+        return response
+      }
+
+      // Token may have expired unexpectedly; force-refresh once and retry.
+      const refreshedToken = await ensureGoogleOAuthAccessTokenForPayload(payload, connection.id, {
+        forceRefresh: true,
+      })
+      accessToken = refreshedToken.accessToken
+      response = await send(accessToken)
+      return response
     }
 
     const { rows, unverifiedSheetRowIndexes } = await buildWeightBillRows(payload)
     const clearRange = `${sheetName}!A:Z`
     const clearEndpoint = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(clearRange)}:clear`
-    const clearResponse = await fetch(clearEndpoint, {
+    const clearResponse = await executeGoogleRequest({
+      url: clearEndpoint,
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({}),
+      body: {},
     })
 
     if (!clearResponse.ok) {
@@ -319,17 +355,14 @@ export async function updateGoogleSheetFromWeightBillsService(
 
     const updateRange = `${sheetName}!A1`
     const updateEndpoint = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(updateRange)}?valueInputOption=RAW`
-    const updateResponse = await fetch(updateEndpoint, {
+    const updateResponse = await executeGoogleRequest({
+      url: updateEndpoint,
       method: 'PUT',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+      body: {
         majorDimension: 'ROWS',
         range: updateRange,
         values: rows,
-      }),
+      },
     })
 
     if (!updateResponse.ok) {
@@ -347,7 +380,7 @@ export async function updateGoogleSheetFromWeightBillsService(
     const sheetId = await getSheetIdByTitle({
       spreadsheetId,
       sheetName,
-      accessToken,
+      executeGoogleRequest,
     })
 
     if (sheetId === null) {
@@ -367,7 +400,7 @@ export async function updateGoogleSheetFromWeightBillsService(
       headerCount: rows[0]?.length || 0,
       totalRows: rows.length,
       unverifiedSheetRowIndexes,
-      accessToken,
+      executeGoogleRequest,
     })
 
     if (!formattingApplied) {

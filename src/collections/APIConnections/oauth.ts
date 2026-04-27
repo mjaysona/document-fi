@@ -1,5 +1,5 @@
 import { createHmac } from 'crypto'
-import type { PayloadRequest } from 'payload'
+import type { Payload, PayloadRequest } from 'payload'
 
 type OAuthStatePayload = {
   connectionId: string
@@ -14,6 +14,10 @@ type GoogleOAuthConnection = {
   googleOAuthAccessToken?: string | null
   googleOAuthRefreshToken?: string | null
   googleOAuthExpiresAt?: string | null
+}
+
+type EnsureGoogleOAuthAccessTokenOptions = {
+  forceRefresh?: boolean
 }
 
 const GOOGLE_ACCESS_TOKEN_REFRESH_WINDOW_MS = 5 * 60 * 1000
@@ -70,13 +74,7 @@ export const getBaseURL = (req: PayloadRequest): string => {
 }
 
 export const getGoogleOAuthConfig = (req: PayloadRequest) => {
-  const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID || process.env.GOOGLE_CLIENT_ID || ''
-  const clientSecret =
-    process.env.GOOGLE_OAUTH_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET || ''
-
-  if (!clientId || !clientSecret) {
-    throw new Error('Missing Google OAuth client credentials.')
-  }
+  const { clientId, clientSecret } = getGoogleOAuthClientCredentials()
 
   const baseURL = getBaseURL(req)
   const redirectURI = `${baseURL}/api/api-connections/oauth/google/callback`
@@ -86,6 +84,21 @@ export const getGoogleOAuthConfig = (req: PayloadRequest) => {
     clientSecret,
     baseURL,
     redirectURI,
+  }
+}
+
+const getGoogleOAuthClientCredentials = (): { clientId: string; clientSecret: string } => {
+  const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID || process.env.GOOGLE_CLIENT_ID || ''
+  const clientSecret =
+    process.env.GOOGLE_OAUTH_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET || ''
+
+  if (!clientId || !clientSecret) {
+    throw new Error('Missing Google OAuth client credentials.')
+  }
+
+  return {
+    clientId,
+    clientSecret,
   }
 }
 
@@ -115,11 +128,20 @@ const assertGoogleSheetsConnection = (connection: GoogleOAuthConnection): void =
 export const ensureGoogleOAuthAccessToken = async (
   req: PayloadRequest,
   connectionOrId: GoogleOAuthConnection | number | string,
+  options: EnsureGoogleOAuthAccessTokenOptions = {},
+): Promise<{ accessToken: string; connection: GoogleOAuthConnection; refreshed: boolean }> => {
+  return ensureGoogleOAuthAccessTokenForPayload(req.payload as Payload, connectionOrId, options)
+}
+
+export const ensureGoogleOAuthAccessTokenForPayload = async (
+  payload: Payload,
+  connectionOrId: GoogleOAuthConnection | number | string,
+  options: EnsureGoogleOAuthAccessTokenOptions = {},
 ): Promise<{ accessToken: string; connection: GoogleOAuthConnection; refreshed: boolean }> => {
   const connection =
     typeof connectionOrId === 'object'
       ? connectionOrId
-      : ((await req.payload.findByID({
+      : ((await payload.findByID({
           collection: 'api-connections',
           id: connectionOrId,
           depth: 0,
@@ -130,8 +152,10 @@ export const ensureGoogleOAuthAccessToken = async (
 
   const existingAccessToken = String(connection.googleOAuthAccessToken || '').trim()
   if (
+    !options.forceRefresh &&
     existingAccessToken &&
-    !isGoogleAccessTokenExpiring(connection.googleOAuthExpiresAt || null)
+    (!connection.googleOAuthExpiresAt ||
+      !isGoogleAccessTokenExpiring(connection.googleOAuthExpiresAt || null))
   ) {
     return {
       accessToken: existingAccessToken,
@@ -145,7 +169,7 @@ export const ensureGoogleOAuthAccessToken = async (
     throw new Error('Google refresh token is missing. Reconnect the Google account.')
   }
 
-  const { clientId, clientSecret } = getGoogleOAuthConfig(req)
+  const { clientId, clientSecret } = getGoogleOAuthClientCredentials()
   const refreshResponse = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: {
@@ -185,7 +209,7 @@ export const ensureGoogleOAuthAccessToken = async (
     throw new Error('Google token refresh response did not include an access token.')
   }
 
-  const updatedConnection = (await req.payload.update({
+  const updatedConnection = (await payload.update({
     collection: 'api-connections',
     id: connection.id,
     depth: 0,
