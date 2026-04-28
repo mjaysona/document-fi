@@ -5,6 +5,7 @@ import { updateGoogleSheetFromWeightBillsService } from '@/lib/googleSheetWeight
 import { parseWeightBillSpreadsheet, REQUIRED_IMPORT_TEMPLATE_HEADERS } from './spreadsheetImport'
 import { headers } from 'next/headers'
 import { getPayload } from 'payload'
+import * as XLSX from 'xlsx'
 import config from '~/payload.config'
 
 export interface WeightBillsQuery {
@@ -35,6 +36,16 @@ const normalizeDateForComparison = (dateValue: unknown): string => {
     return dateValue.trim()
   }
   return ''
+}
+
+const formatDateForExport = (dateValue: unknown): string => {
+  const value = String(dateValue || '').trim()
+  if (!value) return ''
+
+  const parsed = new Date(value)
+  if (!Number.isFinite(parsed.getTime())) return ''
+
+  return parsed.toISOString().split('T')[0] || ''
 }
 
 const normalizeLookupKey = (value: string): string => value.trim().toLowerCase()
@@ -320,36 +331,58 @@ export async function exportWeightBillsToCSV(query: WeightBillsQuery = {}) {
         return true
       })
 
-    // Convert to CSV format
     const headers = [
-      'Bill #',
+      'Weight Bill #',
       'Date',
       'Customer Name',
       'Vehicle',
       'Amount',
       'Payment Status',
-      'Verified',
     ]
+
     const rows = transformedDocs.map((bill: any) => [
       bill.weightBillNumber || '',
-      bill.date ? new Date(bill.date).toLocaleDateString() : '',
+      formatDateForExport(bill.date),
       bill.customerName || '',
       bill.vehicle || '',
-      bill.amount || '',
+      bill.amount ?? '',
       bill.paymentStatus || '',
-      bill.isVerified ? 'Yes' : 'No',
     ])
 
-    // Create CSV content
-    const csvContent = [
-      headers.join(','),
-      ...rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')),
-    ].join('\n')
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows])
+
+    // Highlight unverified rows to match Google Sheet sync semantics.
+    for (let rowIndex = 0; rowIndex < transformedDocs.length; rowIndex += 1) {
+      const bill = transformedDocs[rowIndex]
+      if (bill.isVerified !== false) continue
+
+      const sheetRow = rowIndex + 2
+      for (let colIndex = 0; colIndex < headers.length; colIndex += 1) {
+        const cellRef = XLSX.utils.encode_cell({ r: sheetRow - 1, c: colIndex })
+        if (!worksheet[cellRef]) {
+          worksheet[cellRef] = { t: 's', v: '' }
+        }
+
+        ;(worksheet[cellRef] as any).s = {
+          fill: {
+            patternType: 'solid',
+            fgColor: { rgb: 'F28C8C' },
+            bgColor: { rgb: 'F28C8C' },
+          },
+        }
+      }
+    }
+
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'WeightBills')
+    const workbookBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'buffer' }) as Buffer
 
     return {
       success: true,
-      data: csvContent,
-      filename: `weight-bills-${new Date().toISOString().split('T')[0]}.csv`,
+      data: workbookBuffer.toString('base64'),
+      filename: `weight-bills-${new Date().toISOString().split('T')[0]}.xlsx`,
+      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      isBase64: true,
     }
   } catch (error) {
     console.error('Failed to export weight bills:', error)

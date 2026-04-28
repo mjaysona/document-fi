@@ -178,8 +178,20 @@ export default function WeightBillsPage() {
         filterVerificationStatus,
       })
       if (result.success && result.data && result.filename) {
-        // Create blob and download
-        const blob = new Blob([result.data], { type: 'text/csv;charset=utf-8;' })
+        const isBase64 = Boolean((result as any).isBase64)
+        const mimeType = (result as any).mimeType || 'text/csv;charset=utf-8;'
+
+        const blob = isBase64
+          ? (() => {
+              const binary = atob(result.data)
+              const bytes = new Uint8Array(binary.length)
+              for (let i = 0; i < binary.length; i += 1) {
+                bytes[i] = binary.charCodeAt(i)
+              }
+              return new Blob([bytes], { type: mimeType })
+            })()
+          : new Blob([result.data], { type: mimeType })
+
         const link = document.createElement('a')
         const url = URL.createObjectURL(blob)
         link.setAttribute('href', url)
@@ -860,7 +872,7 @@ export default function WeightBillsPage() {
                 loading={isExporting}
                 ml="auto"
               >
-                Export to CSV
+                Export to Spreadsheet
               </Button>
             </>
           )}
