@@ -275,6 +275,7 @@ export default function WeightBillsPage() {
       // Enter import mode
       setImportedRows(result.rows)
       setImportDecisions({})
+      setImportResult(null)
       setImportMode(true)
       setFeedback({
         tone: 'info',
@@ -589,21 +590,17 @@ export default function WeightBillsPage() {
       <Table.Td>₱{bill.amount?.toFixed(2) || '0.00'}</Table.Td>
       <Table.Td>
         <Group gap="xs" wrap="nowrap">
-          <Badge
-            color={
-              bill.paymentStatus === 'PAID'
-                ? 'green'
-                : bill.paymentStatus === 'CANCELLED'
-                  ? 'red'
-                  : 'gray'
-            }
-            variant="light"
-          >
-            {bill.paymentStatus || 'No payment status'}
-          </Badge>
-          <Badge color={bill.isVerified ? 'green' : 'red'} variant="light">
-            {bill.isVerified ? 'VERIFIED' : 'UNVERIFIED'}
-          </Badge>
+          {(bill.paymentStatus === 'PAID' || bill.paymentStatus === 'CANCELLED') && (
+            <Badge color={bill.paymentStatus === 'PAID' ? 'green' : 'red'} variant="light">
+              {bill.paymentStatus}
+            </Badge>
+          )}
+          {bill.isVerified && (
+            <Badge color={bill.isVerified ? 'green' : 'red'} variant="light">
+              VERIFIED
+            </Badge>
+          )}
+
           {importResult &&
             (importResult.createdRows.includes(bill.weightBillNumber) ? (
               <Badge color="green" variant="filled" size="sm">
@@ -896,8 +893,6 @@ export default function WeightBillsPage() {
 
       {isLoading ? (
         <div style={{ padding: '20px', textAlign: 'center' }}>Loading weight bills...</div>
-      ) : weightBills.length === 0 ? (
-        <div style={{ padding: '20px', textAlign: 'center' }}>No weight bills found.</div>
       ) : importMode ? (
         <>
           {/* Create sorted list for import mode table */}
@@ -1002,19 +997,16 @@ export default function WeightBillsPage() {
                             <Table.Td>{bill!.vehicle}</Table.Td>
                             <Table.Td>₱{bill!.amount?.toFixed(2) || '0.00'}</Table.Td>
                             <Table.Td>
-                              <Badge
-                                color={
-                                  bill!.paymentStatus === 'PAID'
-                                    ? 'green'
-                                    : bill!.paymentStatus === 'CANCELLED'
-                                      ? 'red'
-                                      : 'gray'
-                                }
-                                variant="light"
-                                size="sm"
-                              >
-                                {bill!.paymentStatus || 'No payment status'}
-                              </Badge>
+                              {(bill!.paymentStatus === 'PAID' ||
+                                bill!.paymentStatus === 'CANCELLED') && (
+                                <Badge
+                                  color={bill!.paymentStatus === 'PAID' ? 'green' : 'red'}
+                                  variant="light"
+                                  size="sm"
+                                >
+                                  {bill!.paymentStatus}
+                                </Badge>
+                              )}
                             </Table.Td>
                             <Table.Td>-</Table.Td>
                           </Table.Tr>
@@ -1089,51 +1081,50 @@ export default function WeightBillsPage() {
                             {importedRow!.status === 'changed' &&
                             importedRow!.changes?.some((c) => c.field === 'paymentStatus') ? (
                               <div>
-                                <div style={{ marginBottom: 4 }}>
-                                  <Badge
-                                    color="red"
-                                    variant="light"
-                                    size="xs"
-                                    styles={{
-                                      label: {
-                                        textDecoration: 'line-through',
-                                      },
-                                    }}
-                                  >
-                                    {importedRow!.old?.paymentStatus || 'No payment status'}
-                                  </Badge>
-                                </div>
-                                <div>
-                                  <Badge
-                                    color={
-                                      importedRow!.new.paymentStatus === 'PAID'
-                                        ? 'green'
-                                        : importedRow!.new.paymentStatus === 'CANCELLED'
-                                          ? 'red'
-                                          : 'gray'
-                                    }
-                                    variant="light"
-                                    size="sm"
-                                  >
-                                    {importedRow!.new.paymentStatus || 'No payment status'}
-                                  </Badge>
-                                </div>
+                                {(importedRow!.old?.paymentStatus === 'PAID' ||
+                                  importedRow!.old?.paymentStatus === 'CANCELLED') && (
+                                  <div style={{ marginBottom: 4 }}>
+                                    <Badge
+                                      color={
+                                        importedRow!.old?.paymentStatus === 'PAID' ? 'green' : 'red'
+                                      }
+                                      variant="light"
+                                      size="xs"
+                                      styles={{
+                                        label: {
+                                          textDecoration: 'line-through',
+                                        },
+                                      }}
+                                    >
+                                      {importedRow!.old?.paymentStatus}
+                                    </Badge>
+                                  </div>
+                                )}
+                                {(importedRow!.new.paymentStatus === 'PAID' ||
+                                  importedRow!.new.paymentStatus === 'CANCELLED') && (
+                                  <div>
+                                    <Badge
+                                      color={
+                                        importedRow!.new.paymentStatus === 'PAID' ? 'green' : 'red'
+                                      }
+                                      variant="light"
+                                      size="sm"
+                                    >
+                                      {importedRow!.new.paymentStatus}
+                                    </Badge>
+                                  </div>
+                                )}
                               </div>
-                            ) : (
+                            ) : importedRow!.new.paymentStatus === 'PAID' ||
+                              importedRow!.new.paymentStatus === 'CANCELLED' ? (
                               <Badge
-                                color={
-                                  importedRow!.new.paymentStatus === 'PAID'
-                                    ? 'green'
-                                    : importedRow!.new.paymentStatus === 'CANCELLED'
-                                      ? 'red'
-                                      : 'gray'
-                                }
+                                color={importedRow!.new.paymentStatus === 'PAID' ? 'green' : 'red'}
                                 variant="light"
                                 size="sm"
                               >
-                                {importedRow!.new.paymentStatus || 'No payment status'}
+                                {importedRow!.new.paymentStatus}
                               </Badge>
-                            )}
+                            ) : null}
                           </Table.Td>
                           <Table.Td>
                             {importResult ? (
@@ -1195,6 +1186,8 @@ export default function WeightBillsPage() {
             )
           })()}
         </>
+      ) : weightBills.length === 0 ? (
+        <div style={{ padding: '20px', textAlign: 'center' }}>No weight bills found.</div>
       ) : (
         <>
           <Table striped highlightOnHover>
