@@ -267,7 +267,7 @@ export async function getWeightBillForEdit(weightBillId: string) {
       imagePreviewUrl = `/api/media/${weightBill.proofOfReceipt}`
 
       const mediaDoc = await payload.findByID({
-        collection: 'media',
+        collection: 'weight-bill-receipts',
         id: weightBill.proofOfReceipt,
         depth: 0,
       })

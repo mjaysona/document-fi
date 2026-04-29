@@ -273,7 +273,7 @@ export async function getWeightBillForEdit(weightBillId: string) {
     if (proofOfReceiptId) {
       try {
         const mediaDoc = await payload.findByID({
-          collection: 'media',
+          collection: 'weight-bill-receipts',
           id: proofOfReceiptId,
           depth: 0,
         })

@@ -36,7 +36,7 @@ const SessionUploads: CollectionConfig = {
         {
           name: 'media',
           type: 'relationship',
-          relationTo: 'media',
+          relationTo: 'weight-bill-receipts',
           required: true,
         },
         {

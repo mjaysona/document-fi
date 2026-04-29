@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     const uploadPromises = files.map(async (file) => {
       const buffer = Buffer.from(await file.arrayBuffer())
       const media = await payload.create({
-        collection: 'media',
+        collection: 'weight-bill-receipts',
         data: {},
         file: {
           data: buffer,
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
           }
 
           await payload.delete({
-            collection: 'media',
+            collection: 'weight-bill-receipts',
             id: mediaId,
             depth: 0,
           })

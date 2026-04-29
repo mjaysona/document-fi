@@ -64,7 +64,7 @@ export async function POST() {
         }
 
         await payload.delete({
-          collection: 'media',
+          collection: 'weight-bill-receipts',
           id: mediaId,
           depth: 0,
         })

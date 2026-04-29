@@ -73,6 +73,7 @@ export interface Config {
     'user-preferences': UserPreference;
     vehicles: Vehicle;
     'weight-bills': WeightBill;
+    'weight-bill-receipts': WeightBillReceipt;
     'session-uploads': SessionUpload;
     'api-connections': ApiConnection;
     'user-roles': UserRole;
@@ -92,6 +93,7 @@ export interface Config {
     'user-preferences': UserPreferencesSelect<false> | UserPreferencesSelect<true>;
     vehicles: VehiclesSelect<false> | VehiclesSelect<true>;
     'weight-bills': WeightBillsSelect<false> | WeightBillsSelect<true>;
+    'weight-bill-receipts': WeightBillReceiptsSelect<false> | WeightBillReceiptsSelect<true>;
     'session-uploads': SessionUploadsSelect<false> | SessionUploadsSelect<true>;
     'api-connections': ApiConnectionsSelect<false> | ApiConnectionsSelect<true>;
     'user-roles': UserRolesSelect<false> | UserRolesSelect<true>;
@@ -287,7 +289,7 @@ export interface WeightBill {
   vehicle?: (string | null) | Vehicle;
   amount?: number | null;
   paymentStatus?: ('PAID' | 'CANCELLED') | null;
-  proofOfReceipt?: (string | null) | Media;
+  proofOfReceipt?: (string | null) | WeightBillReceipt;
   isVerified?: boolean | null;
   submittedBy?: (string | null) | User;
   verifiedBy?: (string | null) | User;
@@ -298,12 +300,12 @@ export interface WeightBill {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "media".
+ * via the `definition` "weight-bill-receipts".
  */
-export interface Media {
+export interface WeightBillReceipt {
   id: string;
   createdBy?: (string | null) | User;
-  text?: string | null;
+  prefix?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -327,7 +329,7 @@ export interface SessionUpload {
   uploads?:
     | {
         fileName?: string | null;
-        media: string | Media;
+        media: string | WeightBillReceipt;
         savedStatus?: ('unsaved' | 'saved' | 'verified') | null;
         id?: string | null;
       }[]
@@ -362,6 +364,27 @@ export interface ApiConnection {
   updatedBy?: (string | null) | User;
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media".
+ */
+export interface Media {
+  id: string;
+  createdBy?: (string | null) | User;
+  text?: string | null;
+  prefix?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -439,6 +462,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'weight-bills';
         value: string | WeightBill;
+      } | null)
+    | ({
+        relationTo: 'weight-bill-receipts';
+        value: string | WeightBillReceipt;
       } | null)
     | ({
         relationTo: 'session-uploads';
@@ -615,6 +642,25 @@ export interface WeightBillsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "weight-bill-receipts_select".
+ */
+export interface WeightBillReceiptsSelect<T extends boolean = true> {
+  createdBy?: T;
+  prefix?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "session-uploads_select".
  */
 export interface SessionUploadsSelect<T extends boolean = true> {
@@ -680,6 +726,7 @@ export interface UserRolesSelect<T extends boolean = true> {
 export interface MediaSelect<T extends boolean = true> {
   createdBy?: T;
   text?: T;
+  prefix?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;

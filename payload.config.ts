@@ -31,6 +31,7 @@ import Accounts from '@/collections/Accounts'
 import UserPreferences from '@/collections/UserPreferences'
 import DashboardCustomization from '@/collections/DashboardCustomization'
 import WeightBills from '@/collections/WeightBills'
+import WeightBillReceipts from '@/collections/WeightBillReceipts'
 import SessionUploads from '@/collections/SessionUploads'
 import Vehicles from '@/collections/Vehicles'
 import APIConnections from '@/collections/APIConnections'
@@ -66,6 +67,7 @@ export default buildConfig({
     UserPreferences,
     Vehicles,
     WeightBills,
+    WeightBillReceipts,
     SessionUploads,
 
     // Super Admin specific collections below
@@ -158,6 +160,9 @@ export default buildConfig({
             collections: {
               media: {
                 prefix: 'admin',
+              },
+              'weight-bill-receipts': {
+                prefix: 'app/weight-bills',
               },
             },
             bucket: process.env.S3_BUCKET,

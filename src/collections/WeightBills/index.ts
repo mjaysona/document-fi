@@ -63,7 +63,7 @@ const WeightBills: CollectionConfig = {
       name: 'proofOfReceipt',
       label: 'Proof of Receipt',
       type: 'upload',
-      relationTo: 'media',
+      relationTo: 'weight-bill-receipts',
     },
     {
       name: 'isVerified',

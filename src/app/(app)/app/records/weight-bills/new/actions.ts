@@ -23,7 +23,7 @@ export async function createSessionUpload(records: FileRecord[]) {
     const uploadPromises = records.map(async (record) => {
       const buffer = Buffer.from(record.fileData, 'base64')
       const media = await payload.create({
-        collection: 'media',
+        collection: 'weight-bill-receipts',
         data: {},
         file: {
           data: buffer,
@@ -83,7 +83,7 @@ export async function createSessionUpload(records: FileRecord[]) {
           }
 
           await payload.delete({
-            collection: 'media',
+            collection: 'weight-bill-receipts',
             id: mediaId,
             depth: 0,
           })

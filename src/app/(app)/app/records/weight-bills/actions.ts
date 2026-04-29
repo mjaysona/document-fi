@@ -1014,7 +1014,7 @@ export async function deleteWeightBill(id: string) {
 
     if (proofOfReceiptId) {
       await payload.delete({
-        collection: 'media',
+        collection: 'weight-bill-receipts',
         id: proofOfReceiptId,
         depth: 0,
       })
@@ -1063,7 +1063,7 @@ export async function deleteWeightBills(ids: string[]) {
 
       if (proofOfReceiptId) {
         await payload.delete({
-          collection: 'media',
+          collection: 'weight-bill-receipts',
           id: proofOfReceiptId,
           depth: 0,
         })
