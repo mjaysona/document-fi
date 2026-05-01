@@ -21,6 +21,37 @@ type VerifiedData = {
   proofOfReceipt?: string
 }
 
+function getUploadId(value: unknown): string | undefined {
+  if (typeof value === 'string' || typeof value === 'number') {
+    return String(value)
+  }
+
+  if (value && typeof value === 'object' && 'id' in value) {
+    const id = (value as { id?: unknown }).id
+    if (typeof id === 'string' || typeof id === 'number') {
+      return String(id)
+    }
+  }
+
+  return undefined
+}
+
+async function deleteReceiptIfReplaced(
+  payload: any,
+  previousReceiptId?: string,
+  nextReceiptId?: string,
+): Promise<void> {
+  if (!previousReceiptId || previousReceiptId === nextReceiptId) {
+    return
+  }
+
+  await payload.delete({
+    collection: 'weight-bill-receipts',
+    id: previousReceiptId,
+    depth: 0,
+  })
+}
+
 async function resolveVehicleId(payload: any, vehicleValue?: string): Promise<string | undefined> {
   if (!vehicleValue) return undefined
 
@@ -169,6 +200,9 @@ export async function saveWeightBill(
     })
 
     if (existingBills.docs.length > 0) {
+      const previousReceiptId = getUploadId(existingBills.docs[0].proofOfReceipt)
+      const nextReceiptId = getUploadId(normalizedWeightBillData.proofOfReceipt)
+
       // Update existing weight bill
       weightBill = await payload.update({
         collection: 'weight-bills',
@@ -179,6 +213,8 @@ export async function saveWeightBill(
         },
         depth: 0,
       })
+
+      await deleteReceiptIfReplaced(payload, previousReceiptId, nextReceiptId)
     } else {
       // Create new weight bill
       weightBill = await payload.create({
@@ -355,12 +391,17 @@ export async function saveWeightBillManual(
     }
 
     if (existingBills.docs.length > 0) {
+      const previousReceiptId = getUploadId(existingBills.docs[0].proofOfReceipt)
+      const nextReceiptId = getUploadId(normalizedData.proofOfReceipt)
+
       weightBill = await payload.update({
         collection: 'weight-bills',
         id: existingBills.docs[0].id,
         data: normalizedData,
         depth: 0,
       })
+
+      await deleteReceiptIfReplaced(payload, previousReceiptId, nextReceiptId)
     } else {
       weightBill = await payload.create({
         collection: 'weight-bills',
@@ -390,6 +431,14 @@ export async function updateWeightBillById(
     const payload = await getPayload({ config })
     const currentUserId = String(session.user.id)
     const resolvedVehicleId = await resolveVehicleId(payload, weightBillData.vehicle)
+    const existingWeightBill = await payload.findByID({
+      collection: 'weight-bills',
+      id: weightBillId,
+      depth: 0,
+    })
+
+    const previousReceiptId = getUploadId(existingWeightBill.proofOfReceipt)
+    const nextReceiptId = getUploadId(weightBillData.proofOfReceipt)
 
     const updatedWeightBill = await payload.update({
       collection: 'weight-bills',
@@ -404,6 +453,8 @@ export async function updateWeightBillById(
       },
       depth: 0,
     })
+
+    await deleteReceiptIfReplaced(payload, previousReceiptId, nextReceiptId)
 
     return { success: true, data: updatedWeightBill }
   } catch (error) {

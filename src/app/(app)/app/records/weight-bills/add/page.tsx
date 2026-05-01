@@ -416,7 +416,7 @@ export default function VerifyPage() {
       const formData = new FormData()
       formData.append('file', selectedFile)
 
-      const response = await fetch('/api/media/upload', {
+      const response = await fetch('/api/weight-bill-receipts/upload', {
         method: 'POST',
         body: formData,
       })
