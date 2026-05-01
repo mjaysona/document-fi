@@ -8,8 +8,8 @@ const fetchDashboardIcon = async (dashboardCustomization: DashboardCustomization
   const dashboard = dashboardCustomization?.dashboard
   const icon = dashboard?.logo?.icon
 
-  if (icon?.url) {
-    return <AdminLogoClient src={icon?.url} width={40} height={40} />
+  if (icon && typeof icon === 'object' && 'url' in icon && typeof icon.url === 'string') {
+    return <AdminLogoClient src={icon.url} width={40} height={40} />
   }
 
   return <>...</>

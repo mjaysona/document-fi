@@ -23,7 +23,12 @@ export const createFirstRole = async (payload: Payload): Promise<void> => {
     try {
       const permissions = collectionSlugs.map((slug) => ({
         collectionSlug: slug,
-        access: ['read', 'create', 'update', 'delete'],
+        access: ['read', 'create', 'update', 'delete'] as (
+          | 'read'
+          | 'create'
+          | 'update'
+          | 'delete'
+        )[],
       }))
 
       console.log('permissions:', JSON.stringify(permissions, null, 2))
@@ -35,6 +40,7 @@ export const createFirstRole = async (payload: Payload): Promise<void> => {
           isSystemRole: true,
           permissions,
         },
+        draft: false,
       })
 
       console.info(`"Super Admin" role is created successfully`)

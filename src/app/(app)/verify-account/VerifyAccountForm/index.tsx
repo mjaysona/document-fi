@@ -13,7 +13,7 @@ interface VerifyAccountFormProps {
 }
 
 type FormData = {
-  email: string
+  email: string | undefined
 }
 
 export const VerifyAccountForm: React.FC<VerifyAccountFormProps> = ({ email }) => {
@@ -35,7 +35,7 @@ export const VerifyAccountForm: React.FC<VerifyAccountFormProps> = ({ email }) =
   const handleSubmit = useCallback(async (data: FormData) => {
     sendVerificationEmail(
       {
-        email: data.email,
+        email: data.email ?? '',
         callbackURL: '/app?verified=true',
       },
       {
@@ -52,7 +52,7 @@ export const VerifyAccountForm: React.FC<VerifyAccountFormProps> = ({ email }) =
           setSuccess(false)
 
           const errorMessage =
-            BetterAuthStatusCode[error?.code] ||
+            BetterAuthStatusCode[error?.code as keyof typeof BetterAuthStatusCode] ||
             error?.code ||
             error?.message ||
             ErrorMessage.VERIFY_GENERIC

@@ -11,7 +11,7 @@ export const oauthGoogleRefresh: Endpoint = {
     }
 
     try {
-      const body = await req.json()
+      const body = req.json ? await req.json() : {}
       const connectionId = String(body?.connectionId || '').trim()
 
       if (!connectionId) {

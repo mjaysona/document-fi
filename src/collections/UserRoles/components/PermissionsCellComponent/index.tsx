@@ -7,7 +7,7 @@ import { Pill } from '@payloadcms/ui'
 import { PillProps } from '@payloadcms/ui/elements/Pill'
 import classes from './index.module.scss'
 
-type Permission = NonNullable<UserRole['permissions'] | UserRole['groupedPermissions']>[number]
+type Permission = NonNullable<UserRole['permissions']>[number]
 
 const PermissionsCellComponentServer: React.FC<DefaultServerCellComponentProps> = async (props) => {
   const { field, cellData } = props
@@ -56,9 +56,13 @@ const PermissionsCellComponentServer: React.FC<DefaultServerCellComponentProps> 
   }
 
   const getCollectionLabel = (permission: Permission) => {
-    return ('collectionSlug' in permission ? permission.collectionSlug : permission.group)
+    return (
+      'collectionSlug' in permission
+        ? permission.collectionSlug
+        : (permission as { group?: string }).group
+    )
       ?.split('-')
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ')
   }
 

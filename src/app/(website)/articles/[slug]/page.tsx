@@ -4,7 +4,6 @@ import React, { cache, Fragment } from 'react'
 import config from '@payload-config'
 import type { Post as PostType } from '@payload-types'
 import classes from './index.module.scss'
-import { Gutter } from '../../components/Gutter'
 import { RichText } from '@payloadcms/richtext-lexical/react'
 import type { SerializedEditorState } from '@payloadcms/richtext-lexical/lexical'
 
@@ -50,12 +49,10 @@ export default async function Page({ params: paramsPromise }: PageParams) {
 
   return (
     <Fragment>
-      <Gutter>
-        <main className={classes.page}>
-          <h1>{post?.title}</h1>
-          {content && <RichText data={content} />}
-        </main>
-      </Gutter>
+      <main className={classes.page}>
+        <h1>{post?.title}</h1>
+        {content && <RichText data={content} />}
+      </main>
     </Fragment>
   )
 }

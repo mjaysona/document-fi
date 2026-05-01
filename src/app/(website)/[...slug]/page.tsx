@@ -63,15 +63,13 @@ export default async function Page({ params: paramsPromise }: PageParams) {
     return notFound()
   }
 
-  const { sections } = page
-
   return (
     <Fragment>
       {draft && <LivePreviewListener />}
       <Header />
       <main>
         <h1>{page?.title}</h1>
-        <RichText content={page?.richText} />
+        {/* <RichText content={page?.richText} /> */}
       </main>
     </Fragment>
   )

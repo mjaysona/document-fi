@@ -10,7 +10,7 @@ export const createOrGetConnection: Endpoint = {
     }
 
     try {
-      const body = await req.json()
+      const body = req.json ? await req.json() : {}
       const { id } = body
 
       // If an ID is provided and record exists, return it

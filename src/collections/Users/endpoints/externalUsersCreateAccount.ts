@@ -50,6 +50,7 @@ export const externalUsersCreateAccount: Endpoint = {
           email,
           password,
         },
+        draft: false,
       })
 
       // Return the user without login

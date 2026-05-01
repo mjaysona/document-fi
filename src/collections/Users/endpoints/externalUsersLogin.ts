@@ -54,8 +54,8 @@ export const externalUsersLogin: Endpoint = {
           },
           req,
         })
-      } catch (error) {
-        if (error?.name === 'LockedAuth') {
+      } catch (error: unknown) {
+        if ((error as any)?.name === 'LockedAuth') {
           throw new APIError(ErrorMessage.LOGIN_ACCOUNT_LOCKED, 401)
         }
 

@@ -1,4 +1,4 @@
-import { AccessArgs, AccessResult, CollectionSlug } from 'payload'
+import { AccessArgs, AccessResult, CollectionSlug, GlobalSlug } from 'payload'
 import {
   hasCreatePermission,
   hasDeletePermission,
@@ -9,7 +9,7 @@ import { AccessType } from '@/enums'
 
 const getGenericRoleBasedAccess = async (
   args: AccessArgs,
-  slug: CollectionSlug,
+  slug: CollectionSlug | GlobalSlug,
   permission: AccessType,
 ): Promise<AccessResult> => {
   const { req } = args

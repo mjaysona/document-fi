@@ -1,6 +1,7 @@
 'use client'
 
-import type { PayloadAdminBarProps } from 'payload-admin-bar'
+import type { PayloadAdminBarProps } from '@payloadcms/admin-bar'
+import type { PayloadMeUser } from '@payloadcms/admin-bar'
 
 import { useRouter } from 'next/navigation'
 import { PayloadAdminBar } from '@payloadcms/admin-bar'
@@ -9,7 +10,6 @@ import React, { useState } from 'react'
 import classes from './index.module.scss'
 import { Gutter } from '@payloadcms/ui'
 import { getClientSideURL } from '@/utilities/getURL'
-import { User } from '@payload-types'
 
 const collectionLabels = {
   pages: {
@@ -28,7 +28,7 @@ export const AdminBar: React.FC<{
   const collection = 'pages'
   const router = useRouter()
 
-  const onAuthChange = React.useCallback((user: User) => setShow(Boolean(user?.id)), [])
+  const onAuthChange = React.useCallback((user: PayloadMeUser) => setShow(Boolean(user?.id)), [])
 
   return (
     <div className={[classes.adminBar, show && classes.show].filter(Boolean).join(' ')}>
@@ -36,7 +36,7 @@ export const AdminBar: React.FC<{
         <PayloadAdminBar
           {...adminBarProps}
           cmsURL={getClientSideURL()}
-          collection={collection}
+          collectionSlug={collection}
           collectionLabels={{
             plural: collectionLabels[collection]?.plural || 'Pages',
             singular: collectionLabels[collection]?.singular || 'Page',

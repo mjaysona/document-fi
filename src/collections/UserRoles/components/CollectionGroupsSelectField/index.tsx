@@ -23,15 +23,16 @@ const CollectionGroupsSelectFieldServer: React.FC<CollectionGroupsSelectFieldSer
 }) => {
   const allCollections = Object.values(payload.collections)
   const filteredCollections: { label: string; value: string }[] = allCollections
-    .filter((collection) =>
-      configurableCollectionGroups.includes(collection.config.admin.group?.name as string),
-    )
+    .filter((collection) => {
+      const group = collection.config.admin.group
+      return typeof group === 'object' && group && configurableCollectionGroups.includes(group.name)
+    })
     .map((collection) => {
-      const collectionGroup = collection.config.admin.group as string
+      const collectionGroup = collection.config.admin.group as Record<string, string>
 
       return {
-        label: collectionGroup?.label,
-        value: collectionGroup?.name,
+        label: collectionGroup.label,
+        value: collectionGroup.name,
       }
     })
     // remove duplicates

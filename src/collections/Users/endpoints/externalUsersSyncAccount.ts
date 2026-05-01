@@ -55,7 +55,7 @@ export const externalUsersSyncAccount: Endpoint = {
           req,
         })
       } catch (error) {
-        if (error?.name === 'LockedAuth') {
+        if ((error as any)?.name === 'LockedAuth') {
           throw new APIError(ErrorMessage.LOGIN_ACCOUNT_LOCKED, 401)
         }
 

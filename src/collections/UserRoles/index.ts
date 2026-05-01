@@ -48,7 +48,7 @@ const UserRoles: CollectionConfig = {
       label: 'Role',
       type: 'text',
       required: true,
-      validate: (value: string) => noSpecialCharacters(value),
+      // validate: (value: string) => noSpecialCharacters(value),
       access: {
         update: ({ doc, req }) => {
           return hasSuperAdminRole(req.user?.userRoles) || !doc?.isSystemRole

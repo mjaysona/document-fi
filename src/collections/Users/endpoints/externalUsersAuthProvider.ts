@@ -2,6 +2,7 @@ import type { Endpoint } from 'payload'
 import { headersWithCors } from 'payload'
 import { APIError } from 'payload'
 import { ErrorMessage } from '../enums'
+import type { User } from '@payload-types'
 
 // A custom endpoint that can be reached by POST request
 // at: /api/account/auth/provider
@@ -39,7 +40,7 @@ export const externalUsersAuthProvider: Endpoint = {
 
     if (existingUser.totalDocs > 0) {
       // Check if user has already logged in with this provider
-      const user = existingUser.docs[0]
+      const user = existingUser.docs[0] as User
 
       if (user.providers?.google?.id === id) {
         return Response.json(

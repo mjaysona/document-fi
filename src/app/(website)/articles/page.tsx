@@ -1,5 +1,4 @@
 import React, { Fragment } from 'react'
-import { Gutter } from '../components/Gutter'
 import { getPayload } from 'payload'
 import config from '@payload-config'
 
@@ -21,21 +20,19 @@ export default async function Page() {
   const articles = data.docs || []
 
   if (!articles.length) {
-    return <Gutter>No articles found</Gutter>
+    return <>No articles found</>
   }
 
   return (
     <Fragment>
-      <Gutter>
-        <h1>Articles</h1>
-        <ul>
-          {articles.map((article) => (
-            <li key={article.id}>
-              <a href={`/articles/${article.slug}`}>{article.title}</a>
-            </li>
-          ))}
-        </ul>
-      </Gutter>
+      <h1>Articles</h1>
+      <ul>
+        {articles.map((article) => (
+          <li key={article.id}>
+            <a href={`/articles/${article.slug}`}>{article.title}</a>
+          </li>
+        ))}
+      </ul>
     </Fragment>
   )
 }
