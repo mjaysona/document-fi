@@ -43,6 +43,7 @@ jobs:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
           key: ${{ secrets.DROPLET_SSH_KEY }}
+          passphrase: ${{ secrets.DROPLET_SSH_PASSPHRASE }}
           port: ${{ secrets.DROPLET_PORT }}
           source: ".next,public,package.json,pnpm-lock.yaml,next.config.mjs,payload.config.ts"
           target: "/var/www/document-fi"
@@ -53,6 +54,7 @@ jobs:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
           key: ${{ secrets.DROPLET_SSH_KEY }}
+          passphrase: ${{ secrets.DROPLET_SSH_PASSPHRASE }}
           port: ${{ secrets.DROPLET_PORT }}
           script: |
             set -e
