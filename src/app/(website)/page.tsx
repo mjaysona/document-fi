@@ -4,6 +4,8 @@ import { auth } from '@/app/(app)/lib/auth'
 import { headers as getHeaders } from 'next/headers'
 import { redirect } from 'next/navigation'
 
+export const dynamic = 'force-dynamic'
+
 export default async function HomePage() {
   const session = await auth.api.getSession({
     headers: await getHeaders(),

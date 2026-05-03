@@ -11,6 +11,8 @@ import { User } from '~/payload-types'
 import { ROLES } from '@/collections/UserRoles/roles.enum'
 import { QueryProvider } from '@/app/providers/Query'
 
+export const dynamic = 'force-dynamic'
+
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   let user: User | null = null
   let session: { userId: string } | null = null

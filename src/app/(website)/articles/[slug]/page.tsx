@@ -7,6 +7,8 @@ import classes from './index.module.scss'
 import { RichText } from '@payloadcms/richtext-lexical/react'
 import type { SerializedEditorState } from '@payloadcms/richtext-lexical/lexical'
 
+export const dynamic = 'force-dynamic'
+
 interface PageParams {
   params: Promise<{
     slug?: string

@@ -2,6 +2,8 @@ import React, { Fragment } from 'react'
 import { getPayload } from 'payload'
 import config from '@payload-config'
 
+export const dynamic = 'force-dynamic'
+
 // eslint-disable-next-line no-restricted-exports
 export default async function Page() {
   const payload = await getPayload({ config })

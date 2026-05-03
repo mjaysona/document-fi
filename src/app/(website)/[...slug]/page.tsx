@@ -9,6 +9,9 @@ import config from '@payload-config'
 import RichText from '@/app/(app)/components/RichText'
 import { LivePreviewListener } from '@/app/(app)/components/LivePreviewListener'
 import { Header } from '@/app/(app)/components/LandingPageHeader'
+
+export const dynamic = 'force-dynamic'
+
 const queryPageBySlug = async ({ slug, slugUrl }: { slug: string; slugUrl: string }) => {
   const { isEnabled: draft } = await draftMode()
   const payload = await getPayload({ config })
