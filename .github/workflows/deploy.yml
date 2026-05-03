@@ -68,7 +68,8 @@ jobs:
             fi
 
             cd /var/www/document-fi
-            pnpm install --prod --frozen-lockfile --ignore-scripts=false
+            rm -rf node_modules
+            CI=true pnpm install --prod --frozen-lockfile --ignore-scripts=false --force
             pnpm rebuild sharp
             pnpm payload migrate
             pm2 restart document-fi || pm2 start pnpm --name document-fi -- start
