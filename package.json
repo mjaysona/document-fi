@@ -22,6 +22,12 @@
   "engines": {
     "node": "^18.20.2 || >=20.9.0"
   },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "sharp",
+      "esbuild"
+    ]
+  },
   "dependencies": {
     "@innovixx/payload-color-picker-field": "^2.0.1",
     "@mantine/core": "^8.3.18",
