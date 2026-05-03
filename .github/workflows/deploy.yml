@@ -28,6 +28,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Write build env file
+        run: |
+          cat > .env.local << 'EOF'
+          ${{ secrets.BUILD_ENV_FILE }}
+          EOF
+
       - name: Build
         run: pnpm build
 
