@@ -69,7 +69,11 @@ jobs:
 
             cd /var/www/document-fi
             CI=true pnpm install --prod --frozen-lockfile --prefer-offline
-            pnpm rebuild sharp esbuild
+
+            # pnpm v10 may skip native build scripts; install Linux sharp binary explicitly.
+            npm install --no-save --platform=linux --arch=x64 sharp@0.32.6
+            pnpm rebuild esbuild
+
             pnpm payload migrate
             pm2 restart document-fi || pm2 start pnpm --name document-fi -- start
             pm2 save
