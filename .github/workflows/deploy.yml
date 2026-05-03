@@ -62,15 +62,14 @@ jobs:
             export PATH="$PNPM_HOME:$PATH"
 
             if ! command -v pnpm >/dev/null 2>&1; then
-              npm install -g pnpm@9
+              npm install -g pnpm@10
             else
-              pnpm -v | grep -q '^9\.' || npm install -g pnpm@9
+              pnpm -v | grep -q '^10\.' || npm install -g pnpm@10
             fi
 
             cd /var/www/document-fi
-            rm -rf node_modules
-            CI=true pnpm install --prod --frozen-lockfile --ignore-scripts=false --force
-            pnpm rebuild sharp
+            CI=true pnpm install --prod --frozen-lockfile --prefer-offline
+            pnpm rebuild sharp esbuild
             pnpm payload migrate
             pm2 restart document-fi || pm2 start pnpm --name document-fi -- start
             pm2 save
