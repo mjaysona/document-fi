@@ -854,7 +854,7 @@ export default function VerifyPage() {
                     pointerEvents: 'none',
                   }}
                 >
-                  Analyzing image
+                  Importing data from image
                 </Text>
               )}
               <Text fw={700} mb="md">
