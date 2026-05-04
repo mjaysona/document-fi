@@ -1,28 +1,29 @@
 import * as XLSX from 'xlsx'
 
 export const REQUIRED_IMPORT_TEMPLATE_HEADERS = [
-  'Weight Bill #',
   'Date',
-  'Customer Name',
+  'Customer',
+  'Weight Bill #',
   'Vehicle',
 ] as const
 
-export const OPTIONAL_IMPORT_TEMPLATE_HEADERS = ['Amount', 'Payment Status', 'Verified'] as const
+export const OPTIONAL_IMPORT_TEMPLATE_HEADERS = ['Amount', 'Remarks'] as const
 
 const HEADER_ALIASES: Record<string, string[]> = {
-  weightBillNumber: ['weight bill #', 'bill #', 'weight bill number', 'weightbillnumber'],
   date: ['date'],
-  customerName: ['customer name', 'customer'],
+  customerName: ['customer', 'customer name'],
+  weightBillNumber: ['weight bill #', 'bill #', 'weight bill number', 'weightbillnumber'],
   vehicle: ['vehicle'],
   amount: ['amount'],
   paymentStatus: ['payment status', 'status'],
   isVerified: ['verified', 'is verified'],
+  remarks: ['remarks', 'remark'],
 }
 
 export type ParsedSpreadsheetWeightBill = {
   rowNumber: number
   weightBillNumber: number
-  date: string
+  date: string | undefined
   customerName: string
   vehicle: string
   amount?: number
@@ -104,15 +105,13 @@ const parseDate = (value: unknown): string | undefined => {
   return parsed.toISOString().split('T')[0]
 }
 
-const parsePaymentStatus = (value: unknown): 'PAID' | 'CANCELLED' | undefined => {
+const parsePaymentStatus = (value: unknown): 'PAID' | undefined => {
   const trimmed = String(value || '')
     .trim()
     .toUpperCase()
   if (!trimmed) return undefined
 
-  if (trimmed === 'PAID' || trimmed === 'CANCELLED') {
-    return trimmed
-  }
+  if (trimmed === 'PAID') return 'PAID'
 
   return undefined
 }
@@ -166,6 +165,8 @@ export const parseWeightBillSpreadsheet = (
   fileBuffer: Buffer,
   fileName: string,
 ): SpreadsheetImportParseResult => {
+  const headerRowIndex = 3
+
   let workbook: XLSX.WorkBook
 
   try {
@@ -198,7 +199,7 @@ export const parseWeightBillSpreadsheet = (
     raw: false,
   })
 
-  const headerRow = (grid[0] || []).map((cell) => String(cell || '').trim())
+  const headerRow = (grid[headerRowIndex] || []).map((cell) => String(cell || '').trim())
   const normalizedHeaders = headerRow.map((header) => normalizeHeader(header))
 
   if (normalizedHeaders.length === 0 || normalizedHeaders.every((header) => !header)) {
@@ -221,7 +222,7 @@ export const parseWeightBillSpreadsheet = (
   const rows: ParsedSpreadsheetWeightBill[] = []
   const rowErrors: string[] = []
 
-  for (let rowIndex = 1; rowIndex < grid.length; rowIndex += 1) {
+  for (let rowIndex = headerRowIndex + 1; rowIndex < grid.length; rowIndex += 1) {
     const rowNumber = rowIndex + 1
     const cells = grid[rowIndex] || []
 
@@ -233,8 +234,8 @@ export const parseWeightBillSpreadsheet = (
     const customerNameRaw = cells[headerIndexMap.customerName]
     const vehicleRaw = cells[headerIndexMap.vehicle]
     const amountRaw = headerIndexMap.amount !== undefined ? cells[headerIndexMap.amount] : undefined
-    const paymentStatusRaw =
-      headerIndexMap.paymentStatus !== undefined ? cells[headerIndexMap.paymentStatus] : undefined
+    const remarksRaw =
+      headerIndexMap.remarks !== undefined ? cells[headerIndexMap.remarks] : undefined
     const isVerifiedRaw =
       headerIndexMap.isVerified !== undefined ? cells[headerIndexMap.isVerified] : undefined
 
@@ -243,7 +244,15 @@ export const parseWeightBillSpreadsheet = (
     const customerName = String(customerNameRaw || '').trim()
     const vehicle = String(vehicleRaw || '').trim()
     const amount = parseNumber(amountRaw)
-    const paymentStatus = parsePaymentStatus(paymentStatusRaw)
+    const remarks = String(remarksRaw || '').trim()
+    const paymentStatusFromRemarks = parsePaymentStatus(remarks)
+    const isCancelledCustomer = customerName.toUpperCase() === 'CANCELLED'
+    const paymentStatus: 'PAID' | 'CANCELLED' | undefined = paymentStatusFromRemarks
+      ? 'PAID'
+      : !remarks && isCancelledCustomer
+        ? 'CANCELLED'
+        : undefined
+    const normalizedCustomerName = paymentStatus === 'CANCELLED' ? '' : customerName
     const isVerified = parseVerified(isVerifiedRaw)
 
     if (!weightBillNumber || weightBillNumber <= 0) {
@@ -251,23 +260,13 @@ export const parseWeightBillSpreadsheet = (
       continue
     }
 
-    if (!date) {
+    if (!date && paymentStatus !== 'CANCELLED') {
       rowErrors.push(`Row ${rowNumber}: invalid Date.`)
       continue
     }
 
-    if (!customerName) {
-      rowErrors.push(`Row ${rowNumber}: Customer Name is required.`)
-      continue
-    }
-
-    if (!vehicle) {
-      rowErrors.push(`Row ${rowNumber}: Vehicle is required.`)
-      continue
-    }
-
-    if (paymentStatusRaw && !paymentStatus) {
-      rowErrors.push(`Row ${rowNumber}: Payment Status must be PAID or CANCELLED.`)
+    if (remarks && !paymentStatusFromRemarks) {
+      rowErrors.push(`Row ${rowNumber}: Remarks must be PAID or empty.`)
       continue
     }
 
@@ -275,7 +274,7 @@ export const parseWeightBillSpreadsheet = (
       rowNumber,
       weightBillNumber,
       date,
-      customerName,
+      customerName: normalizedCustomerName,
       vehicle,
       amount,
       paymentStatus,

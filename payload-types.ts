@@ -288,7 +288,7 @@ export interface UserPreference {
 export interface Vehicle {
   id: string;
   name: string;
-  amount: number;
+  amount?: number | null;
   updatedAt: string;
   createdAt: string;
 }

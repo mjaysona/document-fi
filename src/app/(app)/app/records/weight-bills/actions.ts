@@ -5,7 +5,7 @@ import { updateGoogleSheetFromWeightBillsService } from '@/lib/googleSheetWeight
 import { parseWeightBillSpreadsheet, REQUIRED_IMPORT_TEMPLATE_HEADERS } from './spreadsheetImport'
 import { headers } from 'next/headers'
 import { getPayload } from 'payload'
-import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
 import config from '~/payload.config'
 
 export interface WeightBillsQuery {
@@ -42,10 +42,19 @@ const formatDateForExport = (dateValue: unknown): string => {
   const value = String(dateValue || '').trim()
   if (!value) return ''
 
+  const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (isoMatch) {
+    const [, year, month, day] = isoMatch
+    return `${month}/${day}/${year}`
+  }
+
   const parsed = new Date(value)
   if (!Number.isFinite(parsed.getTime())) return ''
 
-  return parsed.toISOString().split('T')[0] || ''
+  const month = String(parsed.getMonth() + 1).padStart(2, '0')
+  const day = String(parsed.getDate()).padStart(2, '0')
+  const year = String(parsed.getFullYear())
+  return `${month}/${day}/${year}`
 }
 
 const normalizeLookupKey = (value: string): string => value.trim().toLowerCase()
@@ -299,7 +308,7 @@ export async function exportWeightBillsToCSV(query: WeightBillsQuery = {}) {
       vehiclesById.set(String(vehicle.id), vehicle.name || '')
     }
 
-    const transformedDocs = result.docs
+    const filteredDocs = result.docs
       .map((bill: any) => ({
         ...bill,
         vehicle:
@@ -331,56 +340,123 @@ export async function exportWeightBillsToCSV(query: WeightBillsQuery = {}) {
         return true
       })
 
-    const headers = [
-      'Weight Bill #',
-      'Date',
-      'Customer Name',
-      'Vehicle',
-      'Amount',
-      'Payment Status',
+    const transformedDocs = [...filteredDocs].sort((a: any, b: any) => {
+      const timeA = new Date(String(a.date || '')).getTime()
+      const timeB = new Date(String(b.date || '')).getTime()
+      const safeA = Number.isFinite(timeA) ? timeA : Number.POSITIVE_INFINITY
+      const safeB = Number.isFinite(timeB) ? timeB : Number.POSITIVE_INFINITY
+      return safeA - safeB
+    })
+
+    const headers = ['DATE', 'CUSTOMER', 'WEIGHT BILL #', 'VEHICLE', 'AMOUNT', 'REMARKS']
+
+    const rows = transformedDocs.map((bill: any) => {
+      const isCancelled = String(bill.paymentStatus || '').toUpperCase() === 'CANCELLED'
+
+      if (isCancelled) {
+        return [
+          formatDateForExport(bill.date) ?? '',
+          'CANCELLED',
+          bill.weightBillNumber || '',
+          '',
+          '',
+          '',
+        ]
+      }
+
+      return [
+        formatDateForExport(bill.date),
+        bill.customerName || '',
+        bill.weightBillNumber || '',
+        bill.vehicle || '',
+        bill.amount ?? '',
+        String(bill.paymentStatus || '').toUpperCase() === 'PAID' ? 'PAID' : '',
+      ]
+    })
+
+    const workbook = new ExcelJS.Workbook()
+    const worksheet = workbook.addWorksheet('WeightBills')
+
+    worksheet.columns = [
+      { width: 14 },
+      { width: 26 },
+      { width: 16 },
+      { width: 20 },
+      { width: 14 },
+      { width: 14 },
     ]
 
-    const rows = transformedDocs.map((bill: any) => [
-      bill.weightBillNumber || '',
-      formatDateForExport(bill.date),
-      bill.customerName || '',
-      bill.vehicle || '',
-      bill.amount ?? '',
-      bill.paymentStatus || '',
-    ])
+    worksheet.addRow(['RS GRAINS MILLING CENTER', '', '', '', '', ''])
+    worksheet.addRow(['Sinamar Norte, San Mateo, Isabela', '', '', '', '', ''])
+    worksheet.addRow(['TRUCKSCALE 2026', '', '', '', '', ''])
+    worksheet.addRow(headers)
+    for (const row of rows) {
+      worksheet.addRow(row)
+    }
 
-    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows])
+    for (let rowIndex = 1; rowIndex <= 4; rowIndex += 1) {
+      worksheet.getRow(rowIndex).height = 26
+    }
 
-    // Highlight unverified rows to match Google Sheet sync semantics.
-    for (let rowIndex = 0; rowIndex < transformedDocs.length; rowIndex += 1) {
-      const bill = transformedDocs[rowIndex]
-      if (bill.isVerified !== false) continue
+    worksheet.mergeCells('A1:F1')
+    worksheet.mergeCells('A2:F2')
+    worksheet.mergeCells('A3:F3')
 
-      const sheetRow = rowIndex + 2
-      for (let colIndex = 0; colIndex < headers.length; colIndex += 1) {
-        const cellRef = XLSX.utils.encode_cell({ r: sheetRow - 1, c: colIndex })
-        if (!worksheet[cellRef]) {
-          worksheet[cellRef] = { t: 's', v: '' }
+    // Apply base typography to the exported template range.
+    for (let rowIndex = 1; rowIndex <= worksheet.rowCount; rowIndex += 1) {
+      for (let colIndex = 1; colIndex <= 6; colIndex += 1) {
+        const cell = worksheet.getCell(rowIndex, colIndex)
+        cell.font = {
+          ...(cell.font || {}),
+          name: 'Arial',
+          size: 12,
         }
 
-        ;(worksheet[cellRef] as any).s = {
-          fill: {
-            patternType: 'solid',
-            fgColor: { rgb: 'F28C8C' },
-            bgColor: { rgb: 'F28C8C' },
-          },
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' },
         }
       }
     }
 
-    const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'WeightBills')
-    const workbookBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'buffer' }) as Buffer
+    worksheet.getCell('A1').font = { name: 'Arial', size: 12, bold: true }
+    worksheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' }
+
+    worksheet.getCell('A2').alignment = { horizontal: 'center', vertical: 'middle' }
+
+    worksheet.getCell('A3').font = { name: 'Arial', size: 12, bold: true }
+    worksheet.getCell('A3').alignment = { horizontal: 'left', vertical: 'middle' }
+
+    const headerRow = worksheet.getRow(4)
+    headerRow.font = { name: 'Arial', size: 12, bold: true }
+    headerRow.alignment = { horizontal: 'center', vertical: 'middle' }
+
+    // Header and data values should all be centered.
+    for (let rowIndex = 4; rowIndex <= worksheet.rowCount; rowIndex += 1) {
+      for (let colIndex = 1; colIndex <= 6; colIndex += 1) {
+        worksheet.getCell(rowIndex, colIndex).alignment = {
+          horizontal: 'center',
+          vertical: 'middle',
+        }
+      }
+    }
+
+    const workbookBuffer = Buffer.from(await workbook.xlsx.writeBuffer())
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    const day = String(now.getDate()).padStart(2, '0')
+    const hours = String(now.getHours()).padStart(2, '0')
+    const minutes = String(now.getMinutes()).padStart(2, '0')
+    const seconds = String(now.getSeconds()).padStart(2, '0')
+    const time = `${hours}${minutes}${seconds}`
 
     return {
       success: true,
       data: workbookBuffer.toString('base64'),
-      filename: `weight-bills-${new Date().toISOString().split('T')[0]}.xlsx`,
+      filename: `Truck Scale ${year} ${month}-${day}-${time}.xlsx`,
       mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       isBase64: true,
     }
@@ -445,14 +521,14 @@ export type ImportRowComparison = {
   status: 'new' | 'changed' | 'unchanged'
   weightBillNumber: number
   new: {
-    date: string
+    date: string | undefined
     customerName: string
     vehicle: string
     amount: number
     paymentStatus?: string
   }
   old?: {
-    date: string
+    date: string | undefined
     customerName: string
     vehicle: string
     amount: number
@@ -581,16 +657,12 @@ export async function parseAndCompareImportedRows(
 
     for (const row of parsed.rows) {
       const vehicle = resolveVehicleForImport(row.vehicle, vehicleLookup)
-      if (!vehicle) {
-        errors.push(`Row ${row.rowNumber}: vehicle "${row.vehicle}" was not found.`)
-        continue
-      }
 
       const newData = {
         date: row.date,
         customerName: row.customerName,
-        vehicle: vehicle.name,
-        amount: row.amount ?? vehicle.amount ?? 0,
+        vehicle: vehicle?.name ?? '',
+        amount: row.amount ?? vehicle?.amount ?? 0,
         paymentStatus: row.paymentStatus,
       }
 
@@ -620,8 +692,8 @@ export async function parseAndCompareImportedRows(
       if (oldData.date !== newData.date)
         changes.push({
           field: 'date',
-          oldValue: oldData.date,
-          newValue: newData.date,
+          oldValue: oldData.date ?? '',
+          newValue: newData.date ?? '',
         })
       if (oldData.customerName !== newData.customerName)
         changes.push({
@@ -726,12 +798,6 @@ export async function applyImportDecisions(data: {
       if (decision !== 'accepted') continue
 
       const vehicleId = vehiclesByName.get(row.new.vehicle.toLowerCase().trim())
-      if (!vehicleId) {
-        payload.logger.warn({
-          msg: `Vehicle "${row.new.vehicle}" not found for bill ${row.weightBillNumber}`,
-        })
-        continue
-      }
 
       try {
         if (row.status === 'new') {
@@ -739,9 +805,9 @@ export async function applyImportDecisions(data: {
             collection: 'weight-bills',
             data: {
               weightBillNumber: row.weightBillNumber,
-              date: row.new.date,
+              ...(row.new.date ? { date: row.new.date } : {}),
               customerName: row.new.customerName,
-              vehicle: vehicleId,
+              ...(vehicleId ? { vehicle: vehicleId } : {}),
               amount: row.new.amount,
               paymentStatus:
                 (row.new.paymentStatus as 'PAID' | 'CANCELLED' | undefined) || undefined,
@@ -770,9 +836,9 @@ export async function applyImportDecisions(data: {
               collection: 'weight-bills',
               id: recordId,
               data: {
-                date: row.new.date,
+                ...(row.new.date ? { date: row.new.date } : {}),
                 customerName: row.new.customerName,
-                vehicle: vehicleId,
+                ...(vehicleId ? { vehicle: vehicleId } : {}),
                 amount: row.new.amount,
                 paymentStatus:
                   (row.new.paymentStatus as 'PAID' | 'CANCELLED' | undefined) || undefined,
@@ -926,20 +992,16 @@ export async function importWeightBillsFromSpreadsheet(formData: FormData) {
       seenInFile.add(row.weightBillNumber)
 
       const vehicle = resolveVehicleForImport(row.vehicle, vehicleLookup)
-      if (!vehicle) {
-        invalidRows.push(`Row ${row.rowNumber}: vehicle \"${row.vehicle}\" was not found.`)
-        continue
-      }
 
       try {
         await payload.create({
           collection: 'weight-bills',
           data: {
             weightBillNumber: row.weightBillNumber,
-            date: row.date,
+            ...(row.date ? { date: row.date } : {}),
             customerName: row.customerName,
-            vehicle: vehicle.id,
-            amount: row.amount ?? vehicle.amount ?? 0,
+            ...(vehicle ? { vehicle: vehicle.id } : {}),
+            amount: row.amount ?? vehicle?.amount ?? 0,
             paymentStatus: row.paymentStatus,
             isVerified: row.isVerified,
             submittedBy: currentUserId,

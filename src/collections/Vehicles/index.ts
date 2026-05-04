@@ -28,7 +28,6 @@ const Vehicles: CollectionConfig = {
       name: 'amount',
       label: 'Amount',
       type: 'number',
-      required: true,
     },
   ],
   timestamps: true,
