@@ -20,6 +20,37 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Verify droplet SSH connectivity
+        shell: bash
+        env:
+          DROPLET_HOST: ${{ secrets.DROPLET_HOST }}
+          DROPLET_PORT: ${{ secrets.DROPLET_PORT }}
+        run: |
+          set -e
+          echo "Checking SSH reachability: ${DROPLET_HOST}:${DROPLET_PORT}"
+
+          for attempt in 1 2 3 4 5; do
+            if nc -z -w 5 "$DROPLET_HOST" "$DROPLET_PORT"; then
+              echo "SSH port is reachable"
+              exit 0
+            fi
+
+            echo "Attempt ${attempt}/5 failed, retrying in 8s..."
+            sleep 8
+          done
+
+          echo "SSH endpoint is not reachable from GitHub runner"
+          exit 1
+
+      - name: Setup MongoDB Atlas CLI
+        uses: mongodb/atlas-github-action@v0.2.2
+
+      - name: Verify Atlas authentication
+        shell: bash
+        run: |
+          atlas config set silence_storage_warning true
+          atlas auth whoami
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -46,15 +77,6 @@ jobs:
         run: |
           echo "ip_address=$(curl -s https://checkip.amazonaws.com)" >> "$GITHUB_OUTPUT"
 
-      - name: Setup MongoDB Atlas CLI
-        uses: mongodb/atlas-github-action@v0.2.2
-
-      - name: Verify Atlas authentication
-        shell: bash
-        run: |
-          atlas config set silence_storage_warning true
-          atlas auth whoami
-
       - name: Add runner IP to MongoDB Atlas access list
         shell: bash
         run: |
@@ -73,28 +95,6 @@ jobs:
 
       - name: Build
         run: pnpm build
-
-      - name: Verify droplet SSH connectivity
-        shell: bash
-        env:
-          DROPLET_HOST: ${{ secrets.DROPLET_HOST }}
-          DROPLET_PORT: ${{ secrets.DROPLET_PORT }}
-        run: |
-          set -e
-          echo "Checking SSH reachability: ${DROPLET_HOST}:${DROPLET_PORT}"
-
-          for attempt in 1 2 3 4 5; do
-            if nc -z -w 5 "$DROPLET_HOST" "$DROPLET_PORT"; then
-              echo "SSH port is reachable"
-              exit 0
-            fi
-
-            echo "Attempt ${attempt}/5 failed, retrying in 8s..."
-            sleep 8
-          done
-
-          echo "SSH endpoint is not reachable from GitHub runner"
-          exit 1
 
       - name: Copy build artifacts to droplet
         uses: appleboy/scp-action@v0.1.7
