@@ -16,6 +16,11 @@ export const auth = betterAuth({
     modelName: 'accounts',
   },
   basePath: '/auth/provider',
+  trustedOrigins: [
+    process.env.NEXT_PUBLIC_SERVER_URL as string,
+    `${process.env.NEXT_PUBLIC_SERVER_URL}:3000`,
+    'http://localhost:3000',
+  ],
   database: mongodbAdapter(db),
   emailAndPassword: {
     autoSignIn: false,
