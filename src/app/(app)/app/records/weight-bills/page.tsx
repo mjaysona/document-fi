@@ -20,7 +20,7 @@ import {
   Modal,
   Stack,
 } from '@mantine/core'
-import { Filter, Search, Download, Pencil, Trash2, CircleCheck } from 'lucide-react'
+import { Filter, Search, Download, Pencil, Trash2, CircleCheck, Upload } from 'lucide-react'
 import {
   deleteWeightBill,
   deleteWeightBills,
@@ -71,7 +71,18 @@ const DEBOUNCE_DELAY = 500
 const formatDateForDisplay = (dateValue: string | undefined): string => {
   if (!dateValue) return '-'
   const normalized = dateValue.includes('T') ? dateValue.split('T')[0] : dateValue
+  return normalized || '-'
+}
+
+const formatTextForDisplay = (value: unknown): string => {
+  const normalized = String(value ?? '').trim()
+  if (!normalized || normalized.toLowerCase() === 'undefined') return '-'
   return normalized
+}
+
+const formatAmountForDisplay = (amount: number | undefined): string => {
+  if (typeof amount !== 'number' || !Number.isFinite(amount) || amount === 0) return '-'
+  return `₱${amount.toFixed(2)}`
 }
 
 export default function WeightBillsPage() {
@@ -110,10 +121,8 @@ export default function WeightBillsPage() {
     createdRows: number[]
     updatedRows: number[]
   } | null>(null)
-  const [showImportResultsFirst, setShowImportResultsFirst] = useState(false)
   const [importModeSortBy, setImportModeSortBy] = useState<SortBy>('date')
   const [importModeSortOrder, setImportModeSortOrder] = useState<SortOrder>('desc')
-  const [importModeShowImportedFirst, setImportModeShowImportedFirst] = useState(true)
   const importInputRef = useRef<HTMLInputElement | null>(null)
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -272,14 +281,29 @@ export default function WeightBillsPage() {
         return
       }
 
+      if (result.totalNew === 0 && result.totalChanged === 0) {
+        setImportMode(false)
+        setImportedRows([])
+        setImportDecisions({})
+        setImportResult(null)
+        setFeedback({
+          tone: 'success',
+          message: 'No changes to show. Data and imported Excel file are synced.',
+        })
+        return
+      }
+
       // Enter import mode
       setImportedRows(result.rows)
       setImportDecisions({})
       setImportResult(null)
       setImportMode(true)
+      const duplicateWarnings = result.errors.filter((error) =>
+        error.startsWith('Duplicate Weight Bill # found and removed'),
+      )
       setFeedback({
         tone: 'info',
-        message: `Import preview ready: ${result.totalNew} new, ${result.totalChanged} changed, ${result.totalUnchanged} unchanged.`,
+        message: `Import preview ready: ${result.totalNew} new, ${result.totalChanged} changed, ${result.totalUnchanged} unchanged.${duplicateWarnings.length > 0 ? ` ${duplicateWarnings.join(' ')}` : ''}`,
       })
     } catch (error) {
       console.error('Failed to parse spreadsheet:', error)
@@ -292,6 +316,19 @@ export default function WeightBillsPage() {
   const handleApplyImport = async () => {
     if (Object.keys(importDecisions).length === 0) {
       setFeedback({ tone: 'error', message: 'No changes accepted or rejected.' })
+      return
+    }
+
+    const acceptedCount = Object.values(importDecisions).filter(
+      (decision) => decision === 'accepted',
+    ).length
+
+    if (acceptedCount === 0) {
+      setImportResult(null)
+      setImportMode(false)
+      setImportedRows([])
+      setImportDecisions({})
+      setFeedback({ tone: 'info', message: 'No changes were applied.' })
       return
     }
 
@@ -382,15 +419,8 @@ export default function WeightBillsPage() {
   const acceptAllImportedRows = () => {
     const newDecisions: Record<number, 'accepted' | 'rejected'> = {}
     for (const row of importedRows) {
+      if (row.status === 'unchanged') continue
       newDecisions[row.weightBillNumber] = 'accepted'
-    }
-    setImportDecisions(newDecisions)
-  }
-
-  const rejectAllImportedRows = () => {
-    const newDecisions: Record<number, 'accepted' | 'rejected'> = {}
-    for (const row of importedRows) {
-      newDecisions[row.weightBillNumber] = 'rejected'
     }
     setImportDecisions(newDecisions)
   }
@@ -518,29 +548,7 @@ export default function WeightBillsPage() {
     setSelectedIds((prev) => prev.filter((id) => weightBills.some((bill) => bill.id === id)))
   }, [weightBills])
 
-  const displayBills =
-    showImportResultsFirst && importResult
-      ? [...weightBills].sort((a, b) => {
-          const aIsCreated = importResult.createdRows.includes(a.weightBillNumber)
-          const bIsCreated = importResult.createdRows.includes(b.weightBillNumber)
-          const aIsUpdated = importResult.updatedRows.includes(a.weightBillNumber)
-          const bIsUpdated = importResult.updatedRows.includes(b.weightBillNumber)
-
-          // Created and updated rows first (combined)
-          const aIsModified = aIsCreated || aIsUpdated
-          const bIsModified = bIsCreated || bIsUpdated
-
-          if (aIsModified && !bIsModified) return -1
-          if (!aIsModified && bIsModified) return 1
-
-          // If both modified, created first
-          if (aIsCreated && !bIsCreated) return -1
-          if (!aIsCreated && bIsCreated) return 1
-
-          // Otherwise maintain original order
-          return 0
-        })
-      : weightBills
+  const displayBills = weightBills
 
   const visibleIds = displayBills.map((bill) => bill.id)
   const activeFilterCount =
@@ -583,11 +591,11 @@ export default function WeightBillsPage() {
       </Table.Td>
       <Table.Td>{bill.weightBillNumber}</Table.Td>
       <Table.Td>{formatDateForDisplay(bill.date)}</Table.Td>
-      <Table.Td>{bill.customerName}</Table.Td>
-      <Table.Td>{bill.vehicle}</Table.Td>
+      <Table.Td>{formatTextForDisplay(bill.customerName)}</Table.Td>
+      <Table.Td>{formatTextForDisplay(bill.vehicle)}</Table.Td>
       <Table.Td>{bill.submittedBy || '-'}</Table.Td>
       <Table.Td>{bill.verifiedBy || '-'}</Table.Td>
-      <Table.Td>₱{bill.amount?.toFixed(2) || '0.00'}</Table.Td>
+      <Table.Td>{formatAmountForDisplay(bill.amount)}</Table.Td>
       <Table.Td>
         <Group gap="xs" wrap="nowrap">
           {(bill.paymentStatus === 'PAID' || bill.paymentStatus === 'CANCELLED') && (
@@ -746,19 +754,8 @@ export default function WeightBillsPage() {
               >
                 Date {importModeSortBy === 'date' && (importModeSortOrder === 'asc' ? '↑' : '↓')}
               </Button>
-              <Button
-                variant={importModeShowImportedFirst ? 'filled' : 'light'}
-                color="green"
-                size="sm"
-                onClick={() => setImportModeShowImportedFirst(!importModeShowImportedFirst)}
-              >
-                {importModeShowImportedFirst ? '✓ ' : ''}Imported First
-              </Button>
               <Button variant="light" color="green" size="sm" onClick={acceptAllImportedRows}>
                 Accept All
-              </Button>
-              <Button variant="light" color="red" size="sm" onClick={rejectAllImportedRows}>
-                Reject All
               </Button>
               <Button
                 variant="filled"
@@ -806,20 +803,11 @@ export default function WeightBillsPage() {
               {importResult && (
                 <>
                   <Button
-                    variant={showImportResultsFirst ? 'filled' : 'light'}
-                    color="blue"
-                    size="sm"
-                    onClick={() => setShowImportResultsFirst(!showImportResultsFirst)}
-                  >
-                    {showImportResultsFirst ? '✓ ' : ''}Recently Modified
-                  </Button>
-                  <Button
                     variant="default"
                     size="sm"
                     color="gray"
                     onClick={() => {
                       setImportResult(null)
-                      setShowImportResultsFirst(false)
                     }}
                   >
                     Clear Import Results
@@ -836,7 +824,7 @@ export default function WeightBillsPage() {
               >
                 Delete selected ({selectedIds.length})
               </Button>
-              <Button
+              {/* <Button
                 variant="default"
                 size="sm"
                 onClick={handleSync}
@@ -844,16 +832,7 @@ export default function WeightBillsPage() {
                 disabled={isImporting}
               >
                 Sync Google Sheet
-              </Button>
-              <Button
-                variant="default"
-                size="sm"
-                onClick={handleImportClick}
-                loading={isImporting}
-                disabled={isSyncing}
-              >
-                Import Spreadsheet
-              </Button>
+              </Button> */}
               <input
                 ref={importInputRef}
                 type="file"
@@ -864,10 +843,19 @@ export default function WeightBillsPage() {
               <Button
                 variant="default"
                 size="sm"
+                leftSection={<Upload size={16} />}
+                onClick={handleImportClick}
+                loading={isImporting}
+                disabled={isSyncing}
+              >
+                Import Spreadsheet
+              </Button>
+              <Button
+                variant="default"
+                size="sm"
                 leftSection={<Download size={16} />}
                 onClick={handleExport}
                 loading={isExporting}
-                ml="auto"
               >
                 Export to Spreadsheet
               </Button>
@@ -897,67 +885,28 @@ export default function WeightBillsPage() {
         <>
           {/* Create sorted list for import mode table */}
           {(() => {
-            // Combine all rows (existing DB records with imported changes + new imported records)
+            // Build from actionable import rows so Import Mode is not limited by current DB page.
             const allRows: Array<{
               type: 'existing' | 'new'
-              bill?: WeightBill
-              importedRow?: ImportRowComparison
-            }> = []
+              importedRow: ImportRowComparison
+            }> = importedRows
+              .filter((row) => row.status === 'new' || row.status === 'changed')
+              .map((importedRow) => ({
+                type: importedRow.status === 'new' ? 'new' : 'existing',
+                importedRow,
+              }))
 
-            // Add existing bills with their imported rows
-            weightBills.forEach((bill) => {
-              const importedRow = importedRows.find(
-                (r) => r.weightBillNumber === bill.weightBillNumber,
-              )
-              if (importedRow) {
-                allRows.push({ type: 'existing', bill, importedRow })
-              }
-            })
-
-            // Add new imported rows (not in DB)
-            importedRows
-              .filter(
-                (row) =>
-                  row.status === 'new' &&
-                  !weightBills.some((b) => b.weightBillNumber === row.weightBillNumber),
-              )
-              .forEach((importedRow) => {
-                allRows.push({ type: 'new', importedRow })
-              })
-
-            // Sort by preference
+            // Sort by selected field
             const sortedRows = [...allRows].sort((a, b) => {
-              // If "Imported First" is enabled, prioritize imported records (new and changed)
-              if (importModeShowImportedFirst) {
-                const aIsImported =
-                  a.importedRow &&
-                  (a.importedRow.status === 'new' || a.importedRow.status === 'changed')
-                const bIsImported =
-                  b.importedRow &&
-                  (b.importedRow.status === 'new' || b.importedRow.status === 'changed')
-
-                if (aIsImported && !bIsImported) return -1
-                if (!aIsImported && bIsImported) return 1
-
-                // If both imported, sort new before changed
-                if (aIsImported && bIsImported) {
-                  const aIsNew = a.importedRow?.status === 'new'
-                  const bIsNew = b.importedRow?.status === 'new'
-                  if (aIsNew && !bIsNew) return -1
-                  if (!aIsNew && bIsNew) return 1
-                }
-              }
-
-              // Sort by selected field
               let aValue: string | number = ''
               let bValue: string | number = ''
 
               if (importModeSortBy === 'date') {
-                aValue = a.bill?.date || a.importedRow?.new.date || ''
-                bValue = b.bill?.date || b.importedRow?.new.date || ''
+                aValue = a.importedRow.new.date || ''
+                bValue = b.importedRow.new.date || ''
               } else if (importModeSortBy === 'name') {
-                aValue = a.bill?.customerName || a.importedRow?.new.customerName || ''
-                bValue = b.bill?.customerName || b.importedRow?.new.customerName || ''
+                aValue = a.importedRow.new.customerName || ''
+                bValue = b.importedRow.new.customerName || ''
               }
 
               if (aValue < bValue) return importModeSortOrder === 'asc' ? -1 : 1
@@ -980,113 +929,82 @@ export default function WeightBillsPage() {
                     </Table.Tr>
                   </Table.Thead>
                   <Table.Tbody>
-                    {sortedRows.map((row) => {
+                    {sortedRows.map((row, rowIndex) => {
                       const importedRow = row.importedRow
-                      const bill = row.bill
-                      const decision = importedRow
-                        ? importDecisions[importedRow.weightBillNumber]
-                        : undefined
-
-                      if (row.type === 'existing' && !importedRow) {
-                        // Non-imported record: show normally without chips
-                        return (
-                          <Table.Tr key={bill!.id}>
-                            <Table.Td fw={500}>{bill!.weightBillNumber}</Table.Td>
-                            <Table.Td>{formatDateForDisplay(bill!.date)}</Table.Td>
-                            <Table.Td>{bill!.customerName}</Table.Td>
-                            <Table.Td>{bill!.vehicle}</Table.Td>
-                            <Table.Td>₱{bill!.amount?.toFixed(2) || '0.00'}</Table.Td>
-                            <Table.Td>
-                              {(bill!.paymentStatus === 'PAID' ||
-                                bill!.paymentStatus === 'CANCELLED') && (
-                                <Badge
-                                  color={bill!.paymentStatus === 'PAID' ? 'green' : 'red'}
-                                  variant="light"
-                                  size="sm"
-                                >
-                                  {bill!.paymentStatus}
-                                </Badge>
-                              )}
-                            </Table.Td>
-                            <Table.Td>-</Table.Td>
-                          </Table.Tr>
-                        )
-                      }
+                      const decision = importDecisions[importedRow.weightBillNumber]
 
                       // Imported record: show with diffs and chips
                       const rowBg =
-                        importedRow!.status === 'new' ? 'rgba(34, 139, 34, 0.1)' : undefined
+                        importedRow.status === 'new' ? 'rgba(34, 139, 34, 0.1)' : undefined
 
                       return (
                         <Table.Tr
-                          key={
-                            row.type === 'new' ? `new-${importedRow!.weightBillNumber}` : bill!.id
-                          }
+                          key={`${row.type}-${importedRow.weightBillNumber}-${importedRow.status}-${rowIndex}`}
                           bg={rowBg}
                         >
-                          <Table.Td fw={500}>{importedRow!.weightBillNumber}</Table.Td>
+                          <Table.Td fw={500}>{importedRow.weightBillNumber}</Table.Td>
                           <Table.Td>
-                            {importedRow!.status === 'changed' &&
-                            importedRow!.changes?.some((c) => c.field === 'date') ? (
+                            {importedRow.status === 'changed' &&
+                            importedRow.changes?.some((c) => c.field === 'date') ? (
                               <div>
                                 <span style={{ color: '#b00020', textDecoration: 'line-through' }}>
-                                  {importedRow!.old?.date}
+                                  {formatDateForDisplay(importedRow.old?.date)}
                                 </span>
-                                <div>{importedRow!.new.date}</div>
+                                <div>{formatDateForDisplay(importedRow.new.date)}</div>
                               </div>
                             ) : (
-                              importedRow!.new.date
+                              formatDateForDisplay(importedRow.new.date)
                             )}
                           </Table.Td>
                           <Table.Td>
-                            {importedRow!.status === 'changed' &&
-                            importedRow!.changes?.some((c) => c.field === 'customerName') ? (
+                            {importedRow.status === 'changed' &&
+                            importedRow.changes?.some((c) => c.field === 'customerName') ? (
                               <div>
                                 <span style={{ color: '#b00020', textDecoration: 'line-through' }}>
-                                  {importedRow!.old?.customerName}
+                                  {formatTextForDisplay(importedRow.old?.customerName)}
                                 </span>
-                                <div>{importedRow!.new.customerName}</div>
+                                <div>{formatTextForDisplay(importedRow.new.customerName)}</div>
                               </div>
                             ) : (
-                              importedRow!.new.customerName
+                              formatTextForDisplay(importedRow.new.customerName)
                             )}
                           </Table.Td>
                           <Table.Td>
-                            {importedRow!.status === 'changed' &&
-                            importedRow!.changes?.some((c) => c.field === 'vehicle') ? (
+                            {importedRow.status === 'changed' &&
+                            importedRow.changes?.some((c) => c.field === 'vehicle') ? (
                               <div>
                                 <span style={{ color: '#b00020', textDecoration: 'line-through' }}>
-                                  {importedRow!.old?.vehicle}
+                                  {formatTextForDisplay(importedRow.old?.vehicle)}
                                 </span>
-                                <div>{importedRow!.new.vehicle}</div>
+                                <div>{formatTextForDisplay(importedRow.new.vehicle)}</div>
                               </div>
                             ) : (
-                              importedRow!.new.vehicle
+                              formatTextForDisplay(importedRow.new.vehicle)
                             )}
                           </Table.Td>
                           <Table.Td>
-                            {importedRow!.status === 'changed' &&
-                            importedRow!.changes?.some((c) => c.field === 'amount') ? (
+                            {importedRow.status === 'changed' &&
+                            importedRow.changes?.some((c) => c.field === 'amount') ? (
                               <div>
                                 <span style={{ color: '#b00020', textDecoration: 'line-through' }}>
-                                  ₱{importedRow!.old?.amount.toFixed(2)}
+                                  {formatAmountForDisplay(importedRow.old?.amount)}
                                 </span>
-                                <div>₱{importedRow!.new.amount.toFixed(2)}</div>
+                                <div>{formatAmountForDisplay(importedRow.new.amount)}</div>
                               </div>
                             ) : (
-                              `₱${importedRow!.new.amount.toFixed(2)}`
+                              formatAmountForDisplay(importedRow.new.amount)
                             )}
                           </Table.Td>
                           <Table.Td>
-                            {importedRow!.status === 'changed' &&
-                            importedRow!.changes?.some((c) => c.field === 'paymentStatus') ? (
+                            {importedRow.status === 'changed' &&
+                            importedRow.changes?.some((c) => c.field === 'paymentStatus') ? (
                               <div>
-                                {(importedRow!.old?.paymentStatus === 'PAID' ||
-                                  importedRow!.old?.paymentStatus === 'CANCELLED') && (
+                                {(importedRow.old?.paymentStatus === 'PAID' ||
+                                  importedRow.old?.paymentStatus === 'CANCELLED') && (
                                   <div style={{ marginBottom: 4 }}>
                                     <Badge
                                       color={
-                                        importedRow!.old?.paymentStatus === 'PAID' ? 'green' : 'red'
+                                        importedRow.old?.paymentStatus === 'PAID' ? 'green' : 'red'
                                       }
                                       variant="light"
                                       size="xs"
@@ -1096,45 +1014,49 @@ export default function WeightBillsPage() {
                                         },
                                       }}
                                     >
-                                      {importedRow!.old?.paymentStatus}
+                                      {importedRow.old?.paymentStatus}
                                     </Badge>
                                   </div>
                                 )}
-                                {(importedRow!.new.paymentStatus === 'PAID' ||
-                                  importedRow!.new.paymentStatus === 'CANCELLED') && (
+                                {(importedRow.new.paymentStatus === 'PAID' ||
+                                  importedRow.new.paymentStatus === 'CANCELLED') && (
                                   <div>
                                     <Badge
                                       color={
-                                        importedRow!.new.paymentStatus === 'PAID' ? 'green' : 'red'
+                                        importedRow.new.paymentStatus === 'PAID' ? 'green' : 'red'
                                       }
                                       variant="light"
                                       size="sm"
                                     >
-                                      {importedRow!.new.paymentStatus}
+                                      {importedRow.new.paymentStatus}
                                     </Badge>
                                   </div>
                                 )}
                               </div>
-                            ) : importedRow!.new.paymentStatus === 'PAID' ||
-                              importedRow!.new.paymentStatus === 'CANCELLED' ? (
+                            ) : importedRow.new.paymentStatus === 'PAID' ||
+                              importedRow.new.paymentStatus === 'CANCELLED' ? (
                               <Badge
-                                color={importedRow!.new.paymentStatus === 'PAID' ? 'green' : 'red'}
+                                color={importedRow.new.paymentStatus === 'PAID' ? 'green' : 'red'}
                                 variant="light"
                                 size="sm"
                               >
-                                {importedRow!.new.paymentStatus}
+                                {importedRow.new.paymentStatus}
                               </Badge>
-                            ) : null}
+                            ) : (
+                              <Text size="sm" c="dimmed">
+                                -
+                              </Text>
+                            )}
                           </Table.Td>
                           <Table.Td>
                             {importResult ? (
                               // Show result indicator instead of chips
                               <Badge
                                 color={
-                                  importResult.createdRows.includes(importedRow!.weightBillNumber)
+                                  importResult.createdRows.includes(importedRow.weightBillNumber)
                                     ? 'green'
                                     : importResult.updatedRows.includes(
-                                          importedRow!.weightBillNumber,
+                                          importedRow.weightBillNumber,
                                         )
                                       ? 'blue'
                                       : 'gray'
@@ -1142,13 +1064,13 @@ export default function WeightBillsPage() {
                                 variant="filled"
                                 size="sm"
                               >
-                                {importResult.createdRows.includes(importedRow!.weightBillNumber)
+                                {importResult.createdRows.includes(importedRow.weightBillNumber)
                                   ? '✓ Created'
-                                  : importResult.updatedRows.includes(importedRow!.weightBillNumber)
+                                  : importResult.updatedRows.includes(importedRow.weightBillNumber)
                                     ? '✓ Updated'
                                     : 'Rejected'}
                               </Badge>
-                            ) : importedRow!.status === 'unchanged' ? (
+                            ) : importedRow.status === 'unchanged' ? (
                               <Text size="sm" c="dimmed">
                                 Unchanged
                               </Text>
@@ -1159,20 +1081,10 @@ export default function WeightBillsPage() {
                                   color={decision === 'accepted' ? 'green' : 'default'}
                                   checked={decision === 'accepted'}
                                   onChange={() =>
-                                    toggleImportDecision(importedRow!.weightBillNumber, 'accepted')
+                                    toggleImportDecision(importedRow.weightBillNumber, 'accepted')
                                   }
                                 >
                                   Accept
-                                </Chip>
-                                <Chip
-                                  variant="light"
-                                  color={decision === 'rejected' ? 'red' : 'default'}
-                                  checked={decision === 'rejected'}
-                                  onChange={() =>
-                                    toggleImportDecision(importedRow!.weightBillNumber, 'rejected')
-                                  }
-                                >
-                                  Reject
                                 </Chip>
                               </Group>
                             )}

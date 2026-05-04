@@ -68,9 +68,16 @@ const parseNumber = (value: unknown): number | undefined => {
   return parsed
 }
 
+const formatLocalDate = (date: Date): string => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 const parseDate = (value: unknown): string | undefined => {
   if (value instanceof Date && Number.isFinite(value.getTime())) {
-    return value.toISOString().split('T')[0]
+    return formatLocalDate(value)
   }
 
   if (typeof value === 'number' && Number.isFinite(value)) {
@@ -84,6 +91,24 @@ const parseDate = (value: unknown): string | undefined => {
 
   const trimmed = String(value || '').trim()
   if (!trimmed) return undefined
+
+  const mmddyyyyMatch = trimmed.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2}|\d{4})$/)
+  if (mmddyyyyMatch) {
+    const [, monthRaw, dayRaw, yearRaw] = mmddyyyyMatch
+    const month = Number(monthRaw)
+    const day = Number(dayRaw)
+    const year = yearRaw.length === 2 ? 2000 + Number(yearRaw) : Number(yearRaw)
+
+    const parsed = new Date(year, month - 1, day)
+    if (
+      Number.isFinite(parsed.getTime()) &&
+      parsed.getFullYear() === year &&
+      parsed.getMonth() === month - 1 &&
+      parsed.getDate() === day
+    ) {
+      return formatLocalDate(parsed)
+    }
+  }
 
   if (/^\d+(\.\d+)?$/.test(trimmed)) {
     const serial = Number(trimmed)
@@ -102,7 +127,7 @@ const parseDate = (value: unknown): string | undefined => {
     return undefined
   }
 
-  return parsed.toISOString().split('T')[0]
+  return formatLocalDate(parsed)
 }
 
 const parsePaymentStatus = (value: unknown): 'PAID' | undefined => {
@@ -260,11 +285,6 @@ export const parseWeightBillSpreadsheet = (
       continue
     }
 
-    if (!date && paymentStatus !== 'CANCELLED') {
-      rowErrors.push(`Row ${rowNumber}: invalid Date.`)
-      continue
-    }
-
     if (remarks && !paymentStatusFromRemarks) {
       rowErrors.push(`Row ${rowNumber}: Remarks must be PAID or empty.`)
       continue
@@ -282,9 +302,31 @@ export const parseWeightBillSpreadsheet = (
     })
   }
 
+  const latestRowsByWeightBillNumber = new Map<number, ParsedSpreadsheetWeightBill>()
+  const duplicateWeightBillNumbers = new Set<number>()
+
+  for (const row of rows) {
+    if (latestRowsByWeightBillNumber.has(row.weightBillNumber)) {
+      duplicateWeightBillNumbers.add(row.weightBillNumber)
+    }
+    // Keep the latest occurrence in the file.
+    latestRowsByWeightBillNumber.set(row.weightBillNumber, row)
+  }
+
+  const deduplicatedRows = Array.from(latestRowsByWeightBillNumber.values()).sort(
+    (a, b) => a.rowNumber - b.rowNumber,
+  )
+
+  if (duplicateWeightBillNumbers.size > 0) {
+    const duplicateList = Array.from(duplicateWeightBillNumbers)
+      .sort((a, b) => a - b)
+      .join(', ')
+    rowErrors.push(`Duplicate Weight Bill # found and removed (kept latest row): ${duplicateList}.`)
+  }
+
   return {
     success: true,
-    rows,
+    rows: deduplicatedRows,
     rowErrors,
     normalizedHeaders,
   }

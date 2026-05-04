@@ -26,15 +26,60 @@ type ImportVehicle = {
   amount?: number
 }
 
+const formatLocalDate = (date: Date): string => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 const normalizeDateForComparison = (dateValue: unknown): string => {
+  if (dateValue instanceof Date && Number.isFinite(dateValue.getTime())) {
+    return formatLocalDate(dateValue)
+  }
+
   if (typeof dateValue === 'string') {
     // If already ISO date, extract just YYYY-MM-DD
     if (dateValue.includes('T')) {
       return dateValue.split('T')[0]
     }
-    // Otherwise assume it's already YYYY-MM-DD
-    return dateValue.trim()
+
+    const trimmed = dateValue.trim()
+    if (!trimmed) return ''
+
+    const mmddyyyyMatch = trimmed.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2}|\d{4})$/)
+    if (mmddyyyyMatch) {
+      const [, monthRaw, dayRaw, yearRaw] = mmddyyyyMatch
+      const month = Number(monthRaw)
+      const day = Number(dayRaw)
+      const year = yearRaw.length === 2 ? 2000 + Number(yearRaw) : Number(yearRaw)
+
+      const parsed = new Date(year, month - 1, day)
+      if (
+        Number.isFinite(parsed.getTime()) &&
+        parsed.getFullYear() === year &&
+        parsed.getMonth() === month - 1 &&
+        parsed.getDate() === day
+      ) {
+        return formatLocalDate(parsed)
+      }
+    }
+
+    const parsed = new Date(trimmed)
+    if (Number.isFinite(parsed.getTime())) {
+      return formatLocalDate(parsed)
+    }
+
+    return trimmed
   }
+
+  if (dateValue != null) {
+    const parsed = new Date(String(dateValue))
+    if (Number.isFinite(parsed.getTime())) {
+      return formatLocalDate(parsed)
+    }
+  }
+
   return ''
 }
 
@@ -524,14 +569,14 @@ export type ImportRowComparison = {
     date: string | undefined
     customerName: string
     vehicle: string
-    amount: number
+    amount: number | undefined
     paymentStatus?: string
   }
   old?: {
     date: string | undefined
     customerName: string
     vehicle: string
-    amount: number
+    amount: number | undefined
     paymentStatus?: string
   }
   changes?: {
@@ -662,7 +707,7 @@ export async function parseAndCompareImportedRows(
         date: row.date,
         customerName: row.customerName,
         vehicle: vehicle?.name ?? '',
-        amount: row.amount ?? vehicle?.amount ?? 0,
+        amount: row.amount,
         paymentStatus: row.paymentStatus,
       }
 
@@ -678,46 +723,74 @@ export async function parseAndCompareImportedRows(
         continue
       }
 
+      const normalizedOldPaymentStatus = String(existingRecord.paymentStatus || '')
+        .trim()
+        .toUpperCase()
+      const rawOldCustomerName = String(existingRecord.customerName || '').trim()
+      const normalizedOldCustomerName =
+        normalizedOldPaymentStatus === 'CANCELLED' && rawOldCustomerName.toUpperCase() === 'CANCELLED'
+          ? ''
+          : rawOldCustomerName
+      const oldVehicleId =
+        typeof existingRecord.vehicle === 'string' ? existingRecord.vehicle.trim() : ''
+
       // Compare with existing record
       const oldData = {
         date: normalizeDateForComparison(existingRecord.date),
-        customerName: existingRecord.customerName,
-        vehicle: vehiclesById.get(String(existingRecord.vehicle)) || String(existingRecord.vehicle),
-        amount: existingRecord.amount ?? 0,
-        paymentStatus: existingRecord.paymentStatus,
+        customerName: normalizedOldCustomerName,
+        vehicle: oldVehicleId ? vehiclesById.get(oldVehicleId) || oldVehicleId : '',
+        amount: typeof existingRecord.amount === 'number' ? existingRecord.amount : undefined,
+        paymentStatus: normalizedOldPaymentStatus || undefined,
       }
 
       const changes: { field: string; oldValue: string; newValue: string }[] = []
 
-      if (oldData.date !== newData.date)
+      const oldDateValue = oldData.date ?? ''
+      const newDateValue = newData.date ?? ''
+      const oldCustomerNameValue = oldData.customerName ?? ''
+      const newCustomerNameValue = newData.customerName ?? ''
+      const oldVehicleValue = oldData.vehicle ?? ''
+      const newVehicleValue = newData.vehicle ?? ''
+      const oldAmountValue =
+        typeof oldData.amount === 'number' && oldData.amount !== 0 ? String(oldData.amount) : ''
+      const newAmountValue =
+        typeof newData.amount === 'number' && newData.amount !== 0 ? String(newData.amount) : ''
+      const oldPaymentStatusValue = String(oldData.paymentStatus || '')
+        .trim()
+        .toUpperCase()
+      const newPaymentStatusValue = String(newData.paymentStatus || '')
+        .trim()
+        .toUpperCase()
+
+      if (oldDateValue !== newDateValue)
         changes.push({
           field: 'date',
-          oldValue: oldData.date ?? '',
-          newValue: newData.date ?? '',
+          oldValue: oldDateValue,
+          newValue: newDateValue,
         })
-      if (oldData.customerName !== newData.customerName)
+      if (oldCustomerNameValue !== newCustomerNameValue)
         changes.push({
           field: 'customerName',
-          oldValue: oldData.customerName,
-          newValue: newData.customerName,
+          oldValue: oldCustomerNameValue,
+          newValue: newCustomerNameValue,
         })
-      if (oldData.vehicle !== newData.vehicle)
+      if (oldVehicleValue !== newVehicleValue)
         changes.push({
           field: 'vehicle',
-          oldValue: oldData.vehicle,
-          newValue: newData.vehicle,
+          oldValue: oldVehicleValue,
+          newValue: newVehicleValue,
         })
-      if (oldData.amount !== newData.amount)
+      if (oldAmountValue !== newAmountValue)
         changes.push({
           field: 'amount',
-          oldValue: String(oldData.amount),
-          newValue: String(newData.amount),
+          oldValue: oldAmountValue,
+          newValue: newAmountValue,
         })
-      if (oldData.paymentStatus !== newData.paymentStatus)
+      if (oldPaymentStatusValue !== newPaymentStatusValue)
         changes.push({
           field: 'paymentStatus',
-          oldValue: oldData.paymentStatus || '',
-          newValue: newData.paymentStatus || '',
+          oldValue: oldPaymentStatusValue,
+          newValue: newPaymentStatusValue,
         })
 
       if (changes.length === 0) {
@@ -805,12 +878,12 @@ export async function applyImportDecisions(data: {
             collection: 'weight-bills',
             data: {
               weightBillNumber: row.weightBillNumber,
-              ...(row.new.date ? { date: row.new.date } : {}),
+              date: row.new.date ?? null,
               customerName: row.new.customerName,
-              ...(vehicleId ? { vehicle: vehicleId } : {}),
-              amount: row.new.amount,
+              vehicle: vehicleId ?? null,
+              amount: row.new.amount ?? null,
               paymentStatus:
-                (row.new.paymentStatus as 'PAID' | 'CANCELLED' | undefined) || undefined,
+                (row.new.paymentStatus as 'PAID' | 'CANCELLED' | undefined) ?? null,
               isVerified: false,
               submittedBy: currentUserId,
             },
@@ -836,12 +909,12 @@ export async function applyImportDecisions(data: {
               collection: 'weight-bills',
               id: recordId,
               data: {
-                ...(row.new.date ? { date: row.new.date } : {}),
+                date: row.new.date ?? null,
                 customerName: row.new.customerName,
-                ...(vehicleId ? { vehicle: vehicleId } : {}),
-                amount: row.new.amount,
+                vehicle: vehicleId ?? null,
+                amount: row.new.amount ?? null,
                 paymentStatus:
-                  (row.new.paymentStatus as 'PAID' | 'CANCELLED' | undefined) || undefined,
+                  (row.new.paymentStatus as 'PAID' | 'CANCELLED' | undefined) ?? null,
               },
               depth: 0,
             })
@@ -998,11 +1071,11 @@ export async function importWeightBillsFromSpreadsheet(formData: FormData) {
           collection: 'weight-bills',
           data: {
             weightBillNumber: row.weightBillNumber,
-            ...(row.date ? { date: row.date } : {}),
+            date: row.date ?? null,
             customerName: row.customerName,
-            ...(vehicle ? { vehicle: vehicle.id } : {}),
-            amount: row.amount ?? vehicle?.amount ?? 0,
-            paymentStatus: row.paymentStatus,
+            vehicle: vehicle?.id ?? null,
+            amount: row.amount ?? null,
+            paymentStatus: row.paymentStatus ?? null,
             isVerified: row.isVerified,
             submittedBy: currentUserId,
             ...(row.isVerified ? { verifiedBy: currentUserId } : {}),
