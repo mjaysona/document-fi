@@ -35,7 +35,7 @@ jobs:
           EOF
 
       - name: Migrate & Build
-        run: pnpm ci
+        run: pnpm run ci
 
       - name: Copy build artifacts to droplet
         uses: appleboy/scp-action@v0.1.7
