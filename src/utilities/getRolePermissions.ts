@@ -16,8 +16,9 @@ const hasPermission = (user: User, collectionSlug: string, permission: AccessTyp
     if (collectionAccess?.access.includes(permission)) return true
 
     const collectionGroupAccess = (role as UserRole).groupedPermissions?.find(
-      (permission: { group: string; collections: string[] }) =>
-        permission.group === collectionSlug || permission.collections?.includes(collectionSlug),
+      (groupPermission) =>
+        groupPermission.group === collectionSlug ||
+        (groupPermission.collections ?? []).includes(collectionSlug),
     )
 
     return collectionGroupAccess?.access.includes(permission)

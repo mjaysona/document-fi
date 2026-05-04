@@ -22,6 +22,7 @@ const configurableCollections = [
 ]
 
 const configurableGlobals = ['dashboard-customization']
+const configurableCollectionGroups = ['globals', 'appearance', 'admin']
 
 const UserRoles: CollectionConfig = {
   slug: 'user-roles',
@@ -134,6 +135,110 @@ const UserRoles: CollectionConfig = {
                   },
                 },
                 width: '25%',
+              },
+            },
+            {
+              name: 'access',
+              label: 'Access',
+              type: 'select',
+              hasMany: true,
+              required: true,
+              options: [
+                {
+                  label: 'View',
+                  value: AccessType.READ,
+                },
+                {
+                  label: 'Create',
+                  value: AccessType.CREATE,
+                },
+                {
+                  label: 'Update',
+                  value: AccessType.UPDATE,
+                },
+                {
+                  label: 'Delete',
+                  value: AccessType.DELETE,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+    {
+      name: 'groupedPermissions',
+      label: 'Group Permissions',
+      type: 'array',
+      admin: {
+        hidden: true,
+        components: {
+          Cell: {
+            path: '@/collections/UserRoles/components/PermissionsCellComponent/index',
+          },
+        },
+      },
+      fields: [
+        {
+          type: 'row',
+          admin: {
+            width: '50%',
+          },
+          fields: [
+            {
+              name: 'group',
+              label: 'Group',
+              type: 'text',
+              required: true,
+              access: {
+                update: updateUserRoles as FieldAccess,
+              },
+              admin: {
+                components: {
+                  Field: {
+                    path: '@/collections/UserRoles/components/CollectionGroupsSelectField/index',
+                    serverProps: {
+                      configurableCollectionGroups,
+                      groupedPermissionsPath: 'groupedPermissions',
+                      selectFieldName: 'group',
+                      textFieldName: 'selectedFeatures',
+                    },
+                  },
+                },
+                width: '25%',
+              },
+            },
+            {
+              name: 'collections',
+              type: 'text',
+              hasMany: true,
+              admin: {
+                hidden: true,
+                readOnly: true,
+              },
+              hooks: {
+                beforeChange: [
+                  ({ req, siblingData }) => {
+                    const group = siblingData?.group
+
+                    if (!group) {
+                      return []
+                    }
+
+                    const collections = Object.values(req.payload.collections)
+                      .filter((collection) => {
+                        const collectionGroup = collection.config.admin.group
+                        return (
+                          typeof collectionGroup === 'object' &&
+                          collectionGroup &&
+                          collectionGroup.name === group
+                        )
+                      })
+                      .map((collection) => collection.config.slug)
+
+                    return collections
+                  },
+                ],
               },
             },
             {

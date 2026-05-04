@@ -86,6 +86,33 @@ const Users: CollectionConfig = {
       ],
     },
     {
+      name: 'providers',
+      type: 'group',
+      admin: {
+        hidden: true,
+      },
+      fields: [
+        {
+          name: 'google',
+          type: 'group',
+          fields: [
+            {
+              name: 'id',
+              type: 'text',
+            },
+            {
+              name: 'email',
+              type: 'email',
+            },
+            {
+              name: 'linkedAt',
+              type: 'date',
+            },
+          ],
+        },
+      ],
+    },
+    {
       type: 'group',
       admin: {
         position: 'sidebar',

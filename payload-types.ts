@@ -59,125 +59,127 @@ export type SupportedTimezones =
   | 'Pacific/Guam'
   | 'Pacific/Noumea'
   | 'Pacific/Auckland'
-  | 'Pacific/Fiji'
+  | 'Pacific/Fiji';
 
 export interface Config {
   auth: {
-    users: UserAuthOperations
-  }
-  blocks: {}
+    users: UserAuthOperations;
+  };
+  blocks: {};
   collections: {
-    users: User
-    pages: Page
-    posts: Post
-    'user-preferences': UserPreference
-    vehicles: Vehicle
-    'weight-bills': WeightBill
-    'weight-bill-receipts': WeightBillReceipt
-    'session-uploads': SessionUpload
-    'api-connections': ApiConnection
-    'user-roles': UserRole
-    media: Media
-    accounts: Account
-    sessions: Session
-    'payload-kv': PayloadKv
-    'payload-locked-documents': PayloadLockedDocument
-    'payload-preferences': PayloadPreference
-    'payload-migrations': PayloadMigration
-  }
-  collectionsJoins: {}
+    users: User;
+    pages: Page;
+    posts: Post;
+    'user-preferences': UserPreference;
+    vehicles: Vehicle;
+    'weight-bills': WeightBill;
+    'weight-bill-receipts': WeightBillReceipt;
+    'session-uploads': SessionUpload;
+    'api-connections': ApiConnection;
+    'user-roles': UserRole;
+    media: Media;
+    accounts: Account;
+    sessions: Session;
+    'payload-kv': PayloadKv;
+    'payload-locked-documents': PayloadLockedDocument;
+    'payload-preferences': PayloadPreference;
+    'payload-migrations': PayloadMigration;
+  };
+  collectionsJoins: {};
   collectionsSelect: {
-    users: UsersSelect<false> | UsersSelect<true>
-    pages: PagesSelect<false> | PagesSelect<true>
-    posts: PostsSelect<false> | PostsSelect<true>
-    'user-preferences': UserPreferencesSelect<false> | UserPreferencesSelect<true>
-    vehicles: VehiclesSelect<false> | VehiclesSelect<true>
-    'weight-bills': WeightBillsSelect<false> | WeightBillsSelect<true>
-    'weight-bill-receipts': WeightBillReceiptsSelect<false> | WeightBillReceiptsSelect<true>
-    'session-uploads': SessionUploadsSelect<false> | SessionUploadsSelect<true>
-    'api-connections': ApiConnectionsSelect<false> | ApiConnectionsSelect<true>
-    'user-roles': UserRolesSelect<false> | UserRolesSelect<true>
-    media: MediaSelect<false> | MediaSelect<true>
-    accounts: AccountsSelect<false> | AccountsSelect<true>
-    sessions: SessionsSelect<false> | SessionsSelect<true>
-    'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>
-    'payload-locked-documents':
-      | PayloadLockedDocumentsSelect<false>
-      | PayloadLockedDocumentsSelect<true>
-    'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>
-    'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>
-  }
+    users: UsersSelect<false> | UsersSelect<true>;
+    pages: PagesSelect<false> | PagesSelect<true>;
+    posts: PostsSelect<false> | PostsSelect<true>;
+    'user-preferences': UserPreferencesSelect<false> | UserPreferencesSelect<true>;
+    vehicles: VehiclesSelect<false> | VehiclesSelect<true>;
+    'weight-bills': WeightBillsSelect<false> | WeightBillsSelect<true>;
+    'weight-bill-receipts': WeightBillReceiptsSelect<false> | WeightBillReceiptsSelect<true>;
+    'session-uploads': SessionUploadsSelect<false> | SessionUploadsSelect<true>;
+    'api-connections': ApiConnectionsSelect<false> | ApiConnectionsSelect<true>;
+    'user-roles': UserRolesSelect<false> | UserRolesSelect<true>;
+    media: MediaSelect<false> | MediaSelect<true>;
+    accounts: AccountsSelect<false> | AccountsSelect<true>;
+    sessions: SessionsSelect<false> | SessionsSelect<true>;
+    'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
+    'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
+    'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
+    'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
+  };
   db: {
-    defaultIDType: string
-  }
-  fallbackLocale: null
+    defaultIDType: string;
+  };
+  fallbackLocale: null;
   globals: {
-    'dashboard-customization': DashboardCustomization
-  }
+    'dashboard-customization': DashboardCustomization;
+  };
   globalsSelect: {
-    'dashboard-customization':
-      | DashboardCustomizationSelect<false>
-      | DashboardCustomizationSelect<true>
-  }
-  locale: null
+    'dashboard-customization': DashboardCustomizationSelect<false> | DashboardCustomizationSelect<true>;
+  };
+  locale: null;
   widgets: {
-    collections: CollectionsWidget
-  }
-  user: User
+    collections: CollectionsWidget;
+  };
+  user: User;
   jobs: {
-    tasks: unknown
-    workflows: unknown
-  }
+    tasks: unknown;
+    workflows: unknown;
+  };
 }
 export interface UserAuthOperations {
   forgotPassword: {
-    email: string
-    password: string
-  }
+    email: string;
+    password: string;
+  };
   login: {
-    email: string
-    password: string
-  }
+    email: string;
+    password: string;
+  };
   registerFirstUser: {
-    email: string
-    password: string
-  }
+    email: string;
+    password: string;
+  };
   unlock: {
-    email: string
-    password: string
-  }
+    email: string;
+    password: string;
+  };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users".
  */
 export interface User {
-  providers?: any
-  id: string
-  userRoles?: (string | UserRole)[] | null
-  name?: string | null
-  image?: string | null
-  isSystemAccount?: boolean | null
-  isEmailVerified?: boolean | null
-  isFresh?: boolean | null
-  updatedAt: string
-  createdAt: string
-  email: string
-  resetPasswordToken?: string | null
-  resetPasswordExpiration?: string | null
-  salt?: string | null
-  hash?: string | null
-  loginAttempts?: number | null
-  lockUntil?: string | null
+  id: string;
+  userRoles?: (string | UserRole)[] | null;
+  name?: string | null;
+  image?: string | null;
+  providers?: {
+    google?: {
+      id?: string | null;
+      email?: string | null;
+      linkedAt?: string | null;
+    };
+  };
+  isSystemAccount?: boolean | null;
+  isEmailVerified?: boolean | null;
+  isFresh?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+  email: string;
+  resetPasswordToken?: string | null;
+  resetPasswordExpiration?: string | null;
+  salt?: string | null;
+  hash?: string | null;
+  loginAttempts?: number | null;
+  lockUntil?: string | null;
   sessions?:
     | {
-        id: string
-        createdAt?: string | null
-        expiresAt: string
+        id: string;
+        createdAt?: string | null;
+        expiresAt: string;
       }[]
-    | null
-  password?: string | null
-  collection: 'users'
+    | null;
+  password?: string | null;
+  collection: 'users';
 }
 /**
  * User roles are used to control access to records in the system.
@@ -186,163 +188,170 @@ export interface User {
  * via the `definition` "user-roles".
  */
 export interface UserRole {
-  groupedPermissions?: any
-  id: string
-  createdBy?: (string | null) | User
-  updatedBy?: (string | null) | User
-  label: string
+  id: string;
+  createdBy?: (string | null) | User;
+  updatedBy?: (string | null) | User;
+  label: string;
   permissions?:
     | {
-        collectionSlug: string
-        access: ('read' | 'create' | 'update' | 'delete')[]
-        id?: string | null
+        collectionSlug: string;
+        access: ('read' | 'create' | 'update' | 'delete')[];
+        id?: string | null;
       }[]
-    | null
+    | null;
+  groupedPermissions?:
+    | {
+        group: string;
+        collections?: string[] | null;
+        access: ('read' | 'create' | 'update' | 'delete')[];
+        id?: string | null;
+      }[]
+    | null;
   /**
    * This user is a system generated user and cannot be deleted.
    */
-  isSystemRole?: boolean | null
-  selectedFeatures?: string[] | null
-  updatedAt: string
-  createdAt: string
+  isSystemRole?: boolean | null;
+  selectedFeatures?: string[] | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "pages".
  */
 export interface Page {
-  id: string
-  allowPublicRead?: boolean | null
-  createdBy?: (string | null) | User
-  updatedBy?: (string | null) | User
-  title: string
-  slug?: string | null
-  slugLock?: boolean | null
-  parent?: (string | null) | Page
+  id: string;
+  allowPublicRead?: boolean | null;
+  createdBy?: (string | null) | User;
+  updatedBy?: (string | null) | User;
+  title: string;
+  slug?: string | null;
+  slugLock?: boolean | null;
+  parent?: (string | null) | Page;
   breadcrumbs?:
     | {
-        doc?: (string | null) | Page
-        url?: string | null
-        label?: string | null
-        id?: string | null
+        doc?: (string | null) | Page;
+        url?: string | null;
+        label?: string | null;
+        id?: string | null;
       }[]
-    | null
-  updatedAt: string
-  createdAt: string
-  _status?: ('draft' | 'published') | null
+    | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "posts".
  */
 export interface Post {
-  id: string
-  title: string
+  id: string;
+  title: string;
   content: {
     root: {
-      type: string
+      type: string;
       children: {
-        type: any
-        version: number
-        [k: string]: unknown
-      }[]
-      direction: ('ltr' | 'rtl') | null
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | ''
-      indent: number
-      version: number
-    }
-    [k: string]: unknown
-  }
-  slug?: string | null
-  slugLock?: boolean | null
-  createdBy?: (string | null) | User
-  updatedBy?: (string | null) | User
-  updatedAt: string
-  createdAt: string
-  _status?: ('draft' | 'published') | null
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  slug?: string | null;
+  slugLock?: boolean | null;
+  createdBy?: (string | null) | User;
+  updatedBy?: (string | null) | User;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "user-preferences".
  */
 export interface UserPreference {
-  id: string
-  userId: string | User
-  sidenavState?: ('expanded' | 'collapsed') | null
-  updatedAt: string
-  createdAt: string
+  id: string;
+  userId: string | User;
+  sidenavState?: ('expanded' | 'collapsed') | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "vehicles".
  */
 export interface Vehicle {
-  id: string
-  name: string
-  amount: number
-  updatedAt: string
-  createdAt: string
+  id: string;
+  name: string;
+  amount: number;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "weight-bills".
  */
 export interface WeightBill {
-  id: string
-  weightBillNumber?: number | null
-  date?: string | null
-  customerName?: string | null
-  vehicle?: (string | null) | Vehicle
-  amount?: number | null
-  paymentStatus?: ('PAID' | 'CANCELLED') | null
-  proofOfReceipt?: (string | null) | WeightBillReceipt
-  isVerified?: boolean | null
-  submittedBy?: (string | null) | User
-  verifiedBy?: (string | null) | User
-  createdBy?: (string | null) | User
-  updatedBy?: (string | null) | User
-  updatedAt: string
-  createdAt: string
+  id: string;
+  weightBillNumber?: number | null;
+  date?: string | null;
+  customerName?: string | null;
+  vehicle?: (string | null) | Vehicle;
+  amount?: number | null;
+  paymentStatus?: ('PAID' | 'CANCELLED') | null;
+  proofOfReceipt?: (string | null) | WeightBillReceipt;
+  isVerified?: boolean | null;
+  submittedBy?: (string | null) | User;
+  verifiedBy?: (string | null) | User;
+  createdBy?: (string | null) | User;
+  updatedBy?: (string | null) | User;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "weight-bill-receipts".
  */
 export interface WeightBillReceipt {
-  id: string
-  createdBy?: (string | null) | User
-  prefix?: string | null
-  updatedAt: string
-  createdAt: string
-  url?: string | null
-  thumbnailURL?: string | null
-  filename?: string | null
-  mimeType?: string | null
-  filesize?: number | null
-  width?: number | null
-  height?: number | null
-  focalX?: number | null
-  focalY?: number | null
+  id: string;
+  createdBy?: (string | null) | User;
+  prefix?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "session-uploads".
  */
 export interface SessionUpload {
-  id: string
-  userId: string | User
-  documentType: 'weight-bill'
+  id: string;
+  userId: string | User;
+  documentType: 'weight-bill';
   uploads?:
     | {
-        fileName?: string | null
-        media: string | WeightBillReceipt
-        savedStatus?: ('unsaved' | 'saved' | 'verified') | null
-        id?: string | null
+        fileName?: string | null;
+        media: string | WeightBillReceipt;
+        savedStatus?: ('unsaved' | 'saved' | 'verified') | null;
+        id?: string | null;
       }[]
-    | null
-  createdBy?: (string | null) | User
-  updatedAt: string
-  createdAt: string
+    | null;
+  createdBy?: (string | null) | User;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * Configure third-party API integrations used by system records.
@@ -351,487 +360,506 @@ export interface SessionUpload {
  * via the `definition` "api-connections".
  */
 export interface ApiConnection {
-  id: string
-  sourceType: 'weight-bills'
-  serviceType: 'google-sheets'
-  googleOAuthConnect?: string | null
-  googleAccountEmail?: string | null
-  googleOAuthConnected?: boolean | null
-  googleOAuthAccessToken?: string | null
-  googleOAuthRefreshToken?: string | null
-  googleOAuthExpiresAt?: string | null
+  id: string;
+  sourceType: 'weight-bills';
+  serviceType: 'google-sheets';
+  googleOAuthConnect?: string | null;
+  googleAccountEmail?: string | null;
+  googleOAuthConnected?: boolean | null;
+  googleOAuthAccessToken?: string | null;
+  googleOAuthRefreshToken?: string | null;
+  googleOAuthExpiresAt?: string | null;
   /**
    * The file location identifier from the Google Sheet URL.
    */
-  spreadsheetId?: string | null
-  sheetName?: string | null
-  isEnabled?: boolean | null
-  createdBy?: (string | null) | User
-  updatedBy?: (string | null) | User
-  updatedAt: string
-  createdAt: string
+  spreadsheetId?: string | null;
+  sheetName?: string | null;
+  isEnabled?: boolean | null;
+  createdBy?: (string | null) | User;
+  updatedBy?: (string | null) | User;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media".
  */
 export interface Media {
-  id: string
-  createdBy?: (string | null) | User
-  text?: string | null
-  prefix?: string | null
-  updatedAt: string
-  createdAt: string
-  url?: string | null
-  thumbnailURL?: string | null
-  filename?: string | null
-  mimeType?: string | null
-  filesize?: number | null
-  width?: number | null
-  height?: number | null
-  focalX?: number | null
-  focalY?: number | null
+  id: string;
+  createdBy?: (string | null) | User;
+  text?: string | null;
+  prefix?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "accounts".
  */
 export interface Account {
-  id: string
-  userId?: (string | null) | User
-  providerId: string
-  accessToken: string
-  idToken: string
-  scope?: string | null
-  accessTokenExpiresAt: string
-  createdAt: string
-  updatedAt: string
+  id: string;
+  userId?: (string | null) | User;
+  providerId: string;
+  accessToken: string;
+  idToken: string;
+  scope?: string | null;
+  accessTokenExpiresAt: string;
+  createdAt: string;
+  updatedAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "sessions".
  */
 export interface Session {
-  id: string
-  userId?: (string | null) | User
-  token: string
-  expiresAt: string
-  ipAddress?: string | null
-  userAgent?: string | null
-  updatedAt: string
-  createdAt: string
+  id: string;
+  userId?: (string | null) | User;
+  token: string;
+  expiresAt: string;
+  ipAddress?: string | null;
+  userAgent?: string | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
-  id: string
-  key: string
+  id: string;
+  key: string;
   data:
     | {
-        [k: string]: unknown
+        [k: string]: unknown;
       }
     | unknown[]
     | string
     | number
     | boolean
-    | null
+    | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
-  id: string
+  id: string;
   document?:
     | ({
-        relationTo: 'users'
-        value: string | User
+        relationTo: 'users';
+        value: string | User;
       } | null)
     | ({
-        relationTo: 'pages'
-        value: string | Page
+        relationTo: 'pages';
+        value: string | Page;
       } | null)
     | ({
-        relationTo: 'posts'
-        value: string | Post
+        relationTo: 'posts';
+        value: string | Post;
       } | null)
     | ({
-        relationTo: 'user-preferences'
-        value: string | UserPreference
+        relationTo: 'user-preferences';
+        value: string | UserPreference;
       } | null)
     | ({
-        relationTo: 'vehicles'
-        value: string | Vehicle
+        relationTo: 'vehicles';
+        value: string | Vehicle;
       } | null)
     | ({
-        relationTo: 'weight-bills'
-        value: string | WeightBill
+        relationTo: 'weight-bills';
+        value: string | WeightBill;
       } | null)
     | ({
-        relationTo: 'weight-bill-receipts'
-        value: string | WeightBillReceipt
+        relationTo: 'weight-bill-receipts';
+        value: string | WeightBillReceipt;
       } | null)
     | ({
-        relationTo: 'session-uploads'
-        value: string | SessionUpload
+        relationTo: 'session-uploads';
+        value: string | SessionUpload;
       } | null)
     | ({
-        relationTo: 'api-connections'
-        value: string | ApiConnection
+        relationTo: 'api-connections';
+        value: string | ApiConnection;
       } | null)
     | ({
-        relationTo: 'user-roles'
-        value: string | UserRole
+        relationTo: 'user-roles';
+        value: string | UserRole;
       } | null)
     | ({
-        relationTo: 'media'
-        value: string | Media
+        relationTo: 'media';
+        value: string | Media;
       } | null)
     | ({
-        relationTo: 'accounts'
-        value: string | Account
+        relationTo: 'accounts';
+        value: string | Account;
       } | null)
     | ({
-        relationTo: 'sessions'
-        value: string | Session
-      } | null)
-  globalSlug?: string | null
+        relationTo: 'sessions';
+        value: string | Session;
+      } | null);
+  globalSlug?: string | null;
   user: {
-    relationTo: 'users'
-    value: string | User
-  }
-  updatedAt: string
-  createdAt: string
+    relationTo: 'users';
+    value: string | User;
+  };
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-preferences".
  */
 export interface PayloadPreference {
-  id: string
+  id: string;
   user: {
-    relationTo: 'users'
-    value: string | User
-  }
-  key?: string | null
+    relationTo: 'users';
+    value: string | User;
+  };
+  key?: string | null;
   value?:
     | {
-        [k: string]: unknown
+        [k: string]: unknown;
       }
     | unknown[]
     | string
     | number
     | boolean
-    | null
-  updatedAt: string
-  createdAt: string
+    | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-migrations".
  */
 export interface PayloadMigration {
-  id: string
-  name?: string | null
-  batch?: number | null
-  updatedAt: string
-  createdAt: string
+  id: string;
+  name?: string | null;
+  batch?: number | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
-  userRoles?: T
-  name?: T
-  image?: T
-  isSystemAccount?: T
-  isEmailVerified?: T
-  isFresh?: T
-  updatedAt?: T
-  createdAt?: T
-  email?: T
-  resetPasswordToken?: T
-  resetPasswordExpiration?: T
-  salt?: T
-  hash?: T
-  loginAttempts?: T
-  lockUntil?: T
+  userRoles?: T;
+  name?: T;
+  image?: T;
+  providers?:
+    | T
+    | {
+        google?:
+          | T
+          | {
+              id?: T;
+              email?: T;
+              linkedAt?: T;
+            };
+      };
+  isSystemAccount?: T;
+  isEmailVerified?: T;
+  isFresh?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  email?: T;
+  resetPasswordToken?: T;
+  resetPasswordExpiration?: T;
+  salt?: T;
+  hash?: T;
+  loginAttempts?: T;
+  lockUntil?: T;
   sessions?:
     | T
     | {
-        id?: T
-        createdAt?: T
-        expiresAt?: T
-      }
+        id?: T;
+        createdAt?: T;
+        expiresAt?: T;
+      };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "pages_select".
  */
 export interface PagesSelect<T extends boolean = true> {
-  allowPublicRead?: T
-  createdBy?: T
-  updatedBy?: T
-  title?: T
-  slug?: T
-  slugLock?: T
-  parent?: T
+  allowPublicRead?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  title?: T;
+  slug?: T;
+  slugLock?: T;
+  parent?: T;
   breadcrumbs?:
     | T
     | {
-        doc?: T
-        url?: T
-        label?: T
-        id?: T
-      }
-  updatedAt?: T
-  createdAt?: T
-  _status?: T
+        doc?: T;
+        url?: T;
+        label?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "posts_select".
  */
 export interface PostsSelect<T extends boolean = true> {
-  title?: T
-  content?: T
-  slug?: T
-  slugLock?: T
-  createdBy?: T
-  updatedBy?: T
-  updatedAt?: T
-  createdAt?: T
-  _status?: T
+  title?: T;
+  content?: T;
+  slug?: T;
+  slugLock?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "user-preferences_select".
  */
 export interface UserPreferencesSelect<T extends boolean = true> {
-  userId?: T
-  sidenavState?: T
-  updatedAt?: T
-  createdAt?: T
+  userId?: T;
+  sidenavState?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "vehicles_select".
  */
 export interface VehiclesSelect<T extends boolean = true> {
-  name?: T
-  amount?: T
-  updatedAt?: T
-  createdAt?: T
+  name?: T;
+  amount?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "weight-bills_select".
  */
 export interface WeightBillsSelect<T extends boolean = true> {
-  weightBillNumber?: T
-  date?: T
-  customerName?: T
-  vehicle?: T
-  amount?: T
-  paymentStatus?: T
-  proofOfReceipt?: T
-  isVerified?: T
-  submittedBy?: T
-  verifiedBy?: T
-  createdBy?: T
-  updatedBy?: T
-  updatedAt?: T
-  createdAt?: T
+  weightBillNumber?: T;
+  date?: T;
+  customerName?: T;
+  vehicle?: T;
+  amount?: T;
+  paymentStatus?: T;
+  proofOfReceipt?: T;
+  isVerified?: T;
+  submittedBy?: T;
+  verifiedBy?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "weight-bill-receipts_select".
  */
 export interface WeightBillReceiptsSelect<T extends boolean = true> {
-  createdBy?: T
-  prefix?: T
-  updatedAt?: T
-  createdAt?: T
-  url?: T
-  thumbnailURL?: T
-  filename?: T
-  mimeType?: T
-  filesize?: T
-  width?: T
-  height?: T
-  focalX?: T
-  focalY?: T
+  createdBy?: T;
+  prefix?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "session-uploads_select".
  */
 export interface SessionUploadsSelect<T extends boolean = true> {
-  userId?: T
-  documentType?: T
+  userId?: T;
+  documentType?: T;
   uploads?:
     | T
     | {
-        fileName?: T
-        media?: T
-        savedStatus?: T
-        id?: T
-      }
-  createdBy?: T
-  updatedAt?: T
-  createdAt?: T
+        fileName?: T;
+        media?: T;
+        savedStatus?: T;
+        id?: T;
+      };
+  createdBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "api-connections_select".
  */
 export interface ApiConnectionsSelect<T extends boolean = true> {
-  sourceType?: T
-  serviceType?: T
-  googleOAuthConnect?: T
-  googleAccountEmail?: T
-  googleOAuthConnected?: T
-  googleOAuthAccessToken?: T
-  googleOAuthRefreshToken?: T
-  googleOAuthExpiresAt?: T
-  spreadsheetId?: T
-  sheetName?: T
-  isEnabled?: T
-  createdBy?: T
-  updatedBy?: T
-  updatedAt?: T
-  createdAt?: T
+  sourceType?: T;
+  serviceType?: T;
+  googleOAuthConnect?: T;
+  googleAccountEmail?: T;
+  googleOAuthConnected?: T;
+  googleOAuthAccessToken?: T;
+  googleOAuthRefreshToken?: T;
+  googleOAuthExpiresAt?: T;
+  spreadsheetId?: T;
+  sheetName?: T;
+  isEnabled?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "user-roles_select".
  */
 export interface UserRolesSelect<T extends boolean = true> {
-  createdBy?: T
-  updatedBy?: T
-  label?: T
+  createdBy?: T;
+  updatedBy?: T;
+  label?: T;
   permissions?:
     | T
     | {
-        collectionSlug?: T
-        access?: T
-        id?: T
-      }
-  isSystemRole?: T
-  selectedFeatures?: T
-  updatedAt?: T
-  createdAt?: T
+        collectionSlug?: T;
+        access?: T;
+        id?: T;
+      };
+  groupedPermissions?:
+    | T
+    | {
+        group?: T;
+        collections?: T;
+        access?: T;
+        id?: T;
+      };
+  isSystemRole?: T;
+  selectedFeatures?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media_select".
  */
 export interface MediaSelect<T extends boolean = true> {
-  createdBy?: T
-  text?: T
-  prefix?: T
-  updatedAt?: T
-  createdAt?: T
-  url?: T
-  thumbnailURL?: T
-  filename?: T
-  mimeType?: T
-  filesize?: T
-  width?: T
-  height?: T
-  focalX?: T
-  focalY?: T
+  createdBy?: T;
+  text?: T;
+  prefix?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "accounts_select".
  */
 export interface AccountsSelect<T extends boolean = true> {
-  userId?: T
-  providerId?: T
-  accessToken?: T
-  idToken?: T
-  scope?: T
-  accessTokenExpiresAt?: T
-  createdAt?: T
-  updatedAt?: T
+  userId?: T;
+  providerId?: T;
+  accessToken?: T;
+  idToken?: T;
+  scope?: T;
+  accessTokenExpiresAt?: T;
+  createdAt?: T;
+  updatedAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "sessions_select".
  */
 export interface SessionsSelect<T extends boolean = true> {
-  userId?: T
-  token?: T
-  expiresAt?: T
-  ipAddress?: T
-  userAgent?: T
-  updatedAt?: T
-  createdAt?: T
+  userId?: T;
+  token?: T;
+  expiresAt?: T;
+  ipAddress?: T;
+  userAgent?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv_select".
  */
 export interface PayloadKvSelect<T extends boolean = true> {
-  key?: T
-  data?: T
+  key?: T;
+  data?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents_select".
  */
 export interface PayloadLockedDocumentsSelect<T extends boolean = true> {
-  document?: T
-  globalSlug?: T
-  user?: T
-  updatedAt?: T
-  createdAt?: T
+  document?: T;
+  globalSlug?: T;
+  user?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-preferences_select".
  */
 export interface PayloadPreferencesSelect<T extends boolean = true> {
-  user?: T
-  key?: T
-  value?: T
-  updatedAt?: T
-  createdAt?: T
+  user?: T;
+  key?: T;
+  value?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-migrations_select".
  */
 export interface PayloadMigrationsSelect<T extends boolean = true> {
-  name?: T
-  batch?: T
-  updatedAt?: T
-  createdAt?: T
+  name?: T;
+  batch?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "dashboard-customization".
  */
 export interface DashboardCustomization {
-  id: string
+  id: string;
   dashboard?: {
     logo?: {
-      fullSize?: (string | null) | Media
-      icon?: (string | null) | Media
-    }
-  }
+      fullSize?: (string | null) | Media;
+      icon?: (string | null) | Media;
+    };
+  };
   website?: {
     /**
      * This functionality is under development
      */
-    font?: string | null
-  }
-  updatedAt?: string | null
-  createdAt?: string | null
+    font?: string | null;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -844,18 +872,18 @@ export interface DashboardCustomizationSelect<T extends boolean = true> {
         logo?:
           | T
           | {
-              fullSize?: T
-              icon?: T
-            }
-      }
+              fullSize?: T;
+              icon?: T;
+            };
+      };
   website?:
     | T
     | {
-        font?: T
-      }
-  updatedAt?: T
-  createdAt?: T
-  globalType?: T
+        font?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -863,17 +891,18 @@ export interface DashboardCustomizationSelect<T extends boolean = true> {
  */
 export interface CollectionsWidget {
   data?: {
-    [k: string]: unknown
-  }
-  width: 'full'
+    [k: string]: unknown;
+  };
+  width: 'full';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "auth".
  */
 export interface Auth {
-  [k: string]: unknown
+  [k: string]: unknown;
 }
+
 
 declare module 'payload' {
   export interface GeneratedTypes extends Config {}
