@@ -34,6 +34,20 @@ jobs:
           ${{ secrets.BUILD_ENV_FILE }}
           EOF
 
+      - name: Get runner public IP
+        id: get_gh_runner_ip
+        shell: bash
+        run: |
+          echo "ip_address=$(curl -s https://checkip.amazonaws.com)" >> "$GITHUB_OUTPUT"
+
+      - name: Setup MongoDB Atlas CLI
+        uses: mongodb/atlas-github-action@v0.2.2
+
+      - name: Add runner IP to MongoDB Atlas access list
+        shell: bash
+        run: |
+          atlas accessLists create "${{ steps.get_gh_runner_ip.outputs.ip_address }}" --type ipAddress --projectId "${{ secrets.MONGODB_ATLAS_PROJECT_ID }}" --comment "Temporary access for GitHub Actions"
+
       - name: Migrate & Build
         run: pnpm run ci
 
@@ -73,3 +87,11 @@ jobs:
             pnpm payload migrate
             pm2 restart document-fi || pm2 start pnpm --name document-fi -- start
             pm2 save
+
+      - name: Remove runner IP from MongoDB Atlas access list
+        if: always()
+        shell: bash
+        run: |
+          if [ -n "${{ steps.get_gh_runner_ip.outputs.ip_address }}" ]; then
+            atlas accessLists delete "${{ steps.get_gh_runner_ip.outputs.ip_address }}" --projectId "${{ secrets.MONGODB_ATLAS_PROJECT_ID }}" --force
+          fi
