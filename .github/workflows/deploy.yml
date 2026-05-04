@@ -34,8 +34,8 @@ jobs:
           ${{ secrets.BUILD_ENV_FILE }}
           EOF
 
-      - name: Build
-        run: pnpm build
+      - name: Migrate & Build
+        run: pnpm ci
 
       - name: Copy build artifacts to droplet
         uses: appleboy/scp-action@v0.1.7
