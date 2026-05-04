@@ -9,6 +9,12 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    env:
+      MONGODB_ATLAS_PROJECT_ID: ${{ secrets.MONGODB_ATLAS_PROJECT_ID }}
+      MONGODB_ATLAS_PUBLIC_API_KEY: ${{ secrets.MONGODB_ATLAS_PUBLIC_API_KEY }}
+      MONGODB_ATLAS_PRIVATE_API_KEY: ${{ secrets.MONGODB_ATLAS_PRIVATE_API_KEY }}
+      MONGODB_ATLAS_CLIENT_ID: ${{ secrets.MONGODB_ATLAS_CLIENT_ID }}
+      MONGODB_ATLAS_CLIENT_SECRET: ${{ secrets.MONGODB_ATLAS_CLIENT_SECRET }}
 
     steps:
       - name: Checkout
@@ -43,10 +49,16 @@ jobs:
       - name: Setup MongoDB Atlas CLI
         uses: mongodb/atlas-github-action@v0.2.2
 
+      - name: Verify Atlas authentication
+        shell: bash
+        run: |
+          atlas config set silence_storage_warning true
+          atlas auth whoami
+
       - name: Add runner IP to MongoDB Atlas access list
         shell: bash
         run: |
-          atlas accessLists create "${{ steps.get_gh_runner_ip.outputs.ip_address }}" --type ipAddress --projectId "${{ secrets.MONGODB_ATLAS_PROJECT_ID }}" --comment "Temporary access for GitHub Actions"
+          atlas accessLists create "${{ steps.get_gh_runner_ip.outputs.ip_address }}" --type ipAddress --projectId "$MONGODB_ATLAS_PROJECT_ID" --comment "Temporary access for GitHub Actions"
 
       - name: Migrate & Build
         run: pnpm run ci
@@ -93,5 +105,5 @@ jobs:
         shell: bash
         run: |
           if [ -n "${{ steps.get_gh_runner_ip.outputs.ip_address }}" ]; then
-            atlas accessLists delete "${{ steps.get_gh_runner_ip.outputs.ip_address }}" --projectId "${{ secrets.MONGODB_ATLAS_PROJECT_ID }}" --force
+            atlas accessLists delete "${{ steps.get_gh_runner_ip.outputs.ip_address }}" --projectId "$MONGODB_ATLAS_PROJECT_ID" --force
           fi
