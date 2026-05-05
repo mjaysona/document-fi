@@ -6,14 +6,17 @@ import {
   ArrowLeftToLine,
   ArrowRightFromLine,
   ChevronDown,
+  ChevronRight,
+  ChevronUp,
   FileText,
   LayoutDashboard,
   LogOut,
   PlusCircle,
   Settings,
+  Weight,
 } from 'lucide-react'
-import { useRouter, useSelectedLayoutSegment } from 'next/navigation'
-import { useState } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 type NavbarProps = {
   isExpanded: boolean
@@ -23,8 +26,45 @@ type NavbarProps = {
 
 export const Navbar = ({ isExpanded, toggleExpandCollapse, mobileBreakpoint }: NavbarProps) => {
   const [isSigningOut, setIsSigningOut] = useState<Boolean>(false)
+  const [recordsOpened, setRecordsOpened] = useState(true)
   const router = useRouter()
-  const activePath = useSelectedLayoutSegment()
+  const pathname = usePathname()
+
+  const isRecordsActive = pathname.startsWith('/app/records')
+  const isWeightBillsActive = pathname.startsWith('/app/records/weight-bills')
+  const isQuotationsActive = pathname.startsWith('/app/records/quotations')
+
+  useEffect(() => {
+    if (isRecordsActive) setRecordsOpened(true)
+  }, [isRecordsActive])
+
+  const navItems = [
+    {
+      id: 'records',
+      label: 'Records',
+      icon: LayoutDashboard,
+      path: '/app/records',
+      active: isRecordsActive && !isWeightBillsActive && !isQuotationsActive,
+      opened: recordsOpened,
+      children: [
+        {
+          id: 'weight-bills',
+          label: 'Weight Bills',
+          icon: Weight,
+          path: '/app/records/weight-bills',
+          active: isWeightBillsActive,
+        },
+        {
+          id: 'quotations',
+          label: 'Quotations',
+          icon: FileText,
+          path: '/app/records/quotations',
+          active: isQuotationsActive,
+        },
+      ],
+    },
+  ]
+
   const logout = async () => {
     await signOut({
       fetchOptions: {
@@ -37,16 +77,6 @@ export const Navbar = ({ isExpanded, toggleExpandCollapse, mobileBreakpoint }: N
       },
     })
   }
-  const navItems = [
-    {
-      id: 'records',
-      label: 'Records',
-      icon: LayoutDashboard,
-      path: '/app/records',
-      active: activePath === 'records',
-    },
-  ]
-
   return (
     <AppShell.Navbar p="xs">
       <Stack
@@ -99,7 +129,7 @@ export const Navbar = ({ isExpanded, toggleExpandCollapse, mobileBreakpoint }: N
             )}
           </Flex>
           <Flex direction="column">
-            {navItems.map(({ id, label, path, active, icon: Icon }) => (
+            {navItems.map(({ id, label, path, active, icon: Icon, children, opened }) => (
               <Tooltip
                 key={id}
                 arrowOffset={30}
@@ -117,10 +147,46 @@ export const Navbar = ({ isExpanded, toggleExpandCollapse, mobileBreakpoint }: N
                   active={active}
                   label={isExpanded ? label : undefined}
                   leftSection={<Icon size={16} />}
-                  onClick={() => router.push(path)}
+                  rightSection={
+                    isExpanded && children?.length ? (
+                      <ChevronUp
+                        size={16}
+                        style={{
+                          transform: opened ? 'rotate(90deg)' : 'rotate(0deg)',
+                          transition: 'transform 150ms ease',
+                        }}
+                      />
+                    ) : undefined
+                  }
                   variant="subtle"
                   h={40}
-                />
+                  childrenOffset={20}
+                  opened={isExpanded ? opened : undefined}
+                  onClick={() => {
+                    if (!isExpanded) {
+                      router.push(path)
+                      return
+                    }
+
+                    if (id === 'records' && children?.length) {
+                      setRecordsOpened((prev) => !prev)
+                      return
+                    }
+
+                    router.push(path)
+                  }}
+                >
+                  {children?.map((child) => (
+                    <NavLink
+                      key={child.id}
+                      label={child.label}
+                      leftSection={child.icon ? <child.icon size={14} /> : undefined}
+                      active={child.active}
+                      variant="subtle"
+                      onClick={() => router.push(child.path)}
+                    />
+                  ))}
+                </NavLink>
               </Tooltip>
             ))}
           </Flex>
