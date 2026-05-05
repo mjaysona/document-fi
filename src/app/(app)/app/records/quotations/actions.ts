@@ -10,7 +10,7 @@ export type EquipmentOption = {
   name: string
   description?: string
   unitPrice: number
-  images?: string[]
+  images?: { id: string; url: string }[]
 }
 
 export type CreateQuoteItemInput = {
@@ -72,12 +72,15 @@ export async function getEquipmentOptions(): Promise<{
         description: item.description ? String(item.description) : undefined,
         unitPrice: typeof item.unitPrice === 'number' ? item.unitPrice : 0,
         images: Array.isArray(item.images)
-          ? item.images
+          ? (item.images as any[])
               .map((img: any) => {
                 if (!img) return null
-                return typeof img === 'string' ? img : String(img.id)
+                const id = typeof img === 'string' ? img : String(img.id)
+                const url = typeof img === 'object' && img.url ? String(img.url) : ''
+                if (!id || !url) return null
+                return { id, url }
               })
-              .filter(Boolean)
+              .filter(Boolean as unknown as (v: any) => v is { id: string; url: string })
           : [],
       })),
     }

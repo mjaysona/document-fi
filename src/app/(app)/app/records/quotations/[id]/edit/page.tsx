@@ -34,7 +34,7 @@ type QuoteFormItem = {
   description: string
   unitPrice: number
   quantity: number
-  images?: string[]
+  images?: { id: string; url: string }[]
 }
 
 type Feedback = { type: 'success' | 'error'; message: string }
@@ -102,7 +102,7 @@ export default function EditQuotePage() {
             description: item.description ?? '',
             unitPrice: item.unitPrice,
             quantity: item.quantity,
-            images: item.images?.map((img) => img.id) ?? [],
+            images: item.images ?? [],
           })),
         )
       } catch {
@@ -199,7 +199,7 @@ export default function EditQuotePage() {
           description: item.description || undefined,
           unitPrice: item.unitPrice,
           quantity: item.quantity,
-          images: item.images,
+          images: item.images?.map((img) => img.id),
         })),
       })
 
@@ -441,7 +441,7 @@ export default function EditQuotePage() {
                 })
                 return (
                   <Group key={item._key} gap="xs" wrap="nowrap" align="flex-start" px={4}>
-                    <Stack gap={2} style={{ flex: 1, paddingTop: 4 }}>
+                    <Stack gap={4} style={{ flex: 1, paddingTop: 4 }}>
                       <Text size="sm" fw={500}>
                         {item.name}
                       </Text>
@@ -449,6 +449,24 @@ export default function EditQuotePage() {
                         <Text size="xs" c="dimmed">
                           {item.description}
                         </Text>
+                      )}
+                      {item.images && item.images.length > 0 && (
+                        <Group gap={4} mt={2}>
+                          {item.images.map((img) => (
+                            <img
+                              key={img.id}
+                              src={img.url}
+                              alt=""
+                              style={{
+                                width: 72,
+                                height: 72,
+                                objectFit: 'cover',
+                                borderRadius: 4,
+                                border: '1px solid var(--mantine-color-default-border)',
+                              }}
+                            />
+                          ))}
+                        </Group>
                       )}
                     </Stack>
 
