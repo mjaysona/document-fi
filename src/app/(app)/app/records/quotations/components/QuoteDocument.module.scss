@@ -1,0 +1,159 @@
+.document {
+  background: #fff;
+  color: #111;
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: 8px;
+  padding: 24px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.headerLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.logo {
+  max-height: 60px;
+  max-width: 180px;
+  object-fit: contain;
+  object-position: left ;
+  display: block;
+}
+
+.title {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+.meta {
+  margin: 0;
+  color: #5c5f66;
+  font-size: 14px;
+}
+
+.clientBlock {
+  margin-bottom: 16px;
+}
+
+.clientLabel {
+  margin: 0 0 6px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: #5c5f66;
+  text-transform: uppercase;
+}
+
+.clientValue {
+  margin: 0;
+  font-size: 14px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.table thead th {
+  text-align: left;
+  font-size: 12px;
+  color: #5c5f66;
+  border-bottom: 1px solid #d9d9d9;
+  padding: 8px;
+}
+
+.table tbody td {
+  vertical-align: top;
+  border-bottom: 1px solid #ececec;
+  padding: 10px 8px;
+  font-size: 14px;
+}
+
+.cellRight {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.itemName {
+  margin: 0;
+  font-weight: 600;
+}
+
+.itemDescription {
+  margin: 4px 0 0;
+  color: #5c5f66;
+  font-size: 13px;
+}
+
+.thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.thumb {
+  width: 88px;
+  height: 88px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid #e2e2e2;
+  display: block;
+}
+
+.summary {
+  margin-top: 14px;
+  margin-left: auto;
+  width: min(320px, 100%);
+}
+
+.summaryRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  font-size: 14px;
+}
+
+.summaryTotal {
+  font-weight: 700;
+  border-top: 1px solid #d9d9d9;
+  margin-top: 2px;
+  padding-top: 8px;
+}
+
+@media print {
+  .document {
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+  }
+
+  .table thead {
+    display: table-header-group;
+  }
+
+  .table tfoot {
+    display: table-footer-group;
+  }
+
+  .table tr {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .thumb {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}

@@ -381,6 +381,8 @@ export interface Quote {
   name: string;
   clientName?: string | null;
   clientEmail?: string | null;
+  date?: string | null;
+  logo?: (string | null) | Media;
   items?:
     | {
         equipmentId?: (string | null) | Equipment;
@@ -396,6 +398,27 @@ export interface Quote {
   updatedBy?: (string | null) | User;
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media".
+ */
+export interface Media {
+  id: string;
+  createdBy?: (string | null) | User;
+  text?: string | null;
+  prefix?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -443,27 +466,6 @@ export interface ApiConnection {
   updatedBy?: (string | null) | User;
   updatedAt: string;
   createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "media".
- */
-export interface Media {
-  id: string;
-  createdBy?: (string | null) | User;
-  text?: string | null;
-  prefix?: string | null;
-  updatedAt: string;
-  createdAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -781,6 +783,8 @@ export interface QuotesSelect<T extends boolean = true> {
   name?: T;
   clientName?: T;
   clientEmail?: T;
+  date?: T;
+  logo?: T;
   items?:
     | T
     | {

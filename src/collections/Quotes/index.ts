@@ -41,15 +41,6 @@ const quoteItemFields: Field[] = [
     type: 'relationship',
     relationTo: 'equipment-media',
     hasMany: true,
-    filterOptions: ({ siblingData }) => {
-      const equipmentId = (siblingData as Record<string, unknown>)?.equipmentId
-      if (!equipmentId) return false
-      return {
-        equipment: {
-          equals: equipmentId,
-        },
-      }
-    },
   },
 ]
 
@@ -85,6 +76,23 @@ const Quotes: CollectionConfig = {
       name: 'clientEmail',
       label: 'Client Email',
       type: 'email',
+    },
+    {
+      name: 'date',
+      label: 'Date',
+      type: 'date',
+      admin: {
+        date: {
+          pickerAppearance: 'dayOnly',
+          displayFormat: 'MMM d, yyyy',
+        },
+      },
+    },
+    {
+      name: 'logo',
+      label: 'Logo',
+      type: 'upload',
+      relationTo: 'media',
     },
     {
       name: 'items',

@@ -1,0 +1,58 @@
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.toolbarRight {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.printArea {
+  width: 100%;
+}
+
+@media print {
+  :global(html),
+  :global(body) {
+    margin: 0;
+    padding: 0;
+    background: #fff;
+  }
+
+  :global(body *) {
+    visibility: hidden !important;
+  }
+
+  .printArea,
+  .printArea * {
+    visibility: visible !important;
+  }
+
+  .printArea {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+  }
+
+  .toolbar {
+    display: none;
+  }
+
+  .wrapper {
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+
+  @page {
+    size: A4;
+    margin: 16mm;
+  }
+}
