@@ -28,7 +28,7 @@ type QuoteFormItem = {
   description: string
   unitPrice: number
   quantity: number
-  images?: string[]
+  images?: { id: string; url: string }[]
 }
 
 type Feedback = { type: 'success' | 'error'; message: string }
@@ -137,7 +137,7 @@ export default function NewQuotePage() {
           description: item.description || undefined,
           unitPrice: item.unitPrice,
           quantity: item.quantity,
-          images: item.images,
+          images: item.images?.map((img) => img.id),
         })),
       })
 
