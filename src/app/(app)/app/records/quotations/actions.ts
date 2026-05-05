@@ -10,6 +10,7 @@ export type EquipmentOption = {
   name: string
   description?: string
   unitPrice: number
+  images?: string[]
 }
 
 export type CreateQuoteItemInput = {
@@ -18,12 +19,15 @@ export type CreateQuoteItemInput = {
   description?: string
   unitPrice: number
   quantity: number
+  images?: string[]
 }
 
 export type CreateQuoteInput = {
   name: string
   clientName?: string
   clientEmail?: string
+  date?: string
+  logoId?: string
   items: CreateQuoteItemInput[]
 }
 
@@ -33,6 +37,7 @@ export type QuoteDetailItem = {
   description?: string
   unitPrice: number
   quantity: number
+  images?: { id: string; url: string }[]
 }
 
 export type QuoteDetail = {
@@ -40,6 +45,9 @@ export type QuoteDetail = {
   name: string
   clientName?: string
   clientEmail?: string
+  date?: string
+  logoId?: string
+  logoUrl?: string
   items: QuoteDetailItem[]
 }
 
@@ -54,7 +62,7 @@ export async function getEquipmentOptions(): Promise<{
       collection: 'equipment',
       sort: 'name',
       limit: 1000,
-      depth: 0,
+      depth: 1,
     })
     return {
       success: true,
@@ -63,6 +71,14 @@ export async function getEquipmentOptions(): Promise<{
         name: String(item.name || ''),
         description: item.description ? String(item.description) : undefined,
         unitPrice: typeof item.unitPrice === 'number' ? item.unitPrice : 0,
+        images: Array.isArray(item.images)
+          ? item.images
+              .map((img: any) => {
+                if (!img) return null
+                return typeof img === 'string' ? img : String(img.id)
+              })
+              .filter(Boolean)
+          : [],
       })),
     }
   } catch (error) {
@@ -159,12 +175,15 @@ export async function createQuote(input: CreateQuoteInput): Promise<{
         name: input.name,
         clientName: input.clientName ?? null,
         clientEmail: input.clientEmail ?? null,
+        date: input.date ?? null,
+        logo: input.logoId ?? null,
         items: input.items.map((item) => ({
           equipmentId: item.equipmentId ?? null,
           name: item.name,
           description: item.description ?? null,
           unitPrice: item.unitPrice,
           quantity: item.quantity,
+          images: item.images ?? [],
         })),
       },
       depth: 0,
@@ -192,10 +211,106 @@ export async function getQuoteById(id: string): Promise<{
     const doc = await payload.findByID({
       collection: 'quotes',
       id,
-      depth: 0,
+      depth: 1,
     })
 
     const items = Array.isArray((doc as any).items) ? (doc as any).items : []
+    const rawLogo = (doc as any).logo
+
+    const imageIdSet = new Set<string>()
+
+    const collectImageIds = (images: any) => {
+      if (!Array.isArray(images)) return
+      images.forEach((img) => {
+        if (!img) return
+        if (typeof img === 'string') {
+          imageIdSet.add(img)
+          return
+        }
+        if (img.id) imageIdSet.add(String(img.id))
+      })
+    }
+
+    items.forEach((item: any) => {
+      collectImageIds(item.images)
+      if (item.equipmentId && typeof item.equipmentId === 'object') {
+        collectImageIds(item.equipmentId.images)
+      }
+    })
+
+    const imageIds = Array.from(imageIdSet)
+    const mediaUrlById = new Map<string, string>()
+
+    if (imageIds.length > 0) {
+      const mediaResult = await payload.find({
+        collection: 'equipment-media',
+        where: {
+          id: {
+            in: imageIds,
+          },
+        },
+        limit: imageIds.length,
+        depth: 0,
+      })
+
+      ;(mediaResult.docs as any[]).forEach((mediaDoc) => {
+        const mediaId = String(mediaDoc.id)
+        const mediaUrl = mediaDoc.url ? String(mediaDoc.url) : ''
+        if (mediaUrl) mediaUrlById.set(mediaId, mediaUrl)
+      })
+    }
+
+    const resolveImages = (images: any): Array<{ id: string; url: string }> => {
+      if (!Array.isArray(images)) return []
+
+      return images
+        .map((img) => {
+          if (!img) return null
+
+          if (typeof img === 'string') {
+            const url = mediaUrlById.get(img)
+            if (!url) return null
+            return { id: img, url }
+          }
+
+          const imageId = img.id ? String(img.id) : ''
+          const imageUrl = img.url
+            ? String(img.url)
+            : imageId
+              ? mediaUrlById.get(imageId) || ''
+              : ''
+
+          if (!imageId || !imageUrl) return null
+          return { id: imageId, url: imageUrl }
+        })
+        .filter(Boolean) as Array<{ id: string; url: string }>
+    }
+
+    let logoId: string | undefined
+    let logoUrl: string | undefined
+    if (rawLogo) {
+      if (typeof rawLogo === 'string') {
+        logoId = rawLogo
+        try {
+          const logoDoc = await payload.findByID({ collection: 'media', id: rawLogo, depth: 0 })
+          logoUrl = (logoDoc as any)?.url ? String((logoDoc as any).url) : undefined
+        } catch {
+          logoUrl = undefined
+        }
+      } else {
+        logoId = String(rawLogo.id)
+        if (rawLogo.url) {
+          logoUrl = String(rawLogo.url)
+        } else {
+          try {
+            const logoDoc = await payload.findByID({ collection: 'media', id: logoId, depth: 0 })
+            logoUrl = (logoDoc as any)?.url ? String((logoDoc as any).url) : undefined
+          } catch {
+            logoUrl = undefined
+          }
+        }
+      }
+    }
 
     return {
       success: true,
@@ -204,16 +319,28 @@ export async function getQuoteById(id: string): Promise<{
         name: String((doc as any).name || ''),
         clientName: (doc as any).clientName ? String((doc as any).clientName) : undefined,
         clientEmail: (doc as any).clientEmail ? String((doc as any).clientEmail) : undefined,
+        date: (doc as any).date ? String((doc as any).date) : undefined,
+        logoId,
+        logoUrl,
         items: items.map((item: any) => ({
-          equipmentId: item.equipmentId
-            ? typeof item.equipmentId === 'string'
-              ? item.equipmentId
-              : String(item.equipmentId.id)
-            : undefined,
+          equipmentId:
+            item.equipmentId && typeof item.equipmentId === 'object'
+              ? String(item.equipmentId.id)
+              : item.equipmentId
+                ? String(item.equipmentId)
+                : undefined,
           name: String(item.name || ''),
           description: item.description ? String(item.description) : undefined,
           unitPrice: typeof item.unitPrice === 'number' ? item.unitPrice : 0,
           quantity: typeof item.quantity === 'number' ? item.quantity : 1,
+          images:
+            resolveImages(item.images).length > 0
+              ? resolveImages(item.images)
+              : resolveImages(
+                  item.equipmentId && typeof item.equipmentId === 'object'
+                    ? item.equipmentId.images
+                    : undefined,
+                ),
         })),
       },
     }
@@ -242,12 +369,15 @@ export async function updateQuote(
         name: input.name,
         clientName: input.clientName ?? null,
         clientEmail: input.clientEmail ?? null,
+        date: input.date ?? null,
+        logo: input.logoId ?? null,
         items: input.items.map((item) => ({
           equipmentId: item.equipmentId ?? null,
           name: item.name,
           description: item.description ?? null,
           unitPrice: item.unitPrice,
           quantity: item.quantity,
+          images: item.images ?? [],
         })),
       },
       depth: 0,
@@ -257,5 +387,44 @@ export async function updateQuote(
   } catch (error) {
     console.error('Failed to update quote:', error)
     return { success: false, error: 'Failed to update quote.' }
+  }
+}
+
+export async function uploadQuoteLogo(formData: FormData): Promise<{
+  success: boolean
+  id?: string
+  url?: string
+  error?: string
+}> {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() })
+    if (!session?.user?.id) {
+      return { success: false, error: 'Unauthorized' }
+    }
+
+    const file = formData.get('file') as File | null
+    if (!file) {
+      return { success: false, error: 'No file provided' }
+    }
+
+    const buffer = Buffer.from(await file.arrayBuffer())
+    const payload = await getPayload({ config })
+
+    const media = await payload.create({
+      collection: 'media',
+      data: {},
+      file: {
+        data: buffer,
+        name: file.name,
+        mimetype: file.type || 'image/jpeg',
+        size: buffer.length,
+      },
+    })
+
+    const url = (media as any).url ? String((media as any).url) : undefined
+    return { success: true, id: String(media.id), url }
+  } catch (error) {
+    console.error('Failed to upload logo:', error)
+    return { success: false, error: 'Failed to upload logo.' }
   }
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import {
   ActionIcon,
@@ -18,7 +18,13 @@ import {
 } from '@mantine/core'
 import { ArrowLeft, Trash2 } from 'lucide-react'
 import classes from '../../../page.module.scss'
-import { getEquipmentOptions, getQuoteById, updateQuote, type EquipmentOption } from '../../actions'
+import {
+  getEquipmentOptions,
+  getQuoteById,
+  updateQuote,
+  uploadQuoteLogo,
+  type EquipmentOption,
+} from '../../actions'
 import { calcLineTotal, calcQuoteSummary } from '@/lib/quoteCalculations'
 
 type QuoteFormItem = {
@@ -28,6 +34,7 @@ type QuoteFormItem = {
   description: string
   unitPrice: number
   quantity: number
+  images?: string[]
 }
 
 type Feedback = { type: 'success' | 'error'; message: string }
@@ -44,6 +51,7 @@ export default function EditQuotePage() {
   const [quoteName, setQuoteName] = useState('')
   const [clientName, setClientName] = useState('')
   const [clientEmail, setClientEmail] = useState('')
+  const [quoteDate, setQuoteDate] = useState('')
   const [items, setItems] = useState<QuoteFormItem[]>([])
   const [equipmentOptions, setEquipmentOptions] = useState<EquipmentOption[]>([])
   const [selectedEquipmentId, setSelectedEquipmentId] = useState<string | null>(null)
@@ -51,6 +59,10 @@ export default function EditQuotePage() {
   const [feedback, setFeedback] = useState<Feedback | null>(null)
   const [nameError, setNameError] = useState<string | null>(null)
   const [itemsError, setItemsError] = useState<string | null>(null)
+  const [logoId, setLogoId] = useState<string | undefined>(undefined)
+  const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | undefined>(undefined)
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false)
+  const logoInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const loadData = async () => {
@@ -79,6 +91,9 @@ export default function EditQuotePage() {
         setQuoteName(quote.name)
         setClientName(quote.clientName ?? '')
         setClientEmail(quote.clientEmail ?? '')
+        setQuoteDate(quote.date ? quote.date.split('T')[0] : '')
+        setLogoId(quote.logoId)
+        setLogoPreviewUrl(quote.logoUrl)
         setItems(
           quote.items.map((item, idx) => ({
             _key: `${item.equipmentId ?? 'item'}-${idx}`,
@@ -87,6 +102,7 @@ export default function EditQuotePage() {
             description: item.description ?? '',
             unitPrice: item.unitPrice,
             quantity: item.quantity,
+            images: item.images?.map((img) => img.id) ?? [],
           })),
         )
       } catch {
@@ -118,6 +134,7 @@ export default function EditQuotePage() {
         description: equip.description ?? '',
         unitPrice: equip.unitPrice,
         quantity: 1,
+        images: equip.images ?? [],
       },
     ])
     setItemsError(null)
@@ -146,7 +163,7 @@ export default function EditQuotePage() {
 
   const summary = calcQuoteSummary(items)
 
-  const handleSave = async () => {
+  const saveQuote = async () => {
     if (!quoteId) return
 
     setFeedback(null)
@@ -166,7 +183,7 @@ export default function EditQuotePage() {
       setItemsError(null)
     }
 
-    if (hasError) return
+    if (hasError) return false
 
     setIsSaving(true)
     try {
@@ -174,25 +191,40 @@ export default function EditQuotePage() {
         name: quoteName.trim(),
         clientName: clientName.trim() || undefined,
         clientEmail: clientEmail.trim() || undefined,
+        date: quoteDate || undefined,
+        logoId: logoId,
         items: items.map((item) => ({
           equipmentId: item.equipmentId,
           name: item.name,
           description: item.description || undefined,
           unitPrice: item.unitPrice,
           quantity: item.quantity,
+          images: item.images,
         })),
       })
 
       if (result.success) {
         setFeedback({ type: 'success', message: 'Quote updated.' })
+        return true
       } else {
         setFeedback({ type: 'error', message: result.error ?? 'Failed to update quote.' })
+        return false
       }
     } catch {
       setFeedback({ type: 'error', message: 'Failed to update quote.' })
+      return false
     } finally {
       setIsSaving(false)
     }
+  }
+
+  const handlePreview = async () => {
+    if (!quoteId) return
+
+    const saved = await saveQuote()
+    if (!saved) return
+
+    router.push(`/app/records/quotations/${quoteId}/preview`)
   }
 
   if (isInitialLoading) {
@@ -262,6 +294,78 @@ export default function EditQuotePage() {
                 disabled={isSaving}
               />
             </Group>
+            <TextInput
+              label="Date"
+              type="date"
+              value={quoteDate}
+              onChange={(e) => setQuoteDate(e.currentTarget.value)}
+              disabled={isSaving}
+              style={{ maxWidth: 200 }}
+            />
+          </Stack>
+        </Card>
+
+        <Card withBorder radius="md">
+          <Text fw={700} mb="md">
+            Logo
+          </Text>
+          <Stack gap="sm">
+            {logoPreviewUrl && (
+              <img
+                src={logoPreviewUrl}
+                alt="Logo preview"
+                style={{ maxHeight: 80, maxWidth: 200, objectFit: 'contain' }}
+              />
+            )}
+            <Group gap="xs" align="center">
+              <Button
+                variant="default"
+                size="sm"
+                loading={isUploadingLogo}
+                disabled={isSaving}
+                onClick={() => logoInputRef.current?.click()}
+              >
+                {logoPreviewUrl ? 'Change Logo' : 'Upload Logo'}
+              </Button>
+              {logoPreviewUrl && (
+                <Button
+                  variant="subtle"
+                  color="red"
+                  size="sm"
+                  disabled={isSaving || isUploadingLogo}
+                  onClick={() => {
+                    setLogoId(undefined)
+                    setLogoPreviewUrl(undefined)
+                  }}
+                >
+                  Remove
+                </Button>
+              )}
+            </Group>
+            <input
+              ref={logoInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={async (e) => {
+                const input = e.currentTarget
+                const file = input.files?.[0]
+                if (!file) return
+                setLogoPreviewUrl(URL.createObjectURL(file))
+                setIsUploadingLogo(true)
+                const fd = new FormData()
+                fd.append('file', file)
+                const result = await uploadQuoteLogo(fd)
+                if (result.success && result.id) {
+                  setLogoId(result.id)
+                  if (result.url) setLogoPreviewUrl(result.url)
+                } else {
+                  setFeedback({ type: 'error', message: result.error ?? 'Logo upload failed.' })
+                }
+                setIsUploadingLogo(false)
+                input.value = ''
+              }}
+            />
           </Stack>
         </Card>
 
@@ -424,13 +528,13 @@ export default function EditQuotePage() {
 
       <Card className={classes['footer--fixed']} withBorder>
         <div className={classes.footer__actions}>
-          <Button variant="default" disabled title="Available in preview phase">
+          <Button variant="default" onClick={handlePreview} disabled={!quoteId || isSaving}>
             Preview
           </Button>
           <Button variant="default" disabled title="Available in share phase">
             Share
           </Button>
-          <Button onClick={handleSave} loading={isSaving}>
+          <Button onClick={saveQuote} loading={isSaving}>
             Save Changes
           </Button>
         </div>

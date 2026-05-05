@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   ActionIcon,
@@ -18,7 +18,7 @@ import {
 } from '@mantine/core'
 import { ArrowLeft, Trash2 } from 'lucide-react'
 import classes from '../../page.module.scss'
-import { createQuote, getEquipmentOptions, type EquipmentOption } from '../actions'
+import { createQuote, getEquipmentOptions, uploadQuoteLogo, type EquipmentOption } from '../actions'
 import { calcLineTotal, calcQuoteSummary } from '@/lib/quoteCalculations'
 
 type QuoteFormItem = {
@@ -28,6 +28,7 @@ type QuoteFormItem = {
   description: string
   unitPrice: number
   quantity: number
+  images?: string[]
 }
 
 type Feedback = { type: 'success' | 'error'; message: string }
@@ -41,7 +42,12 @@ export default function NewQuotePage() {
   const [quoteName, setQuoteName] = useState('')
   const [clientName, setClientName] = useState('')
   const [clientEmail, setClientEmail] = useState('')
+  const [quoteDate, setQuoteDate] = useState('')
   const [items, setItems] = useState<QuoteFormItem[]>([])
+  const [logoId, setLogoId] = useState<string | undefined>(undefined)
+  const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | undefined>(undefined)
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false)
+  const logoInputRef = useRef<HTMLInputElement>(null)
   const [equipmentOptions, setEquipmentOptions] = useState<EquipmentOption[]>([])
   const [selectedEquipmentId, setSelectedEquipmentId] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
@@ -70,6 +76,7 @@ export default function NewQuotePage() {
         description: equip.description ?? '',
         unitPrice: equip.unitPrice,
         quantity: 1,
+        images: equip.images ?? [],
       },
     ])
     setItemsError(null)
@@ -89,7 +96,9 @@ export default function NewQuotePage() {
     if (!Number.isFinite(numValue)) return
     const safeValue =
       field === 'quantity' ? Math.max(1, Math.floor(numValue)) : Math.max(0, numValue)
-    setItems((prev) => prev.map((item) => (item._key === key ? { ...item, [field]: safeValue } : item)))
+    setItems((prev) =>
+      prev.map((item) => (item._key === key ? { ...item, [field]: safeValue } : item)),
+    )
   }
 
   const summary = calcQuoteSummary(items)
@@ -120,12 +129,15 @@ export default function NewQuotePage() {
         name: quoteName.trim(),
         clientName: clientName.trim() || undefined,
         clientEmail: clientEmail.trim() || undefined,
+        date: quoteDate || undefined,
+        logoId: logoId,
         items: items.map((item) => ({
           equipmentId: item.equipmentId,
           name: item.name,
           description: item.description || undefined,
           unitPrice: item.unitPrice,
           quantity: item.quantity,
+          images: item.images,
         })),
       })
 
@@ -200,6 +212,79 @@ export default function NewQuotePage() {
               onChange={(e) => setClientEmail(e.currentTarget.value)}
               disabled={isSaving}
             />
+            <TextInput
+              label="Date"
+              type="date"
+              value={quoteDate}
+              onChange={(e) => setQuoteDate(e.currentTarget.value)}
+              disabled={isSaving}
+              style={{ maxWidth: 200 }}
+            />
+          </Stack>
+        </Card>
+
+        {/* Logo */}
+        <Card withBorder radius="md">
+          <Text fw={700} mb="md">
+            Logo
+          </Text>
+          <Stack gap="sm">
+            {logoPreviewUrl && (
+              <img
+                src={logoPreviewUrl}
+                alt="Logo preview"
+                style={{ maxHeight: 80, maxWidth: 200, objectFit: 'contain' }}
+              />
+            )}
+            <Group gap="xs" align="center">
+              <Button
+                variant="default"
+                size="sm"
+                loading={isUploadingLogo}
+                disabled={isSaving}
+                onClick={() => logoInputRef.current?.click()}
+              >
+                {logoPreviewUrl ? 'Change Logo' : 'Upload Logo'}
+              </Button>
+              {logoPreviewUrl && (
+                <Button
+                  variant="subtle"
+                  color="red"
+                  size="sm"
+                  disabled={isSaving || isUploadingLogo}
+                  onClick={() => {
+                    setLogoId(undefined)
+                    setLogoPreviewUrl(undefined)
+                  }}
+                >
+                  Remove
+                </Button>
+              )}
+            </Group>
+            <input
+              ref={logoInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={async (e) => {
+                const input = e.currentTarget
+                const file = input.files?.[0]
+                if (!file) return
+                setLogoPreviewUrl(URL.createObjectURL(file))
+                setIsUploadingLogo(true)
+                const fd = new FormData()
+                fd.append('file', file)
+                const result = await uploadQuoteLogo(fd)
+                if (result.success && result.id) {
+                  setLogoId(result.id)
+                  if (result.url) setLogoPreviewUrl(result.url)
+                } else {
+                  setFeedback({ type: 'error', message: result.error ?? 'Logo upload failed.' })
+                }
+                setIsUploadingLogo(false)
+                input.value = ''
+              }}
+            />
           </Stack>
         </Card>
 
@@ -256,28 +341,13 @@ export default function NewQuotePage() {
                 <Text size="xs" c="dimmed" fw={600} style={{ flex: 1 }}>
                   ITEM
                 </Text>
-                <Text
-                  size="xs"
-                  c="dimmed"
-                  fw={600}
-                  style={{ width: 120, textAlign: 'right' }}
-                >
+                <Text size="xs" c="dimmed" fw={600} style={{ width: 120, textAlign: 'right' }}>
                   UNIT PRICE
                 </Text>
-                <Text
-                  size="xs"
-                  c="dimmed"
-                  fw={600}
-                  style={{ width: 80, textAlign: 'right' }}
-                >
+                <Text size="xs" c="dimmed" fw={600} style={{ width: 80, textAlign: 'right' }}>
                   QTY
                 </Text>
-                <Text
-                  size="xs"
-                  c="dimmed"
-                  fw={600}
-                  style={{ width: 110, textAlign: 'right' }}
-                >
+                <Text size="xs" c="dimmed" fw={600} style={{ width: 110, textAlign: 'right' }}>
                   LINE TOTAL
                 </Text>
                 <div style={{ width: 28 }} />
@@ -286,7 +356,10 @@ export default function NewQuotePage() {
               <Divider />
 
               {items.map((item) => {
-                const lineTotal = calcLineTotal({ unitPrice: item.unitPrice, quantity: item.quantity })
+                const lineTotal = calcLineTotal({
+                  unitPrice: item.unitPrice,
+                  quantity: item.quantity,
+                })
                 return (
                   <Group key={item._key} gap="xs" wrap="nowrap" align="flex-start" px={4}>
                     <Stack gap={2} style={{ flex: 1, paddingTop: 4 }}>
@@ -379,12 +452,6 @@ export default function NewQuotePage() {
       {/* Fixed footer */}
       <Card className={classes['footer--fixed']} withBorder>
         <div className={classes.footer__actions}>
-          <Button variant="default" disabled title="Available after saving">
-            Preview
-          </Button>
-          <Button variant="default" disabled title="Available after saving">
-            Share
-          </Button>
           <Button onClick={handleSave} loading={isSaving}>
             Save Quote
           </Button>

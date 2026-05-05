@@ -78,6 +78,23 @@ const Quotes: CollectionConfig = {
       type: 'email',
     },
     {
+      name: 'date',
+      label: 'Date',
+      type: 'date',
+      admin: {
+        date: {
+          pickerAppearance: 'dayOnly',
+          displayFormat: 'MMM d, yyyy',
+        },
+      },
+    },
+    {
+      name: 'logo',
+      label: 'Logo',
+      type: 'upload',
+      relationTo: 'media',
+    },
+    {
       name: 'items',
       label: 'Items',
       type: 'array',

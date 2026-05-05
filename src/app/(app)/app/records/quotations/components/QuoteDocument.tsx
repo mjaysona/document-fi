@@ -20,6 +20,7 @@ export type QuoteDocumentData = {
   clientName?: string | null
   clientEmail?: string | null
   createdAt?: string | null
+  logoUrl?: string | null
   items: QuoteDocumentItem[]
 }
 
@@ -68,7 +69,8 @@ export function QuoteDocument({ quote, currency = 'PHP' }: QuoteDocumentProps) {
   return (
     <article className={styles.document} aria-label="Quotation document">
       <header className={styles.header}>
-        <div>
+        <div className={styles.headerLeft}>
+          {quote.logoUrl && <img src={quote.logoUrl} alt="Logo" className={styles.logo} />}
           <h1 className={styles.title}>{quote.name || 'Untitled Quote'}</h1>
           <p className={styles.meta}>Quote ID: {quote.id || '-'}</p>
         </div>

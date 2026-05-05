@@ -145,7 +145,18 @@ export default function QuotationsPage() {
     })
 
   const columns: DataTableColumn<QuoteListItem>[] = [
-    { key: 'name', label: 'Name' },
+    {
+      key: 'name',
+      label: 'Name',
+      render: (row) => (
+        <span
+          style={{ cursor: 'pointer', textDecoration: 'underline' }}
+          onClick={() => router.push(`/app/records/quotations/${row.id}/edit`)}
+        >
+          {row.name}
+        </span>
+      ),
+    },
     { key: 'clientName', label: 'Client', render: (row) => row.clientName || '-' },
     { key: 'createdAt', label: 'Created', render: (row) => formatDate(row.createdAt) },
     {
