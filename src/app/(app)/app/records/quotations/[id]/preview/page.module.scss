@@ -1,10 +1,20 @@
+.page {
+  min-height: 100vh;
+  background: var(--mantine-color-body);
+}
+
 .toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
   gap: 12px;
   flex-wrap: wrap;
+  padding: 12px 24px;
+  background: var(--mantine-color-body);
+  border-bottom: 1px solid var(--mantine-color-default-border);
 }
 
 .toolbarRight {
@@ -14,15 +24,15 @@
 }
 
 .printArea {
-  width: 100%;
+  max-width: 794px; /* A4 width at 96dpi */
+  margin: 32px auto;
+  padding: 0 16px 64px;
 }
 
 @media print {
   :global(html),
   :global(body) {
-    margin: 0;
-    padding: 0;
-    background: #fff;
+    background: #fff !important;
   }
 
   :global(body *) {
@@ -39,20 +49,17 @@
     top: 0;
     left: 0;
     width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
   }
 
   .toolbar {
-    display: none;
-  }
-
-  .wrapper {
-    max-width: 100%;
-    padding: 0;
-    margin: 0;
+    display: none !important;
   }
 
   @page {
-    size: A4;
-    margin: 16mm;
+    size: A4 portrait;
+    margin: 16mm 14mm;
   }
 }

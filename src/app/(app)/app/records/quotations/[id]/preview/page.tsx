@@ -38,7 +38,7 @@ export default async function PreviewPage({ params }: Props) {
   }
 
   return (
-    <div>
+    <div className={styles.page}>
       <div className={styles.toolbar}>
         <Link href="/app/records/quotations">
           <Button variant="default" leftSection={<ArrowLeft size={16} />}>
