@@ -133,6 +133,5 @@ jobs:
             cd /var/www/document-fi
             CI=true pnpm install --prod --frozen-lockfile --prefer-offline
 
-            pnpm payload migrate
             pm2 restart document-fi || pm2 start pnpm --name document-fi -- start
             pm2 save
