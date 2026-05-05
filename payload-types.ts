@@ -72,7 +72,10 @@ export interface Config {
     posts: Post;
     'user-preferences': UserPreference;
     vehicles: Vehicle;
+    equipment: Equipment;
+    'equipment-media': EquipmentMedia;
     'weight-bills': WeightBill;
+    quotes: Quote;
     'weight-bill-receipts': WeightBillReceipt;
     'session-uploads': SessionUpload;
     'api-connections': ApiConnection;
@@ -92,7 +95,10 @@ export interface Config {
     posts: PostsSelect<false> | PostsSelect<true>;
     'user-preferences': UserPreferencesSelect<false> | UserPreferencesSelect<true>;
     vehicles: VehiclesSelect<false> | VehiclesSelect<true>;
+    equipment: EquipmentSelect<false> | EquipmentSelect<true>;
+    'equipment-media': EquipmentMediaSelect<false> | EquipmentMediaSelect<true>;
     'weight-bills': WeightBillsSelect<false> | WeightBillsSelect<true>;
+    quotes: QuotesSelect<false> | QuotesSelect<true>;
     'weight-bill-receipts': WeightBillReceiptsSelect<false> | WeightBillReceiptsSelect<true>;
     'session-uploads': SessionUploadsSelect<false> | SessionUploadsSelect<true>;
     'api-connections': ApiConnectionsSelect<false> | ApiConnectionsSelect<true>;
@@ -294,6 +300,39 @@ export interface Vehicle {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "equipment".
+ */
+export interface Equipment {
+  id: string;
+  name: string;
+  description?: string | null;
+  unitPrice: number;
+  images?: (string | EquipmentMedia)[] | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "equipment-media".
+ */
+export interface EquipmentMedia {
+  id: string;
+  createdBy?: (string | null) | User;
+  prefix?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "weight-bills".
  */
 export interface WeightBill {
@@ -332,6 +371,31 @@ export interface WeightBillReceipt {
   height?: number | null;
   focalX?: number | null;
   focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "quotes".
+ */
+export interface Quote {
+  id: string;
+  name: string;
+  clientName?: string | null;
+  clientEmail?: string | null;
+  items?:
+    | {
+        equipmentId?: (string | null) | Equipment;
+        name: string;
+        description?: string | null;
+        unitPrice: number;
+        quantity: number;
+        images?: (string | EquipmentMedia)[] | null;
+        id?: string | null;
+      }[]
+    | null;
+  createdBy?: (string | null) | User;
+  updatedBy?: (string | null) | User;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -475,8 +539,20 @@ export interface PayloadLockedDocument {
         value: string | Vehicle;
       } | null)
     | ({
+        relationTo: 'equipment';
+        value: string | Equipment;
+      } | null)
+    | ({
+        relationTo: 'equipment-media';
+        value: string | EquipmentMedia;
+      } | null)
+    | ({
         relationTo: 'weight-bills';
         value: string | WeightBill;
+      } | null)
+    | ({
+        relationTo: 'quotes';
+        value: string | Quote;
       } | null)
     | ({
         relationTo: 'weight-bill-receipts';
@@ -648,6 +724,37 @@ export interface VehiclesSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "equipment_select".
+ */
+export interface EquipmentSelect<T extends boolean = true> {
+  name?: T;
+  description?: T;
+  unitPrice?: T;
+  images?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "equipment-media_select".
+ */
+export interface EquipmentMediaSelect<T extends boolean = true> {
+  createdBy?: T;
+  prefix?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "weight-bills_select".
  */
 export interface WeightBillsSelect<T extends boolean = true> {
@@ -661,6 +768,30 @@ export interface WeightBillsSelect<T extends boolean = true> {
   isVerified?: T;
   submittedBy?: T;
   verifiedBy?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "quotes_select".
+ */
+export interface QuotesSelect<T extends boolean = true> {
+  name?: T;
+  clientName?: T;
+  clientEmail?: T;
+  items?:
+    | T
+    | {
+        equipmentId?: T;
+        name?: T;
+        description?: T;
+        unitPrice?: T;
+        quantity?: T;
+        images?: T;
+        id?: T;
+      };
   createdBy?: T;
   updatedBy?: T;
   updatedAt?: T;

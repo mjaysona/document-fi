@@ -35,6 +35,9 @@ import WeightBillReceipts from '@/collections/WeightBillReceipts'
 import SessionUploads from '@/collections/SessionUploads'
 import Vehicles from '@/collections/Vehicles'
 import APIConnections from '@/collections/APIConnections'
+import Equipment from '@/collections/Equipment'
+import EquipmentMedia from '@/collections/EquipmentMedia'
+import Quotes from '@/collections/Quotes'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -66,7 +69,10 @@ export default buildConfig({
     Posts,
     UserPreferences,
     Vehicles,
+    Equipment,
+    EquipmentMedia,
     WeightBills,
+    Quotes,
     WeightBillReceipts,
     SessionUploads,
 
@@ -163,6 +169,9 @@ export default buildConfig({
               },
               'weight-bill-receipts': {
                 prefix: 'app/weight-bills',
+              },
+              'equipment-media': {
+                prefix: 'app/equipment',
               },
             },
             bucket: process.env.S3_BUCKET,

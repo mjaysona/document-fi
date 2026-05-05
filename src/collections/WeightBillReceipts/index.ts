@@ -15,8 +15,8 @@ const WeightBillReceipts: CollectionConfig = {
   },
   admin: {
     group: {
-      label: 'Super Admin',
-      name: 'super-admin',
+      label: 'Media',
+      name: 'media',
     },
   },
   fields: [

@@ -16,8 +16,8 @@ const Media: CollectionConfig = {
   },
   admin: {
     group: {
-      label: 'Super Admin',
-      name: 'super-admin',
+      label: 'Media',
+      name: 'media',
     },
     // hidden: ({ user }) => !hasSuperAdminRole(user?.userRoles),
   },
