@@ -549,7 +549,11 @@ export default function EditQuotePage() {
           <Button variant="default" onClick={handlePreview} disabled={!quoteId || isSaving}>
             Preview
           </Button>
-          <Button variant="default" disabled title="Available in share phase">
+          <Button
+            variant="default"
+            disabled={!quoteId || isSaving}
+            onClick={() => quoteId && window.open(`/q/${quoteId}`, '_blank')}
+          >
             Share
           </Button>
           <Button onClick={saveQuote} loading={isSaving}>
