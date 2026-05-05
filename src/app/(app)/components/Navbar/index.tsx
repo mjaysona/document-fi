@@ -6,6 +6,7 @@ import {
   ArrowLeftToLine,
   ArrowRightFromLine,
   ChevronDown,
+  FileText,
   LayoutDashboard,
   LogOut,
   PlusCircle,
@@ -86,6 +87,12 @@ export const Navbar = ({ isExpanded, toggleExpandCollapse, mobileBreakpoint }: N
                     onClick={() => router.push('/app/records/weight-bills/new')}
                   >
                     Weight Bill
+                  </Menu.Item>
+                  <Menu.Item
+                    leftSection={<FileText size={16} />}
+                    onClick={() => router.push('/app/records/quotations/add')}
+                  >
+                    Quotation
                   </Menu.Item>
                 </Menu.Dropdown>
               </Menu>

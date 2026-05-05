@@ -41,15 +41,6 @@ const quoteItemFields: Field[] = [
     type: 'relationship',
     relationTo: 'equipment-media',
     hasMany: true,
-    filterOptions: ({ siblingData }) => {
-      const equipmentId = (siblingData as Record<string, unknown>)?.equipmentId
-      if (!equipmentId) return false
-      return {
-        equipment: {
-          equals: equipmentId,
-        },
-      }
-    },
   },
 ]
 
