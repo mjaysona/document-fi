@@ -109,7 +109,7 @@ jobs:
           source: ".next,public,package.json,pnpm-lock.yaml,next.config.mjs,payload.config.ts"
           target: "/var/www/document-fi"
 
-      - name: Install prod deps, migrate, restart PM2
+      - name: Install prod deps and restart PM2
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.DROPLET_HOST }}
