@@ -61,8 +61,10 @@ export default async function PreviewPage({ params }: Props) {
         </div>
       </div>
 
-      <div className={styles.printArea}>
-        <QuoteDocument quote={documentData} />
+      <div className={styles.printAreaWrapper}>
+        <div className={styles.printArea}>
+          <QuoteDocument quote={documentData} />
+        </div>
       </div>
     </div>
   )

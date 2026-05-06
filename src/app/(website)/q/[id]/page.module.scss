@@ -1,22 +1,30 @@
 .page {
   min-height: 100vh;
   background: #f1f3f5;
+}
+
+.wrapper {
+  overflow-x: auto;
   padding: 32px 16px 64px;
 }
 
 .main {
-  max-width: 794px;
+  width: 794px; /* A4 width at 96dpi — fixed, never shrinks */
   margin: 0 auto;
 }
 
 @media print {
   .page {
     background: #fff;
-    padding: 0;
+  }
+
+  .wrapper {
+    overflow: visible !important;
+    padding: 0 !important;
   }
 
   .main {
-    max-width: 100%;
+    width: 100%;
     margin: 0;
   }
 

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ActionIcon, Alert, Button, Group, Modal, Stack, Text, TextInput } from '@mantine/core'
-import { CircleCheck, Eye, Pencil, Plus, Search, Trash2 } from 'lucide-react'
+import { CircleCheck, Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { getQuotes, deleteQuote, deleteQuotes, type QuoteListItem } from './actions'
 import { DataTable, type DataTableColumn } from '@/app/(app)/components/ui/DataTable'
 import classes from '../page.module.scss'
@@ -151,7 +151,7 @@ export default function QuotationsPage() {
       render: (row) => (
         <span
           style={{ cursor: 'pointer', textDecoration: 'underline' }}
-          onClick={() => router.push(`/app/records/quotations/${row.id}/edit`)}
+          onClick={() => router.push(`/app/records/quotations/${row.id}/preview`)}
         >
           {row.name}
         </span>
@@ -165,14 +165,6 @@ export default function QuotationsPage() {
       width: 120,
       render: (row) => (
         <Group gap="xs" wrap="nowrap">
-          <ActionIcon
-            variant="subtle"
-            size="sm"
-            title="Preview"
-            onClick={() => router.push(`/app/records/quotations/${row.id}/preview`)}
-          >
-            <Eye size={14} />
-          </ActionIcon>
           <ActionIcon
             variant="subtle"
             size="sm"

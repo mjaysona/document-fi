@@ -51,9 +51,11 @@ export default async function PublicQuotePage({ params }: Props) {
 
   return (
     <div className={styles.page}>
-      <main className={styles.main}>
-        <QuoteDocument quote={documentData} />
-      </main>
+      <div className={styles.wrapper}>
+        <main className={styles.main}>
+          <QuoteDocument quote={documentData} />
+        </main>
+      </div>
     </div>
   )
 }

@@ -23,10 +23,14 @@
   align-items: center;
 }
 
+.printAreaWrapper {
+  overflow-x: auto;
+  padding: 32px 16px 64px;
+}
+
 .printArea {
-  max-width: 794px; /* A4 width at 96dpi */
-  margin: 32px auto;
-  padding: 0 16px 64px;
+  width: 794px; /* A4 width at 96dpi — fixed, never shrinks */
+  margin: 0 auto;
 }
 
 @media print {
@@ -44,12 +48,16 @@
     visibility: visible !important;
   }
 
+  .printAreaWrapper {
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+
   .printArea {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
-    max-width: 100%;
     margin: 0;
     padding: 0;
   }
