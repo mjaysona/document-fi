@@ -49,6 +49,9 @@ export type QuoteDetail = {
   logoId?: string
   logoUrl?: string
   items: QuoteDetailItem[]
+  isShared?: boolean
+  shareToken?: string
+  shareExpiresAt?: string
 }
 
 export async function getEquipmentOptions(): Promise<{
@@ -325,6 +328,11 @@ export async function getQuoteById(id: string): Promise<{
         date: (doc as any).date ? String((doc as any).date) : undefined,
         logoId,
         logoUrl,
+        isShared: (doc as any).isShared === true,
+        shareToken: (doc as any).shareToken ? String((doc as any).shareToken) : undefined,
+        shareExpiresAt: (doc as any).shareExpiresAt
+          ? String((doc as any).shareExpiresAt)
+          : undefined,
         items: items.map((item: any) => ({
           equipmentId:
             item.equipmentId && typeof item.equipmentId === 'object'
@@ -429,5 +437,68 @@ export async function uploadQuoteLogo(formData: FormData): Promise<{
   } catch (error) {
     console.error('Failed to upload logo:', error)
     return { success: false, error: 'Failed to upload logo.' }
+  }
+}
+
+type ShareDuration = '1d' | '7d' | '30d' | 'never'
+
+const DURATION_MS: Record<ShareDuration, number | null> = {
+  '1d': 24 * 60 * 60 * 1000,
+  '7d': 7 * 24 * 60 * 60 * 1000,
+  '30d': 30 * 24 * 60 * 60 * 1000,
+  never: null,
+}
+
+export async function generateShareToken(
+  id: string,
+  duration: ShareDuration,
+): Promise<{ success: boolean; shareToken?: string; shareUrl?: string; error?: string }> {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() })
+    if (!session?.user?.id) return { success: false, error: 'Unauthorized' }
+
+    const payload = await getPayload({ config })
+    const token = crypto.randomUUID()
+    const ms = DURATION_MS[duration]
+    const shareExpiresAt = ms ? new Date(Date.now() + ms).toISOString() : null
+
+    await payload.update({
+      collection: 'quotes',
+      id,
+      data: {
+        shareToken: token,
+        shareExpiresAt,
+        isShared: true,
+      } as any,
+    })
+
+    const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL ?? ''
+    return { success: true, shareToken: token, shareUrl: `${baseUrl}/q/${token}` }
+  } catch (error) {
+    console.error('Failed to generate share token:', error)
+    return { success: false, error: 'Failed to generate share link.' }
+  }
+}
+
+export async function revokeShareToken(id: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() })
+    if (!session?.user?.id) return { success: false, error: 'Unauthorized' }
+
+    const payload = await getPayload({ config })
+    await payload.update({
+      collection: 'quotes',
+      id,
+      data: {
+        shareToken: null,
+        shareExpiresAt: null,
+        isShared: false,
+      } as any,
+    })
+
+    return { success: true }
+  } catch (error) {
+    console.error('Failed to revoke share token:', error)
+    return { success: false, error: 'Failed to revoke share link.' }
   }
 }

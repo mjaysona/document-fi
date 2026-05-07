@@ -8,6 +8,13 @@
   padding: 32px 16px 64px;
 }
 
+.toolbar {
+  width: 794px;
+  margin: 0 auto 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+
 .main {
   width: 794px; /* A4 width at 96dpi — fixed, never shrinks */
   margin: 0 auto;
@@ -21,6 +28,10 @@
   .wrapper {
     overflow: visible !important;
     padding: 0 !important;
+  }
+
+  .toolbar {
+    display: none !important;
   }
 
   .main {

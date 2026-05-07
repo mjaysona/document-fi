@@ -5,15 +5,16 @@ import {
   QuoteDocument,
   type QuoteDocumentData,
 } from '@/app/(app)/app/records/quotations/components/QuoteDocument'
+import { PrintButton } from '@/app/(app)/app/records/quotations/[id]/preview/PrintButton'
 import styles from './page.module.scss'
 
 type Props = {
-  params: Promise<{ id: string }>
+  params: Promise<{ token: string }>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { id } = await params
-  const result = await getPublicQuote(id)
+  const { token } = await params
+  const result = await getPublicQuote(token)
   if (!result.success || !result.data) return { title: 'Quotation' }
   return {
     title: result.data.name,
@@ -24,8 +25,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function PublicQuotePage({ params }: Props) {
-  const { id } = await params
-  const result = await getPublicQuote(id)
+  const { token } = await params
+  const result = await getPublicQuote(token)
 
   if (!result.success || !result.data) {
     notFound()
@@ -52,6 +53,9 @@ export default async function PublicQuotePage({ params }: Props) {
   return (
     <div className={styles.page}>
       <div className={styles.wrapper}>
+        <div className={styles.toolbar}>
+          <PrintButton />
+        </div>
         <main className={styles.main}>
           <QuoteDocument quote={documentData} />
         </main>

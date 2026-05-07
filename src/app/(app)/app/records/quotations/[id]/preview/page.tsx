@@ -1,10 +1,11 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@mantine/core'
-import { ArrowLeft, Pencil, Share2 } from 'lucide-react'
+import { ArrowLeft, Pencil } from 'lucide-react'
 import { getQuoteById } from '../../actions'
 import { QuoteDocument, type QuoteDocumentData } from '../../components/QuoteDocument'
 import { PrintButton } from './PrintButton'
+import { ShareModal } from './ShareModal'
 import styles from './page.module.scss'
 
 type Props = {
@@ -52,11 +53,12 @@ export default async function PreviewPage({ params }: Props) {
               Edit
             </Button>
           </Link>
-          <Link href={`/q/${id}`} target="_blank">
-            <Button variant="default" leftSection={<Share2 size={16} />}>
-              Share
-            </Button>
-          </Link>
+          <ShareModal
+            quoteId={id}
+            initialIsShared={quote.isShared ?? false}
+            initialShareToken={quote.shareToken}
+            initialShareExpiresAt={quote.shareExpiresAt}
+          />
           <PrintButton />
         </div>
       </div>

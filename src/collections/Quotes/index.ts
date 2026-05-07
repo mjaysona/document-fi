@@ -102,6 +102,38 @@ const Quotes: CollectionConfig = {
       minRows: 1,
     },
     {
+      name: 'isShared',
+      label: 'Sharing enabled',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: {
+        position: 'sidebar',
+      },
+    },
+    {
+      name: 'shareToken',
+      label: 'Share token',
+      type: 'text',
+      admin: {
+        position: 'sidebar',
+        readOnly: true,
+        description: 'Auto-generated. Manage via the app Share button.',
+      },
+    },
+    {
+      name: 'shareExpiresAt',
+      label: 'Share expires at',
+      type: 'date',
+      admin: {
+        position: 'sidebar',
+        readOnly: true,
+        date: {
+          pickerAppearance: 'dayAndTime',
+          displayFormat: 'MMM d, yyyy HH:mm',
+        },
+      },
+    },
+    {
       ...createdByField,
       admin: {
         ...createdByField.admin,

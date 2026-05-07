@@ -4,18 +4,30 @@ import { getPayload } from 'payload'
 import config from '~/payload.config'
 import type { QuoteDetail } from '@/app/(app)/app/records/quotations/actions'
 
-export async function getPublicQuote(id: string): Promise<{
+export async function getPublicQuote(token: string): Promise<{
   success: boolean
   data?: QuoteDetail
   error?: string
 }> {
   try {
     const payload = await getPayload({ config })
-    const doc = await payload.findByID({
+
+    const result = await payload.find({
       collection: 'quotes',
-      id,
+      where: { shareToken: { equals: token } },
+      limit: 1,
       depth: 1,
     })
+
+    const doc = result.docs[0]
+    if (!doc) return { success: false, error: 'Quote not found.' }
+
+    // Lazy expiry check
+    if (!(doc as any).isShared) return { success: false, error: 'Quote not found.' }
+    const expiresAt = (doc as any).shareExpiresAt
+    if (expiresAt && new Date(expiresAt) < new Date()) {
+      return { success: false, error: 'This share link has expired.' }
+    }
 
     const items = Array.isArray((doc as any).items) ? (doc as any).items : []
     const rawLogo = (doc as any).logo

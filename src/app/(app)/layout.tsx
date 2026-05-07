@@ -16,43 +16,48 @@ export const dynamic = 'force-dynamic'
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   let user: User | null = null
   let session: { userId: string } | null = null
-  const activeSession = await auth.api.getSession({
-    headers: await headers(),
-  })
+  const headersList = await headers()
 
-  console.log('[AUTH DEBUG] activeSession:', activeSession)
-  console.log('[AUTH DEBUG] cookies from headers:', (await headers()).get('cookie'))
-
-  if (activeSession) {
-    const payload = await getPayload({ config })
-
-    session = activeSession?.session
-    user = await payload.findByID({
-      collection: 'users',
-      id: session?.userId || '',
+  try {
+    const activeSession = await auth.api.getSession({
+      headers: headersList,
     })
 
-    if (!user?.userRoles?.length || user?.isFresh) {
-      const roles = await payload.find({
-        collection: 'user-roles',
-        where: {
-          label: {
-            equals: ROLES.USER,
-          },
-        },
+    if (activeSession) {
+      const payload = await getPayload({ config })
+
+      session = activeSession.session
+      user = await payload.findByID({
+        collection: 'users',
+        id: session?.userId || '',
       })
 
-      if (roles?.docs?.length) {
-        await payload.update({
-          collection: 'users',
-          id: user.id,
-          data: {
-            userRoles: [roles.docs[0].id],
-            isFresh: false,
+      if (!user?.userRoles?.length || user?.isFresh) {
+        const roles = await payload.find({
+          collection: 'user-roles',
+          where: {
+            label: {
+              equals: ROLES.USER,
+            },
           },
         })
+
+        if (roles?.docs?.length) {
+          await payload.update({
+            collection: 'users',
+            id: user.id,
+            data: {
+              userRoles: [roles.docs[0].id],
+              isFresh: false,
+            },
+          })
+        }
       }
     }
+  } catch (error) {
+    console.error('Failed to initialize app session in RootLayout:', error)
+    user = null
+    session = null
   }
 
   return (

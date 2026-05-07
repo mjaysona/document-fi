@@ -394,6 +394,12 @@ export interface Quote {
         id?: string | null;
       }[]
     | null;
+  isShared?: boolean | null;
+  /**
+   * Auto-generated. Manage via the app Share button.
+   */
+  shareToken?: string | null;
+  shareExpiresAt?: string | null;
   createdBy?: (string | null) | User;
   updatedBy?: (string | null) | User;
   updatedAt: string;
@@ -796,6 +802,9 @@ export interface QuotesSelect<T extends boolean = true> {
         images?: T;
         id?: T;
       };
+  isShared?: T;
+  shareToken?: T;
+  shareExpiresAt?: T;
   createdBy?: T;
   updatedBy?: T;
   updatedAt?: T;
