@@ -8,10 +8,10 @@ import {
   Button,
   Card,
   Group,
+  LoadingOverlay,
   NumberInput,
   Select,
   Stack,
-  Switch,
   Text,
   TextInput,
   Textarea,
@@ -20,10 +20,14 @@ import {
 import { Dropzone, MIME_TYPES } from '@mantine/dropzone'
 import { ArrowLeft, Ban, CheckCircle, Pencil, Trash2, Upload } from 'lucide-react'
 import {
+  analyzeReceiptFile,
   createTransactionWithReceipt,
   getBanks,
-  uploadTransactionReceipt,
+  getFinancialAccounts,
   type BankOption,
+  type FinancialAccountOption,
+  type TransactionStatus,
+  type TransactionType,
 } from '../actions'
 import classes from '../../page.module.scss'
 
@@ -32,6 +36,7 @@ type Feedback = { type: 'success' | 'error'; message: string }
 export default function AddTransactionPage() {
   const router = useRouter()
   const [banks, setBanks] = useState<BankOption[]>([])
+  const [financialAccounts, setFinancialAccounts] = useState<FinancialAccountOption[]>([])
   const [isSaving, setIsSaving] = useState(false)
   const [isUploadingReceipt, setIsUploadingReceipt] = useState(false)
   const [feedback, setFeedback] = useState<Feedback | null>(null)
@@ -39,15 +44,15 @@ export default function AddTransactionPage() {
   const [transactionDate, setTransactionDate] = useState('')
   const [description, setDescription] = useState('')
   const [particulars, setParticulars] = useState('')
-  const [transactionType, setTransactionType] = useState<string | null>(null)
-  const [sourceBank, setSourceBank] = useState<string | null>(null)
+  const [transactionType, setTransactionType] = useState<TransactionType | null>(null)
+  const [sourceAccount, setSourceAccount] = useState<string | null>(null)
+  const [destinationAccount, setDestinationAccount] = useState<string | null>(null)
+  const [financialAccount, setFinancialAccount] = useState<string | null>(null)
+  const [fromValue, setFromValue] = useState('')
+  const [toValue, setToValue] = useState('')
   const [referenceNumber, setReferenceNumber] = useState('')
-  const [moneyIn, setMoneyIn] = useState<number | ''>('')
-  const [moneyOut, setMoneyOut] = useState<number | ''>('')
-  const [runningBalance, setRunningBalance] = useState<number | ''>('')
-  const [currency, setCurrency] = useState('PHP')
-  const [isReversed, setIsReversed] = useState(false)
-  const [reversalReason, setReversalReason] = useState('')
+  const [amount, setAmount] = useState<number | ''>('')
+  const [transactionStatus, setTransactionStatus] = useState<TransactionStatus | null>('completed')
 
   const [receiptReady, setReceiptReady] = useState(false)
   const [receiptImageUrl, setReceiptImageUrl] = useState<string | undefined>()
@@ -62,11 +67,82 @@ export default function AddTransactionPage() {
     setReceiptReady(false)
   }
 
+  const handleFileAnalysis = async (file: File) => {
+    setReceiptImageUrl(URL.createObjectURL(file))
+    setPendingReceiptFile(file)
+    setPendingRawOcrText(undefined)
+    setReceiptReady(false)
+    setFeedback(null)
+    setIsUploadingReceipt(true)
+
+    const formData = new FormData()
+    formData.append('file', file)
+    const result = await analyzeReceiptFile(formData)
+
+    if (result.success || result.rawOcrText) {
+      setPendingRawOcrText(result.rawOcrText)
+      setReceiptReady(true)
+
+      if (result.transactionDate) {
+        const parsed = new Date(result.transactionDate)
+        if (!Number.isNaN(parsed.getTime())) {
+          setTransactionDate(parsed.toISOString().split('T')[0])
+        }
+      }
+      if (result.description) setDescription(result.description)
+      if (result.particulars) setParticulars(result.particulars)
+      if (result.transactionType) setTransactionType(result.transactionType)
+      if (result.detectedDestinationBankId) setDestinationAccount(result.detectedDestinationBankId)
+      if (result.from) setFromValue(result.from)
+      if (result.to) setToValue(result.to)
+      if (result.referenceNumber) setReferenceNumber(result.referenceNumber)
+      if (typeof result.amount === 'number') setAmount(result.amount)
+      if (result.transactionStatus) setTransactionStatus(result.transactionStatus)
+
+      setFeedback({
+        type: result.error ? 'error' : 'success',
+        message: result.error
+          ? `OCR complete. ${result.error}`
+          : 'Receipt analyzed. Fields auto-filled. Save to create the transaction.',
+      })
+    } else {
+      setFeedback({ type: 'error', message: result.error ?? 'Failed to analyze receipt.' })
+    }
+
+    setIsUploadingReceipt(false)
+  }
+
   useEffect(() => {
-    getBanks().then((result) => {
-      if (result.success) setBanks(result.data)
+    Promise.all([getBanks(), getFinancialAccounts()]).then(([banksResult, accountsResult]) => {
+      if (banksResult.success) setBanks(banksResult.data)
+      if (accountsResult.success) setFinancialAccounts(accountsResult.data)
     })
   }, [])
+
+  useEffect(() => {
+    if (financialAccount || financialAccounts.length === 0) return
+
+    const defaultAccount = financialAccounts.find((account) => account.isDefault)
+    if (defaultAccount) {
+      setFinancialAccount(defaultAccount.id)
+      setSourceAccount(defaultAccount.bankId ?? null)
+    }
+  }, [financialAccount, financialAccounts])
+
+  useEffect(() => {
+    if (!financialAccount) {
+      setSourceAccount(null)
+      return
+    }
+
+    const selectedAccount = financialAccounts.find((account) => account.id === financialAccount)
+    setSourceAccount(selectedAccount?.bankId ?? null)
+  }, [financialAccount, financialAccounts])
+
+  const sourceBankName =
+    banks.find((bank) => bank.id === sourceAccount)?.name ||
+    financialAccounts.find((account) => account.id === financialAccount)?.bankName ||
+    ''
 
   const handleSave = async () => {
     setFeedback(null)
@@ -76,8 +152,23 @@ export default function AddTransactionPage() {
       return
     }
 
+    if (!transactionType) {
+      setFeedback({ type: 'error', message: 'Transaction type is required.' })
+      return
+    }
+
+    if (amount === '') {
+      setFeedback({ type: 'error', message: 'Amount is required.' })
+      return
+    }
+
+    if (!financialAccount) {
+      setFeedback({ type: 'error', message: 'Financial account is required.' })
+      return
+    }
+
     if (!receiptReady || !pendingReceiptFile) {
-      setFeedback({ type: 'error', message: 'Receipt must be processed before save.' })
+      setFeedback({ type: 'error', message: 'Receipt must be analyzed before save.' })
       return
     }
 
@@ -88,18 +179,16 @@ export default function AddTransactionPage() {
     formData.append('description', description.trim())
     if (transactionDate) formData.append('transactionDate', transactionDate)
     if (particulars.trim()) formData.append('particulars', particulars.trim())
-    if (transactionType) formData.append('transactionType', transactionType)
-    if (sourceBank) formData.append('sourceBank', sourceBank)
+    formData.append('transactionType', transactionType)
+    if (sourceAccount) formData.append('sourceAccount', sourceAccount)
+    if (destinationAccount) formData.append('destinationAccount', destinationAccount)
+    if (financialAccount) formData.append('financialAccount', financialAccount)
+    if (fromValue.trim()) formData.append('from', fromValue.trim())
+    if (toValue.trim()) formData.append('to', toValue.trim())
     if (referenceNumber.trim()) formData.append('referenceNumber', referenceNumber.trim())
-    if (moneyIn !== '') formData.append('moneyIn', String(Number(moneyIn)))
-    if (moneyOut !== '') formData.append('moneyOut', String(Number(moneyOut)))
-    if (runningBalance !== '') formData.append('runningBalance', String(Number(runningBalance)))
-    formData.append('currency', currency.trim() || 'PHP')
-    formData.append('isReversed', String(isReversed))
+    formData.append('amount', String(Number(amount)))
+    formData.append('transactionStatus', transactionStatus || 'completed')
     if (pendingRawOcrText) formData.append('rawOcrText', pendingRawOcrText)
-    if (isReversed && reversalReason.trim()) {
-      formData.append('reversalReason', reversalReason.trim())
-    }
 
     const result = await createTransactionWithReceipt(formData)
 
@@ -135,11 +224,44 @@ export default function AddTransactionPage() {
         )}
 
         <Group grow align="flex-start" wrap="nowrap" gap="md">
-          <Card withBorder radius="md" style={{ flex: 1 }}>
+          <Card withBorder radius="md" style={{ flex: 1, position: 'relative' }}>
+            <LoadingOverlay
+              visible={isUploadingReceipt}
+              zIndex={100}
+              overlayProps={{ radius: 'md', blur: 2 }}
+            />
+            {isUploadingReceipt && (
+              <Text
+                size="sm"
+                fw={600}
+                c="white"
+                style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, 28px)',
+                  zIndex: 101,
+                  pointerEvents: 'none',
+                }}
+              >
+                Analyzing receipt
+              </Text>
+            )}
             <Text fw={700} mb="md">
               Transaction Details
             </Text>
             <Stack gap="sm">
+              <Select
+                label="Financial Account"
+                searchable
+                data={financialAccounts.map((account) => ({
+                  value: account.id,
+                  label: `${account.name} ${account.bankName ? ` - ${account.bankName}` : ''}${account.isDefault ? ' (Default)' : ''}`,
+                }))}
+                value={financialAccount}
+                onChange={setFinancialAccount}
+                required
+              />
               <TextInput
                 label="Description"
                 value={description}
@@ -160,80 +282,76 @@ export default function AddTransactionPage() {
                   onChange={(e) => setTransactionDate(e.currentTarget.value)}
                 />
                 <Select
-                  label="Type"
+                  label="Transaction Type"
                   data={[
                     { label: 'Debit', value: 'debit' },
                     { label: 'Credit', value: 'credit' },
-                    { label: 'Transfer', value: 'transfer' },
-                    { label: 'Payment', value: 'payment' },
-                    { label: 'Other', value: 'other' },
                   ]}
                   value={transactionType}
-                  onChange={setTransactionType}
+                  onChange={(value) =>
+                    setTransactionType((value as TransactionType | null) ?? null)
+                  }
+                  required
                 />
               </Group>
               <Group grow>
+                <TextInput label="Source Bank" value={sourceBankName} readOnly />
                 <Select
-                  label="Source Bank"
+                  label="Destination Bank"
                   searchable
                   data={banks.map((bank) => ({
                     value: bank.id,
                     label: `${bank.name} (${bank.code})`,
                   }))}
-                  value={sourceBank}
-                  onChange={setSourceBank}
+                  value={destinationAccount}
+                  onChange={setDestinationAccount}
                 />
+              </Group>
+              <Group grow>
+                <TextInput
+                  label="From"
+                  value={fromValue}
+                  onChange={(e) => setFromValue(e.currentTarget.value)}
+                />
+                <TextInput
+                  label="To"
+                  value={toValue}
+                  onChange={(e) => setToValue(e.currentTarget.value)}
+                />
+              </Group>
+              <Group grow>
                 <TextInput
                   label="Reference Number"
                   value={referenceNumber}
                   onChange={(e) => setReferenceNumber(e.currentTarget.value)}
                 />
-              </Group>
-              <Group grow>
-                <NumberInput
-                  label="Money In"
-                  min={0}
-                  decimalScale={2}
-                  fixedDecimalScale
-                  value={moneyIn}
-                  onChange={(value) => setMoneyIn(typeof value === 'number' ? value : '')}
-                />
-                <NumberInput
-                  label="Money Out"
-                  min={0}
-                  decimalScale={2}
-                  fixedDecimalScale
-                  value={moneyOut}
-                  onChange={(value) => setMoneyOut(typeof value === 'number' ? value : '')}
-                />
-                <NumberInput
-                  label="Running Balance"
-                  min={0}
-                  decimalScale={2}
-                  fixedDecimalScale
-                  value={runningBalance}
-                  onChange={(value) => setRunningBalance(typeof value === 'number' ? value : '')}
+                <Select
+                  label="Transaction Status"
+                  data={[
+                    { label: 'Completed', value: 'completed' },
+                    { label: 'Failed', value: 'failed' },
+                  ]}
+                  value={transactionStatus}
+                  onChange={(value) =>
+                    setTransactionStatus((value as TransactionStatus | null) ?? 'completed')
+                  }
                 />
               </Group>
-              <TextInput
-                label="Currency"
-                value={currency}
-                onChange={(e) => setCurrency(e.currentTarget.value)}
+              <NumberInput
+                label="Amount"
+                value={amount}
+                onChange={(value) => setAmount(typeof value === 'number' ? value : '')}
+                min={0}
+                leftSection="₱"
+                decimalScale={2}
+                fixedDecimalScale
+                thousandSeparator=","
+                hideControls
+                required
               />
-              <Switch
-                label="Mark as reversed"
-                checked={isReversed}
-                onChange={(e) => setIsReversed(e.currentTarget.checked)}
-              />
-              {isReversed && (
-                <Textarea
-                  label="Reversal reason"
-                  value={reversalReason}
-                  onChange={(e) => setReversalReason(e.currentTarget.value)}
-                  minRows={2}
-                  required
-                />
-              )}
+              <Text size="sm" c="dimmed">
+                Debit increases the selected financial account balance. Credit decreases it.
+              </Text>
             </Stack>
           </Card>
 
@@ -245,36 +363,7 @@ export default function AddTransactionPage() {
               onChange={(event) => {
                 const file = event.currentTarget.files?.[0]
                 if (!file) return
-
-                void (async () => {
-                  setReceiptImageUrl(URL.createObjectURL(file))
-                  setPendingReceiptFile(file)
-                  setPendingRawOcrText(undefined)
-                  setReceiptReady(false)
-                  setFeedback(null)
-                  setIsUploadingReceipt(true)
-
-                  const formData = new FormData()
-                  formData.append('file', file)
-                  const result = await uploadTransactionReceipt(formData)
-
-                  if (result.success) {
-                    setPendingRawOcrText(result.rawOcrText)
-                    setReceiptReady(true)
-                    setFeedback({
-                      type: 'success',
-                      message: 'Receipt processed successfully. Save to create the transaction.',
-                    })
-                  } else {
-                    setFeedback({
-                      type: 'error',
-                      message: result.error ?? 'Failed to process receipt.',
-                    })
-                  }
-
-                  setIsUploadingReceipt(false)
-                })()
-
+                void handleFileAnalysis(file)
                 event.currentTarget.value = ''
               }}
               ref={(node) => {
@@ -289,39 +378,34 @@ export default function AddTransactionPage() {
                 className={classes.uploadCard}
                 style={{ position: 'relative' }}
               >
+                <LoadingOverlay
+                  visible={isUploadingReceipt}
+                  zIndex={100}
+                  overlayProps={{ radius: 'md', blur: 2 }}
+                />
+                {isUploadingReceipt && (
+                  <Text
+                    size="sm"
+                    fw={600}
+                    c="white"
+                    style={{
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      transform: 'translate(-50%, 28px)',
+                      zIndex: 101,
+                      pointerEvents: 'none',
+                    }}
+                  >
+                    Analyzing image
+                  </Text>
+                )}
                 <Dropzone
                   className={classes.dropzone}
                   radius="md"
-                  onDrop={async (files) => {
+                  onDrop={(files) => {
                     const file = files[0]
-                    if (!file) return
-
-                    setReceiptImageUrl(URL.createObjectURL(file))
-                    setPendingReceiptFile(file)
-                    setPendingRawOcrText(undefined)
-                    setReceiptReady(false)
-                    setFeedback(null)
-                    setIsUploadingReceipt(true)
-
-                    const formData = new FormData()
-                    formData.append('file', file)
-                    const result = await uploadTransactionReceipt(formData)
-
-                    if (result.success) {
-                      setPendingRawOcrText(result.rawOcrText)
-                      setReceiptReady(true)
-                      setFeedback({
-                        type: 'success',
-                        message: 'Receipt processed successfully. Save to create the transaction.',
-                      })
-                    } else {
-                      setFeedback({
-                        type: 'error',
-                        message: result.error ?? 'Failed to process receipt.',
-                      })
-                    }
-
-                    setIsUploadingReceipt(false)
+                    if (file) void handleFileAnalysis(file)
                   }}
                   onReject={() => {
                     setFeedback({ type: 'error', message: 'Invalid file. Please upload an image.' })
@@ -358,6 +442,28 @@ export default function AddTransactionPage() {
               </Card>
             ) : (
               <Card withBorder radius="md" style={{ position: 'relative' }}>
+                <LoadingOverlay
+                  visible={isUploadingReceipt}
+                  zIndex={100}
+                  overlayProps={{ radius: 'md', blur: 2 }}
+                />
+                {isUploadingReceipt && (
+                  <Text
+                    size="sm"
+                    fw={600}
+                    c="white"
+                    style={{
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      transform: 'translate(-50%, 28px)',
+                      zIndex: 101,
+                      pointerEvents: 'none',
+                    }}
+                  >
+                    Analyzing image
+                  </Text>
+                )}
                 <Text fw={700} mb="md">
                   Receipt
                 </Text>
@@ -416,7 +522,7 @@ export default function AddTransactionPage() {
       <Card withBorder radius="md" className={classes['footer--fixed']}>
         <Group justify="space-between">
           <Text size="sm" c="dimmed">
-            Upload and process the receipt, then save the transaction.
+            Upload and analyze the receipt, then save the transaction.
           </Text>
           <Button onClick={handleSave} loading={isSaving || isUploadingReceipt}>
             Save

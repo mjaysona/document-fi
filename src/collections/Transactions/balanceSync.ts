@@ -1,0 +1,127 @@
+import type { PayloadRequest } from 'payload'
+
+type AccountRecord = {
+  startingBalance?: number | null
+  currentBalance?: number | null
+}
+
+type TransactionRecord = {
+  id: string | number
+  amount?: number | null
+  transactionType?: string | null
+  transactionStatus?: string | null
+  runningBalance?: number | null
+}
+
+type MaybeRelationship = string | { id?: string | number } | null | undefined
+
+function getRelationshipId(value: MaybeRelationship): string | null {
+  if (!value) return null
+  if (typeof value === 'string') return value
+  if (typeof value.id === 'string') return value.id
+  if (typeof value.id === 'number') return String(value.id)
+  return null
+}
+
+function getSignedAmount(transaction: TransactionRecord): number {
+  if (transaction.transactionStatus !== 'completed') return 0
+
+  const rawAmount =
+    typeof transaction.amount === 'number' ? transaction.amount : Number(transaction.amount || 0)
+  if (!Number.isFinite(rawAmount) || rawAmount <= 0) return 0
+
+  return transaction.transactionType === 'debit' ? rawAmount : -rawAmount
+}
+
+export async function syncAccountBalances(args: {
+  req: PayloadRequest
+  accountIds: Array<string | null | undefined>
+}) {
+  const uniqueIds = [...new Set(args.accountIds.filter((value): value is string => Boolean(value)))]
+  if (uniqueIds.length === 0) return
+
+  const req = args.req
+  req.context = {
+    ...(req.context || {}),
+    skipTransactionBalanceSync: true,
+  }
+
+  for (const accountId of uniqueIds) {
+    const account = (await req.payload.findByID({
+      collection: 'financial-accounts',
+      id: accountId,
+      depth: 0,
+      overrideAccess: true,
+      req,
+    })) as AccountRecord
+
+    const transactions = await req.payload.find({
+      collection: 'transactions',
+      where: {
+        financialAccount: {
+          equals: accountId,
+        },
+      },
+      depth: 0,
+      limit: 1000,
+      sort: 'transactionDate',
+      overrideAccess: true,
+      req,
+    })
+
+    let runningBalance =
+      typeof account.startingBalance === 'number'
+        ? account.startingBalance
+        : Number(account.startingBalance || 0)
+
+    for (const transaction of transactions.docs as Array<TransactionRecord>) {
+      const nextRunningBalance =
+        transaction.transactionStatus === 'completed'
+          ? runningBalance + getSignedAmount(transaction)
+          : null
+
+      if ((transaction.runningBalance ?? null) !== nextRunningBalance) {
+        await req.payload.update({
+          collection: 'transactions',
+          id: String(transaction.id),
+          data: {
+            runningBalance: nextRunningBalance,
+          },
+          depth: 0,
+          overrideAccess: true,
+          req,
+          context: req.context,
+        })
+      }
+
+      if (transaction.transactionStatus === 'completed' && nextRunningBalance !== null) {
+        runningBalance = nextRunningBalance
+      }
+    }
+
+    const nextCurrentBalance = Number.isFinite(runningBalance) ? runningBalance : 0
+    if (account.currentBalance !== nextCurrentBalance) {
+      await req.payload.update({
+        collection: 'financial-accounts',
+        id: accountId,
+        data: {
+          currentBalance: nextCurrentBalance,
+        },
+        depth: 0,
+        overrideAccess: true,
+        req,
+        context: req.context,
+      })
+    }
+  }
+}
+
+export function getAffectedAccountIds(args: {
+  doc?: Record<string, unknown>
+  previousDoc?: Record<string, unknown>
+}) {
+  return [
+    getRelationshipId(args.doc?.financialAccount as MaybeRelationship),
+    getRelationshipId(args.previousDoc?.financialAccount as MaybeRelationship),
+  ]
+}

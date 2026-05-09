@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import { createBanks, readBanks, updateBanks, deleteBanks } from './access'
+import { createBanks, deleteBanks, readBanks, updateBanks } from './access'
 
 const Banks: CollectionConfig = {
   slug: 'banks',
@@ -15,19 +15,19 @@ const Banks: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'name',
-    defaultColumns: ['name', 'code', 'updatedAt'],
+    defaultColumns: ['name', 'code'],
   },
   fields: [
     {
-      name: 'name',
-      label: 'Name',
+      name: 'code',
+      label: 'Bank Code',
       type: 'text',
       required: true,
       unique: true,
     },
     {
-      name: 'code',
-      label: 'Code',
+      name: 'name',
+      label: 'Name',
       type: 'text',
       required: true,
       unique: true,

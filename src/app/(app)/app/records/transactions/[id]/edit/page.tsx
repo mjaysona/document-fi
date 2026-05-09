@@ -8,10 +8,10 @@ import {
   Button,
   Card,
   Group,
+  LoadingOverlay,
   NumberInput,
   Select,
   Stack,
-  Switch,
   Text,
   TextInput,
   Textarea,
@@ -20,11 +20,16 @@ import {
 import { Dropzone, MIME_TYPES } from '@mantine/dropzone'
 import { ArrowLeft, Ban, CheckCircle, Pencil, Trash2, Upload } from 'lucide-react'
 import {
+  analyzeReceiptFile,
   getBanks,
+  getFinancialAccounts,
   getTransactionById,
-  replaceTransactionReceipt,
+  processTransactionReceipt,
   updateTransactionWithReceipt,
   type BankOption,
+  type FinancialAccountOption,
+  type TransactionStatus,
+  type TransactionType,
 } from '../../actions'
 import classes from '../../../page.module.scss'
 
@@ -36,28 +41,30 @@ export default function EditTransactionPage() {
   const id = params?.id as string
 
   const [banks, setBanks] = useState<BankOption[]>([])
+  const [financialAccounts, setFinancialAccounts] = useState<FinancialAccountOption[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isUploadingReceipt, setIsUploadingReceipt] = useState(false)
-  const [isProcessing, setIsProcessing] = useState(false)
+  const [isProcessingReceipt, setIsProcessingReceipt] = useState(false)
   const [feedback, setFeedback] = useState<Feedback | null>(null)
 
   const [transactionDate, setTransactionDate] = useState('')
   const [description, setDescription] = useState('')
   const [particulars, setParticulars] = useState('')
-  const [transactionType, setTransactionType] = useState<string | null>(null)
-  const [sourceBank, setSourceBank] = useState<string | null>(null)
+  const [transactionType, setTransactionType] = useState<TransactionType | null>(null)
+  const [sourceAccount, setSourceAccount] = useState<string | null>(null)
+  const [destinationAccount, setDestinationAccount] = useState<string | null>(null)
+  const [financialAccount, setFinancialAccount] = useState<string | null>(null)
+  const [fromValue, setFromValue] = useState('')
+  const [toValue, setToValue] = useState('')
   const [referenceNumber, setReferenceNumber] = useState('')
-  const [moneyIn, setMoneyIn] = useState<number | ''>('')
-  const [moneyOut, setMoneyOut] = useState<number | ''>('')
+  const [amount, setAmount] = useState<number | ''>('')
+  const [transactionStatus, setTransactionStatus] = useState<TransactionStatus | null>('completed')
   const [runningBalance, setRunningBalance] = useState<number | ''>('')
-  const [currency, setCurrency] = useState('PHP')
-  const [isReversed, setIsReversed] = useState(false)
-  const [reversalReason, setReversalReason] = useState('')
 
-  const [receiptImageId, setReceiptImageId] = useState<string>('')
+  const [receiptImageId, setReceiptImageId] = useState('')
   const [receiptImageUrl, setReceiptImageUrl] = useState<string | undefined>()
-  const [receiptImageFileName, setReceiptImageFileName] = useState<string>('')
+  const [receiptImageFileName, setReceiptImageFileName] = useState('')
   const [pendingReceiptFile, setPendingReceiptFile] = useState<File | null>(null)
   const [pendingRawOcrText, setPendingRawOcrText] = useState<string | undefined>()
   const receiptInputRef = useRef<() => void>(() => {})
@@ -66,13 +73,15 @@ export default function EditTransactionPage() {
     let isMounted = true
 
     const load = async () => {
-      const [banksResult, transactionResult] = await Promise.all([
+      const [banksResult, financialAccountsResult, transactionResult] = await Promise.all([
         getBanks(),
+        getFinancialAccounts(),
         getTransactionById(id),
       ])
 
       if (!isMounted) return
       if (banksResult.success) setBanks(banksResult.data)
+      if (financialAccountsResult.success) setFinancialAccounts(financialAccountsResult.data)
 
       if (!transactionResult.success || !transactionResult.data) {
         setFeedback({
@@ -88,14 +97,27 @@ export default function EditTransactionPage() {
       setDescription(tx.description)
       setParticulars(tx.particulars ?? '')
       setTransactionType(tx.transactionType ?? null)
-      setSourceBank(tx.sourceBank ?? null)
+      setDestinationAccount(tx.destinationAccount ?? null)
+      const nextFinancialAccount = tx.financialAccount ?? null
+      setFinancialAccount(nextFinancialAccount)
+      if (!nextFinancialAccount) {
+        const defaultAccount = financialAccountsResult.data.find((account) => account.isDefault)
+        if (defaultAccount) {
+          setFinancialAccount(defaultAccount.id)
+          setSourceAccount(defaultAccount.bankId ?? null)
+        }
+      } else {
+        const selectedAccount = financialAccountsResult.data.find(
+          (account) => account.id === nextFinancialAccount,
+        )
+        setSourceAccount(selectedAccount?.bankId ?? tx.sourceAccount ?? null)
+      }
+      setFromValue(tx.from ?? '')
+      setToValue(tx.to ?? '')
       setReferenceNumber(tx.referenceNumber ?? '')
-      setMoneyIn(typeof tx.moneyIn === 'number' ? tx.moneyIn : '')
-      setMoneyOut(typeof tx.moneyOut === 'number' ? tx.moneyOut : '')
+      setAmount(typeof tx.amount === 'number' ? tx.amount : '')
+      setTransactionStatus(tx.transactionStatus ?? 'completed')
       setRunningBalance(typeof tx.runningBalance === 'number' ? tx.runningBalance : '')
-      setCurrency(tx.currency ?? 'PHP')
-      setIsReversed(tx.isReversed ?? false)
-      setReversalReason(tx.reversalReason ?? '')
       setReceiptImageId(tx.receiptImageId ?? '')
       setReceiptImageUrl(tx.receiptImageUrl ?? undefined)
       setReceiptImageFileName(tx.receiptImageFileName ?? '')
@@ -110,11 +132,130 @@ export default function EditTransactionPage() {
     }
   }, [id])
 
+  const hydrateFromTransaction = async () => {
+    const refreshed = await getTransactionById(id)
+    if (!refreshed.success || !refreshed.data) return
+
+    const tx = refreshed.data
+    setTransactionDate(tx.transactionDate?.slice(0, 10) ?? '')
+    setDescription(tx.description)
+    setParticulars(tx.particulars ?? '')
+    setTransactionType(tx.transactionType ?? null)
+    setDestinationAccount(tx.destinationAccount ?? null)
+    const nextFinancialAccount = tx.financialAccount ?? null
+    setFinancialAccount(nextFinancialAccount)
+    if (nextFinancialAccount) {
+      const selectedAccount = financialAccounts.find(
+        (account) => account.id === nextFinancialAccount,
+      )
+      setSourceAccount(selectedAccount?.bankId ?? tx.sourceAccount ?? null)
+    } else {
+      setSourceAccount(tx.sourceAccount ?? null)
+    }
+    setFromValue(tx.from ?? '')
+    setToValue(tx.to ?? '')
+    setReferenceNumber(tx.referenceNumber ?? '')
+    setAmount(typeof tx.amount === 'number' ? tx.amount : '')
+    setTransactionStatus(tx.transactionStatus ?? 'completed')
+    setRunningBalance(typeof tx.runningBalance === 'number' ? tx.runningBalance : '')
+    setReceiptImageId(tx.receiptImageId ?? '')
+    setReceiptImageUrl(tx.receiptImageUrl ?? undefined)
+    setReceiptImageFileName(tx.receiptImageFileName ?? '')
+    setPendingRawOcrText(tx.rawOcrText ?? undefined)
+  }
+
+  const handleProcessReceipt = async () => {
+    if (!receiptImageId) {
+      setFeedback({ type: 'error', message: 'Save a receipt image first.' })
+      return
+    }
+
+    setFeedback(null)
+    setIsProcessingReceipt(true)
+
+    const result = await processTransactionReceipt(id)
+    if (result.success || result.status === 'partial-success') {
+      await hydrateFromTransaction()
+    }
+
+    if (result.success) {
+      setFeedback({ type: 'success', message: 'Receipt processed successfully.' })
+    } else if (result.status === 'partial-success') {
+      setFeedback({
+        type: 'success',
+        message: result.error ?? 'Partial success. Retry processing.',
+      })
+    } else {
+      setFeedback({ type: 'error', message: result.error ?? 'Failed to process receipt.' })
+    }
+
+    setIsProcessingReceipt(false)
+  }
+
+  const handleFileAnalysis = async (file: File) => {
+    setPendingReceiptFile(file)
+    setReceiptImageUrl(URL.createObjectURL(file))
+    setReceiptImageFileName(file.name)
+    setPendingRawOcrText(undefined)
+    setFeedback(null)
+    setIsUploadingReceipt(true)
+
+    const formData = new FormData()
+    formData.append('file', file)
+    const result = await analyzeReceiptFile(formData)
+
+    if (result.success || result.rawOcrText) {
+      setPendingRawOcrText(result.rawOcrText)
+
+      if (result.transactionDate) {
+        const parsed = new Date(result.transactionDate)
+        if (!Number.isNaN(parsed.getTime())) {
+          setTransactionDate(parsed.toISOString().split('T')[0])
+        }
+      }
+      if (result.description) setDescription(result.description)
+      if (result.particulars) setParticulars(result.particulars)
+      if (result.transactionType) setTransactionType(result.transactionType)
+      if (result.detectedDestinationBankId) setDestinationAccount(result.detectedDestinationBankId)
+      if (result.from) setFromValue(result.from)
+      if (result.to) setToValue(result.to)
+      if (result.referenceNumber) setReferenceNumber(result.referenceNumber)
+      if (typeof result.amount === 'number') setAmount(result.amount)
+      if (result.transactionStatus) setTransactionStatus(result.transactionStatus)
+
+      setFeedback({
+        type: result.error ? 'error' : 'success',
+        message: result.error
+          ? `OCR complete. ${result.error}`
+          : 'Receipt analyzed. Fields auto-filled. Save to apply.',
+      })
+    } else {
+      setFeedback({ type: 'error', message: result.error ?? 'Failed to analyze receipt.' })
+    }
+
+    setIsUploadingReceipt(false)
+  }
+
   const handleSave = async () => {
     setFeedback(null)
 
     if (!description.trim()) {
       setFeedback({ type: 'error', message: 'Description is required.' })
+      return
+    }
+
+    if (!transactionType) {
+      setFeedback({ type: 'error', message: 'Transaction type is required.' })
+      return
+    }
+
+    if (amount === '') {
+      setFeedback({ type: 'error', message: 'Amount is required.' })
+      return
+    }
+
+    if (!financialAccount) {
+      setFeedback({ type: 'error', message: 'Financial account is required.' })
       return
     }
 
@@ -124,40 +265,47 @@ export default function EditTransactionPage() {
     formData.append('description', description.trim())
     if (transactionDate) formData.append('transactionDate', transactionDate)
     if (particulars.trim()) formData.append('particulars', particulars.trim())
-    if (transactionType) formData.append('transactionType', transactionType)
-    if (sourceBank) formData.append('sourceBank', sourceBank)
+    formData.append('transactionType', transactionType)
+    if (sourceAccount) formData.append('sourceAccount', sourceAccount)
+    if (destinationAccount) formData.append('destinationAccount', destinationAccount)
+    if (financialAccount) formData.append('financialAccount', financialAccount)
+    if (fromValue.trim()) formData.append('from', fromValue.trim())
+    if (toValue.trim()) formData.append('to', toValue.trim())
     if (referenceNumber.trim()) formData.append('referenceNumber', referenceNumber.trim())
-    if (moneyIn !== '') formData.append('moneyIn', String(Number(moneyIn)))
-    if (moneyOut !== '') formData.append('moneyOut', String(Number(moneyOut)))
-    if (runningBalance !== '') formData.append('runningBalance', String(Number(runningBalance)))
-    formData.append('currency', currency.trim() || 'PHP')
-    formData.append('isReversed', String(isReversed))
+    formData.append('amount', String(Number(amount)))
+    formData.append('transactionStatus', transactionStatus || 'completed')
     if (receiptImageId) formData.append('existingReceiptImageId', receiptImageId)
     if (pendingRawOcrText) formData.append('rawOcrText', pendingRawOcrText)
     if (pendingReceiptFile) formData.append('file', pendingReceiptFile)
-    if (isReversed && reversalReason.trim()) {
-      formData.append('reversalReason', reversalReason.trim())
-    }
 
     const result = await updateTransactionWithReceipt(id, formData)
 
     if (result.success) {
       setPendingReceiptFile(null)
-      setPendingRawOcrText(undefined)
       setFeedback({ type: 'success', message: 'Transaction updated.' })
-
-      const refreshed = await getTransactionById(id)
-      if (refreshed.success && refreshed.data) {
-        setReceiptImageId(refreshed.data.receiptImageId ?? '')
-        setReceiptImageUrl(refreshed.data.receiptImageUrl ?? undefined)
-        setReceiptImageFileName(refreshed.data.receiptImageFileName ?? '')
-      }
+      await hydrateFromTransaction()
     } else {
       setFeedback({ type: 'error', message: result.error ?? 'Failed to update transaction.' })
     }
 
     setIsSaving(false)
   }
+
+  const overlayVisible = isUploadingReceipt || isProcessingReceipt
+  const sourceBankName =
+    banks.find((bank) => bank.id === sourceAccount)?.name ||
+    financialAccounts.find((account) => account.id === financialAccount)?.bankName ||
+    ''
+
+  useEffect(() => {
+    if (!financialAccount) {
+      setSourceAccount(null)
+      return
+    }
+
+    const selectedAccount = financialAccounts.find((account) => account.id === financialAccount)
+    setSourceAccount(selectedAccount?.bankId ?? null)
+  }, [financialAccount, financialAccounts])
 
   return (
     <div className={classes.wrapper}>
@@ -185,11 +333,44 @@ export default function EditTransactionPage() {
           <Text c="dimmed">Loading...</Text>
         ) : (
           <Group grow align="flex-start" wrap="nowrap" gap="md">
-            <Card withBorder radius="md" style={{ flex: 1 }}>
+            <Card withBorder radius="md" style={{ flex: 1, position: 'relative' }}>
+              <LoadingOverlay
+                visible={overlayVisible}
+                zIndex={100}
+                overlayProps={{ radius: 'md', blur: 2 }}
+              />
+              {overlayVisible && (
+                <Text
+                  size="sm"
+                  fw={600}
+                  c="white"
+                  style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, 28px)',
+                    zIndex: 101,
+                    pointerEvents: 'none',
+                  }}
+                >
+                  {isProcessingReceipt ? 'Processing receipt' : 'Analyzing receipt'}
+                </Text>
+              )}
               <Text fw={700} mb="md">
                 Transaction Details
               </Text>
               <Stack gap="sm">
+                <Select
+                  label="Financial Account"
+                  searchable
+                  data={financialAccounts.map((account) => ({
+                    value: account.id,
+                    label: `${account.name} (${account.code})${account.bankName ? ` - ${account.bankName}` : ''}${account.isDefault ? ' (Default)' : ''}`,
+                  }))}
+                  value={financialAccount}
+                  onChange={setFinancialAccount}
+                  required
+                />
                 <TextInput
                   label="Description"
                   value={description}
@@ -210,84 +391,103 @@ export default function EditTransactionPage() {
                     onChange={(e) => setTransactionDate(e.currentTarget.value)}
                   />
                   <Select
-                    label="Type"
+                    label="Transaction Type"
                     data={[
                       { label: 'Debit', value: 'debit' },
                       { label: 'Credit', value: 'credit' },
-                      { label: 'Transfer', value: 'transfer' },
-                      { label: 'Payment', value: 'payment' },
-                      { label: 'Other', value: 'other' },
                     ]}
                     value={transactionType}
-                    onChange={setTransactionType}
+                    onChange={(value) =>
+                      setTransactionType((value as TransactionType | null) ?? null)
+                    }
+                    required
                   />
                 </Group>
                 <Group grow>
+                  <TextInput label="Source Bank" value={sourceBankName} readOnly />
                   <Select
-                    label="Source Bank"
+                    label="Destination Bank"
                     searchable
                     data={banks.map((bank) => ({
                       value: bank.id,
                       label: `${bank.name} (${bank.code})`,
                     }))}
-                    value={sourceBank}
-                    onChange={setSourceBank}
+                    value={destinationAccount}
+                    onChange={setDestinationAccount}
                   />
+                </Group>
+                <Group grow>
+                  <TextInput
+                    label="From"
+                    value={fromValue}
+                    onChange={(e) => setFromValue(e.currentTarget.value)}
+                  />
+                  <TextInput
+                    label="To"
+                    value={toValue}
+                    onChange={(e) => setToValue(e.currentTarget.value)}
+                  />
+                </Group>
+                <Group grow>
                   <TextInput
                     label="Reference Number"
                     value={referenceNumber}
                     onChange={(e) => setReferenceNumber(e.currentTarget.value)}
                   />
+                  <Select
+                    label="Transaction Status"
+                    data={[
+                      { label: 'Completed', value: 'completed' },
+                      { label: 'Failed', value: 'failed' },
+                    ]}
+                    value={transactionStatus}
+                    onChange={(value) =>
+                      setTransactionStatus((value as TransactionStatus | null) ?? 'completed')
+                    }
+                  />
                 </Group>
                 <Group grow>
                   <NumberInput
-                    label="Money In"
+                    label="Amount"
+                    value={amount}
+                    onChange={(value) => setAmount(typeof value === 'number' ? value : '')}
                     min={0}
+                    leftSection="₱"
                     decimalScale={2}
                     fixedDecimalScale
-                    value={moneyIn}
-                    onChange={(value) => setMoneyIn(typeof value === 'number' ? value : '')}
-                  />
-                  <NumberInput
-                    label="Money Out"
-                    min={0}
-                    decimalScale={2}
-                    fixedDecimalScale
-                    value={moneyOut}
-                    onChange={(value) => setMoneyOut(typeof value === 'number' ? value : '')}
+                    thousandSeparator=","
+                    hideControls
+                    required
                   />
                   <NumberInput
                     label="Running Balance"
+                    value={runningBalance}
                     min={0}
+                    leftSection="₱"
                     decimalScale={2}
                     fixedDecimalScale
-                    value={runningBalance}
-                    onChange={(value) => setRunningBalance(typeof value === 'number' ? value : '')}
+                    thousandSeparator=","
+                    hideControls
+                    disabled
                   />
                 </Group>
-                <TextInput
-                  label="Currency"
-                  value={currency}
-                  onChange={(e) => setCurrency(e.currentTarget.value)}
-                />
-                <Switch
-                  label="Mark as reversed"
-                  checked={isReversed}
-                  onChange={(e) => setIsReversed(e.currentTarget.checked)}
-                />
-                {isReversed && (
-                  <Textarea
-                    label="Reversal reason"
-                    value={reversalReason}
-                    onChange={(e) => setReversalReason(e.currentTarget.value)}
-                    minRows={2}
-                    required
-                  />
-                )}
+                <Text size="sm" c="dimmed">
+                  Debit increases the selected financial account balance. Credit decreases it.
+                </Text>
               </Stack>
             </Card>
 
             <div style={{ minWidth: 320 }}>
+              <Button
+                fullWidth
+                mb="md"
+                onClick={handleProcessReceipt}
+                loading={isProcessingReceipt}
+                disabled={isSaving || isUploadingReceipt}
+              >
+                Process Receipt
+              </Button>
+
               <input
                 hidden
                 type="file"
@@ -295,37 +495,7 @@ export default function EditTransactionPage() {
                 onChange={(event) => {
                   const file = event.currentTarget.files?.[0]
                   if (!file) return
-
-                  void (async () => {
-                    setPendingReceiptFile(file)
-                    setReceiptImageUrl(URL.createObjectURL(file))
-                    setReceiptImageFileName(file.name)
-                    setPendingRawOcrText(undefined)
-                    setFeedback(null)
-                    setIsUploadingReceipt(true)
-                    setIsProcessing(true)
-
-                    const formData = new FormData()
-                    formData.append('file', file)
-                    const result = await replaceTransactionReceipt(id, formData)
-
-                    if (result.success) {
-                      setPendingRawOcrText(result.rawOcrText)
-                      setFeedback({
-                        type: 'success',
-                        message: 'Receipt processed. Save to apply it.',
-                      })
-                    } else {
-                      setFeedback({
-                        type: 'error',
-                        message: result.error ?? 'Failed to process receipt.',
-                      })
-                    }
-
-                    setIsUploadingReceipt(false)
-                    setIsProcessing(false)
-                  })()
-
+                  void handleFileAnalysis(file)
                   event.currentTarget.value = ''
                 }}
                 ref={(node) => {
@@ -340,40 +510,34 @@ export default function EditTransactionPage() {
                   className={classes.uploadCard}
                   style={{ position: 'relative' }}
                 >
+                  <LoadingOverlay
+                    visible={overlayVisible}
+                    zIndex={100}
+                    overlayProps={{ radius: 'md', blur: 2 }}
+                  />
+                  {overlayVisible && (
+                    <Text
+                      size="sm"
+                      fw={600}
+                      c="white"
+                      style={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, 28px)',
+                        zIndex: 101,
+                        pointerEvents: 'none',
+                      }}
+                    >
+                      {isProcessingReceipt ? 'Processing receipt' : 'Analyzing image'}
+                    </Text>
+                  )}
                   <Dropzone
                     className={classes.dropzone}
                     radius="md"
-                    onDrop={async (files) => {
+                    onDrop={(files) => {
                       const file = files[0]
-                      if (!file) return
-
-                      setPendingReceiptFile(file)
-                      setReceiptImageUrl(URL.createObjectURL(file))
-                      setReceiptImageFileName(file.name)
-                      setPendingRawOcrText(undefined)
-                      setFeedback(null)
-                      setIsUploadingReceipt(true)
-                      setIsProcessing(true)
-
-                      const formData = new FormData()
-                      formData.append('file', file)
-                      const result = await replaceTransactionReceipt(id, formData)
-
-                      if (result.success) {
-                        setPendingRawOcrText(result.rawOcrText)
-                        setFeedback({
-                          type: 'success',
-                          message: 'Receipt processed. Save to apply it.',
-                        })
-                      } else {
-                        setFeedback({
-                          type: 'error',
-                          message: result.error ?? 'Failed to process receipt.',
-                        })
-                      }
-
-                      setIsUploadingReceipt(false)
-                      setIsProcessing(false)
+                      if (file) void handleFileAnalysis(file)
                     }}
                     onReject={() => {
                       setFeedback({
@@ -383,7 +547,7 @@ export default function EditTransactionPage() {
                     }}
                     maxFiles={1}
                     accept={[MIME_TYPES.png, MIME_TYPES.jpeg, MIME_TYPES.webp]}
-                    disabled={isSaving || isProcessing || isUploadingReceipt}
+                    disabled={isSaving || overlayVisible}
                     aria-label="Drop receipt here"
                   >
                     <div style={{ pointerEvents: 'none' }}>
@@ -413,6 +577,28 @@ export default function EditTransactionPage() {
                 </Card>
               ) : (
                 <Card withBorder radius="md" style={{ position: 'relative' }}>
+                  <LoadingOverlay
+                    visible={overlayVisible}
+                    zIndex={100}
+                    overlayProps={{ radius: 'md', blur: 2 }}
+                  />
+                  {overlayVisible && (
+                    <Text
+                      size="sm"
+                      fw={600}
+                      c="white"
+                      style={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, 28px)',
+                        zIndex: 101,
+                        pointerEvents: 'none',
+                      }}
+                    >
+                      {isProcessingReceipt ? 'Processing receipt' : 'Analyzing image'}
+                    </Text>
+                  )}
                   <Text fw={700} mb="md">
                     Receipt
                   </Text>
@@ -428,7 +614,7 @@ export default function EditTransactionPage() {
                           color="blue"
                           size="sm"
                           onClick={() => receiptInputRef.current()}
-                          disabled={isSaving || isProcessing || isUploadingReceipt}
+                          disabled={isSaving || overlayVisible}
                           aria-label="Edit attached image"
                         >
                           <Pencil size={14} />
@@ -444,7 +630,7 @@ export default function EditTransactionPage() {
                             setPendingReceiptFile(null)
                             setPendingRawOcrText(undefined)
                           }}
-                          disabled={isSaving || isProcessing || isUploadingReceipt}
+                          disabled={isSaving || overlayVisible}
                           aria-label="Remove attached image"
                         >
                           <Trash2 size={14} />
@@ -480,10 +666,7 @@ export default function EditTransactionPage() {
 
       <Card withBorder radius="md" className={classes['footer--fixed']}>
         <Group justify="flex-end">
-          <Button
-            onClick={handleSave}
-            loading={isSaving || isUploadingReceipt || isLoading || isProcessing}
-          >
+          <Button onClick={handleSave} loading={isSaving || overlayVisible || isLoading}>
             Save
           </Button>
         </Group>

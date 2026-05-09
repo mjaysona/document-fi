@@ -1,6 +1,7 @@
 import type { CollectionConfig, Field } from 'payload'
 import { createdByField } from '@/fields/CreatedByField'
 import { updatedByField } from '@/fields/UpdatedByField'
+import { getAffectedAccountIds, syncAccountBalances } from './balanceSync'
 import {
   createTransactions,
   readTransactions,
@@ -22,7 +23,14 @@ const Transactions: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'description',
-    defaultColumns: ['transactionDate', 'description', 'sourceBank', 'moneyIn', 'moneyOut'],
+    defaultColumns: [
+      'description',
+      'transactionDate',
+      'sourceAccount',
+      'financialAccount',
+      'amount',
+      'transactionStatus',
+    ],
   },
   fields: [
     {
@@ -51,19 +59,40 @@ const Transactions: CollectionConfig = {
       name: 'transactionType',
       label: 'Transaction Type',
       type: 'select',
+      required: true,
       options: [
         { label: 'Debit', value: 'debit' },
         { label: 'Credit', value: 'credit' },
-        { label: 'Transfer', value: 'transfer' },
-        { label: 'Payment', value: 'payment' },
-        { label: 'Other', value: 'other' },
       ],
     },
     {
-      name: 'sourceBank',
+      name: 'sourceAccount',
       label: 'Source Bank',
       type: 'relationship',
       relationTo: 'banks',
+    },
+    {
+      name: 'destinationAccount',
+      label: 'Destination Bank',
+      type: 'relationship',
+      relationTo: 'banks',
+    },
+    {
+      name: 'financialAccount',
+      label: 'Financial Account',
+      type: 'relationship',
+      relationTo: 'financial-accounts',
+      required: true,
+    },
+    {
+      name: 'from',
+      label: 'From',
+      type: 'text',
+    },
+    {
+      name: 'to',
+      label: 'To',
+      type: 'text',
     },
     {
       name: 'referenceNumber',
@@ -71,29 +100,30 @@ const Transactions: CollectionConfig = {
       type: 'text',
     },
     {
-      name: 'moneyIn',
-      label: 'Money In',
+      name: 'amount',
+      label: 'Amount',
       type: 'number',
       min: 0,
-    },
-    {
-      name: 'moneyOut',
-      label: 'Money Out',
-      type: 'number',
-      min: 0,
+      required: true,
     },
     {
       name: 'runningBalance',
       label: 'Running Balance',
       type: 'number',
-      min: 0,
+      admin: {
+        readOnly: true,
+      },
     },
     {
-      name: 'currency',
-      label: 'Currency',
-      type: 'text',
+      name: 'transactionStatus',
+      label: 'Transaction Status',
+      type: 'select',
       required: true,
-      defaultValue: 'PHP',
+      defaultValue: 'completed',
+      options: [
+        { label: 'Completed', value: 'completed' },
+        { label: 'Failed', value: 'failed' },
+      ],
     },
     {
       name: 'receiptImage',
@@ -146,23 +176,6 @@ const Transactions: CollectionConfig = {
       },
     },
     {
-      name: 'isReversed',
-      label: 'Is Reversed',
-      type: 'checkbox',
-      defaultValue: false,
-      admin: {
-        position: 'sidebar',
-      },
-    },
-    {
-      name: 'reversalReason',
-      label: 'Reversal Reason',
-      type: 'textarea',
-      admin: {
-        condition: (_, siblingData) => siblingData?.isReversed,
-      },
-    },
-    {
       name: 'uploadedAt',
       label: 'Uploaded At',
       type: 'date',
@@ -189,6 +202,37 @@ const Transactions: CollectionConfig = {
       },
     } as Field,
   ],
+  hooks: {
+    afterChange: [
+      async ({ doc, previousDoc, req }) => {
+        if (req.context?.skipTransactionBalanceSync) return doc
+
+        await syncAccountBalances({
+          req,
+          accountIds: getAffectedAccountIds({
+            doc: doc as Record<string, unknown>,
+            previousDoc: previousDoc as Record<string, unknown>,
+          }),
+        })
+
+        return doc
+      },
+    ],
+    afterDelete: [
+      async ({ doc, req }) => {
+        if (req.context?.skipTransactionBalanceSync) return doc
+
+        await syncAccountBalances({
+          req,
+          accountIds: getAffectedAccountIds({
+            previousDoc: doc as Record<string, unknown>,
+          }),
+        })
+
+        return doc
+      },
+    ],
+  },
   timestamps: true,
 }
 

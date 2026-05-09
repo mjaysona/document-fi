@@ -39,6 +39,7 @@ import Equipment from '@/collections/Equipment'
 import EquipmentMedia from '@/collections/EquipmentMedia'
 import Quotes from '@/collections/Quotes'
 import Banks from '@/collections/Banks'
+import FinancialAccounts from '@/collections/FinancialAccounts'
 import Transactions from '@/collections/Transactions'
 import TransactionReceipts from '@/collections/TransactionReceipts'
 
@@ -76,6 +77,7 @@ export default buildConfig({
     EquipmentMedia,
     WeightBills,
     Banks,
+    FinancialAccounts,
     Transactions,
     TransactionReceipts,
     Quotes,

@@ -14,6 +14,7 @@ import { selectedItemsField } from '@/fields/NonRepeatingArraySelectField'
 const configurableCollections = [
   'accounts',
   'banks',
+  'financial-accounts',
   'equipment',
   'equipment-media',
   'media',

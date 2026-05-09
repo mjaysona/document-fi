@@ -1,6 +1,6 @@
 import createBanks from './create'
+import deleteBanks from './delete'
 import readBanks from './read'
 import updateBanks from './update'
-import deleteBanks from './delete'
 
-export { createBanks, readBanks, updateBanks, deleteBanks }
+export { createBanks, deleteBanks, readBanks, updateBanks }

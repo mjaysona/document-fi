@@ -15,9 +15,9 @@ type FeedbackState = {
 
 const formatDate = (value?: string): string => {
   if (!value) return '-'
-  const d = new Date(value)
-  if (isNaN(d.getTime())) return '-'
-  return d.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '-'
+  return date.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
 const formatCurrency = (value?: number): string => {
@@ -47,23 +47,27 @@ export default function TransactionsPage() {
   }
 
   useEffect(() => {
-    load()
+    void load()
   }, [])
 
   const displayed = useMemo(() => {
-    const q = search.toLowerCase().trim()
-    if (!q) return items
+    const query = search.toLowerCase().trim()
+    if (!query) return items
+
     return items.filter((item) => {
       return (
-        item.description.toLowerCase().includes(q) ||
-        (item.sourceBankName ?? '').toLowerCase().includes(q) ||
-        (item.transactionType ?? '').toLowerCase().includes(q)
+        item.description.toLowerCase().includes(query) ||
+        (item.sourceAccountName ?? '').toLowerCase().includes(query) ||
+        (item.destinationAccountName ?? '').toLowerCase().includes(query) ||
+        (item.transactionType ?? '').toLowerCase().includes(query) ||
+        (item.transactionStatus ?? '').toLowerCase().includes(query)
       )
     })
   }, [items, search])
 
   const handleDeleteConfirm = async () => {
     if (!deleteTargetId) return
+
     setDeletingId(deleteTargetId)
     setDeleteConfirmOpen(false)
     const result = await deleteTransaction(deleteTargetId)
@@ -73,6 +77,7 @@ export default function TransactionsPage() {
     } else {
       setFeedback({ tone: 'error', message: result.error ?? 'Failed to delete transaction.' })
     }
+
     setDeletingId(null)
     setDeleteTargetId(null)
   }
@@ -90,14 +95,24 @@ export default function TransactionsPage() {
         </span>
       ),
     },
-    { key: 'sourceBankName', label: 'Bank', render: (row) => row.sourceBankName || '-' },
-    { key: 'transactionDate', label: 'Date', render: (row) => formatDate(row.transactionDate) },
-    { key: 'moneyIn', label: 'Money In', render: (row) => formatCurrency(row.moneyIn) },
-    { key: 'moneyOut', label: 'Money Out', render: (row) => formatCurrency(row.moneyOut) },
+    { key: 'sourceAccountName', label: 'Source', render: (row) => row.sourceAccountName || '-' },
     {
-      key: 'isReversed',
+      key: 'destinationAccountName',
+      label: 'Destination',
+      render: (row) => row.destinationAccountName || '-',
+    },
+    { key: 'transactionDate', label: 'Date', render: (row) => formatDate(row.transactionDate) },
+    { key: 'transactionType', label: 'Type', render: (row) => row.transactionType || '-' },
+    { key: 'amount', label: 'Amount', render: (row) => formatCurrency(row.amount) },
+    {
+      key: 'runningBalance',
+      label: 'Running Balance',
+      render: (row) => formatCurrency(row.runningBalance),
+    },
+    {
+      key: 'transactionStatus',
       label: 'Status',
-      render: (row) => (row.isReversed ? 'Reversed' : 'Active'),
+      render: (row) => row.transactionStatus || '-',
     },
     {
       key: 'actions',
@@ -136,7 +151,7 @@ export default function TransactionsPage() {
       <div style={{ marginBottom: 24 }}>
         <Group mb="md" gap="xs" align="center">
           <TextInput
-            placeholder="Search by description, bank, or type..."
+            placeholder="Search by description, account, type, or status..."
             leftSection={<Search size={16} />}
             value={search}
             onChange={(e) => setSearch(e.currentTarget.value)}

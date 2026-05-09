@@ -3,6 +3,8 @@ import { user } from '../seed/user'
 import config from '@payload-config'
 import { createFirstRole } from '../collections/utilities/createFirstRole'
 import { initialData } from '../seed/db'
+import { financialAccounts } from '../seed/financialAccounts'
+import { banks } from '../seed/banks'
 import { posts } from '../seed/posts'
 
 async function run() {
@@ -22,9 +24,15 @@ async function run() {
     case 'user':
       await user(payload)
       break
+    case 'accounts':
+      await financialAccounts(payload)
+      break
+    case 'banks':
+      await banks(payload)
+      break
     default:
       console.error(
-        'Unknown seed type. Use "user" to seed user data. Try "pnpm seed user" to seed initial user data.',
+        'Unknown seed type. Use "all", "accounts", "banks", "roles", "posts", or "user".',
       )
   }
 

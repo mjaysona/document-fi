@@ -76,6 +76,7 @@ export interface Config {
     'equipment-media': EquipmentMedia;
     'weight-bills': WeightBill;
     banks: Bank;
+    'financial-accounts': FinancialAccount;
     transactions: Transaction;
     'transaction-receipts': TransactionReceipt;
     quotes: Quote;
@@ -102,6 +103,7 @@ export interface Config {
     'equipment-media': EquipmentMediaSelect<false> | EquipmentMediaSelect<true>;
     'weight-bills': WeightBillsSelect<false> | WeightBillsSelect<true>;
     banks: BanksSelect<false> | BanksSelect<true>;
+    'financial-accounts': FinancialAccountsSelect<false> | FinancialAccountsSelect<true>;
     transactions: TransactionsSelect<false> | TransactionsSelect<true>;
     'transaction-receipts': TransactionReceiptsSelect<false> | TransactionReceiptsSelect<true>;
     quotes: QuotesSelect<false> | QuotesSelect<true>;
@@ -385,8 +387,23 @@ export interface WeightBillReceipt {
  */
 export interface Bank {
   id: string;
-  name: string;
   code: string;
+  name: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "financial-accounts".
+ */
+export interface FinancialAccount {
+  id: string;
+  code: string;
+  name: string;
+  bank: string | Bank;
+  isDefault?: boolean | null;
+  startingBalance: number;
+  currentBalance: number;
   updatedAt: string;
   createdAt: string;
 }
@@ -399,13 +416,16 @@ export interface Transaction {
   transactionDate?: string | null;
   description: string;
   particulars?: string | null;
-  transactionType?: ('debit' | 'credit' | 'transfer' | 'payment' | 'other') | null;
-  sourceBank?: (string | null) | Bank;
+  transactionType: 'debit' | 'credit';
+  sourceAccount?: (string | null) | Bank;
+  destinationAccount?: (string | null) | Bank;
+  financialAccount: string | FinancialAccount;
+  from?: string | null;
+  to?: string | null;
   referenceNumber?: string | null;
-  moneyIn?: number | null;
-  moneyOut?: number | null;
+  amount: number;
   runningBalance?: number | null;
-  currency: string;
+  transactionStatus: 'completed' | 'failed';
   receiptImage?: (string | null) | TransactionReceipt;
   rawOcrText?: string | null;
   aiExtractedJson?:
@@ -420,8 +440,6 @@ export interface Transaction {
   extractionConfidence?: number | null;
   isAiGenerated?: boolean | null;
   isUserEdited?: boolean | null;
-  isReversed?: boolean | null;
-  reversalReason?: string | null;
   uploadedAt?: string | null;
   createdBy?: (string | null) | User;
   updatedBy?: (string | null) | User;
@@ -637,6 +655,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'banks';
         value: string | Bank;
+      } | null)
+    | ({
+        relationTo: 'financial-accounts';
+        value: string | FinancialAccount;
       } | null)
     | ({
         relationTo: 'transactions';
@@ -875,8 +897,22 @@ export interface WeightBillsSelect<T extends boolean = true> {
  * via the `definition` "banks_select".
  */
 export interface BanksSelect<T extends boolean = true> {
-  name?: T;
   code?: T;
+  name?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "financial-accounts_select".
+ */
+export interface FinancialAccountsSelect<T extends boolean = true> {
+  code?: T;
+  name?: T;
+  bank?: T;
+  isDefault?: T;
+  startingBalance?: T;
+  currentBalance?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -889,20 +925,21 @@ export interface TransactionsSelect<T extends boolean = true> {
   description?: T;
   particulars?: T;
   transactionType?: T;
-  sourceBank?: T;
+  sourceAccount?: T;
+  destinationAccount?: T;
+  financialAccount?: T;
+  from?: T;
+  to?: T;
   referenceNumber?: T;
-  moneyIn?: T;
-  moneyOut?: T;
+  amount?: T;
   runningBalance?: T;
-  currency?: T;
+  transactionStatus?: T;
   receiptImage?: T;
   rawOcrText?: T;
   aiExtractedJson?: T;
   extractionConfidence?: T;
   isAiGenerated?: T;
   isUserEdited?: T;
-  isReversed?: T;
-  reversalReason?: T;
   uploadedAt?: T;
   createdBy?: T;
   updatedBy?: T;
