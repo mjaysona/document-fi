@@ -3,6 +3,7 @@ import { Payload } from 'payload'
 export const banks = async (payload: Payload) => {
   const banksData = [
     { code: 'GCASH', name: 'GCash' },
+    { code: 'GOTYME', name: 'GoTyme' },
     { code: 'MAYA', name: 'Maya' },
     { code: 'BDO', name: 'BDO (Banco de Oro)' },
     { code: 'BPI', name: 'BPI (Bank of the Philippine Islands)' },

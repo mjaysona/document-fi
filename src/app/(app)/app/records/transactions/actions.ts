@@ -36,6 +36,7 @@ export type TransactionListItem = {
   destinationAccountName?: string
   transactionDate?: string
   amount?: number
+  transactionFee?: number
   runningBalance?: number
   transactionStatus?: TransactionStatus
   createdAt: string
@@ -54,6 +55,7 @@ export type TransactionFormInput = {
   to?: string
   referenceNumber?: string
   amount?: number
+  transactionFee?: number
   transactionStatus?: TransactionStatus | null
   receiptImageId?: string
   rawOcrText?: string
@@ -90,6 +92,7 @@ export type ReceiptAnalysisResult = {
   transactionType?: TransactionType
   referenceNumber?: string
   amount?: number
+  transactionFee?: number
   transactionStatus?: TransactionStatus
   from?: string
   to?: string
@@ -138,6 +141,61 @@ function normalizeAmount(value: unknown): number | undefined {
   return undefined
 }
 
+function normalizeNonNegativeAmount(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value >= 0 ? value : 0
+  }
+
+  const parsed = Number(
+    String(value || '')
+      .replace(/,/g, '')
+      .trim(),
+  )
+
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0
+}
+
+function createReadableDescriptionFromParticulars(particulars?: string): string | undefined {
+  const raw = String(particulars || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+  if (!raw) return undefined
+
+  // Prefer explicit remarks/notes content when available.
+  const notesOrRemarks = raw.match(/\b(?:notes?|remarks?)\s*[:\-]?\s*(.+)$/i)?.[1]?.trim()
+  if (notesOrRemarks) {
+    const cleaned = notesOrRemarks.replace(/[.\s]+$/, '')
+    if (cleaned) {
+      const normalized = cleaned.charAt(0).toUpperCase() + cleaned.slice(1)
+      return `${normalized}.`
+    }
+  }
+
+  const lower = raw.toLowerCase()
+  if (lower.includes('send money') || lower.includes('instapay')) {
+    const channel = raw.match(/via\s+([a-z0-9\- ]+?)\s+(to|from|notes?)\b/i)?.[1]?.trim()
+    const toValue = raw.match(/\bto\s+([^\n]+?)(?:\s+from\b|\s+notes?\b|$)/i)?.[1]?.trim()
+    const fromValue = raw.match(/\bfrom\s+([^\n]+?)(?:\s+notes?\b|$)/i)?.[1]?.trim()
+    const notesValue = raw.match(/\bnotes?\s+(.+)$/i)?.[1]?.trim()
+
+    const parts: string[] = []
+    if (channel) {
+      const normalizedChannel = channel.replace(/instapay/i, 'Instapay')
+      parts.push(`Sent money via ${normalizedChannel}`)
+    } else {
+      parts.push('Sent money')
+    }
+    if (toValue) parts.push(`to ${toValue}`)
+    if (fromValue) parts.push(`from ${fromValue}`)
+    if (notesValue) parts.push(`for ${notesValue}`)
+
+    const sentence = parts.join(' ').trim()
+    if (sentence) return `${sentence}.`
+  }
+
+  return raw
+}
+
 function normalizeTransactionDate(value: unknown): string | undefined {
   const raw = String(value || '').trim()
   if (!raw) return undefined
@@ -178,7 +236,11 @@ async function createTransactionReceiptFromFormData(formData: FormData): Promise
   return {
     success: true,
     id: String(receipt.id),
-    url: receipt.url ? String(receipt.url) : `/api/media/${String(receipt.id)}`,
+    url: receipt.url
+      ? String(receipt.url)
+      : (receipt as any).filename
+        ? `/api/transaction-receipts/file/${encodeURIComponent(String((receipt as any).filename))}`
+        : `/api/transaction-receipts/${String(receipt.id)}`,
     rawOcrText: rawText,
   }
 }
@@ -218,9 +280,76 @@ async function resolveSourceBankIdFromFinancialAccount(
   return { bankId }
 }
 
+function normalizeTextToken(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function textContainsBankReference(
+  value: string | undefined,
+  bank: BankOption | undefined,
+): boolean {
+  if (!value || !bank) return false
+
+  const normalizedText = ` ${normalizeTextToken(value)} `
+  const codeToken = normalizeTextToken(bank.code)
+  const nameToken = normalizeTextToken(bank.name)
+
+  const codeMatch = codeToken.length >= 2 && normalizedText.includes(` ${codeToken} `)
+  const nameMatch = nameToken.length >= 3 && normalizedText.includes(` ${nameToken} `)
+
+  return codeMatch || nameMatch
+}
+
+function detectBankMentionFromText(
+  value: string | undefined,
+  banks: BankOption[],
+): string | undefined {
+  if (!value) return undefined
+  return banks.find((bank) => textContainsBankReference(value, bank))?.id
+}
+
+function inferTransactionTypeFromBankContext(params: {
+  extractedType?: TransactionType
+  selectedBankId?: string
+  detectedDestinationBankId?: string
+  fromText?: string
+  toText?: string
+  banks: BankOption[]
+}): TransactionType | undefined {
+  const { extractedType, selectedBankId, detectedDestinationBankId, fromText, toText, banks } =
+    params
+
+  if (!selectedBankId) return extractedType
+
+  // Strong signal: destination bank was identified and it is not the selected account bank.
+  if (detectedDestinationBankId && detectedDestinationBankId !== selectedBankId) {
+    return 'credit'
+  }
+
+  const mentionedToBankId = detectBankMentionFromText(toText, banks)
+  const mentionedFromBankId = detectBankMentionFromText(fromText, banks)
+
+  // User rule: if "to" clearly points to a different bank than selected account bank, classify as credit.
+  if (mentionedToBankId && mentionedToBankId !== selectedBankId) {
+    return 'credit'
+  }
+
+  // If "from" explicitly references the selected bank, treat it as debit unless a stronger rule matched.
+  if (mentionedFromBankId && mentionedFromBankId === selectedBankId) {
+    return 'debit'
+  }
+
+  return extractedType
+}
+
 function mapTransactionInput(
   input: TransactionFormInput & {
     amount: number
+    transactionFee: number
     transactionType: TransactionType
     financialAccount: string
   },
@@ -237,6 +366,7 @@ function mapTransactionInput(
     to: input.to?.trim() || undefined,
     referenceNumber: input.referenceNumber?.trim() || undefined,
     amount: input.amount,
+    transactionFee: input.transactionFee,
     transactionStatus: normalizeTransactionStatus(input.transactionStatus) ?? 'completed',
     ...(input.receiptImageId ? { receiptImage: input.receiptImageId } : {}),
     ...(typeof input.rawOcrText !== 'undefined'
@@ -349,6 +479,7 @@ export async function getTransactions(): Promise<{
             : undefined,
         transactionDate: doc.transactionDate ? String(doc.transactionDate) : undefined,
         amount: typeof doc.amount === 'number' ? doc.amount : undefined,
+        transactionFee: typeof doc.transactionFee === 'number' ? doc.transactionFee : 0,
         runningBalance: typeof doc.runningBalance === 'number' ? doc.runningBalance : undefined,
         transactionStatus: normalizeTransactionStatus(doc.transactionStatus),
         createdAt: String(doc.createdAt || ''),
@@ -373,6 +504,7 @@ export async function createTransaction(input: TransactionFormInput): Promise<{
     const description = input.description.trim()
     const transactionType = normalizeTransactionType(input.transactionType)
     const amount = normalizeAmount(input.amount)
+    const transactionFee = normalizeNonNegativeAmount(input.transactionFee)
     const financialAccount = String(input.financialAccount || '').trim()
 
     if (!description) return { success: false, error: 'Description is required.' }
@@ -398,6 +530,7 @@ export async function createTransaction(input: TransactionFormInput): Promise<{
         description,
         transactionType,
         amount,
+        transactionFee,
         financialAccount,
       }),
       depth: 0,
@@ -439,6 +572,7 @@ export async function createTransactionWithReceipt(formData: FormData): Promise<
       to: String(formData.get('to') || '').trim() || undefined,
       referenceNumber: String(formData.get('referenceNumber') || '').trim() || undefined,
       amount: normalizeAmount(formData.get('amount')),
+      transactionFee: normalizeNonNegativeAmount(formData.get('transactionFee')),
       transactionStatus: normalizeTransactionStatus(formData.get('transactionStatus')),
       receiptImageId: receiptResult.id,
       rawOcrText: String(formData.get('rawOcrText') || '').trim() || receiptResult.rawOcrText,
@@ -478,7 +612,6 @@ export async function getTransactionById(id: string): Promise<{
     if ((doc as any).receiptImage) {
       if (typeof (doc as any).receiptImage === 'string') {
         receiptImageId = String((doc as any).receiptImage)
-        receiptImageUrl = `/api/media/${receiptImageId}`
       } else {
         receiptImageId = String((doc as any).receiptImage.id)
         receiptImageFileName = (doc as any).receiptImage.filename
@@ -486,7 +619,34 @@ export async function getTransactionById(id: string): Promise<{
           : undefined
         receiptImageUrl = (doc as any).receiptImage.url
           ? String((doc as any).receiptImage.url)
-          : `/api/media/${receiptImageId}`
+          : undefined
+      }
+
+      if (receiptImageId && (!receiptImageUrl || !receiptImageFileName)) {
+        try {
+          const receiptDoc = await payload.findByID({
+            collection: 'transaction-receipts',
+            id: receiptImageId,
+            depth: 0,
+          })
+
+          if (!receiptImageFileName && (receiptDoc as any).filename) {
+            receiptImageFileName = String((receiptDoc as any).filename)
+          }
+          if (!receiptImageUrl && (receiptDoc as any).url) {
+            receiptImageUrl = String((receiptDoc as any).url)
+          }
+        } catch (error) {
+          console.error('Failed to hydrate receipt image metadata:', error)
+        }
+      }
+
+      if (!receiptImageUrl && receiptImageFileName) {
+        receiptImageUrl = `/api/transaction-receipts/file/${encodeURIComponent(receiptImageFileName)}`
+      }
+
+      if (!receiptImageUrl && receiptImageId) {
+        receiptImageUrl = `/api/transaction-receipts/${receiptImageId}`
       }
     }
 
@@ -524,6 +684,8 @@ export async function getTransactionById(id: string): Promise<{
           ? String((doc as any).referenceNumber)
           : undefined,
         amount: typeof (doc as any).amount === 'number' ? (doc as any).amount : undefined,
+        transactionFee:
+          typeof (doc as any).transactionFee === 'number' ? (doc as any).transactionFee : 0,
         transactionStatus:
           normalizeTransactionStatus((doc as any).transactionStatus) ?? 'completed',
         receiptImageId,
@@ -558,6 +720,7 @@ export async function updateTransaction(
     const description = input.description.trim()
     const transactionType = normalizeTransactionType(input.transactionType)
     const amount = normalizeAmount(input.amount)
+    const transactionFee = normalizeNonNegativeAmount(input.transactionFee)
     const financialAccount = String(input.financialAccount || '').trim()
 
     if (!description) return { success: false, error: 'Description is required.' }
@@ -583,6 +746,7 @@ export async function updateTransaction(
         description,
         transactionType,
         amount,
+        transactionFee,
         financialAccount,
       }),
       depth: 0,
@@ -648,6 +812,7 @@ export async function updateTransactionWithReceipt(
       to: String(formData.get('to') || '').trim() || undefined,
       referenceNumber: String(formData.get('referenceNumber') || '').trim() || undefined,
       amount: normalizeAmount(formData.get('amount')),
+      transactionFee: normalizeNonNegativeAmount(formData.get('transactionFee')),
       transactionStatus: normalizeTransactionStatus(formData.get('transactionStatus')),
       receiptImageId,
       rawOcrText,
@@ -684,12 +849,21 @@ export async function analyzeReceiptFile(formData: FormData): Promise<ReceiptAna
     const buffer = Buffer.from(arrayBuffer)
     const { rawText } = await extractTextFromImageBuffer(buffer)
     const banksResult = await getBanks()
+    const selectedFinancialAccountId = String(formData.get('financialAccount') || '').trim()
+
+    const sourceBankResolution = selectedFinancialAccountId
+      ? await resolveSourceBankIdFromFinancialAccount(selectedFinancialAccountId)
+      : { bankId: undefined }
 
     try {
       const extraction = await extractTransactionWithGroq({
         rawOcrText: rawText,
         banks: banksResult.data,
       })
+
+      const readableDescription =
+        createReadableDescriptionFromParticulars(extraction.extracted.particulars) ??
+        extraction.extracted.description
 
       const detectedSourceBank = banksResult.data.find(
         (bank) => bank.code === extraction.detectedSourceBankCode,
@@ -698,17 +872,27 @@ export async function analyzeReceiptFile(formData: FormData): Promise<ReceiptAna
         (bank) => bank.code === extraction.detectedDestinationBankCode,
       )
 
+      const inferredTransactionType = inferTransactionTypeFromBankContext({
+        extractedType: extraction.extracted.transactionType,
+        selectedBankId: sourceBankResolution.bankId,
+        detectedDestinationBankId: detectedDestinationBank?.id,
+        fromText: extraction.extracted.from,
+        toText: extraction.extracted.to,
+        banks: banksResult.data,
+      })
+
       return {
         success: true,
         rawOcrText: rawText,
         detectedSourceBankId: detectedSourceBank?.id,
         detectedDestinationBankId: detectedDestinationBank?.id,
         transactionDate: extraction.extracted.transactionDate,
-        description: extraction.extracted.description,
+        description: readableDescription,
         particulars: extraction.extracted.particulars ?? extraction.extracted.description,
-        transactionType: extraction.extracted.transactionType,
+        transactionType: inferredTransactionType,
         referenceNumber: extraction.extracted.referenceNumber,
         amount: extraction.extracted.amount,
+        transactionFee: extraction.extracted.transactionFee ?? 0,
         transactionStatus: extraction.extracted.transactionStatus,
         from: extraction.extracted.from,
         to: extraction.extracted.to,
@@ -755,10 +939,39 @@ export async function processTransactionReceipt(
     }
 
     const receiptImageId = typeof receipt === 'string' ? receipt : String(receipt.id)
-    const receiptImageUrl =
-      typeof receipt === 'object' && receipt.url
-        ? String(receipt.url)
-        : `/api/media/${receiptImageId}`
+    let receiptImageFileName: string | undefined
+    let receiptImageUrl: string | undefined =
+      typeof receipt === 'object' && receipt.url ? String(receipt.url) : undefined
+
+    if (typeof receipt === 'object' && receipt.filename) {
+      receiptImageFileName = String(receipt.filename)
+    }
+
+    if (!receiptImageUrl || !receiptImageFileName) {
+      try {
+        const receiptDoc = await payload.findByID({
+          collection: 'transaction-receipts',
+          id: receiptImageId,
+          depth: 0,
+        })
+
+        if (!receiptImageFileName && (receiptDoc as any).filename) {
+          receiptImageFileName = String((receiptDoc as any).filename)
+        }
+        if (!receiptImageUrl && (receiptDoc as any).url) {
+          receiptImageUrl = String((receiptDoc as any).url)
+        }
+      } catch (error) {
+        console.error('Failed to resolve receipt image for processing:', error)
+      }
+    }
+
+    if (!receiptImageUrl && receiptImageFileName) {
+      receiptImageUrl = `/api/transaction-receipts/file/${encodeURIComponent(receiptImageFileName)}`
+    }
+    if (!receiptImageUrl) {
+      receiptImageUrl = `/api/transaction-receipts/${receiptImageId}`
+    }
 
     let rawOcrText = (tx as any).rawOcrText ? String((tx as any).rawOcrText) : ''
     let ocrPersisted = false
@@ -801,6 +1014,10 @@ export async function processTransactionReceipt(
         banks: banksResult.data,
       })
 
+      const readableDescription =
+        createReadableDescriptionFromParticulars(extraction.extracted.particulars) ??
+        extraction.extracted.description
+
       const destinationBank = banksResult.data.find(
         (bank) => bank.code === extraction.detectedDestinationBankCode,
       )
@@ -816,6 +1033,15 @@ export async function processTransactionReceipt(
         ? await resolveSourceBankIdFromFinancialAccount(txFinancialAccountId)
         : { bankId: undefined }
 
+      const inferredTransactionType = inferTransactionTypeFromBankContext({
+        extractedType: extraction.extracted.transactionType,
+        selectedBankId: sourceBankResolution.bankId,
+        detectedDestinationBankId: destinationBank?.id,
+        fromText: extraction.extracted.from,
+        toText: extraction.extracted.to,
+        banks: banksResult.data,
+      })
+
       await payload.update({
         collection: 'transactions',
         id: transactionId,
@@ -828,14 +1054,13 @@ export async function processTransactionReceipt(
             normalizeTransactionDate(extraction.extracted.transactionDate) ??
             (tx as any).transactionDate ??
             null,
-          description: extraction.extracted.description ?? (tx as any).description ?? null,
+          description: readableDescription ?? (tx as any).description ?? null,
           particulars:
             extraction.extracted.particulars ??
             extraction.extracted.description ??
             (tx as any).particulars ??
             null,
-          transactionType:
-            extraction.extracted.transactionType ?? (tx as any).transactionType ?? null,
+          transactionType: inferredTransactionType ?? (tx as any).transactionType ?? null,
           from: extraction.extracted.from ?? (tx as any).from ?? null,
           to: extraction.extracted.to ?? (tx as any).to ?? null,
           referenceNumber:
@@ -844,6 +1069,10 @@ export async function processTransactionReceipt(
             typeof extraction.extracted.amount === 'number'
               ? extraction.extracted.amount
               : ((tx as any).amount ?? null),
+          transactionFee:
+            typeof extraction.extracted.transactionFee === 'number'
+              ? extraction.extracted.transactionFee
+              : ((tx as any).transactionFee ?? 0),
           transactionStatus:
             extraction.extracted.transactionStatus ?? (tx as any).transactionStatus ?? 'completed',
           isAiGenerated: true,

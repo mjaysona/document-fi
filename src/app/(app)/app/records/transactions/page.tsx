@@ -104,6 +104,7 @@ export default function TransactionsPage() {
     { key: 'transactionDate', label: 'Date', render: (row) => formatDate(row.transactionDate) },
     { key: 'transactionType', label: 'Type', render: (row) => row.transactionType || '-' },
     { key: 'amount', label: 'Amount', render: (row) => formatCurrency(row.amount) },
+    { key: 'transactionFee', label: 'Fee', render: (row) => formatCurrency(row.transactionFee) },
     {
       key: 'runningBalance',
       label: 'Running Balance',

@@ -29,6 +29,7 @@ const Transactions: CollectionConfig = {
       'sourceAccount',
       'financialAccount',
       'amount',
+      'transactionFee',
       'transactionStatus',
     ],
   },
@@ -105,6 +106,14 @@ const Transactions: CollectionConfig = {
       type: 'number',
       min: 0,
       required: true,
+    },
+    {
+      name: 'transactionFee',
+      label: 'Transaction Fee',
+      type: 'number',
+      min: 0,
+      required: true,
+      defaultValue: 0,
     },
     {
       name: 'runningBalance',

@@ -424,6 +424,7 @@ export interface Transaction {
   to?: string | null;
   referenceNumber?: string | null;
   amount: number;
+  transactionFee: number;
   runningBalance?: number | null;
   transactionStatus: 'completed' | 'failed';
   receiptImage?: (string | null) | TransactionReceipt;
@@ -932,6 +933,7 @@ export interface TransactionsSelect<T extends boolean = true> {
   to?: T;
   referenceNumber?: T;
   amount?: T;
+  transactionFee?: T;
   runningBalance?: T;
   transactionStatus?: T;
   receiptImage?: T;

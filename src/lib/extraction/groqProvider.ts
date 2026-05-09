@@ -11,6 +11,7 @@ export type GroqExtractedTransaction = {
   transactionType?: 'debit' | 'credit'
   referenceNumber?: string
   amount?: number
+  transactionFee?: number
   transactionStatus?: 'completed' | 'failed'
   from?: string
   to?: string
@@ -60,6 +61,17 @@ function asOptionalNumber(value: unknown): number | undefined {
   return undefined
 }
 
+function asOptionalBoolean(value: unknown): boolean | undefined {
+  if (typeof value === 'boolean') return value
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase()
+    if (normalized === 'true') return true
+    if (normalized === 'false') return false
+  }
+
+  return undefined
+}
+
 export async function extractTransactionWithGroq(params: {
   rawOcrText: string
   banks: BankEntry[]
@@ -86,6 +98,8 @@ Return ONLY strict JSON with these keys:
   "transactionType": "debit"|"credit"|null,
   "referenceNumber": string|null,
   "amount": number|null,
+  "transactionFee": number|null,
+  "amountIncludesFee": boolean|null,
   "transactionStatus": "completed"|"failed"|null,
   "from": string|null,
   "to": string|null,
@@ -93,10 +107,14 @@ Return ONLY strict JSON with these keys:
 }
 Rules:
 - sourceBankCode and destinationBankCode must be exactly one of the codes from the Available banks list above, or null if not identifiable
-- description should be a short summary (for example: transfer, cash in, purchase)
-- particulars should contain the detailed narration, merchant/payment context, or notes; if only one text description exists, use that value for particulars
+- particulars should contain the detailed narration, merchant/payment context, or notes from the receipt text
+- description must be a readable sentence derived from particulars when particulars exists (example: "Send Money via instaPay ... Notes Tennis coaching" -> "Sent money via Instapay to 099... from Maria Angelica Pascua for tennis coaching.")
 - transactionType must be debit or credit only
-- amount must be a positive number
+- amount must be a positive number excluding transaction fee
+- transactionFee must be a non-negative number (use 0 when none)
+- amountIncludesFee should be true only when extracted amount already includes transaction fee; otherwise false
+- Example: if receipt says "Amount Sent 1000" and "Fee 10", then amount=1000, transactionFee=10, amountIncludesFee=false
+- Example: if receipt says "Total Debited 1010" with "Fee 10", then amount=1010, transactionFee=10, amountIncludesFee=true
 - transactionStatus should default to completed unless the OCR clearly indicates failure, reversal, or cancellation
 - do not hallucinate; use null when missing
 - confidence must be between 0 and 100
@@ -149,13 +167,31 @@ ${params.rawOcrText}`
       ? parsed.destinationBankCode
       : undefined
 
+  const rawAmount = asOptionalNumber(parsed.amount)
+  const rawTransactionFee = asOptionalNumber(parsed.transactionFee)
+  const safeTransactionFee =
+    typeof rawTransactionFee === 'number' && rawTransactionFee >= 0 ? rawTransactionFee : 0
+
+  let amountExcludingFee = rawAmount
+  const amountIncludesFee = asOptionalBoolean(parsed.amountIncludesFee)
+
+  if (
+    typeof rawAmount === 'number' &&
+    safeTransactionFee > 0 &&
+    rawAmount > safeTransactionFee &&
+    amountIncludesFee === true
+  ) {
+    amountExcludingFee = rawAmount - safeTransactionFee
+  }
+
   const extracted: GroqExtractedTransaction = {
     transactionDate: parsed.transactionDate || undefined,
     description: parsed.description || undefined,
     particulars: parsed.particulars || undefined,
     transactionType: sanitizeTransactionType(parsed.transactionType),
     referenceNumber: parsed.referenceNumber || undefined,
-    amount: asOptionalNumber(parsed.amount),
+    amount: amountExcludingFee,
+    transactionFee: safeTransactionFee,
     transactionStatus: sanitizeTransactionStatus(parsed.transactionStatus),
     from: parsed.from || undefined,
     to: parsed.to || undefined,

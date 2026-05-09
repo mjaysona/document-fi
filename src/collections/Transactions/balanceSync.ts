@@ -8,6 +8,7 @@ type AccountRecord = {
 type TransactionRecord = {
   id: string | number
   amount?: number | null
+  transactionFee?: number | null
   transactionType?: string | null
   transactionStatus?: string | null
   runningBalance?: number | null
@@ -20,6 +21,23 @@ function getRelationshipId(value: MaybeRelationship): string | null {
   if (typeof value === 'string') return value
   if (typeof value.id === 'string') return value.id
   if (typeof value.id === 'number') return String(value.id)
+
+  const candidate = value as { _id?: unknown; toString?: () => string }
+  if (typeof candidate._id === 'string') return candidate._id
+  if (typeof candidate._id === 'number') return String(candidate._id)
+  if (
+    candidate._id &&
+    typeof (candidate._id as { toString?: () => string }).toString === 'function'
+  ) {
+    const stringified = (candidate._id as { toString: () => string }).toString()
+    if (stringified && stringified !== '[object Object]') return stringified
+  }
+
+  if (typeof candidate.toString === 'function') {
+    const stringified = candidate.toString()
+    if (stringified && stringified !== '[object Object]') return stringified
+  }
+
   return null
 }
 
@@ -28,9 +46,16 @@ function getSignedAmount(transaction: TransactionRecord): number {
 
   const rawAmount =
     typeof transaction.amount === 'number' ? transaction.amount : Number(transaction.amount || 0)
-  if (!Number.isFinite(rawAmount) || rawAmount <= 0) return 0
+  const rawFee =
+    typeof transaction.transactionFee === 'number'
+      ? transaction.transactionFee
+      : Number(transaction.transactionFee || 0)
 
-  return transaction.transactionType === 'debit' ? rawAmount : -rawAmount
+  if (!Number.isFinite(rawAmount) || rawAmount <= 0) return 0
+  const safeFee = Number.isFinite(rawFee) && rawFee > 0 ? rawFee : 0
+  const totalImpact = rawAmount + safeFee
+
+  return transaction.transactionType === 'debit' ? totalImpact : -totalImpact
 }
 
 export async function syncAccountBalances(args: {
