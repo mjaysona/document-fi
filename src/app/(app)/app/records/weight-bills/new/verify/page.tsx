@@ -39,7 +39,8 @@ export default function VerifyPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const editId = searchParams.get('editId') || searchParams.get('id')
-  const isEditMode = pathname === '/app/records/weight-bills/edit' || Boolean(searchParams.get('editId'))
+  const isEditMode =
+    pathname === '/app/records/weight-bills/edit' || Boolean(searchParams.get('editId'))
   const [records, setRecords] = useState<FileRecord[]>([])
   const [uploads, setUploads] = useState<any[]>([])
   const [vehicles, setVehicles] = useState<VehicleOption[]>([])
@@ -106,7 +107,6 @@ export default function VerifyPage() {
         throw new Error(data?.error || 'OCR API error')
       }
 
-      console.log('Raw Weight Bill:', data.ocrResult)
       const parsed = parseWeightBillOCR(data.ocrResult)
       const matchedVehicle = findVehicleByName(parsed.vehicle, vehicleOptions)
       const amount = matchedVehicle?.amount ?? getAmountForVehicle(parsed.vehicle, vehicleOptions)
@@ -129,8 +129,6 @@ export default function VerifyPage() {
             : item,
         ),
       )
-
-      console.log('Parsed Weight Bill:', parsed)
     } catch (error) {
       console.error('OCR integration error:', error)
       setRecords((prev) =>
@@ -176,8 +174,6 @@ export default function VerifyPage() {
         }
 
         const uploadsData = sessionData.uploads || []
-
-        console.log('uploads', uploadsData)
 
         // Preserve analyzed data from existing records
         const recordsMap = new Map(records.map((r, idx) => [idx, r]))
@@ -271,7 +267,6 @@ export default function VerifyPage() {
   }
 
   const handleSkip = async () => {
-    console.log('Skip clicked for', currentRecord?.fileName)
     if (canGoNext) {
       await goToIndex(activeIndex + 1)
     }

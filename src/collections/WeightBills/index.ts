@@ -1,15 +1,15 @@
 import type { CollectionConfig, Field } from 'payload'
 import { createdByField } from '@/fields/CreatedByField'
-import { createWeightBills, readWeightBills, updateWeightBills } from './access'
+import { createWeightBills, deleteWeightBills, readWeightBills, updateWeightBills } from './access'
 import { updatedByField } from '@/fields/UpdatedByField'
 
 const WeightBills: CollectionConfig = {
   slug: 'weight-bills',
   access: {
     create: createWeightBills,
-    read: () => true,
+    read: readWeightBills,
     update: updateWeightBills,
-    delete: () => true,
+    delete: deleteWeightBills,
   },
   admin: {
     useAsTitle: 'weightBillNumber',

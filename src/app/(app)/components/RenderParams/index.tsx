@@ -7,10 +7,6 @@ import { Message } from '../Message'
 export const RenderParams: React.FC = () => {
   const searchParams = useSearchParams()
 
-  console.log('searchParams', searchParams)
-
-  // console.log(paramValues)
-
   // if (paramValues.length) {
   //   return (
   //     <div className={className}>

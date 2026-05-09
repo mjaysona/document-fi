@@ -1,14 +1,23 @@
 import type { CollectionConfig, Field } from 'payload'
 import { createdByField } from '@/fields/CreatedByField'
+import {
+  createEquipmentMedia,
+  readEquipmentMedia,
+  updateEquipmentMedia,
+  deleteEquipmentMedia,
+} from './access'
 
 const EquipmentMedia: CollectionConfig = {
   slug: 'equipment-media',
   labels: {
-    singular: 'Equipment',
-    plural: 'Equipments',
+    singular: 'Equipment Product Image',
+    plural: 'Equipment Product Images',
   },
   access: {
-    read: () => true,
+    create: createEquipmentMedia,
+    read: readEquipmentMedia,
+    update: updateEquipmentMedia,
+    delete: deleteEquipmentMedia,
   },
   upload: {
     mimeTypes: ['image/*'],

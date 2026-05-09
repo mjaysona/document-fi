@@ -11,7 +11,7 @@ const Posts: CollectionConfig = {
     create: createPosts,
     read: readPosts,
     update: updatePosts,
-    delete: () => true,
+    delete: deletePosts,
   },
   admin: {
     useAsTitle: 'title',

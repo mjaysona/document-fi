@@ -10,10 +10,10 @@ import {
 const SessionUploads: CollectionConfig = {
   slug: 'session-uploads',
   access: {
-    create: () => true,
-    read: () => true,
-    update: () => true,
-    delete: () => true,
+    create: createSessionUploads,
+    read: readSessionUploads,
+    update: updateSessionUploads,
+    delete: deleteSessionUploads,
   },
   fields: [
     {

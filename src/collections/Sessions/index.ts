@@ -1,4 +1,9 @@
-import { deleteSessions, readSessions } from '@/collections/Sessions/access'
+import {
+  createSessions,
+  deleteSessions,
+  readSessions,
+  updateSessions,
+} from '@/collections/Sessions/access'
 import type { CollectionConfig, Field } from 'payload'
 
 const Sessions: CollectionConfig = {
@@ -8,9 +13,9 @@ const Sessions: CollectionConfig = {
     plural: 'Active Sessions',
   },
   access: {
-    create: () => false,
+    create: createSessions,
     read: readSessions,
-    update: () => false,
+    update: updateSessions,
     delete: deleteSessions,
   },
   admin: {

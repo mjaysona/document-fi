@@ -150,7 +150,6 @@ export default function VerifyPage() {
         throw new Error(data?.error || 'OCR API error')
       }
 
-      console.log('Raw Weight Bill:', data.ocrResult)
       const parsed = parseWeightBillOCR(data.ocrResult)
       const matchedVehicle = findVehicleByName(parsed.vehicle, vehicleOptions)
       const amount = matchedVehicle?.amount ?? getAmountForVehicle(parsed.vehicle, vehicleOptions)
@@ -173,8 +172,6 @@ export default function VerifyPage() {
             : item,
         ),
       )
-
-      console.log('Parsed Weight Bill:', parsed)
     } catch (error) {
       console.error('OCR integration error:', error)
       setRecords((prev) =>
@@ -376,7 +373,6 @@ export default function VerifyPage() {
   }
 
   const handleSkip = async () => {
-    console.log('Skip clicked for', currentRecord?.fileName)
     if (canGoNext) {
       await goToIndex(activeIndex + 1)
     }

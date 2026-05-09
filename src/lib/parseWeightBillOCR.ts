@@ -157,8 +157,6 @@ function extractCustomerAndWeightBill(sourceText: string): {
 }
 
 export function parseWeightBillOCR(ocrData: any): ParsedWeightBill {
-  console.log('ocrData', ocrData)
-
   // Get the raw markdown text from the OCR response
   const rawText = ocrData?.pages?.[0]?.markdown || ''
   const headerText = normalizeOCRSectionText(ocrData?.pages?.[0]?.header)

@@ -4,7 +4,7 @@ import { Card, Group, SimpleGrid, Text, UnstyledButton } from '@mantine/core'
 import { Fragment } from 'react'
 import { useRouter } from 'next/navigation'
 import classes from './page.module.scss'
-import { FileText, Weight } from 'lucide-react'
+import { FileText, ReceiptText, Weight } from 'lucide-react'
 
 export default function Page() {
   const router = useRouter()
@@ -35,6 +35,15 @@ export default function Page() {
             <FileText size={32} />
             <Text size="xs" mt={7}>
               Quotation
+            </Text>
+          </UnstyledButton>
+          <UnstyledButton
+            className={classes.item}
+            onClick={() => router.push('/app/records/transactions')}
+          >
+            <ReceiptText size={32} />
+            <Text size="xs" mt={7}>
+              Transaction
             </Text>
           </UnstyledButton>
         </SimpleGrid>

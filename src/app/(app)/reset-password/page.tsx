@@ -12,8 +12,6 @@ export default async function Page({ searchParams }: { searchParams: SearchParam
   const title = 'Reset password'
   const { token, email } = searchParams
 
-  console.log('Reset Password Page Params:', { token, email })
-
   if (!token || !email) {
     redirect('/recover-password')
   }

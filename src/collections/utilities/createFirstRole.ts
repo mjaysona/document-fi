@@ -30,9 +30,6 @@ export const createFirstRole = async (payload: Payload): Promise<void> => {
           | 'delete'
         )[],
       }))
-
-      console.log('permissions:', JSON.stringify(permissions, null, 2))
-
       await payload.create({
         collection: 'user-roles',
         data: {

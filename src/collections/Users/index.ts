@@ -37,7 +37,7 @@ const Users: CollectionConfig = {
         disableListColumn: true,
         position: 'sidebar',
         condition: (_data, _siblingData, { user }) => {
-          return hasSuperAdminRole(user?.userRoles)
+          return hasSuperAdminRole(user?.userRoles) || Boolean(user?.isFirstSystemUser)
         },
       },
       label: 'User Roles',
@@ -58,7 +58,7 @@ const Users: CollectionConfig = {
       },
       access: {
         update: ({ req }) => {
-          return isSuperAdmin(req)
+          return isSuperAdmin(req) || Boolean(req.user?.isFirstSystemUser)
         },
       },
     },
@@ -119,10 +119,18 @@ const Users: CollectionConfig = {
       fields: [
         {
           type: 'checkbox',
+          name: 'isFirstSystemUser',
+          admin: {
+            readOnly: true,
+          },
+          defaultValue: false,
+        },
+        {
+          type: 'checkbox',
           name: 'isSystemAccount',
           admin: {
             condition: (_data, _siblingData, { user }) => {
-              return hasSuperAdminRole(user?.userRoles)
+              return hasSuperAdminRole(user?.userRoles) || Boolean(user?.isFirstSystemUser)
             },
           },
           defaultValue: false,

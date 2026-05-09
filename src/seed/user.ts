@@ -24,6 +24,7 @@ export const user: NonNullable<Config['onInit']> = async (payload): Promise<void
         email: 'super@payloadcms.com',
         password: 'super',
         isSystemAccount: true,
+        isFirstSystemUser: true,
       },
     })
     console.info('"Super Admin" user created successfully.')

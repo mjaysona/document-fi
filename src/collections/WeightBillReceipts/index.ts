@@ -1,10 +1,19 @@
 import { CollectionConfig, Field } from 'payload'
 import { createdByField } from '@/fields/CreatedByField'
+import {
+  createWeightBillReceipts,
+  readWeightBillReceipts,
+  updateWeightBillReceipts,
+  deleteWeightBillReceipts,
+} from './access'
 
 const WeightBillReceipts: CollectionConfig = {
   slug: 'weight-bill-receipts',
   access: {
-    read: () => true,
+    create: createWeightBillReceipts,
+    read: readWeightBillReceipts,
+    update: updateWeightBillReceipts,
+    delete: deleteWeightBillReceipts,
   },
   labels: {
     singular: 'Weight Bill Receipt',

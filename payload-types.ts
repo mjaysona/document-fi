@@ -75,6 +75,8 @@ export interface Config {
     equipment: Equipment;
     'equipment-media': EquipmentMedia;
     'weight-bills': WeightBill;
+    banks: Bank;
+    transactions: Transaction;
     quotes: Quote;
     'weight-bill-receipts': WeightBillReceipt;
     'session-uploads': SessionUpload;
@@ -98,6 +100,8 @@ export interface Config {
     equipment: EquipmentSelect<false> | EquipmentSelect<true>;
     'equipment-media': EquipmentMediaSelect<false> | EquipmentMediaSelect<true>;
     'weight-bills': WeightBillsSelect<false> | WeightBillsSelect<true>;
+    banks: BanksSelect<false> | BanksSelect<true>;
+    transactions: TransactionsSelect<false> | TransactionsSelect<true>;
     quotes: QuotesSelect<false> | QuotesSelect<true>;
     'weight-bill-receipts': WeightBillReceiptsSelect<false> | WeightBillReceiptsSelect<true>;
     'session-uploads': SessionUploadsSelect<false> | SessionUploadsSelect<true>;
@@ -165,6 +169,7 @@ export interface User {
       linkedAt?: string | null;
     };
   };
+  isFirstSystemUser?: boolean | null;
   isSystemAccount?: boolean | null;
   isEmailVerified?: boolean | null;
   isFresh?: boolean | null;
@@ -374,6 +379,76 @@ export interface WeightBillReceipt {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "banks".
+ */
+export interface Bank {
+  id: string;
+  name: string;
+  code: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "transactions".
+ */
+export interface Transaction {
+  id: string;
+  transactionDate?: string | null;
+  description: string;
+  particulars?: string | null;
+  transactionType?: ('debit' | 'credit' | 'transfer' | 'payment' | 'other') | null;
+  sourceBank?: (string | null) | Bank;
+  referenceNumber?: string | null;
+  moneyIn?: number | null;
+  moneyOut?: number | null;
+  runningBalance?: number | null;
+  currency: string;
+  receiptImage: string | Media;
+  rawOcrText?: string | null;
+  aiExtractedJson?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  extractionConfidence?: number | null;
+  isAiGenerated?: boolean | null;
+  isUserEdited?: boolean | null;
+  isReversed?: boolean | null;
+  reversalReason?: string | null;
+  uploadedAt?: string | null;
+  createdBy?: (string | null) | User;
+  updatedBy?: (string | null) | User;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media".
+ */
+export interface Media {
+  id: string;
+  createdBy?: (string | null) | User;
+  text?: string | null;
+  prefix?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "quotes".
  */
 export interface Quote {
@@ -404,27 +479,6 @@ export interface Quote {
   updatedBy?: (string | null) | User;
   updatedAt: string;
   createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "media".
- */
-export interface Media {
-  id: string;
-  createdBy?: (string | null) | User;
-  text?: string | null;
-  prefix?: string | null;
-  updatedAt: string;
-  createdAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -559,6 +613,14 @@ export interface PayloadLockedDocument {
         value: string | WeightBill;
       } | null)
     | ({
+        relationTo: 'banks';
+        value: string | Bank;
+      } | null)
+    | ({
+        relationTo: 'transactions';
+        value: string | Transaction;
+      } | null)
+    | ({
         relationTo: 'quotes';
         value: string | Quote;
       } | null)
@@ -651,6 +713,7 @@ export interface UsersSelect<T extends boolean = true> {
               linkedAt?: T;
             };
       };
+  isFirstSystemUser?: T;
   isSystemAccount?: T;
   isEmailVerified?: T;
   isFresh?: T;
@@ -776,6 +839,45 @@ export interface WeightBillsSelect<T extends boolean = true> {
   isVerified?: T;
   submittedBy?: T;
   verifiedBy?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "banks_select".
+ */
+export interface BanksSelect<T extends boolean = true> {
+  name?: T;
+  code?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "transactions_select".
+ */
+export interface TransactionsSelect<T extends boolean = true> {
+  transactionDate?: T;
+  description?: T;
+  particulars?: T;
+  transactionType?: T;
+  sourceBank?: T;
+  referenceNumber?: T;
+  moneyIn?: T;
+  moneyOut?: T;
+  runningBalance?: T;
+  currency?: T;
+  receiptImage?: T;
+  rawOcrText?: T;
+  aiExtractedJson?: T;
+  extractionConfidence?: T;
+  isAiGenerated?: T;
+  isUserEdited?: T;
+  isReversed?: T;
+  reversalReason?: T;
+  uploadedAt?: T;
   createdBy?: T;
   updatedBy?: T;
   updatedAt?: T;

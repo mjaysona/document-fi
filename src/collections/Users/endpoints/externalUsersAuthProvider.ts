@@ -36,8 +36,6 @@ export const externalUsersAuthProvider: Endpoint = {
       },
     })
 
-    console.log('User found:', existingUser)
-
     if (existingUser.totalDocs > 0) {
       // Check if user has already logged in with this provider
       const user = existingUser.docs[0] as User
@@ -56,8 +54,6 @@ export const externalUsersAuthProvider: Endpoint = {
           },
         )
       } else {
-        console.log('User exists but has not logged in with this provider, updating user:', user)
-
         // User exists but has not logged in with this provider, update the user
         await req.payload.update({
           id: user.id,
@@ -72,9 +68,6 @@ export const externalUsersAuthProvider: Endpoint = {
             },
           },
         })
-
-        console.log('User updated with new provider information:', user)
-
         return Response.json(
           {
             user,

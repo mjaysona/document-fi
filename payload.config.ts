@@ -38,6 +38,8 @@ import APIConnections from '@/collections/APIConnections'
 import Equipment from '@/collections/Equipment'
 import EquipmentMedia from '@/collections/EquipmentMedia'
 import Quotes from '@/collections/Quotes'
+import Banks from '@/collections/Banks'
+import Transactions from '@/collections/Transactions'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -72,6 +74,8 @@ export default buildConfig({
     Equipment,
     EquipmentMedia,
     WeightBills,
+    Banks,
+    Transactions,
     Quotes,
     WeightBillReceipts,
     SessionUploads,

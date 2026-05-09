@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { createVehicles, readVehicles, updateVehicles, deleteVehicles } from './access'
 
 const Vehicles: CollectionConfig = {
   slug: 'vehicles',
@@ -7,10 +8,10 @@ const Vehicles: CollectionConfig = {
     plural: 'Vehicles',
   },
   access: {
-    create: () => true,
-    read: () => true,
-    update: () => true,
-    delete: () => true,
+    create: createVehicles,
+    read: readVehicles,
+    update: updateVehicles,
+    delete: deleteVehicles,
   },
   admin: {
     useAsTitle: 'name',

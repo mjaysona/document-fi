@@ -13,12 +13,22 @@ import { selectedItemsField } from '@/fields/NonRepeatingArraySelectField'
 
 const configurableCollections = [
   'accounts',
+  'banks',
+  'equipment',
+  'equipment-media',
   'media',
   'pages',
   'posts',
+  'quotes',
   'sessions',
+  'session-uploads',
+  'transactions',
   'users',
+  'user-preferences',
   'user-roles',
+  'vehicles',
+  'weight-bills',
+  'weight-bill-receipts',
 ]
 
 const configurableGlobals = ['dashboard-customization']
@@ -304,6 +314,24 @@ const UserRoles: CollectionConfig = {
           ...data,
           value: camelCaseFormat(data?.label),
         }
+      },
+    ],
+    beforeValidate: [
+      ({ data, req }) => {
+        // Filter permissions to only those referencing valid collections
+        // This allows existing permissions for collections not in configurableCollections
+        // but prevents referencing collections that don't exist in Payload
+        if (Array.isArray(data?.permissions)) {
+          const collections = req.payload.collections
+          data.permissions = data.permissions.filter((perm: any) => {
+            if (perm && typeof perm === 'object' && perm.collectionSlug) {
+              // Keep permission if it references an actual collection in Payload
+              return collections[perm.collectionSlug as CollectionSlug] !== undefined
+            }
+            return true
+          })
+        }
+        return data
       },
     ],
   },
