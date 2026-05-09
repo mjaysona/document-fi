@@ -16,6 +16,7 @@ export type FinancialAccountDetail = {
   name: string
   bankId: string
   bankName?: string
+  isDefault: boolean
   startingBalance: number
   currentBalance: number
 }
@@ -53,6 +54,7 @@ function mapFinancialAccount(doc: any): FinancialAccountDetail {
     name: String(doc.name || ''),
     bankId,
     bankName,
+    isDefault: Boolean(doc.isDefault),
     startingBalance:
       typeof doc.startingBalance === 'number' && Number.isFinite(doc.startingBalance)
         ? doc.startingBalance
@@ -220,5 +222,67 @@ export async function updateFinancialAccount(
   } catch (error) {
     console.error('Failed to update financial account:', error)
     return { success: false, error: 'Failed to update financial account.' }
+  }
+}
+
+export async function setFinancialAccountDefault(
+  id: string,
+  isDefault: boolean,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() })
+    if (!session?.user?.id) return { success: false, error: 'Unauthorized' }
+
+    const payload = await getPayload({ config })
+
+    if (isDefault) {
+      await payload.update({
+        collection: 'financial-accounts',
+        where: {
+          isDefault: {
+            equals: true,
+          },
+        },
+        data: {
+          isDefault: false,
+        },
+        depth: 0,
+      })
+    }
+
+    await payload.update({
+      collection: 'financial-accounts',
+      id,
+      data: {
+        isDefault,
+      },
+      depth: 0,
+    })
+
+    return { success: true }
+  } catch (error) {
+    console.error('Failed to set default financial account:', error)
+    return { success: false, error: 'Failed to set default financial account.' }
+  }
+}
+
+export async function deleteFinancialAccount(
+  id: string,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() })
+    if (!session?.user?.id) return { success: false, error: 'Unauthorized' }
+
+    const payload = await getPayload({ config })
+    await payload.delete({
+      collection: 'financial-accounts',
+      id,
+      depth: 0,
+    })
+
+    return { success: true }
+  } catch (error) {
+    console.error('Failed to delete financial account:', error)
+    return { success: false, error: 'Failed to delete financial account.' }
   }
 }

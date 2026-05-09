@@ -2,9 +2,13 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Button, Group, Paper, SimpleGrid, Stack, Text } from '@mantine/core'
+import { Badge, Button, Group, Paper, SimpleGrid, Stack, Text } from '@mantine/core'
 import { ArrowDownRight, ArrowUpRight, Landmark } from 'lucide-react'
-import { getFinancialAccountsList, type FinancialAccountDetail } from './actions'
+import {
+  getFinancialAccountsList,
+  setFinancialAccountDefault,
+  type FinancialAccountDetail,
+} from './actions'
 import classes from './page.module.css'
 
 type AccountStat = {
@@ -12,6 +16,7 @@ type AccountStat = {
   title: string
   value: string
   diff: number
+  isDefault: boolean
 }
 
 function formatCurrency(value?: number): string {
@@ -60,6 +65,7 @@ export default function FinancialAccountsPage() {
       title: account.name,
       value: formatCurrency(account.currentBalance),
       diff: toDiffPercent(account.startingBalance, account.currentBalance),
+      isDefault: account.isDefault,
     }))
   }, [accounts])
 
@@ -116,7 +122,35 @@ export default function FinancialAccountsPage() {
                 <Text size="xs" c="dimmed" className={classes.title}>
                   {stat.title}
                 </Text>
-                <Landmark className={classes.icon} size={22} strokeWidth={1.5} />
+                <Group gap="xs">
+                  {stat.isDefault ? (
+                    <Badge color="teal" variant="light" size="sm">
+                      Default
+                    </Badge>
+                  ) : (
+                    <Badge
+                      color="blue"
+                      variant="outline"
+                      size="sm"
+                      style={{ cursor: 'pointer' }}
+                      onClick={async (event) => {
+                        event.stopPropagation()
+                        const result = await setFinancialAccountDefault(stat.id, true)
+                        if (!result.success) return
+
+                        setAccounts((current) =>
+                          current.map((account) => ({
+                            ...account,
+                            isDefault: account.id === stat.id,
+                          })),
+                        )
+                      }}
+                    >
+                      Set as default
+                    </Badge>
+                  )}
+                  <Landmark className={classes.icon} size={22} strokeWidth={1.5} />
+                </Group>
               </Group>
 
               <Group align="flex-end" gap="xs" mt={25}>
