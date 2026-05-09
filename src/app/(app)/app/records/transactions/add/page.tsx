@@ -69,10 +69,10 @@ export default function AddTransactionPage() {
   const [fromValue, setFromValue] = useState('')
   const [toValue, setToValue] = useState('')
   const [referenceNumber, setReferenceNumber] = useState('')
-  const [amount, setAmount] = useState<number | ''>('')
+  const [amount, setAmount] = useState<number | ''>(0)
   const [transactionFee, setTransactionFee] = useState<number | ''>(0)
   const [transactionStatus, setTransactionStatus] = useState<TransactionStatus | null>('completed')
-  const [runningBalance, setRunningBalance] = useState<number | ''>('')
+  const [runningBalance, setRunningBalance] = useState<number | ''>(0)
   const [originalTransactionSnapshot, setOriginalTransactionSnapshot] =
     useState<OriginalTransactionSnapshot | null>(null)
 
@@ -111,10 +111,10 @@ export default function AddTransactionPage() {
     setFromValue(tx.from ?? '')
     setToValue(tx.to ?? '')
     setReferenceNumber(tx.referenceNumber ?? '')
-    setAmount(typeof tx.amount === 'number' ? tx.amount : '')
+    setAmount(typeof tx.amount === 'number' ? tx.amount : 0)
     setTransactionFee(typeof tx.transactionFee === 'number' ? tx.transactionFee : 0)
     setTransactionStatus(tx.transactionStatus ?? 'completed')
-    setRunningBalance(typeof tx.runningBalance === 'number' ? tx.runningBalance : '')
+    setRunningBalance(typeof tx.runningBalance === 'number' ? tx.runningBalance : 0)
     setOriginalTransactionSnapshot(
       tx.financialAccount &&
         tx.transactionType &&
@@ -520,7 +520,7 @@ export default function AddTransactionPage() {
                     searchable
                     data={financialAccounts.map((account) => ({
                       value: account.id,
-                      label: `${account.name} (${account.code})${account.bankName ? ` - ${account.bankName}` : ''}${account.isDefault ? ' (Default)' : ''}`,
+                      label: `${account.name} ${account.bankName ? ` - ${account.bankName}` : ''}${account.isDefault ? ' (Default)' : ''}`,
                     }))}
                     value={financialAccount}
                     onChange={setFinancialAccount}
@@ -618,7 +618,7 @@ export default function AddTransactionPage() {
                   <NumberInput
                     label="Amount"
                     value={amount}
-                    onChange={(value) => setAmount(typeof value === 'number' ? value : '')}
+                    onChange={(value) => setAmount(typeof value === 'number' ? value : 0)}
                     min={0}
                     leftSection="₱"
                     decimalScale={2}

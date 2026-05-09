@@ -39,12 +39,10 @@ export default function FinancialAccountCreatePage() {
 
   const [name, setName] = useState('')
   const [bankId, setBankId] = useState<string | null>(null)
-  const [startingBalance, setStartingBalance] = useState<number | ''>('')
-  const [currentBalance, setCurrentBalance] = useState<number | ''>('')
+  const [startingBalance, setStartingBalance] = useState<number | string>('')
   const [nameError, setNameError] = useState<string | null>(null)
   const [bankError, setBankError] = useState<string | null>(null)
   const [startingBalanceError, setStartingBalanceError] = useState<string | null>(null)
-  const [currentBalanceError, setCurrentBalanceError] = useState<string | null>(null)
 
   useEffect(() => {
     const load = async () => {
@@ -77,7 +75,6 @@ export default function FinancialAccountCreatePage() {
       setName(accountResult.data.name)
       setBankId(accountResult.data.bankId)
       setStartingBalance(accountResult.data.startingBalance)
-      setCurrentBalance(accountResult.data.currentBalance)
       setIsLoading(false)
     }
 
@@ -92,6 +89,8 @@ export default function FinancialAccountCreatePage() {
       })),
     [banks],
   )
+
+  const currentBalanceValue = useMemo<number | string>(() => startingBalance, [startingBalance])
 
   const handleSave = async () => {
     setFeedback(null)
@@ -112,18 +111,16 @@ export default function FinancialAccountCreatePage() {
       setBankError(null)
     }
 
-    if (startingBalance === '') {
+    const parsedStartingBalance =
+      typeof startingBalance === 'number'
+        ? startingBalance
+        : Number(startingBalance.replace(/,/g, '').trim())
+
+    if (startingBalance === '' || Number.isNaN(parsedStartingBalance)) {
       setStartingBalanceError('Starting Balance is required')
       hasError = true
     } else {
       setStartingBalanceError(null)
-    }
-
-    if (currentBalance === '') {
-      setCurrentBalanceError('Current Balance is required')
-      hasError = true
-    } else {
-      setCurrentBalanceError(null)
     }
 
     if (hasError) return
@@ -143,8 +140,8 @@ export default function FinancialAccountCreatePage() {
       const result = await updateFinancialAccount(editId, {
         name: trimmedName,
         bankId: validatedBankId,
-        startingBalance: Number(startingBalance),
-        currentBalance: Number(currentBalance),
+        startingBalance: parsedStartingBalance,
+        currentBalance: parsedStartingBalance,
       })
 
       if (result.success) {
@@ -159,8 +156,8 @@ export default function FinancialAccountCreatePage() {
       const result = await createFinancialAccount({
         name: trimmedName,
         bankId: validatedBankId,
-        startingBalance: Number(startingBalance),
-        currentBalance: Number(currentBalance),
+        startingBalance: parsedStartingBalance,
+        currentBalance: parsedStartingBalance,
       })
 
       if (result.success && result.id) {
@@ -225,7 +222,7 @@ export default function FinancialAccountCreatePage() {
               label="Starting Balance"
               value={startingBalance}
               onChange={(value) => {
-                setStartingBalance(typeof value === 'number' ? value : '')
+                setStartingBalance(value)
                 setStartingBalanceError(null)
               }}
               min={0}
@@ -241,11 +238,7 @@ export default function FinancialAccountCreatePage() {
 
             <NumberInput
               label="Current Balance"
-              value={currentBalance}
-              onChange={(value) => {
-                setCurrentBalance(typeof value === 'number' ? value : '')
-                setCurrentBalanceError(null)
-              }}
+              value={currentBalanceValue}
               min={0}
               leftSection="₱"
               decimalScale={2}
@@ -253,7 +246,7 @@ export default function FinancialAccountCreatePage() {
               thousandSeparator=","
               hideControls
               disabled={isSaving}
-              error={currentBalanceError}
+              readOnly
               required
             />
 

@@ -69,7 +69,7 @@ export default function FinancialAccountsPage() {
 
   if (isLoading) {
     return (
-      <div className={classes.root}>
+      <div>
         <Text c="dimmed">Loading financial accounts...</Text>
       </div>
     )
@@ -77,7 +77,7 @@ export default function FinancialAccountsPage() {
 
   if (!accounts.length) {
     return (
-      <div className={classes.root}>
+      <div>
         <Paper withBorder p="xl" radius="md" className={classes.emptyState}>
           <Stack gap="md" align="center">
             <Text fw={700}>No financial accounts yet</Text>
@@ -92,7 +92,7 @@ export default function FinancialAccountsPage() {
   }
 
   return (
-    <div className={classes.root}>
+    <div>
       <Group justify="space-between" mb="md">
         <Text fw={700}>Financial Accounts</Text>
         <Button variant="light" onClick={goToCreate}>
