@@ -377,7 +377,7 @@ export default function NewQuotePage() {
                       value={item.unitPrice}
                       onChange={(val) => handleItemChange(item._key, 'unitPrice', val)}
                       min={0}
-                      prefix="₱"
+                      leftSection="₱"
                       decimalScale={2}
                       fixedDecimalScale
                       hideControls

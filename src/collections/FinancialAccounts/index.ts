@@ -24,13 +24,6 @@ const FinancialAccounts: CollectionConfig = {
   },
   fields: [
     {
-      name: 'code',
-      label: 'Account Code',
-      type: 'text',
-      required: true,
-      unique: true,
-    },
-    {
       name: 'name',
       label: 'Name',
       type: 'text',
@@ -49,6 +42,9 @@ const FinancialAccounts: CollectionConfig = {
       label: 'Default Account',
       type: 'checkbox',
       defaultValue: false,
+      admin: {
+        position: 'sidebar',
+      },
     },
     {
       name: 'startingBalance',

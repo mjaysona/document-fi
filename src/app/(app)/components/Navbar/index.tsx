@@ -6,12 +6,11 @@ import {
   ArrowLeftToLine,
   ArrowRightFromLine,
   ChevronDown,
-  ChevronRight,
   ChevronUp,
   FileText,
   LayoutDashboard,
+  Landmark,
   LogOut,
-  PlusCircle,
   Settings,
   Weight,
 } from 'lucide-react'
@@ -34,12 +33,20 @@ export const Navbar = ({ isExpanded, toggleExpandCollapse, mobileBreakpoint }: N
   const isWeightBillsActive = pathname.startsWith('/app/records/weight-bills')
   const isQuotationsActive = pathname.startsWith('/app/records/quotations')
   const isTransactionsActive = pathname.startsWith('/app/records/transactions')
+  const isFinancialAccountsActive = pathname.startsWith('/app/financial-accounts')
 
   useEffect(() => {
     if (isRecordsActive) setRecordsOpened(true)
   }, [isRecordsActive])
 
   const navItems = [
+    {
+      id: 'financial-accounts',
+      label: 'Financial Accounts',
+      icon: Landmark,
+      path: '/app/financial-accounts',
+      active: isFinancialAccountsActive,
+    },
     {
       id: 'records',
       label: 'Records',

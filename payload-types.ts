@@ -398,7 +398,6 @@ export interface Bank {
  */
 export interface FinancialAccount {
   id: string;
-  code: string;
   name: string;
   bank: string | Bank;
   isDefault?: boolean | null;
@@ -908,7 +907,6 @@ export interface BanksSelect<T extends boolean = true> {
  * via the `definition` "financial-accounts_select".
  */
 export interface FinancialAccountsSelect<T extends boolean = true> {
-  code?: T;
   name?: T;
   bank?: T;
   isDefault?: T;
