@@ -23,7 +23,9 @@ async function run() {
       await user(payload)
       break
     default:
-      console.error('Unknown seed type. Use "user" to seed user data.')
+      console.error(
+        'Unknown seed type. Use "user" to seed user data. Try "pnpm seed user" to seed initial user data.',
+      )
   }
 
   process.exit(0)
