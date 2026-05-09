@@ -40,6 +40,7 @@ import EquipmentMedia from '@/collections/EquipmentMedia'
 import Quotes from '@/collections/Quotes'
 import Banks from '@/collections/Banks'
 import Transactions from '@/collections/Transactions'
+import TransactionReceipts from '@/collections/TransactionReceipts'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -76,6 +77,7 @@ export default buildConfig({
     WeightBills,
     Banks,
     Transactions,
+    TransactionReceipts,
     Quotes,
     WeightBillReceipts,
     SessionUploads,
@@ -173,6 +175,9 @@ export default buildConfig({
               },
               'weight-bill-receipts': {
                 prefix: 'app/weight-bills',
+              },
+              'transaction-receipts': {
+                prefix: 'app/transactions',
               },
               'equipment-media': {
                 prefix: 'app/equipment',

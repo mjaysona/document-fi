@@ -77,6 +77,7 @@ export interface Config {
     'weight-bills': WeightBill;
     banks: Bank;
     transactions: Transaction;
+    'transaction-receipts': TransactionReceipt;
     quotes: Quote;
     'weight-bill-receipts': WeightBillReceipt;
     'session-uploads': SessionUpload;
@@ -102,6 +103,7 @@ export interface Config {
     'weight-bills': WeightBillsSelect<false> | WeightBillsSelect<true>;
     banks: BanksSelect<false> | BanksSelect<true>;
     transactions: TransactionsSelect<false> | TransactionsSelect<true>;
+    'transaction-receipts': TransactionReceiptsSelect<false> | TransactionReceiptsSelect<true>;
     quotes: QuotesSelect<false> | QuotesSelect<true>;
     'weight-bill-receipts': WeightBillReceiptsSelect<false> | WeightBillReceiptsSelect<true>;
     'session-uploads': SessionUploadsSelect<false> | SessionUploadsSelect<true>;
@@ -404,7 +406,7 @@ export interface Transaction {
   moneyOut?: number | null;
   runningBalance?: number | null;
   currency: string;
-  receiptImage: string | Media;
+  receiptImage?: (string | null) | TransactionReceipt;
   rawOcrText?: string | null;
   aiExtractedJson?:
     | {
@@ -428,12 +430,11 @@ export interface Transaction {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "media".
+ * via the `definition` "transaction-receipts".
  */
-export interface Media {
+export interface TransactionReceipt {
   id: string;
   createdBy?: (string | null) | User;
-  text?: string | null;
   prefix?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -479,6 +480,27 @@ export interface Quote {
   updatedBy?: (string | null) | User;
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media".
+ */
+export interface Media {
+  id: string;
+  createdBy?: (string | null) | User;
+  text?: string | null;
+  prefix?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -619,6 +641,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'transactions';
         value: string | Transaction;
+      } | null)
+    | ({
+        relationTo: 'transaction-receipts';
+        value: string | TransactionReceipt;
       } | null)
     | ({
         relationTo: 'quotes';
@@ -882,6 +908,25 @@ export interface TransactionsSelect<T extends boolean = true> {
   updatedBy?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "transaction-receipts_select".
+ */
+export interface TransactionReceiptsSelect<T extends boolean = true> {
+  createdBy?: T;
+  prefix?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

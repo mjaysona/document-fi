@@ -33,6 +33,7 @@ export const Navbar = ({ isExpanded, toggleExpandCollapse, mobileBreakpoint }: N
   const isRecordsActive = pathname.startsWith('/app/records')
   const isWeightBillsActive = pathname.startsWith('/app/records/weight-bills')
   const isQuotationsActive = pathname.startsWith('/app/records/quotations')
+  const isTransactionsActive = pathname.startsWith('/app/records/transactions')
 
   useEffect(() => {
     if (isRecordsActive) setRecordsOpened(true)
@@ -60,6 +61,13 @@ export const Navbar = ({ isExpanded, toggleExpandCollapse, mobileBreakpoint }: N
           icon: FileText,
           path: '/app/records/quotations',
           active: isQuotationsActive,
+        },
+        {
+          id: 'transactions',
+          label: 'Transactions',
+          icon: FileText,
+          path: '/app/records/transactions',
+          active: isTransactionsActive,
         },
       ],
     },
@@ -123,6 +131,12 @@ export const Navbar = ({ isExpanded, toggleExpandCollapse, mobileBreakpoint }: N
                     onClick={() => router.push('/app/records/quotations/add')}
                   >
                     Quotation
+                  </Menu.Item>
+                  <Menu.Item
+                    leftSection={<FileText size={16} />}
+                    onClick={() => router.push('/app/records/transactions/add')}
+                  >
+                    Transaction
                   </Menu.Item>
                 </Menu.Dropdown>
               </Menu>

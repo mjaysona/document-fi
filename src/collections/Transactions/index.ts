@@ -98,9 +98,8 @@ const Transactions: CollectionConfig = {
     {
       name: 'receiptImage',
       label: 'Receipt Image',
-      type: 'upload',
-      relationTo: 'media',
-      required: true,
+      type: 'relationship',
+      relationTo: 'transaction-receipts',
     },
     {
       name: 'rawOcrText',

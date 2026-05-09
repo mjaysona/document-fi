@@ -17,12 +17,13 @@ import {
   Textarea,
   Title,
 } from '@mantine/core'
-import { ArrowLeft } from 'lucide-react'
+import { Dropzone, MIME_TYPES } from '@mantine/dropzone'
+import { ArrowLeft, Ban, CheckCircle, Pencil, Trash2, Upload } from 'lucide-react'
 import {
   getBanks,
   getTransactionById,
-  updateTransaction,
-  uploadTransactionReceipt,
+  replaceTransactionReceipt,
+  updateTransactionWithReceipt,
   type BankOption,
 } from '../../actions'
 import classes from '../../../page.module.scss'
@@ -38,6 +39,7 @@ export default function EditTransactionPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isUploadingReceipt, setIsUploadingReceipt] = useState(false)
+  const [isProcessing, setIsProcessing] = useState(false)
   const [feedback, setFeedback] = useState<Feedback | null>(null)
 
   const [transactionDate, setTransactionDate] = useState('')
@@ -53,9 +55,12 @@ export default function EditTransactionPage() {
   const [isReversed, setIsReversed] = useState(false)
   const [reversalReason, setReversalReason] = useState('')
 
-  const [receiptImageId, setReceiptImageId] = useState<string | undefined>()
+  const [receiptImageId, setReceiptImageId] = useState<string>('')
   const [receiptImageUrl, setReceiptImageUrl] = useState<string | undefined>()
-  const receiptInputRef = useRef<HTMLInputElement>(null)
+  const [receiptImageFileName, setReceiptImageFileName] = useState<string>('')
+  const [pendingReceiptFile, setPendingReceiptFile] = useState<File | null>(null)
+  const [pendingRawOcrText, setPendingRawOcrText] = useState<string | undefined>()
+  const receiptInputRef = useRef<() => void>(() => {})
 
   useEffect(() => {
     let isMounted = true
@@ -91,12 +96,15 @@ export default function EditTransactionPage() {
       setCurrency(tx.currency ?? 'PHP')
       setIsReversed(tx.isReversed ?? false)
       setReversalReason(tx.reversalReason ?? '')
-      setReceiptImageId(tx.receiptImageId)
-      setReceiptImageUrl(tx.receiptImageUrl)
+      setReceiptImageId(tx.receiptImageId ?? '')
+      setReceiptImageUrl(tx.receiptImageUrl ?? undefined)
+      setReceiptImageFileName(tx.receiptImageFileName ?? '')
+      setPendingReceiptFile(null)
+      setPendingRawOcrText(undefined)
       setIsLoading(false)
     }
 
-    load()
+    void load()
     return () => {
       isMounted = false
     }
@@ -104,42 +112,46 @@ export default function EditTransactionPage() {
 
   const handleSave = async () => {
     setFeedback(null)
+
     if (!description.trim()) {
       setFeedback({ type: 'error', message: 'Description is required.' })
       return
     }
-    if (!receiptImageId) {
-      setFeedback({ type: 'error', message: 'Receipt image is required.' })
-      return
-    }
 
     setIsSaving(true)
-    const result = await updateTransaction(id, {
-      transactionDate: transactionDate || undefined,
-      description: description.trim(),
-      particulars: particulars.trim() || undefined,
-      transactionType:
-        (transactionType as
-          | 'debit'
-          | 'credit'
-          | 'transfer'
-          | 'payment'
-          | 'other'
-          | null
-          | undefined) || undefined,
-      sourceBank: sourceBank || undefined,
-      referenceNumber: referenceNumber.trim() || undefined,
-      moneyIn: moneyIn === '' ? undefined : Number(moneyIn),
-      moneyOut: moneyOut === '' ? undefined : Number(moneyOut),
-      runningBalance: runningBalance === '' ? undefined : Number(runningBalance),
-      currency: currency.trim() || 'PHP',
-      receiptImageId,
-      isReversed,
-      reversalReason: isReversed ? reversalReason.trim() || undefined : undefined,
-    })
+
+    const formData = new FormData()
+    formData.append('description', description.trim())
+    if (transactionDate) formData.append('transactionDate', transactionDate)
+    if (particulars.trim()) formData.append('particulars', particulars.trim())
+    if (transactionType) formData.append('transactionType', transactionType)
+    if (sourceBank) formData.append('sourceBank', sourceBank)
+    if (referenceNumber.trim()) formData.append('referenceNumber', referenceNumber.trim())
+    if (moneyIn !== '') formData.append('moneyIn', String(Number(moneyIn)))
+    if (moneyOut !== '') formData.append('moneyOut', String(Number(moneyOut)))
+    if (runningBalance !== '') formData.append('runningBalance', String(Number(runningBalance)))
+    formData.append('currency', currency.trim() || 'PHP')
+    formData.append('isReversed', String(isReversed))
+    if (receiptImageId) formData.append('existingReceiptImageId', receiptImageId)
+    if (pendingRawOcrText) formData.append('rawOcrText', pendingRawOcrText)
+    if (pendingReceiptFile) formData.append('file', pendingReceiptFile)
+    if (isReversed && reversalReason.trim()) {
+      formData.append('reversalReason', reversalReason.trim())
+    }
+
+    const result = await updateTransactionWithReceipt(id, formData)
 
     if (result.success) {
+      setPendingReceiptFile(null)
+      setPendingRawOcrText(undefined)
       setFeedback({ type: 'success', message: 'Transaction updated.' })
+
+      const refreshed = await getTransactionById(id)
+      if (refreshed.success && refreshed.data) {
+        setReceiptImageId(refreshed.data.receiptImageId ?? '')
+        setReceiptImageUrl(refreshed.data.receiptImageUrl ?? undefined)
+        setReceiptImageFileName(refreshed.data.receiptImageFileName ?? '')
+      }
     } else {
       setFeedback({ type: 'error', message: result.error ?? 'Failed to update transaction.' })
     }
@@ -149,8 +161,8 @@ export default function EditTransactionPage() {
 
   return (
     <div className={classes.wrapper}>
-      <Stack gap="md" style={{ flex: 1, paddingBottom: 120 }}>
-        <Group gap="sm" align="center">
+      <div className={classes.card} style={{ flex: 1 }}>
+        <Group gap="sm" align="center" mb="md">
           <ActionIcon
             variant="default"
             size="lg"
@@ -164,7 +176,7 @@ export default function EditTransactionPage() {
         </Group>
 
         {feedback && (
-          <Alert color={feedback.type === 'success' ? 'green' : 'red'} title="Notice">
+          <Alert color={feedback.type === 'success' ? 'green' : 'red'} title="Notice" mb="md">
             {feedback.message}
           </Alert>
         )}
@@ -172,62 +184,8 @@ export default function EditTransactionPage() {
         {isLoading ? (
           <Text c="dimmed">Loading...</Text>
         ) : (
-          <>
-            <Card withBorder radius="md">
-              <Text fw={700} mb="md">
-                Receipt
-              </Text>
-              <Stack gap="sm">
-                {receiptImageUrl && (
-                  <img
-                    src={receiptImageUrl}
-                    alt="Receipt preview"
-                    style={{ maxHeight: 240, maxWidth: '100%', objectFit: 'contain' }}
-                  />
-                )}
-                <Group gap="xs" align="center">
-                  <Button
-                    variant="default"
-                    size="sm"
-                    loading={isUploadingReceipt}
-                    disabled={isSaving}
-                    onClick={() => receiptInputRef.current?.click()}
-                  >
-                    {receiptImageUrl ? 'Change Receipt' : 'Upload Receipt'}
-                  </Button>
-                </Group>
-                <input
-                  ref={receiptInputRef}
-                  type="file"
-                  accept="image/*"
-                  style={{ display: 'none' }}
-                  onChange={async (e) => {
-                    const file = e.currentTarget.files?.[0]
-                    if (!file) return
-                    setReceiptImageUrl(URL.createObjectURL(file))
-                    setIsUploadingReceipt(true)
-
-                    const formData = new FormData()
-                    formData.append('file', file)
-                    const result = await uploadTransactionReceipt(formData)
-
-                    if (result.success && result.id) {
-                      setReceiptImageId(result.id)
-                      if (result.url) setReceiptImageUrl(result.url)
-                    } else {
-                      setFeedback({
-                        type: 'error',
-                        message: result.error ?? 'Failed to upload receipt.',
-                      })
-                    }
-
-                    setIsUploadingReceipt(false)
-                  }}
-                />
-              </Stack>
-            </Card>
-
-            <Card withBorder radius="md">
+          <Group grow align="flex-start" wrap="nowrap" gap="md">
+            <Card withBorder radius="md" style={{ flex: 1 }}>
               <Text fw={700} mb="md">
                 Transaction Details
               </Text>
@@ -288,7 +246,7 @@ export default function EditTransactionPage() {
                     decimalScale={2}
                     fixedDecimalScale
                     value={moneyIn}
-                    onChange={(val) => setMoneyIn(typeof val === 'number' ? val : '')}
+                    onChange={(value) => setMoneyIn(typeof value === 'number' ? value : '')}
                   />
                   <NumberInput
                     label="Money Out"
@@ -296,7 +254,7 @@ export default function EditTransactionPage() {
                     decimalScale={2}
                     fixedDecimalScale
                     value={moneyOut}
-                    onChange={(val) => setMoneyOut(typeof val === 'number' ? val : '')}
+                    onChange={(value) => setMoneyOut(typeof value === 'number' ? value : '')}
                   />
                   <NumberInput
                     label="Running Balance"
@@ -304,7 +262,7 @@ export default function EditTransactionPage() {
                     decimalScale={2}
                     fixedDecimalScale
                     value={runningBalance}
-                    onChange={(val) => setRunningBalance(typeof val === 'number' ? val : '')}
+                    onChange={(value) => setRunningBalance(typeof value === 'number' ? value : '')}
                   />
                 </Group>
                 <TextInput
@@ -328,16 +286,204 @@ export default function EditTransactionPage() {
                 )}
               </Stack>
             </Card>
-          </>
+
+            <div style={{ minWidth: 320 }}>
+              <input
+                hidden
+                type="file"
+                accept="image/*"
+                onChange={(event) => {
+                  const file = event.currentTarget.files?.[0]
+                  if (!file) return
+
+                  void (async () => {
+                    setPendingReceiptFile(file)
+                    setReceiptImageUrl(URL.createObjectURL(file))
+                    setReceiptImageFileName(file.name)
+                    setPendingRawOcrText(undefined)
+                    setFeedback(null)
+                    setIsUploadingReceipt(true)
+                    setIsProcessing(true)
+
+                    const formData = new FormData()
+                    formData.append('file', file)
+                    const result = await replaceTransactionReceipt(id, formData)
+
+                    if (result.success) {
+                      setPendingRawOcrText(result.rawOcrText)
+                      setFeedback({
+                        type: 'success',
+                        message: 'Receipt processed. Save to apply it.',
+                      })
+                    } else {
+                      setFeedback({
+                        type: 'error',
+                        message: result.error ?? 'Failed to process receipt.',
+                      })
+                    }
+
+                    setIsUploadingReceipt(false)
+                    setIsProcessing(false)
+                  })()
+
+                  event.currentTarget.value = ''
+                }}
+                ref={(node) => {
+                  receiptInputRef.current = () => node?.click()
+                }}
+              />
+
+              {!receiptImageUrl ? (
+                <Card
+                  withBorder
+                  radius="md"
+                  className={classes.uploadCard}
+                  style={{ position: 'relative' }}
+                >
+                  <Dropzone
+                    className={classes.dropzone}
+                    radius="md"
+                    onDrop={async (files) => {
+                      const file = files[0]
+                      if (!file) return
+
+                      setPendingReceiptFile(file)
+                      setReceiptImageUrl(URL.createObjectURL(file))
+                      setReceiptImageFileName(file.name)
+                      setPendingRawOcrText(undefined)
+                      setFeedback(null)
+                      setIsUploadingReceipt(true)
+                      setIsProcessing(true)
+
+                      const formData = new FormData()
+                      formData.append('file', file)
+                      const result = await replaceTransactionReceipt(id, formData)
+
+                      if (result.success) {
+                        setPendingRawOcrText(result.rawOcrText)
+                        setFeedback({
+                          type: 'success',
+                          message: 'Receipt processed. Save to apply it.',
+                        })
+                      } else {
+                        setFeedback({
+                          type: 'error',
+                          message: result.error ?? 'Failed to process receipt.',
+                        })
+                      }
+
+                      setIsUploadingReceipt(false)
+                      setIsProcessing(false)
+                    }}
+                    onReject={() => {
+                      setFeedback({
+                        type: 'error',
+                        message: 'Invalid file. Please upload an image.',
+                      })
+                    }}
+                    maxFiles={1}
+                    accept={[MIME_TYPES.png, MIME_TYPES.jpeg, MIME_TYPES.webp]}
+                    disabled={isSaving || isProcessing || isUploadingReceipt}
+                    aria-label="Drop receipt here"
+                  >
+                    <div style={{ pointerEvents: 'none' }}>
+                      <Group justify="center">
+                        <Dropzone.Accept>
+                          <CheckCircle size={50} className={classes.icon} />
+                        </Dropzone.Accept>
+                        <Dropzone.Reject>
+                          <Ban size={50} className={classes.icon} />
+                        </Dropzone.Reject>
+                        <Dropzone.Idle>
+                          <Upload size={50} className={classes.icon} />
+                        </Dropzone.Idle>
+                      </Group>
+
+                      <Text ta="center" fw={700} fz="lg" mt="xl">
+                        <Dropzone.Accept>Drop receipt here</Dropzone.Accept>
+                        <Dropzone.Reject>File is invalid</Dropzone.Reject>
+                        <Dropzone.Idle>Upload proof of receipt</Dropzone.Idle>
+                      </Text>
+
+                      <Text className={classes.description}>
+                        Drag & drop an image here, or click to select a file.
+                      </Text>
+                    </div>
+                  </Dropzone>
+                </Card>
+              ) : (
+                <Card withBorder radius="md" style={{ position: 'relative' }}>
+                  <Text fw={700} mb="md">
+                    Receipt
+                  </Text>
+                  <Stack gap="sm">
+                    <Group justify="space-between" align="center" mb="md">
+                      <Text fw={700}>
+                        Image preview (
+                        {pendingReceiptFile?.name || receiptImageFileName || 'Receipt'})
+                      </Text>
+                      <Group gap="xs">
+                        <ActionIcon
+                          variant="subtle"
+                          color="blue"
+                          size="sm"
+                          onClick={() => receiptInputRef.current()}
+                          disabled={isSaving || isProcessing || isUploadingReceipt}
+                          aria-label="Edit attached image"
+                        >
+                          <Pencil size={14} />
+                        </ActionIcon>
+                        <ActionIcon
+                          variant="subtle"
+                          color="red"
+                          size="sm"
+                          onClick={() => {
+                            setReceiptImageId('')
+                            setReceiptImageUrl(undefined)
+                            setReceiptImageFileName('')
+                            setPendingReceiptFile(null)
+                            setPendingRawOcrText(undefined)
+                          }}
+                          disabled={isSaving || isProcessing || isUploadingReceipt}
+                          aria-label="Remove attached image"
+                        >
+                          <Trash2 size={14} />
+                        </ActionIcon>
+                      </Group>
+                    </Group>
+                    <div
+                      style={{
+                        position: 'relative',
+                        width: '100%',
+                        maxHeight: '400px',
+                        overflow: 'auto',
+                      }}
+                    >
+                      <img
+                        src={receiptImageUrl}
+                        alt="Receipt preview"
+                        style={{
+                          width: '100%',
+                          height: 'auto',
+                          objectFit: 'contain',
+                          borderRadius: 4,
+                        }}
+                      />
+                    </div>
+                  </Stack>
+                </Card>
+              )}
+            </div>
+          </Group>
         )}
-      </Stack>
+      </div>
 
       <Card withBorder radius="md" className={classes['footer--fixed']}>
-        <Group justify="space-between">
-          <Text size="sm" c="dimmed">
-            Save updates. Processing flow comes in the next phase.
-          </Text>
-          <Button onClick={handleSave} loading={isSaving || isUploadingReceipt || isLoading}>
+        <Group justify="flex-end">
+          <Button
+            onClick={handleSave}
+            loading={isSaving || isUploadingReceipt || isLoading || isProcessing}
+          >
             Save
           </Button>
         </Group>
