@@ -23,6 +23,24 @@
   text-transform: uppercase;
 }
 
+.titleLink {
+  color: var(--mantine-color-blue-4);
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.titleLink:hover {
+  color: var(--mantine-color-blue-6);
+}
+
+.actionBadge {
+  cursor: pointer;
+}
+
+.actionBadge:hover {
+  background-color: var(--mantine-color-gray-7);
+}
+
 .emptyState {
   max-width: 520px;
   margin: 0 auto;

@@ -110,60 +110,56 @@ export default function FinancialAccountsPage() {
           const DiffIcon = stat.diff > 0 ? ArrowUpRight : ArrowDownRight
 
           return (
-            <Paper
-              withBorder
-              p="md"
-              radius="md"
-              key={stat.id}
-              style={{ cursor: 'pointer' }}
-              onClick={() => router.push(`/app/financial-accounts/${stat.id}`)}
-            >
+            <Paper withBorder p="md" radius="md" key={stat.id}>
               <Group justify="space-between">
-                <Text size="xs" c="dimmed" className={classes.title}>
+                <Text
+                  size="xs"
+                  className={`${classes.title} ${classes.titleLink}`}
+                  onClick={() => router.push(`/app/financial-accounts/${stat.id}`)}
+                >
                   {stat.title}
                 </Text>
-                <Group gap="xs">
-                  {stat.isDefault ? (
-                    <Badge color="teal" variant="light" size="sm">
-                      Default
-                    </Badge>
-                  ) : (
-                    <Badge
-                      color="blue"
-                      variant="outline"
-                      size="sm"
-                      style={{ cursor: 'pointer' }}
-                      onClick={async (event) => {
-                        event.stopPropagation()
-                        const result = await setFinancialAccountDefault(stat.id, true)
-                        if (!result.success) return
-
-                        setAccounts((current) =>
-                          current.map((account) => ({
-                            ...account,
-                            isDefault: account.id === stat.id,
-                          })),
-                        )
-                      }}
-                    >
-                      Set as default
-                    </Badge>
-                  )}
-                  <Landmark className={classes.icon} size={22} strokeWidth={1.5} />
-                </Group>
+                <Landmark className={classes.icon} size={22} strokeWidth={1.5} />
               </Group>
 
               <Group align="flex-end" gap="xs" mt={25}>
                 <Text className={classes.value}>{stat.value}</Text>
-                <Text c={stat.diff > 0 ? 'teal' : 'red'} fz="sm" fw={500} className={classes.diff}>
+
+                <Text fz="xs" c="dimmed" mt={7}>
+                  Compared to starting balance
+                </Text>
+                <Text c={stat.diff > 0 ? 'green' : 'red'} fz="sm" fw={500} className={classes.diff}>
                   <span>{Math.abs(stat.diff)}%</span>
                   <DiffIcon size={16} strokeWidth={1.5} />
                 </Text>
               </Group>
 
-              <Text fz="xs" c="dimmed" mt={7}>
-                Compared to starting balance
-              </Text>
+              <Group gap="xs" mt="md">
+                {stat.isDefault ? (
+                  <Badge color="green" size="sm">
+                    Default
+                  </Badge>
+                ) : (
+                  <Badge
+                    color="gray"
+                    size="sm"
+                    className={classes.actionBadge}
+                    onClick={async () => {
+                      const result = await setFinancialAccountDefault(stat.id, true)
+                      if (!result.success) return
+
+                      setAccounts((current) =>
+                        current.map((account) => ({
+                          ...account,
+                          isDefault: account.id === stat.id,
+                        })),
+                      )
+                    }}
+                  >
+                    Set as default
+                  </Badge>
+                )}
+              </Group>
             </Paper>
           )
         })}

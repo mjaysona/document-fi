@@ -20,7 +20,7 @@ const FinancialAccounts: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'name',
-    defaultColumns: ['name', 'code', 'bank', 'isDefault', 'startingBalance', 'currentBalance'],
+    defaultColumns: ['name', 'bank', 'isDefault', 'startingBalance', 'currentBalance'],
   },
   fields: [
     {
@@ -61,9 +61,6 @@ const FinancialAccounts: CollectionConfig = {
       required: true,
       defaultValue: 0,
       min: 0,
-      admin: {
-        readOnly: true,
-      },
     },
   ],
   hooks: {
