@@ -27,9 +27,9 @@ type FileRecord = {
   parsedResult: ParsedWeightBill | null
   date: string
   customerName: string
-  weightBillNumber: number | undefined
+  weightBillNumber: number | string | undefined
   vehicle: string
-  amount: number | undefined
+  amount: number | string | undefined
   paymentStatus: 'PAID' | 'CANCELLED' | ''
   analyzed: boolean
 }
@@ -65,6 +65,19 @@ export default function VerifyPage() {
     }
 
     return findVehicleByName(vehicleIdOrName, vehicleOptions)?.amount
+  }
+
+  const parseOptionalNumber = (value: number | string | undefined): number | undefined => {
+    if (typeof value === 'number' && Number.isFinite(value)) return value
+
+    const normalized = String(value ?? '')
+      .replace(/,/g, '')
+      .trim()
+
+    if (!normalized) return undefined
+
+    const parsed = Number(normalized)
+    return Number.isFinite(parsed) ? parsed : undefined
   }
 
   const analyzeRecord = async (
@@ -289,9 +302,9 @@ export default function VerifyPage() {
           {
             date: currentRecord.date,
             customerName: currentRecord.customerName,
-            weightBillNumber: currentRecord.weightBillNumber,
+            weightBillNumber: parseOptionalNumber(currentRecord.weightBillNumber),
             vehicle: currentRecord.vehicle,
-            amount: currentRecord.amount,
+            amount: parseOptionalNumber(currentRecord.amount),
             paymentStatus: currentRecord.paymentStatus || undefined,
           },
           false,
@@ -311,9 +324,9 @@ export default function VerifyPage() {
         {
           date: currentRecord.date,
           customerName: currentRecord.customerName,
-          weightBillNumber: currentRecord.weightBillNumber,
+          weightBillNumber: parseOptionalNumber(currentRecord.weightBillNumber),
           vehicle: currentRecord.vehicle,
-          amount: currentRecord.amount,
+          amount: parseOptionalNumber(currentRecord.amount),
           paymentStatus: currentRecord.paymentStatus || undefined,
         },
         currentRecord.fileName,
@@ -368,9 +381,9 @@ export default function VerifyPage() {
           {
             date: currentRecord.date,
             customerName: currentRecord.customerName,
-            weightBillNumber: currentRecord.weightBillNumber,
+            weightBillNumber: parseOptionalNumber(currentRecord.weightBillNumber),
             vehicle: currentRecord.vehicle,
-            amount: currentRecord.amount,
+            amount: parseOptionalNumber(currentRecord.amount),
             paymentStatus: currentRecord.paymentStatus || undefined,
           },
           true,
@@ -390,9 +403,9 @@ export default function VerifyPage() {
         {
           date: currentRecord.date,
           customerName: currentRecord.customerName,
-          weightBillNumber: currentRecord.weightBillNumber,
+          weightBillNumber: parseOptionalNumber(currentRecord.weightBillNumber),
           vehicle: currentRecord.vehicle,
-          amount: currentRecord.amount,
+          amount: parseOptionalNumber(currentRecord.amount),
           paymentStatus: currentRecord.paymentStatus || undefined,
         },
         currentRecord.fileName,
@@ -501,7 +514,7 @@ export default function VerifyPage() {
                   value={currentRecord.weightBillNumber}
                   onChange={(val) =>
                     updateActiveRecord({
-                      weightBillNumber: typeof val === 'number' ? val : undefined,
+                      weightBillNumber: val,
                     })
                   }
                   min={0}
@@ -522,9 +535,7 @@ export default function VerifyPage() {
                 <NumberInput
                   label="Amount"
                   value={currentRecord.amount}
-                  onChange={(val) =>
-                    updateActiveRecord({ amount: typeof val === 'number' ? val : undefined })
-                  }
+                  onChange={(val) => updateActiveRecord({ amount: val })}
                   min={0}
                   disabled={isFormDisabled}
                 />

@@ -44,6 +44,23 @@ type OriginalTransactionSnapshot = {
   transactionFee: number
 }
 
+type NumericInputValue = number | string
+
+function parseNumericInputValue(
+  value: NumericInputValue | '' | null | undefined,
+): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) return value
+
+  const normalized = String(value ?? '')
+    .replace(/,/g, '')
+    .trim()
+
+  if (!normalized) return undefined
+
+  const parsed = Number(normalized)
+  return Number.isFinite(parsed) ? parsed : undefined
+}
+
 export default function AddTransactionPage() {
   const pathname = usePathname()
   const router = useRouter()
@@ -69,10 +86,10 @@ export default function AddTransactionPage() {
   const [fromValue, setFromValue] = useState('')
   const [toValue, setToValue] = useState('')
   const [referenceNumber, setReferenceNumber] = useState('')
-  const [amount, setAmount] = useState<number | ''>(0)
-  const [transactionFee, setTransactionFee] = useState<number | ''>(0)
+  const [amount, setAmount] = useState<number | string>('')
+  const [transactionFee, setTransactionFee] = useState<number | string>('')
   const [transactionStatus, setTransactionStatus] = useState<TransactionStatus | null>('completed')
-  const [runningBalance, setRunningBalance] = useState<number | ''>(0)
+  const [runningBalance, setRunningBalance] = useState<number | ''>('')
   const [originalTransactionSnapshot, setOriginalTransactionSnapshot] =
     useState<OriginalTransactionSnapshot | null>(null)
 
@@ -111,10 +128,10 @@ export default function AddTransactionPage() {
     setFromValue(tx.from ?? '')
     setToValue(tx.to ?? '')
     setReferenceNumber(tx.referenceNumber ?? '')
-    setAmount(typeof tx.amount === 'number' ? tx.amount : 0)
-    setTransactionFee(typeof tx.transactionFee === 'number' ? tx.transactionFee : 0)
+    setAmount(typeof tx.amount === 'number' ? tx.amount : '')
+    setTransactionFee(typeof tx.transactionFee === 'number' ? tx.transactionFee : '')
     setTransactionStatus(tx.transactionStatus ?? 'completed')
-    setRunningBalance(typeof tx.runningBalance === 'number' ? tx.runningBalance : 0)
+    setRunningBalance(typeof tx.runningBalance === 'number' ? tx.runningBalance : '')
     setOriginalTransactionSnapshot(
       tx.financialAccount &&
         tx.transactionType &&
@@ -325,10 +342,9 @@ export default function AddTransactionPage() {
       return runningBalance
     }
 
-    const fee =
-      typeof transactionFee === 'number' && Number.isFinite(transactionFee) ? transactionFee : 0
-    const amountNumber = Number(amount)
-    if (!Number.isFinite(amountNumber)) return runningBalance
+    const fee = parseNumericInputValue(transactionFee) ?? 0
+    const amountNumber = parseNumericInputValue(amount)
+    if (typeof amountNumber !== 'number') return runningBalance
 
     const signedImpact = (transactionType === 'debit' ? 1 : -1) * (amountNumber + fee)
     let baselineBalance = selectedAccount.currentBalance
@@ -359,6 +375,9 @@ export default function AddTransactionPage() {
   const handleSave = async () => {
     setFeedback(null)
 
+    const parsedAmount = parseNumericInputValue(amount)
+    const parsedTransactionFee = parseNumericInputValue(transactionFee) ?? 0
+
     if (!description.trim()) {
       setFeedback({ type: 'error', message: 'Description is required.' })
       return
@@ -369,7 +388,7 @@ export default function AddTransactionPage() {
       return
     }
 
-    if (amount === '') {
+    if (typeof parsedAmount !== 'number') {
       setFeedback({ type: 'error', message: 'Amount is required.' })
       return
     }
@@ -398,11 +417,8 @@ export default function AddTransactionPage() {
     if (fromValue.trim()) formData.append('from', fromValue.trim())
     if (toValue.trim()) formData.append('to', toValue.trim())
     if (referenceNumber.trim()) formData.append('referenceNumber', referenceNumber.trim())
-    formData.append('amount', String(Number(amount)))
-    formData.append(
-      'transactionFee',
-      String(typeof transactionFee === 'number' ? transactionFee : 0),
-    )
+    formData.append('amount', String(parsedAmount))
+    formData.append('transactionFee', String(parsedTransactionFee))
     formData.append('transactionStatus', transactionStatus || 'completed')
     if (receiptImageId) formData.append('existingReceiptImageId', receiptImageId)
     if (pendingRawOcrText) formData.append('rawOcrText', pendingRawOcrText)
@@ -618,7 +634,7 @@ export default function AddTransactionPage() {
                   <NumberInput
                     label="Amount"
                     value={amount}
-                    onChange={(value) => setAmount(typeof value === 'number' ? value : 0)}
+                    onChange={(value) => setAmount(value)}
                     min={0}
                     leftSection="₱"
                     decimalScale={2}
@@ -630,7 +646,7 @@ export default function AddTransactionPage() {
                   <NumberInput
                     label="Transaction Fee"
                     value={transactionFee}
-                    onChange={(value) => setTransactionFee(typeof value === 'number' ? value : 0)}
+                    onChange={(value) => setTransactionFee(value)}
                     min={0}
                     leftSection="₱"
                     decimalScale={2}
