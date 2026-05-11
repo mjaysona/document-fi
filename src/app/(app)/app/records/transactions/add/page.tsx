@@ -33,6 +33,7 @@ import {
   type TransactionStatus,
   type TransactionType,
 } from '../actions'
+import { useForm } from '@mantine/form'
 import classes from '../../page.module.scss'
 
 type Feedback = { type: 'success' | 'error'; message: string }
@@ -42,6 +43,22 @@ type OriginalTransactionSnapshot = {
   transactionType: TransactionType
   amount: number
   transactionFee: number
+}
+
+type TransactionFormValues = {
+  transactionDate: string
+  description: string
+  particulars: string
+  transactionType: TransactionType | null
+  sourceAccount: string | null
+  destinationAccount: string | null
+  financialAccount: string | null
+  from: string
+  to: string
+  referenceNumber: string
+  amount: number | string
+  transactionFee: number | string
+  transactionStatus: TransactionStatus | null
 }
 
 type NumericInputValue = number | string
@@ -76,30 +93,90 @@ export default function AddTransactionPage() {
   const [isProcessingReceipt, setIsProcessingReceipt] = useState(false)
   const [feedback, setFeedback] = useState<Feedback | null>(null)
 
-  const [transactionDate, setTransactionDate] = useState('')
-  const [description, setDescription] = useState('')
-  const [particulars, setParticulars] = useState('')
-  const [transactionType, setTransactionType] = useState<TransactionType | null>(null)
-  const [sourceAccount, setSourceAccount] = useState<string | null>(null)
-  const [destinationAccount, setDestinationAccount] = useState<string | null>(null)
-  const [financialAccount, setFinancialAccount] = useState<string | null>(null)
-  const [fromValue, setFromValue] = useState('')
-  const [toValue, setToValue] = useState('')
-  const [referenceNumber, setReferenceNumber] = useState('')
-  const [amount, setAmount] = useState<number | string>('')
-  const [transactionFee, setTransactionFee] = useState<number | string>('')
-  const [transactionStatus, setTransactionStatus] = useState<TransactionStatus | null>('completed')
+  const form = useForm<TransactionFormValues>({
+    initialValues: {
+      transactionDate: '',
+      description: '',
+      particulars: '',
+      transactionType: null,
+      sourceAccount: null,
+      destinationAccount: null,
+      financialAccount: null,
+      from: '',
+      to: '',
+      referenceNumber: '',
+      amount: '',
+      transactionFee: '',
+      transactionStatus: 'completed',
+    },
+    validate: {
+      description: (value) => (value.trim() ? null : 'Description is required.'),
+      transactionType: (value) => (value ? null : 'Transaction type is required.'),
+      financialAccount: (value) => (value ? null : 'Financial account is required.'),
+      amount: (value) =>
+        typeof parseNumericInputValue(value) === 'number' ? null : 'Amount is required.',
+    },
+  })
+
   const [runningBalance, setRunningBalance] = useState<number | ''>('')
   const [originalTransactionSnapshot, setOriginalTransactionSnapshot] =
     useState<OriginalTransactionSnapshot | null>(null)
 
-  const [receiptReady, setReceiptReady] = useState(false)
   const [receiptImageId, setReceiptImageId] = useState('')
   const [receiptImageUrl, setReceiptImageUrl] = useState<string | undefined>()
   const [receiptImageFileName, setReceiptImageFileName] = useState('')
+  const [receiptPreviewAttempt, setReceiptPreviewAttempt] = useState(0)
   const [pendingReceiptFile, setPendingReceiptFile] = useState<File | null>(null)
   const [pendingRawOcrText, setPendingRawOcrText] = useState<string | undefined>()
   const receiptInputRef = useRef<() => void>(() => {})
+
+  const receiptPreviewCandidates = useMemo(() => {
+    const candidates: string[] = []
+
+    const pushCandidate = (value?: string) => {
+      const normalized = String(value || '').trim()
+      if (!normalized) return
+      if (!candidates.includes(normalized)) {
+        candidates.push(normalized)
+      }
+    }
+
+    const normalizedUrl = String(receiptImageUrl || '').trim()
+    if (normalizedUrl) {
+      if (
+        normalizedUrl.startsWith('http://') ||
+        normalizedUrl.startsWith('https://') ||
+        normalizedUrl.startsWith('/') ||
+        normalizedUrl.startsWith('blob:') ||
+        normalizedUrl.startsWith('data:')
+      ) {
+        pushCandidate(normalizedUrl)
+      } else {
+        pushCandidate(`/api/transaction-receipts/file/${encodeURIComponent(normalizedUrl)}`)
+      }
+    }
+
+    const normalizedFilename = String(receiptImageFileName || '').trim()
+    if (normalizedFilename) {
+      pushCandidate(`/api/transaction-receipts/file/${encodeURIComponent(normalizedFilename)}`)
+    }
+
+    const normalizedId = String(receiptImageId || '').trim()
+    if (normalizedId) {
+      pushCandidate(`/api/transaction-receipts/${encodeURIComponent(normalizedId)}`)
+    }
+
+    return candidates
+  }, [receiptImageFileName, receiptImageId, receiptImageUrl])
+
+  const activeReceiptImageUrl =
+    receiptPreviewCandidates[
+      Math.min(receiptPreviewAttempt, Math.max(0, receiptPreviewCandidates.length - 1))
+    ]
+
+  useEffect(() => {
+    setReceiptPreviewAttempt(0)
+  }, [receiptImageUrl, receiptImageFileName, receiptImageId])
 
   const hydrateFromTransaction = async () => {
     if (!isEditMode || !transactionId) return
@@ -108,29 +185,31 @@ export default function AddTransactionPage() {
     if (!refreshed.success || !refreshed.data) return
 
     const tx = refreshed.data
-    setTransactionDate(tx.transactionDate?.slice(0, 10) ?? '')
-    setDescription(tx.description)
-    setParticulars(tx.particulars ?? '')
-    setTransactionType(tx.transactionType ?? null)
-    setDestinationAccount(tx.destinationAccount ?? null)
+    form.setValues({
+      transactionDate: tx.transactionDate?.slice(0, 10) ?? '',
+      description: tx.description,
+      particulars: tx.particulars ?? '',
+      transactionType: tx.transactionType ?? null,
+      destinationAccount: tx.destinationAccount ?? null,
+      from: tx.from ?? '',
+      to: tx.to ?? '',
+      referenceNumber: tx.referenceNumber ?? '',
+      amount: typeof tx.amount === 'number' ? tx.amount : '',
+      transactionFee: typeof tx.transactionFee === 'number' ? tx.transactionFee : '',
+      transactionStatus: tx.transactionStatus ?? 'completed',
+    })
 
     const nextFinancialAccount = tx.financialAccount ?? null
-    setFinancialAccount(nextFinancialAccount)
+    form.setFieldValue('financialAccount', nextFinancialAccount)
     if (nextFinancialAccount) {
       const selectedAccount = financialAccounts.find(
         (account) => account.id === nextFinancialAccount,
       )
-      setSourceAccount(selectedAccount?.bankId ?? tx.sourceAccount ?? null)
+      form.setFieldValue('sourceAccount', selectedAccount?.bankId ?? tx.sourceAccount ?? null)
     } else {
-      setSourceAccount(tx.sourceAccount ?? null)
+      form.setFieldValue('sourceAccount', tx.sourceAccount ?? null)
     }
-
-    setFromValue(tx.from ?? '')
-    setToValue(tx.to ?? '')
-    setReferenceNumber(tx.referenceNumber ?? '')
-    setAmount(typeof tx.amount === 'number' ? tx.amount : '')
-    setTransactionFee(typeof tx.transactionFee === 'number' ? tx.transactionFee : '')
-    setTransactionStatus(tx.transactionStatus ?? 'completed')
+    form.clearFieldError('referenceNumber')
     setRunningBalance(typeof tx.runningBalance === 'number' ? tx.runningBalance : '')
     setOriginalTransactionSnapshot(
       tx.financialAccount &&
@@ -159,7 +238,6 @@ export default function AddTransactionPage() {
     setReceiptImageUrl(undefined)
     setPendingReceiptFile(null)
     setPendingRawOcrText(undefined)
-    setReceiptReady(false)
   }
 
   const handleFileAnalysis = async (file: File) => {
@@ -167,35 +245,37 @@ export default function AddTransactionPage() {
     setReceiptImageFileName(file.name)
     setPendingReceiptFile(file)
     setPendingRawOcrText(undefined)
-    setReceiptReady(false)
     setFeedback(null)
     setIsUploadingReceipt(true)
 
     const formData = new FormData()
     formData.append('file', file)
-    if (financialAccount) formData.append('financialAccount', financialAccount)
+    if (form.values.financialAccount)
+      formData.append('financialAccount', form.values.financialAccount)
     const result = await analyzeReceiptFile(formData)
 
     if (result.success || result.rawOcrText) {
       setPendingRawOcrText(result.rawOcrText)
-      if (!isEditMode) setReceiptReady(true)
 
       if (result.transactionDate) {
         const parsed = new Date(result.transactionDate)
         if (!Number.isNaN(parsed.getTime())) {
-          setTransactionDate(parsed.toISOString().split('T')[0])
+          form.setFieldValue('transactionDate', parsed.toISOString().split('T')[0])
         }
       }
-      if (result.description) setDescription(result.description)
-      if (result.particulars) setParticulars(result.particulars)
-      if (result.transactionType) setTransactionType(result.transactionType)
-      if (result.detectedDestinationBankId) setDestinationAccount(result.detectedDestinationBankId)
-      if (result.from) setFromValue(result.from)
-      if (result.to) setToValue(result.to)
-      if (result.referenceNumber) setReferenceNumber(result.referenceNumber)
-      if (typeof result.amount === 'number') setAmount(result.amount)
-      if (typeof result.transactionFee === 'number') setTransactionFee(result.transactionFee)
-      if (result.transactionStatus) setTransactionStatus(result.transactionStatus)
+      if (result.description) form.setFieldValue('description', result.description)
+      if (result.particulars) form.setFieldValue('particulars', result.particulars)
+      if (result.transactionType) form.setFieldValue('transactionType', result.transactionType)
+      if (result.detectedDestinationBankId)
+        form.setFieldValue('destinationAccount', result.detectedDestinationBankId)
+      if (result.from) form.setFieldValue('from', result.from)
+      if (result.to) form.setFieldValue('to', result.to)
+      if (result.referenceNumber) form.setFieldValue('referenceNumber', result.referenceNumber)
+      if (typeof result.amount === 'number') form.setFieldValue('amount', result.amount)
+      if (typeof result.transactionFee === 'number')
+        form.setFieldValue('transactionFee', result.transactionFee)
+      if (result.transactionStatus)
+        form.setFieldValue('transactionStatus', result.transactionStatus)
 
       if (result.error) {
         setFeedback({ type: 'error', message: `OCR complete. ${result.error}` })
@@ -243,35 +323,37 @@ export default function AddTransactionPage() {
       }
 
       const tx = transactionResult.data
-      setTransactionDate(tx.transactionDate?.slice(0, 10) ?? '')
-      setDescription(tx.description)
-      setParticulars(tx.particulars ?? '')
-      setTransactionType(tx.transactionType ?? null)
-      setDestinationAccount(tx.destinationAccount ?? null)
+      form.setValues({
+        transactionDate: tx.transactionDate?.slice(0, 10) ?? '',
+        description: tx.description,
+        particulars: tx.particulars ?? '',
+        transactionType: tx.transactionType ?? null,
+        destinationAccount: tx.destinationAccount ?? null,
+        from: tx.from ?? '',
+        to: tx.to ?? '',
+        referenceNumber: tx.referenceNumber ?? '',
+        amount: typeof tx.amount === 'number' ? tx.amount : '',
+        transactionFee: typeof tx.transactionFee === 'number' ? tx.transactionFee : 0,
+        transactionStatus: tx.transactionStatus ?? 'completed',
+      })
 
       const nextFinancialAccount = tx.financialAccount ?? null
-      setFinancialAccount(nextFinancialAccount)
+      form.setFieldValue('financialAccount', nextFinancialAccount)
       if (!nextFinancialAccount) {
         const defaultAccount = accountsResult.success
           ? accountsResult.data.find((account) => account.isDefault)
           : undefined
         if (defaultAccount) {
-          setFinancialAccount(defaultAccount.id)
-          setSourceAccount(defaultAccount.bankId ?? null)
+          form.setFieldValue('financialAccount', defaultAccount.id)
+          form.setFieldValue('sourceAccount', defaultAccount.bankId ?? null)
         }
       } else {
         const selectedAccount = accountsResult.success
           ? accountsResult.data.find((account) => account.id === nextFinancialAccount)
           : undefined
-        setSourceAccount(selectedAccount?.bankId ?? tx.sourceAccount ?? null)
+        form.setFieldValue('sourceAccount', selectedAccount?.bankId ?? tx.sourceAccount ?? null)
       }
-
-      setFromValue(tx.from ?? '')
-      setToValue(tx.to ?? '')
-      setReferenceNumber(tx.referenceNumber ?? '')
-      setAmount(typeof tx.amount === 'number' ? tx.amount : '')
-      setTransactionFee(typeof tx.transactionFee === 'number' ? tx.transactionFee : 0)
-      setTransactionStatus(tx.transactionStatus ?? 'completed')
+      form.clearFieldError('referenceNumber')
       setRunningBalance(typeof tx.runningBalance === 'number' ? tx.runningBalance : '')
       setOriginalTransactionSnapshot(
         tx.financialAccount &&
@@ -301,58 +383,71 @@ export default function AddTransactionPage() {
   }, [isEditMode, transactionId])
 
   useEffect(() => {
-    if (financialAccount || financialAccounts.length === 0) return
+    if (form.values.financialAccount || financialAccounts.length === 0) return
 
     const defaultAccount = financialAccounts.find((account) => account.isDefault)
-    if (defaultAccount) {
-      setFinancialAccount(defaultAccount.id)
-      setSourceAccount(defaultAccount.bankId ?? null)
+    if (defaultAccount && form.values.financialAccount !== defaultAccount.id) {
+      form.setFieldValue('financialAccount', defaultAccount.id)
     }
-  }, [financialAccount, financialAccounts])
+
+    const nextSourceAccount = defaultAccount?.bankId ?? null
+    if (form.values.sourceAccount !== nextSourceAccount) {
+      form.setFieldValue('sourceAccount', nextSourceAccount)
+    }
+  }, [financialAccounts, form.values.financialAccount, form.values.sourceAccount])
 
   useEffect(() => {
-    if (!financialAccount) {
-      setSourceAccount(null)
-      return
-    }
+    const nextSourceAccount = form.values.financialAccount
+      ? (financialAccounts.find((account) => account.id === form.values.financialAccount)?.bankId ??
+        null)
+      : null
 
-    const selectedAccount = financialAccounts.find((account) => account.id === financialAccount)
-    setSourceAccount(selectedAccount?.bankId ?? null)
-  }, [financialAccount, financialAccounts])
+    if (form.values.sourceAccount !== nextSourceAccount) {
+      form.setFieldValue('sourceAccount', nextSourceAccount)
+    }
+  }, [financialAccounts, form.values.financialAccount, form.values.sourceAccount])
 
   const sourceBankName =
-    banks.find((bank) => bank.id === sourceAccount)?.name ||
-    financialAccounts.find((account) => account.id === financialAccount)?.bankName ||
+    banks.find((bank) => bank.id === form.values.sourceAccount)?.name ||
+    financialAccounts.find((account) => account.id === form.values.financialAccount)?.bankName ||
     ''
 
   const selectedAccountCurrentBalance = useMemo<number | ''>(() => {
-    if (!financialAccount) return ''
+    if (!form.values.financialAccount) return ''
 
-    const selectedAccount = financialAccounts.find((account) => account.id === financialAccount)
+    const selectedAccount = financialAccounts.find(
+      (account) => account.id === form.values.financialAccount,
+    )
     return typeof selectedAccount?.currentBalance === 'number' ? selectedAccount.currentBalance : ''
-  }, [financialAccount, financialAccounts])
+  }, [financialAccounts, form.values.financialAccount])
 
   const projectedRunningBalance = useMemo<number | ''>(() => {
-    if (!financialAccount || amount === '' || !transactionType) {
+    if (
+      !form.values.financialAccount ||
+      form.values.amount === '' ||
+      !form.values.transactionType
+    ) {
       return runningBalance
     }
 
-    const selectedAccount = financialAccounts.find((account) => account.id === financialAccount)
+    const selectedAccount = financialAccounts.find(
+      (account) => account.id === form.values.financialAccount,
+    )
     if (!selectedAccount || typeof selectedAccount.currentBalance !== 'number') {
       return runningBalance
     }
 
-    const fee = parseNumericInputValue(transactionFee) ?? 0
-    const amountNumber = parseNumericInputValue(amount)
+    const fee = parseNumericInputValue(form.values.transactionFee) ?? 0
+    const amountNumber = parseNumericInputValue(form.values.amount)
     if (typeof amountNumber !== 'number') return runningBalance
 
-    const signedImpact = (transactionType === 'debit' ? 1 : -1) * (amountNumber + fee)
+    const signedImpact = (form.values.transactionType === 'debit' ? 1 : -1) * (amountNumber + fee)
     let baselineBalance = selectedAccount.currentBalance
 
     if (
       isEditMode &&
       originalTransactionSnapshot &&
-      originalTransactionSnapshot.financialAccount === financialAccount
+      originalTransactionSnapshot.financialAccount === form.values.financialAccount
     ) {
       const originalSignedImpact =
         (originalTransactionSnapshot.transactionType === 'debit' ? 1 : -1) *
@@ -362,44 +457,29 @@ export default function AddTransactionPage() {
 
     return baselineBalance + signedImpact
   }, [
-    amount,
-    financialAccount,
     financialAccounts,
+    form.values.amount,
+    form.values.financialAccount,
+    form.values.transactionFee,
+    form.values.transactionType,
     isEditMode,
     originalTransactionSnapshot,
     runningBalance,
-    transactionFee,
-    transactionType,
   ])
 
   const handleSave = async () => {
     setFeedback(null)
+    form.clearFieldError('referenceNumber')
 
-    const parsedAmount = parseNumericInputValue(amount)
-    const parsedTransactionFee = parseNumericInputValue(transactionFee) ?? 0
-
-    if (!description.trim()) {
-      setFeedback({ type: 'error', message: 'Description is required.' })
+    const validation = form.validate()
+    if (validation.hasErrors) {
       return
     }
 
-    if (!transactionType) {
-      setFeedback({ type: 'error', message: 'Transaction type is required.' })
-      return
-    }
-
+    const parsedAmount = parseNumericInputValue(form.values.amount)
+    const parsedTransactionFee = parseNumericInputValue(form.values.transactionFee) ?? 0
     if (typeof parsedAmount !== 'number') {
       setFeedback({ type: 'error', message: 'Amount is required.' })
-      return
-    }
-
-    if (!financialAccount) {
-      setFeedback({ type: 'error', message: 'Financial account is required.' })
-      return
-    }
-
-    if (!isEditMode && (!receiptReady || !pendingReceiptFile)) {
-      setFeedback({ type: 'error', message: 'Receipt must be analyzed before save.' })
       return
     }
 
@@ -407,19 +487,23 @@ export default function AddTransactionPage() {
 
     const formData = new FormData()
     if (pendingReceiptFile) formData.append('file', pendingReceiptFile)
-    formData.append('description', description.trim())
-    if (transactionDate) formData.append('transactionDate', transactionDate)
-    if (particulars.trim()) formData.append('particulars', particulars.trim())
-    formData.append('transactionType', transactionType)
-    if (sourceAccount) formData.append('sourceAccount', sourceAccount)
-    if (destinationAccount) formData.append('destinationAccount', destinationAccount)
-    if (financialAccount) formData.append('financialAccount', financialAccount)
-    if (fromValue.trim()) formData.append('from', fromValue.trim())
-    if (toValue.trim()) formData.append('to', toValue.trim())
-    if (referenceNumber.trim()) formData.append('referenceNumber', referenceNumber.trim())
+    formData.append('description', form.values.description.trim())
+    if (form.values.transactionDate) formData.append('transactionDate', form.values.transactionDate)
+    if (form.values.particulars.trim())
+      formData.append('particulars', form.values.particulars.trim())
+    if (form.values.transactionType) formData.append('transactionType', form.values.transactionType)
+    if (form.values.sourceAccount) formData.append('sourceAccount', form.values.sourceAccount)
+    if (form.values.destinationAccount)
+      formData.append('destinationAccount', form.values.destinationAccount)
+    if (form.values.financialAccount)
+      formData.append('financialAccount', form.values.financialAccount)
+    if (form.values.from.trim()) formData.append('from', form.values.from.trim())
+    if (form.values.to.trim()) formData.append('to', form.values.to.trim())
+    if (form.values.referenceNumber.trim())
+      formData.append('referenceNumber', form.values.referenceNumber.trim())
     formData.append('amount', String(parsedAmount))
     formData.append('transactionFee', String(parsedTransactionFee))
-    formData.append('transactionStatus', transactionStatus || 'completed')
+    formData.append('transactionStatus', form.values.transactionStatus || 'completed')
     if (receiptImageId) formData.append('existingReceiptImageId', receiptImageId)
     if (pendingRawOcrText) formData.append('rawOcrText', pendingRawOcrText)
 
@@ -431,6 +515,9 @@ export default function AddTransactionPage() {
         setFeedback({ type: 'success', message: 'Transaction updated.' })
         await hydrateFromTransaction()
       } else {
+        if (result.error === 'Reference number already exists.') {
+          form.setFieldError('referenceNumber', result.error)
+        }
         setFeedback({ type: 'error', message: result.error ?? 'Failed to update transaction.' })
       }
     } else {
@@ -439,6 +526,9 @@ export default function AddTransactionPage() {
       if (result.success && result.id) {
         router.push(`/app/records/transactions/${result.id}/edit`)
       } else {
+        if (result.error === 'Reference number already exists.') {
+          form.setFieldError('referenceNumber', result.error)
+        }
         setFeedback({ type: 'error', message: result.error ?? 'Failed to create transaction.' })
       }
     }
@@ -538,8 +628,9 @@ export default function AddTransactionPage() {
                       value: account.id,
                       label: `${account.name} ${account.bankName ? ` - ${account.bankName}` : ''}${account.isDefault ? ' (Default)' : ''}`,
                     }))}
-                    value={financialAccount}
-                    onChange={setFinancialAccount}
+                    value={form.values.financialAccount}
+                    onChange={(value) => form.setFieldValue('financialAccount', value)}
+                    error={form.errors.financialAccount}
                     required
                   />
                   <NumberInput
@@ -557,22 +648,23 @@ export default function AddTransactionPage() {
                 </Group>
                 <TextInput
                   label="Description"
-                  value={description}
-                  onChange={(e) => setDescription(e.currentTarget.value)}
+                  value={form.values.description}
+                  onChange={(e) => form.setFieldValue('description', e.currentTarget.value)}
+                  error={form.errors.description}
                   required
                 />
                 <Textarea
                   label="Particulars"
-                  value={particulars}
-                  onChange={(e) => setParticulars(e.currentTarget.value)}
+                  value={form.values.particulars}
+                  onChange={(e) => form.setFieldValue('particulars', e.currentTarget.value)}
                   minRows={2}
                 />
                 <Group grow>
                   <TextInput
                     label="Transaction Date"
                     type="date"
-                    value={transactionDate}
-                    onChange={(e) => setTransactionDate(e.currentTarget.value)}
+                    value={form.values.transactionDate}
+                    onChange={(e) => form.setFieldValue('transactionDate', e.currentTarget.value)}
                   />
                   <Select
                     label="Transaction Type"
@@ -580,10 +672,14 @@ export default function AddTransactionPage() {
                       { label: 'Debit', value: 'debit' },
                       { label: 'Credit', value: 'credit' },
                     ]}
-                    value={transactionType}
+                    value={form.values.transactionType}
                     onChange={(value) =>
-                      setTransactionType((value as TransactionType | null) ?? null)
+                      form.setFieldValue(
+                        'transactionType',
+                        (value as TransactionType | null) ?? null,
+                      )
                     }
+                    error={form.errors.transactionType}
                     required
                   />
                 </Group>
@@ -596,27 +692,31 @@ export default function AddTransactionPage() {
                       value: bank.id,
                       label: `${bank.name} (${bank.code})`,
                     }))}
-                    value={destinationAccount}
-                    onChange={setDestinationAccount}
+                    value={form.values.destinationAccount}
+                    onChange={(value) => form.setFieldValue('destinationAccount', value)}
                   />
                 </Group>
                 <Group grow>
                   <TextInput
                     label="From"
-                    value={fromValue}
-                    onChange={(e) => setFromValue(e.currentTarget.value)}
+                    value={form.values.from}
+                    onChange={(e) => form.setFieldValue('from', e.currentTarget.value)}
                   />
                   <TextInput
                     label="To"
-                    value={toValue}
-                    onChange={(e) => setToValue(e.currentTarget.value)}
+                    value={form.values.to}
+                    onChange={(e) => form.setFieldValue('to', e.currentTarget.value)}
                   />
                 </Group>
                 <Group grow>
                   <TextInput
                     label="Reference Number"
-                    value={referenceNumber}
-                    onChange={(e) => setReferenceNumber(e.currentTarget.value)}
+                    value={form.values.referenceNumber}
+                    onChange={(e) => {
+                      form.setFieldValue('referenceNumber', e.currentTarget.value)
+                      form.clearFieldError('referenceNumber')
+                    }}
+                    error={form.errors.referenceNumber}
                   />
                   <Select
                     label="Transaction Status"
@@ -624,17 +724,21 @@ export default function AddTransactionPage() {
                       { label: 'Completed', value: 'completed' },
                       { label: 'Failed', value: 'failed' },
                     ]}
-                    value={transactionStatus}
+                    value={form.values.transactionStatus}
                     onChange={(value) =>
-                      setTransactionStatus((value as TransactionStatus | null) ?? 'completed')
+                      form.setFieldValue(
+                        'transactionStatus',
+                        (value as TransactionStatus | null) ?? 'completed',
+                      )
                     }
                   />
                 </Group>
                 <Group grow>
                   <NumberInput
                     label="Amount"
-                    value={amount}
-                    onChange={(value) => setAmount(value)}
+                    value={form.values.amount}
+                    onChange={(value) => form.setFieldValue('amount', value)}
+                    error={form.errors.amount}
                     min={0}
                     leftSection="₱"
                     decimalScale={2}
@@ -645,8 +749,8 @@ export default function AddTransactionPage() {
                   />
                   <NumberInput
                     label="Transaction Fee"
-                    value={transactionFee}
-                    onChange={(value) => setTransactionFee(value)}
+                    value={form.values.transactionFee}
+                    onChange={(value) => form.setFieldValue('transactionFee', value)}
                     min={0}
                     leftSection="₱"
                     decimalScale={2}
@@ -709,7 +813,7 @@ export default function AddTransactionPage() {
                 }}
               />
 
-              {!receiptImageUrl ? (
+              {!activeReceiptImageUrl ? (
                 <Card
                   withBorder
                   radius="md"
@@ -843,8 +947,14 @@ export default function AddTransactionPage() {
                       }}
                     >
                       <img
-                        src={receiptImageUrl}
+                        src={activeReceiptImageUrl}
                         alt="Receipt preview"
+                        onError={() => {
+                          setReceiptPreviewAttempt((current) => {
+                            const next = current + 1
+                            return next < receiptPreviewCandidates.length ? next : current
+                          })
+                        }}
                         style={{
                           width: '100%',
                           height: 'auto',
@@ -866,7 +976,7 @@ export default function AddTransactionPage() {
           <Text size="sm" c="dimmed">
             {isEditMode
               ? 'Update fields or receipt, then save your changes.'
-              : 'Upload and analyze the receipt, then save the transaction.'}
+              : 'Fill out transaction details and save. Receipt upload is optional.'}
           </Text>
           <Button onClick={handleSave} loading={isSaving || overlayVisible || isLoading}>
             Save

@@ -72,6 +72,15 @@ function asOptionalBoolean(value: unknown): boolean | undefined {
   return undefined
 }
 
+function hasWaivedFeeSignal(rawOcrText: string): boolean {
+  const normalized = String(rawOcrText || '').toLowerCase()
+  if (!normalized) return false
+
+  return /(transfer\s*fee|service\s*fee|fee)[^\n|]{0,40}\b(free|waived|no\s*fee|0\.00)\b/i.test(
+    normalized,
+  )
+}
+
 export async function extractTransactionWithGroq(params: {
   rawOcrText: string
   banks: BankEntry[]
@@ -113,8 +122,10 @@ Rules:
 - amount must be a positive number excluding transaction fee
 - transactionFee must be a non-negative number (use 0 when none)
 - amountIncludesFee should be true only when extracted amount already includes transaction fee; otherwise false
+- If fee text explicitly indicates FREE/waived/no fee, set transactionFee=0 and amountIncludesFee=false, even if a numeric fee is also printed (example: "Transfer Fee PHP 15.00 FREE")
 - Example: if receipt says "Amount Sent 1000" and "Fee 10", then amount=1000, transactionFee=10, amountIncludesFee=false
 - Example: if receipt says "Total Debited 1010" with "Fee 10", then amount=1010, transactionFee=10, amountIncludesFee=true
+- Example: if receipt says "Transfer Amount 25,900", "Transfer Fee 15.00 FREE", "Total Amount 25,900", then amount=25900, transactionFee=0, amountIncludesFee=false
 - transactionStatus should default to completed unless the OCR clearly indicates failure, reversal, or cancellation
 - do not hallucinate; use null when missing
 - confidence must be between 0 and 100
@@ -169,8 +180,12 @@ ${params.rawOcrText}`
 
   const rawAmount = asOptionalNumber(parsed.amount)
   const rawTransactionFee = asOptionalNumber(parsed.transactionFee)
-  const safeTransactionFee =
+  let safeTransactionFee =
     typeof rawTransactionFee === 'number' && rawTransactionFee >= 0 ? rawTransactionFee : 0
+  const feeWaived = hasWaivedFeeSignal(params.rawOcrText)
+  if (feeWaived) {
+    safeTransactionFee = 0
+  }
 
   let amountExcludingFee = rawAmount
   const amountIncludesFee = asOptionalBoolean(parsed.amountIncludesFee)

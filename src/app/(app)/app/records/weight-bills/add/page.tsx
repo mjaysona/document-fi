@@ -20,6 +20,7 @@ import {
 } from '@mantine/core'
 import { Dropzone, MIME_TYPES } from '@mantine/dropzone'
 import { ArrowLeft, Ban, CheckCircle, Pencil, Trash2, Upload } from 'lucide-react'
+import { useForm } from '@mantine/form'
 import classes from '../../page.module.scss'
 import { parseWeightBillOCR, type ParsedWeightBill } from '@/lib/parseWeightBillOCR'
 import UploadPagination from './UploadPagination'
@@ -56,6 +57,15 @@ type FileRecord = {
   analyzed: boolean
 }
 
+type WeightBillFormValues = {
+  date: string
+  customerName: string
+  weightBillNumber: number | string | undefined
+  vehicle: string
+  amount: number | string | undefined
+  paymentStatus: 'PAID' | 'CANCELLED' | ''
+}
+
 export default function VerifyPage() {
   const pathname = usePathname()
   const router = useRouter()
@@ -78,10 +88,6 @@ export default function VerifyPage() {
     type: 'success' | 'error'
     message: string
   } | null>(null)
-  const [weightBillValidationAction, setWeightBillValidationAction] = useState<
-    'save' | 'verify' | null
-  >(null)
-  const [verifyValidationActive, setVerifyValidationActive] = useState(false)
   const [pendingAction, setPendingAction] = useState<'save' | 'verify' | null>(null)
   const [finishConfirmOpen, setFinishConfirmOpen] = useState(false)
   const [isMagnifierVisible, setIsMagnifierVisible] = useState(false)
@@ -89,6 +95,17 @@ export default function VerifyPage() {
   const proofInputRef = useRef<HTMLInputElement | null>(null)
   const MAGNIFIER_SIZE = 200
   const MAGNIFIER_ZOOM = 1.75
+
+  const form = useForm<WeightBillFormValues>({
+    initialValues: {
+      date: '',
+      customerName: '',
+      weightBillNumber: undefined,
+      vehicle: '',
+      amount: undefined,
+      paymentStatus: '',
+    },
+  })
 
   const findVehicleByName = (
     vehicleName: string,
@@ -326,6 +343,29 @@ export default function VerifyPage() {
 
   const currentRecord = records[activeIndex]
 
+  useEffect(() => {
+    if (!currentRecord) return
+
+    form.setValues({
+      date: currentRecord.date,
+      customerName: currentRecord.customerName,
+      weightBillNumber: currentRecord.weightBillNumber,
+      vehicle: currentRecord.vehicle,
+      amount: currentRecord.amount,
+      paymentStatus: currentRecord.paymentStatus,
+    })
+    form.clearErrors()
+  }, [
+    activeIndex,
+    currentRecord?.id,
+    currentRecord?.date,
+    currentRecord?.customerName,
+    currentRecord?.weightBillNumber,
+    currentRecord?.vehicle,
+    currentRecord?.amount,
+    currentRecord?.paymentStatus,
+  ])
+
   // Auto-analyze when a new unanalyzed record becomes active (e.g. after Upload and Analyze)
   useEffect(() => {
     if (
@@ -341,11 +381,6 @@ export default function VerifyPage() {
     analyzeRecord(currentRecord, activeIndex)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentRecord?.id, activeIndex])
-
-  useEffect(() => {
-    setWeightBillValidationAction(null)
-    setVerifyValidationActive(false)
-  }, [activeIndex])
 
   const canGoPrev = activeIndex > 0
   const canGoNext = activeIndex < records.length - 1
@@ -382,6 +417,10 @@ export default function VerifyPage() {
   const handleVehicleChange = (value: string) => {
     const vehicleId = value || ''
     const amount = getAmountForVehicle(vehicleId)
+    form.setFieldValue('vehicle', vehicleId)
+    if (amount !== undefined) {
+      form.setFieldValue('amount', amount)
+    }
     updateActiveRecord({ vehicle: vehicleId, amount: amount ?? currentRecord?.amount })
   }
 
@@ -492,56 +531,15 @@ export default function VerifyPage() {
     lens.style.backgroundPosition = `${-bgX + MAGNIFIER_SIZE / 2}px ${-bgY + MAGNIFIER_SIZE / 2}px`
   }
 
-  const parsedWeightBillNumber = currentRecord
-    ? parseOptionalNumber(currentRecord.weightBillNumber)
-    : undefined
-  const parsedAmount = currentRecord ? parseOptionalNumber(currentRecord.amount) : undefined
-
-  const isWeightBillNumberMissing = Boolean(currentRecord && parsedWeightBillNumber === undefined)
-
-  const weightBillNumberError = isWeightBillNumberMissing
-    ? weightBillValidationAction === 'save'
-      ? 'Weight Bill # is required to save this record'
-      : weightBillValidationAction === 'verify'
-        ? 'Weight Bill # is required to verify this record'
-        : null
-    : null
-
-  const dateError =
-    currentRecord && !currentRecord.date?.trim() ? 'Date is required to verify this record' : null
-
-  const customerNameError =
-    currentRecord && !currentRecord.customerName?.trim()
-      ? 'Customer Name is required to verify this record'
-      : null
-
-  const vehicleError =
-    currentRecord && !currentRecord.vehicle?.trim()
-      ? 'Vehicle is required to verify this record'
-      : null
-
-  const amountError =
-    currentRecord && parsedAmount === undefined ? 'Amount is required to verify this record' : null
-
-  const paymentStatusError =
-    currentRecord && !currentRecord.paymentStatus
-      ? 'Payment Status is required to verify this record'
-      : null
-
-  const hasVerifyValidationErrors = Boolean(
-    dateError ||
-      customerNameError ||
-      isWeightBillNumberMissing ||
-      vehicleError ||
-      amountError ||
-      paymentStatusError,
-  )
+  const parsedWeightBillNumber = parseOptionalNumber(form.values.weightBillNumber)
+  const parsedAmount = parseOptionalNumber(form.values.amount)
 
   const handleSave = async () => {
     if (!currentRecord) return
-    setWeightBillValidationAction('save')
+    form.clearErrors()
 
-    if (isWeightBillNumberMissing) {
+    if (parsedWeightBillNumber === undefined) {
+      form.setFieldError('weightBillNumber', 'Weight Bill # is required.')
       return
     }
     const currentStatus = uploads[activeIndex]?.savedStatus
@@ -564,12 +562,12 @@ export default function VerifyPage() {
         const result = await updateWeightBillById(
           editId,
           {
-            date: currentRecord.date,
-            customerName: currentRecord.customerName,
-            weightBillNumber: parseOptionalNumber(currentRecord.weightBillNumber),
-            vehicle: currentRecord.vehicle,
-            amount: parseOptionalNumber(currentRecord.amount),
-            paymentStatus: currentRecord.paymentStatus || undefined,
+            date: form.values.date,
+            customerName: form.values.customerName,
+            weightBillNumber: parseOptionalNumber(form.values.weightBillNumber),
+            vehicle: form.values.vehicle,
+            amount: parseOptionalNumber(form.values.amount),
+            paymentStatus: form.values.paymentStatus || undefined,
             proofOfReceipt: currentRecord.proofOfReceiptMediaId || undefined,
           },
           false,
@@ -594,12 +592,12 @@ export default function VerifyPage() {
       const result = isManualMode
         ? await saveWeightBillManual(
             {
-              date: currentRecord.date,
-              customerName: currentRecord.customerName,
-              weightBillNumber: parseOptionalNumber(currentRecord.weightBillNumber),
-              vehicle: currentRecord.vehicle,
-              amount: parseOptionalNumber(currentRecord.amount),
-              paymentStatus: currentRecord.paymentStatus || undefined,
+              date: form.values.date,
+              customerName: form.values.customerName,
+              weightBillNumber: parseOptionalNumber(form.values.weightBillNumber),
+              vehicle: form.values.vehicle,
+              amount: parseOptionalNumber(form.values.amount),
+              paymentStatus: form.values.paymentStatus || undefined,
               proofOfReceipt: currentRecord.proofOfReceiptMediaId || undefined,
             },
             false,
@@ -607,12 +605,12 @@ export default function VerifyPage() {
         : await saveWeightBill(
             activeIndex,
             {
-              date: currentRecord.date,
-              customerName: currentRecord.customerName,
-              weightBillNumber: parseOptionalNumber(currentRecord.weightBillNumber),
-              vehicle: currentRecord.vehicle,
-              amount: parseOptionalNumber(currentRecord.amount),
-              paymentStatus: currentRecord.paymentStatus || undefined,
+              date: form.values.date,
+              customerName: form.values.customerName,
+              weightBillNumber: parseOptionalNumber(form.values.weightBillNumber),
+              vehicle: form.values.vehicle,
+              amount: parseOptionalNumber(form.values.amount),
+              paymentStatus: form.values.paymentStatus || undefined,
               proofOfReceipt: currentRecord.proofOfReceiptMediaId || undefined,
             },
             currentRecord.fileName,
@@ -676,11 +674,34 @@ export default function VerifyPage() {
   const handleVerify = async () => {
     if (!currentRecord) return
 
-    setWeightBillValidationAction('verify')
+    form.clearErrors()
+    let hasErrors = false
+    if (!form.values.date.trim()) {
+      form.setFieldError('date', 'Date is required.')
+      hasErrors = true
+    }
+    if (!form.values.customerName.trim()) {
+      form.setFieldError('customerName', 'Customer Name is required.')
+      hasErrors = true
+    }
+    if (parsedWeightBillNumber === undefined) {
+      form.setFieldError('weightBillNumber', 'Weight Bill # is required.')
+      hasErrors = true
+    }
+    if (!form.values.vehicle.trim()) {
+      form.setFieldError('vehicle', 'Vehicle is required.')
+      hasErrors = true
+    }
+    if (parsedAmount === undefined) {
+      form.setFieldError('amount', 'Amount is required.')
+      hasErrors = true
+    }
+    if (!form.values.paymentStatus) {
+      form.setFieldError('paymentStatus', 'Payment Status is required.')
+      hasErrors = true
+    }
 
-    setVerifyValidationActive(true)
-
-    if (hasVerifyValidationErrors) {
+    if (hasErrors) {
       return
     }
 
@@ -704,12 +725,12 @@ export default function VerifyPage() {
         const result = await updateWeightBillById(
           editId,
           {
-            date: currentRecord.date,
-            customerName: currentRecord.customerName,
-            weightBillNumber: parseOptionalNumber(currentRecord.weightBillNumber),
-            vehicle: currentRecord.vehicle,
-            amount: parseOptionalNumber(currentRecord.amount),
-            paymentStatus: currentRecord.paymentStatus || undefined,
+            date: form.values.date,
+            customerName: form.values.customerName,
+            weightBillNumber: parseOptionalNumber(form.values.weightBillNumber),
+            vehicle: form.values.vehicle,
+            amount: parseOptionalNumber(form.values.amount),
+            paymentStatus: form.values.paymentStatus || undefined,
             proofOfReceipt: currentRecord.proofOfReceiptMediaId || undefined,
           },
           true,
@@ -734,12 +755,12 @@ export default function VerifyPage() {
       const result = isManualMode
         ? await saveWeightBillManual(
             {
-              date: currentRecord.date,
-              customerName: currentRecord.customerName,
-              weightBillNumber: parseOptionalNumber(currentRecord.weightBillNumber),
-              vehicle: currentRecord.vehicle,
-              amount: parseOptionalNumber(currentRecord.amount),
-              paymentStatus: currentRecord.paymentStatus || undefined,
+              date: form.values.date,
+              customerName: form.values.customerName,
+              weightBillNumber: parseOptionalNumber(form.values.weightBillNumber),
+              vehicle: form.values.vehicle,
+              amount: parseOptionalNumber(form.values.amount),
+              paymentStatus: form.values.paymentStatus || undefined,
               proofOfReceipt: currentRecord.proofOfReceiptMediaId || undefined,
             },
             true,
@@ -747,12 +768,12 @@ export default function VerifyPage() {
         : await verifyAndSaveWeightBill(
             activeIndex,
             {
-              date: currentRecord.date,
-              customerName: currentRecord.customerName,
-              weightBillNumber: parseOptionalNumber(currentRecord.weightBillNumber),
-              vehicle: currentRecord.vehicle,
-              amount: parseOptionalNumber(currentRecord.amount),
-              paymentStatus: currentRecord.paymentStatus || undefined,
+              date: form.values.date,
+              customerName: form.values.customerName,
+              weightBillNumber: parseOptionalNumber(form.values.weightBillNumber),
+              vehicle: form.values.vehicle,
+              amount: parseOptionalNumber(form.values.amount),
+              paymentStatus: form.values.paymentStatus || undefined,
               proofOfReceipt: currentRecord.proofOfReceiptMediaId || undefined,
             },
             currentRecord.fileName,
@@ -871,35 +892,43 @@ export default function VerifyPage() {
                 <TextInput
                   label="Date"
                   type="date"
-                  value={currentRecord.date}
-                  onChange={(e) => updateActiveRecord({ date: e.currentTarget.value })}
+                  value={form.values.date}
+                  onChange={(e) => {
+                    const value = e.currentTarget.value
+                    form.setFieldValue('date', value)
+                    updateActiveRecord({ date: value })
+                  }}
                   disabled={isFormDisabled}
-                  error={verifyValidationActive ? dateError : null}
+                  error={form.errors.date}
                 />
                 <TextInput
                   label="Customer Name"
-                  value={currentRecord.customerName}
-                  onChange={(e) => updateActiveRecord({ customerName: e.currentTarget.value })}
+                  value={form.values.customerName}
+                  onChange={(e) => {
+                    const value = e.currentTarget.value
+                    form.setFieldValue('customerName', value)
+                    updateActiveRecord({ customerName: value })
+                  }}
                   disabled={isFormDisabled}
-                  error={verifyValidationActive ? customerNameError : null}
+                  error={form.errors.customerName}
                 />
                 <NumberInput
                   label="Weight Bill #"
-                  value={currentRecord.weightBillNumber}
-                  onChange={(val) =>
-                    updateActiveRecord({
-                      weightBillNumber: val,
-                    })
-                  }
+                  value={form.values.weightBillNumber}
+                  onChange={(val) => {
+                    form.setFieldValue('weightBillNumber', val)
+                    updateActiveRecord({ weightBillNumber: val })
+                    form.clearFieldError('weightBillNumber')
+                  }}
                   min={0}
                   disabled={isFormDisabled}
-                  error={weightBillNumberError}
+                  error={form.errors.weightBillNumber}
                   required
                   hideControls
                 />
                 <Select
                   label="Vehicle"
-                  value={currentRecord.vehicle || undefined}
+                  value={form.values.vehicle || undefined}
                   onChange={(value) => handleVehicleChange(value || '')}
                   data={vehicles.map((vehicleOption) => ({
                     value: vehicleOption.id,
@@ -908,12 +937,16 @@ export default function VerifyPage() {
                   clearable
                   placeholder="Select vehicle"
                   disabled={isFormDisabled}
-                  error={verifyValidationActive ? vehicleError : null}
+                  error={form.errors.vehicle}
                 />
                 <NumberInput
                   label="Amount"
-                  value={currentRecord.amount}
-                  onChange={(val) => updateActiveRecord({ amount: val })}
+                  value={form.values.amount}
+                  onChange={(val) => {
+                    form.setFieldValue('amount', val)
+                    updateActiveRecord({ amount: val })
+                    form.clearFieldError('amount')
+                  }}
                   min={0}
                   disabled={isFormDisabled}
                   leftSection="₱"
@@ -921,14 +954,16 @@ export default function VerifyPage() {
                   fixedDecimalScale
                   thousandSeparator=","
                   hideControls
-                  error={verifyValidationActive ? amountError : null}
+                  error={form.errors.amount}
                 />
                 <Select
                   label="Payment Status"
-                  value={currentRecord.paymentStatus || undefined}
-                  onChange={(value) =>
-                    updateActiveRecord({ paymentStatus: (value as 'PAID' | 'CANCELLED') || '' })
-                  }
+                  value={form.values.paymentStatus || undefined}
+                  onChange={(value) => {
+                    const nextStatus = (value as 'PAID' | 'CANCELLED') || ''
+                    form.setFieldValue('paymentStatus', nextStatus)
+                    updateActiveRecord({ paymentStatus: nextStatus })
+                  }}
                   data={[
                     { value: 'PAID', label: 'PAID' },
                     { value: 'CANCELLED', label: 'CANCELLED' },
@@ -936,7 +971,7 @@ export default function VerifyPage() {
                   clearable
                   placeholder="Select payment status"
                   disabled={isFormDisabled}
-                  error={verifyValidationActive ? paymentStatusError : null}
+                  error={form.errors.paymentStatus}
                 />
                 <Group justify="end" mt="md">
                   <Button

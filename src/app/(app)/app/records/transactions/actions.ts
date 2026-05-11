@@ -155,6 +155,42 @@ function normalizeNonNegativeAmount(value: unknown): number {
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0
 }
 
+function normalizeReferenceNumber(value: unknown): string | undefined {
+  const normalized = String(value || '').trim()
+  return normalized || undefined
+}
+
+async function isReferenceNumberTaken(args: {
+  payload: Awaited<ReturnType<typeof getPayload>>
+  referenceNumber?: string
+  excludeTransactionId?: string
+}): Promise<boolean> {
+  const referenceNumber = normalizeReferenceNumber(args.referenceNumber)
+  if (!referenceNumber) return false
+
+  const where: Record<string, unknown> = {
+    referenceNumber: {
+      equals: referenceNumber,
+    },
+  }
+
+  if (args.excludeTransactionId) {
+    where.id = {
+      not_equals: args.excludeTransactionId,
+    }
+  }
+
+  const existing = await args.payload.find({
+    collection: 'transactions',
+    where: where as any,
+    depth: 0,
+    limit: 1,
+    overrideAccess: true,
+  })
+
+  return existing.totalDocs > 0
+}
+
 function createReadableDescriptionFromParticulars(particulars?: string): string | undefined {
   const raw = String(particulars || '')
     .replace(/\s+/g, ' ')
@@ -521,6 +557,15 @@ export async function createTransaction(input: TransactionFormInput): Promise<{
     }
 
     const payload = await getPayload({ config })
+    const duplicateReferenceNumber = await isReferenceNumberTaken({
+      payload,
+      referenceNumber: input.referenceNumber,
+    })
+
+    if (duplicateReferenceNumber) {
+      return { success: false, error: 'Reference number already exists.' }
+    }
+
     const doc = await payload.create({
       collection: 'transactions',
       draft: false,
@@ -555,9 +600,24 @@ export async function createTransactionWithReceipt(formData: FormData): Promise<
     const description = String(formData.get('description') || '').trim()
     if (!description) return { success: false, error: 'Description is required.' }
 
-    const receiptResult = await createTransactionReceiptFromFormData(formData)
-    if (!receiptResult.success || !receiptResult.id) {
-      return { success: false, error: receiptResult.error ?? 'Failed to save receipt.' }
+    const file = formData.get('file')
+    const hasFile = file instanceof File && file.size > 0
+
+    let receiptResult:
+      | {
+          success: boolean
+          id?: string
+          url?: string
+          rawOcrText?: string
+          error?: string
+        }
+      | undefined
+
+    if (hasFile) {
+      receiptResult = await createTransactionReceiptFromFormData(formData)
+      if (!receiptResult.success || !receiptResult.id) {
+        return { success: false, error: receiptResult.error ?? 'Failed to save receipt.' }
+      }
     }
 
     const createResult = await createTransaction({
@@ -574,11 +634,11 @@ export async function createTransactionWithReceipt(formData: FormData): Promise<
       amount: normalizeAmount(formData.get('amount')),
       transactionFee: normalizeNonNegativeAmount(formData.get('transactionFee')),
       transactionStatus: normalizeTransactionStatus(formData.get('transactionStatus')),
-      receiptImageId: receiptResult.id,
-      rawOcrText: String(formData.get('rawOcrText') || '').trim() || receiptResult.rawOcrText,
+      receiptImageId: receiptResult?.id,
+      rawOcrText: String(formData.get('rawOcrText') || '').trim() || receiptResult?.rawOcrText,
     })
 
-    if (!createResult.success) {
+    if (!createResult.success && receiptResult?.id) {
       await deleteTransactionReceiptById(receiptResult.id)
     }
 
@@ -737,6 +797,16 @@ export async function updateTransaction(
     }
 
     const payload = await getPayload({ config })
+    const duplicateReferenceNumber = await isReferenceNumberTaken({
+      payload,
+      referenceNumber: input.referenceNumber,
+      excludeTransactionId: id,
+    })
+
+    if (duplicateReferenceNumber) {
+      return { success: false, error: 'Reference number already exists.' }
+    }
+
     await payload.update({
       collection: 'transactions',
       id,

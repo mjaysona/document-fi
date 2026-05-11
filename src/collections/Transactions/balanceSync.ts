@@ -72,13 +72,28 @@ export async function syncAccountBalances(args: {
   }
 
   for (const accountId of uniqueIds) {
-    const account = (await req.payload.findByID({
-      collection: 'financial-accounts',
-      id: accountId,
-      depth: 0,
-      overrideAccess: true,
-      req,
-    })) as AccountRecord
+    let account: AccountRecord
+    try {
+      account = (await req.payload.findByID({
+        collection: 'financial-accounts',
+        id: accountId,
+        depth: 0,
+        overrideAccess: true,
+        req,
+      })) as AccountRecord
+    } catch (error) {
+      const status =
+        typeof error === 'object' && error && 'status' in error
+          ? Number((error as { status?: unknown }).status)
+          : undefined
+
+      // If an account no longer exists, skip it so transaction updates don't fail.
+      if (status === 404) {
+        continue
+      }
+
+      throw error
+    }
 
     const transactions = await req.payload.find({
       collection: 'transactions',
