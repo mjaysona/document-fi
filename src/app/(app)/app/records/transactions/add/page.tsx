@@ -17,9 +17,11 @@ import {
   Textarea,
   Tooltip,
   Title,
+  Checkbox,
+  Switch,
 } from '@mantine/core'
 import { Dropzone, MIME_TYPES } from '@mantine/dropzone'
-import { ArrowLeft, Ban, CheckCircle, CircleHelp, Pencil, Trash2, Upload } from 'lucide-react'
+import { ArrowLeft, Ban, CheckCircle, CircleHelp, Pencil, Upload } from 'lucide-react'
 import {
   analyzeReceiptFile,
   createTransactionWithReceipt,
@@ -590,17 +592,27 @@ export default function AddTransactionPage() {
   return (
     <div className={classes.wrapper}>
       <div className={classes.card} style={{ flex: 1 }}>
-        <Group gap="sm" align="center" mb="md">
-          <ActionIcon
-            variant="default"
-            size="lg"
-            radius="sm"
-            aria-label="Back"
-            onClick={() => router.push('/app/records/transactions')}
-          >
-            <ArrowLeft size={16} />
-          </ActionIcon>
-          <Title order={5}>{isEditMode ? 'Edit Transaction' : 'New Transaction'}</Title>
+        <Group mb="md" justify="space-between">
+          <Group gap="sm" align="center">
+            <ActionIcon
+              variant="default"
+              size="lg"
+              radius="sm"
+              aria-label="Back"
+              onClick={() => router.push('/app/records/transactions')}
+            >
+              <ArrowLeft size={16} />
+            </ActionIcon>
+            <Title order={5}>{isEditMode ? 'Edit Transaction' : 'New Transaction'}</Title>
+          </Group>
+          <Group>
+            <Switch label="Fund transfer" />
+            <Tooltip label="Fund transfer - receiving account allocates across multiple transactions">
+              <span style={{ display: 'inline-flex', cursor: 'help' }}>
+                <CircleHelp size={14} />
+              </span>
+            </Tooltip>
+          </Group>
         </Group>
 
         {feedback && (
@@ -985,16 +997,6 @@ export default function AddTransactionPage() {
                           aria-label="Edit attached image"
                         >
                           <Pencil size={14} />
-                        </ActionIcon>
-                        <ActionIcon
-                          variant="subtle"
-                          color="red"
-                          size="sm"
-                          onClick={handleRemoveAttachedImage}
-                          disabled={isSaving || overlayVisible}
-                          aria-label="Remove attached image"
-                        >
-                          <Trash2 size={14} />
                         </ActionIcon>
                       </Group>
                     </Group>

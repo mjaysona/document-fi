@@ -9,7 +9,6 @@ import {
   Button,
   Collapse,
   Group,
-  Modal,
   MultiSelect,
   Stack,
   Text,
@@ -18,7 +17,7 @@ import {
 import { DatePickerInput } from '@mantine/dates'
 import { CircleCheck, Filter, Plus, Search } from 'lucide-react'
 import { DataTable, type DataTableColumn } from '@/app/(app)/components/ui/DataTable'
-import { deleteTransaction, getTransactions, type TransactionListItem } from './actions'
+import { getTransactions, type TransactionListItem } from './actions'
 import classes from '../page.module.scss'
 
 type FeedbackState = {
@@ -62,13 +61,8 @@ export default function TransactionsPage() {
     null,
     null,
   ])
-  const [deletingId, setDeletingId] = useState<string | null>(null)
-  const [isBulkDeleting, setIsBulkDeleting] = useState(false)
-  const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [sortBy, setSortBy] = useState<SortBy>('date')
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
-  const [deleteTargetIds, setDeleteTargetIds] = useState<string[]>([])
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [feedback, setFeedback] = useState<FeedbackState | null>(null)
 
   const load = async () => {
@@ -241,52 +235,6 @@ export default function TransactionsPage() {
     setSortOrder('desc')
   }
 
-  const handleToggleSelectAll = (checked: boolean) => {
-    setSelectedIds(checked ? displayed.map((item) => item.id) : [])
-  }
-
-  const handleToggleSelectRow = (id: string, checked: boolean) => {
-    setSelectedIds((prev) =>
-      checked ? (prev.includes(id) ? prev : [...prev, id]) : prev.filter((itemId) => itemId !== id),
-    )
-  }
-
-  const handleDeleteConfirm = async () => {
-    if (deleteTargetIds.length === 0) return
-
-    const targetIds = [...deleteTargetIds]
-    const isBulk = targetIds.length > 1
-
-    if (isBulk) {
-      setIsBulkDeleting(true)
-    } else {
-      setDeletingId(targetIds[0])
-    }
-
-    setDeleteConfirmOpen(false)
-
-    const results = await Promise.all(targetIds.map((id) => deleteTransaction(id)))
-    const failed = results.find((result) => !result.success)
-
-    if (!failed) {
-      setItems((prev) => prev.filter((item) => !targetIds.includes(item.id)))
-      setSelectedIds((prev) => prev.filter((id) => !targetIds.includes(id)))
-      setFeedback({
-        tone: 'success',
-        message:
-          targetIds.length === 1
-            ? 'Transaction deleted.'
-            : `${targetIds.length} transaction(s) deleted.`,
-      })
-    } else {
-      setFeedback({ tone: 'error', message: failed.error ?? 'Failed to delete transaction(s).' })
-    }
-
-    setDeletingId(null)
-    setIsBulkDeleting(false)
-    setDeleteTargetIds([])
-  }
-
   const columns: DataTableColumn<TransactionListItem>[] = [
     {
       key: 'transactionDate',
@@ -352,14 +300,6 @@ export default function TransactionsPage() {
       ),
     },
   ]
-
-  const singleDeleteLoading =
-    deleteTargetIds.length === 1 && deletingId === deleteTargetIds[0] && !isBulkDeleting
-
-  const deleteLabel =
-    deleteTargetIds.length <= 1
-      ? 'Delete this transaction? This cannot be undone.'
-      : `Delete ${deleteTargetIds.length} selected transaction(s)? This cannot be undone.`
 
   return (
     <div className={classes.wrapper}>
@@ -487,21 +427,7 @@ export default function TransactionsPage() {
             )}
           </Stack>
         </Collapse>
-        <Group justify="space-between">
-          <Button
-            variant="light"
-            color="red"
-            size="sm"
-            disabled={selectedIds.length === 0}
-            loading={isBulkDeleting}
-            onClick={() => {
-              if (selectedIds.length === 0) return
-              setDeleteTargetIds(selectedIds)
-              setDeleteConfirmOpen(true)
-            }}
-          >
-            Delete selected ({selectedIds.length})
-          </Button>
+        <Group justify="flex-end">
           <Button
             variant="filled"
             size="sm"
@@ -532,42 +458,7 @@ export default function TransactionsPage() {
         isLoading={isLoading}
         loadingText="Loading transactions..."
         emptyText="No transactions found."
-        selectedIds={selectedIds}
-        onToggleSelectAll={handleToggleSelectAll}
-        onToggleSelectRow={handleToggleSelectRow}
       />
-
-      <Modal
-        opened={deleteConfirmOpen}
-        onClose={() => {
-          setDeleteConfirmOpen(false)
-          setDeleteTargetIds([])
-        }}
-        title="Confirm deletion"
-        centered
-      >
-        <Text size="sm" mb="lg">
-          {deleteLabel}
-        </Text>
-        <Group justify="end" gap="sm">
-          <Button
-            variant="outline"
-            onClick={() => {
-              setDeleteConfirmOpen(false)
-              setDeleteTargetIds([])
-            }}
-          >
-            Cancel
-          </Button>
-          <Button
-            color="red"
-            onClick={handleDeleteConfirm}
-            loading={isBulkDeleting || singleDeleteLoading}
-          >
-            Delete
-          </Button>
-        </Group>
-      </Modal>
     </div>
   )
 }
