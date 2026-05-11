@@ -901,16 +901,12 @@ export async function updateTransactionWithReceipt(
 }
 
 export async function deleteTransaction(id: string): Promise<{ success: boolean; error?: string }> {
-  try {
-    const session = await auth.api.getSession({ headers: await headers() })
-    if (!session?.user?.id) return { success: false, error: 'Unauthorized' }
-
-    const payload = await getPayload({ config })
-    await payload.delete({ collection: 'transactions', id })
-    return { success: true }
-  } catch (error) {
-    console.error('Failed to delete transaction:', error)
-    return { success: false, error: 'Failed to delete transaction.' }
+  // Transactions cannot be deleted - this maintains audit trail and prevents accidental data loss
+  // Users should create a reversing transaction instead
+  return {
+    success: false,
+    error:
+      'Transactions cannot be deleted. Please create a reversing transaction to reverse this entry.',
   }
 }
 

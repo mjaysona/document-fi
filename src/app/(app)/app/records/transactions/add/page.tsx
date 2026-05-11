@@ -98,7 +98,7 @@ export default function AddTransactionPage() {
       transactionDate: '',
       description: '',
       particulars: '',
-      transactionType: null,
+      transactionType: 'credit',
       sourceAccount: null,
       destinationAccount: null,
       financialAccount: null,
@@ -110,8 +110,15 @@ export default function AddTransactionPage() {
       transactionStatus: 'completed',
     },
     validate: {
+      transactionDate: (value) => (value ? null : 'Transaction date is required.'),
       description: (value) => (value.trim() ? null : 'Description is required.'),
       transactionType: (value) => (value ? null : 'Transaction type is required.'),
+      sourceAccount: (value) => (value ? null : 'Source bank is required.'),
+      destinationAccount: (value) => (value ? null : 'Destination bank is required.'),
+      from: (value) => (value.trim() ? null : 'From is required.'),
+      to: (value) => (value.trim() ? null : 'To is required.'),
+      referenceNumber: (value) => (value.trim() ? null : 'Reference number is required.'),
+      transactionStatus: (value) => (value ? null : 'Transaction status is required.'),
       financialAccount: (value) => (value ? null : 'Financial account is required.'),
       amount: (value) =>
         typeof parseNumericInputValue(value) === 'number' ? null : 'Amount is required.',
@@ -389,28 +396,38 @@ export default function AddTransactionPage() {
     if (defaultAccount && form.values.financialAccount !== defaultAccount.id) {
       form.setFieldValue('financialAccount', defaultAccount.id)
     }
-
-    const nextSourceAccount = defaultAccount?.bankId ?? null
-    if (form.values.sourceAccount !== nextSourceAccount) {
-      form.setFieldValue('sourceAccount', nextSourceAccount)
-    }
-  }, [financialAccounts, form.values.financialAccount, form.values.sourceAccount])
+  }, [financialAccounts, form.values.financialAccount])
 
   useEffect(() => {
-    const nextSourceAccount = form.values.financialAccount
-      ? (financialAccounts.find((account) => account.id === form.values.financialAccount)?.bankId ??
-        null)
-      : null
+    if (!form.values.financialAccount || financialAccounts.length === 0) return
 
-    if (form.values.sourceAccount !== nextSourceAccount) {
-      form.setFieldValue('sourceAccount', nextSourceAccount)
+    const selectedAccount = financialAccounts.find(
+      (account) => account.id === form.values.financialAccount,
+    )
+
+    if (!selectedAccount) return
+
+    // Set source account to the financial account's bank and from to account name
+    if (form.values.sourceAccount !== selectedAccount.bankId) {
+      form.setFieldValue('sourceAccount', selectedAccount.bankId ?? null)
     }
-  }, [financialAccounts, form.values.financialAccount, form.values.sourceAccount])
+    if (!form.values.from) {
+      form.setFieldValue('from', selectedAccount.name)
+    }
+  }, [financialAccounts, form.values.financialAccount])
 
-  const sourceBankName =
-    banks.find((bank) => bank.id === form.values.sourceAccount)?.name ||
-    financialAccounts.find((account) => account.id === form.values.financialAccount)?.bankName ||
-    ''
+  // Set transaction date to today when creating a new transaction
+  useEffect(() => {
+    if (isEditMode || form.values.transactionDate) return
+
+    const today = new Date()
+    const year = today.getFullYear()
+    const month = String(today.getMonth() + 1).padStart(2, '0')
+    const day = String(today.getDate()).padStart(2, '0')
+    const todayFormatted = `${year}-${month}-${day}`
+
+    form.setFieldValue('transactionDate', todayFormatted)
+  }, [isEditMode])
 
   const selectedAccountCurrentBalance = useMemo<number | ''>(() => {
     if (!form.values.financialAccount) return ''
@@ -524,6 +541,9 @@ export default function AddTransactionPage() {
       const result = await createTransactionWithReceipt(formData)
 
       if (result.success && result.id) {
+        setFeedback({ type: 'success', message: 'Transaction created successfully.' })
+        // Wait a moment to show the success message before redirecting
+        await new Promise((resolve) => setTimeout(resolve, 800))
         router.push(`/app/records/transactions/${result.id}/edit`)
       } else {
         if (result.error === 'Reference number already exists.') {
@@ -646,25 +666,15 @@ export default function AddTransactionPage() {
                     placeholder="Select financial account"
                   />
                 </Group>
-                <TextInput
-                  label="Description"
-                  value={form.values.description}
-                  onChange={(e) => form.setFieldValue('description', e.currentTarget.value)}
-                  error={form.errors.description}
-                  required
-                />
-                <Textarea
-                  label="Particulars"
-                  value={form.values.particulars}
-                  onChange={(e) => form.setFieldValue('particulars', e.currentTarget.value)}
-                  minRows={2}
-                />
                 <Group grow>
                   <TextInput
                     label="Transaction Date"
                     type="date"
                     value={form.values.transactionDate}
                     onChange={(e) => form.setFieldValue('transactionDate', e.currentTarget.value)}
+                    error={form.errors.transactionDate}
+                    required
+                    disabled={!form.values.financialAccount}
                   />
                   <Select
                     label="Transaction Type"
@@ -673,18 +683,40 @@ export default function AddTransactionPage() {
                       { label: 'Credit', value: 'credit' },
                     ]}
                     value={form.values.transactionType}
-                    onChange={(value) =>
-                      form.setFieldValue(
-                        'transactionType',
-                        (value as TransactionType | null) ?? null,
-                      )
-                    }
+                    onChange={(value) => {
+                      if (value) {
+                        const sourceBank = form.values.sourceAccount
+                        const destinationBank = form.values.destinationAccount
+                        const fromValue = form.values.from
+                        const toValue = form.values.to
+                        form.setFieldValue('transactionType', value as TransactionType)
+                        form.setFieldValue('sourceAccount', destinationBank)
+                        form.setFieldValue('destinationAccount', sourceBank)
+                        form.setFieldValue('from', toValue)
+                        form.setFieldValue('to', fromValue)
+                      }
+                    }}
+                    clearable={false}
                     error={form.errors.transactionType}
                     required
+                    disabled={!form.values.financialAccount}
                   />
                 </Group>
                 <Group grow>
-                  <TextInput label="Source Bank" value={sourceBankName} readOnly />
+                  <Select
+                    label="Source Bank"
+                    searchable
+                    data={banks.map((bank) => ({
+                      value: bank.id,
+                      label: `${bank.name} (${bank.code})`,
+                    }))}
+                    value={form.values.sourceAccount}
+                    onChange={(value) => form.setFieldValue('sourceAccount', value)}
+                    error={form.errors.sourceAccount}
+                    required
+                    disabled={!form.values.financialAccount}
+                    readOnly={form.values.transactionType === 'credit'}
+                  />
                   <Select
                     label="Destination Bank"
                     searchable
@@ -694,6 +726,10 @@ export default function AddTransactionPage() {
                     }))}
                     value={form.values.destinationAccount}
                     onChange={(value) => form.setFieldValue('destinationAccount', value)}
+                    error={form.errors.destinationAccount}
+                    required
+                    disabled={!form.values.financialAccount}
+                    readOnly={form.values.transactionType === 'debit'}
                   />
                 </Group>
                 <Group grow>
@@ -701,11 +737,17 @@ export default function AddTransactionPage() {
                     label="From"
                     value={form.values.from}
                     onChange={(e) => form.setFieldValue('from', e.currentTarget.value)}
+                    error={form.errors.from}
+                    required
+                    disabled={!form.values.financialAccount}
                   />
                   <TextInput
                     label="To"
                     value={form.values.to}
                     onChange={(e) => form.setFieldValue('to', e.currentTarget.value)}
+                    error={form.errors.to}
+                    required
+                    disabled={!form.values.financialAccount}
                   />
                 </Group>
                 <Group grow>
@@ -717,6 +759,8 @@ export default function AddTransactionPage() {
                       form.clearFieldError('referenceNumber')
                     }}
                     error={form.errors.referenceNumber}
+                    required
+                    disabled={!form.values.financialAccount}
                   />
                   <Select
                     label="Transaction Status"
@@ -731,6 +775,9 @@ export default function AddTransactionPage() {
                         (value as TransactionStatus | null) ?? 'completed',
                       )
                     }
+                    error={form.errors.transactionStatus}
+                    required
+                    disabled={!form.values.financialAccount}
                   />
                 </Group>
                 <Group grow>
@@ -782,6 +829,19 @@ export default function AddTransactionPage() {
                     placeholder="Enter account, type, and amount"
                   />
                 </div>
+                <TextInput
+                  label="Description"
+                  value={form.values.description}
+                  onChange={(e) => form.setFieldValue('description', e.currentTarget.value)}
+                  error={form.errors.description}
+                  required
+                />
+                <Textarea
+                  label="Particulars"
+                  value={form.values.particulars}
+                  onChange={(e) => form.setFieldValue('particulars', e.currentTarget.value)}
+                  minRows={2}
+                />
               </Stack>
             </Card>
 

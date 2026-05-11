@@ -227,20 +227,6 @@ const Transactions: CollectionConfig = {
         return doc
       },
     ],
-    afterDelete: [
-      async ({ doc, req }) => {
-        if (req.context?.skipTransactionBalanceSync) return doc
-
-        await syncAccountBalances({
-          req,
-          accountIds: getAffectedAccountIds({
-            previousDoc: doc as Record<string, unknown>,
-          }),
-        })
-
-        return doc
-      },
-    ],
   },
   timestamps: true,
 }
