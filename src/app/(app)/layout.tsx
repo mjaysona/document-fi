@@ -1,4 +1,5 @@
 import '@mantine/core/styles.css'
+import '@mantine/dates/styles.css'
 import { mantineHtmlProps, ColorSchemeScript } from '@mantine/core'
 import { ThemeProvider } from '@/app/providers/Theme'
 import { AuthProvider } from '@/app/providers/Auth'

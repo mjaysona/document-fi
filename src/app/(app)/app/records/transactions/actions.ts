@@ -32,6 +32,7 @@ export type TransactionListItem = {
   id: string
   description: string
   transactionType?: TransactionType
+  financialAccountName?: string
   sourceAccountName?: string
   destinationAccountName?: string
   transactionDate?: string
@@ -503,6 +504,12 @@ export async function getTransactions(): Promise<{
         id: String(doc.id),
         description: String(doc.description || ''),
         transactionType: normalizeTransactionType(doc.transactionType),
+        financialAccountName:
+          doc.financialAccount &&
+          typeof doc.financialAccount === 'object' &&
+          doc.financialAccount.name
+            ? String(doc.financialAccount.name)
+            : undefined,
         sourceAccountName:
           doc.sourceAccount && typeof doc.sourceAccount === 'object' && doc.sourceAccount.name
             ? String(doc.sourceAccount.name)
