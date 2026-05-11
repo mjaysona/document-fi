@@ -1,8 +1,3 @@
----
-description: 
-globs: 
-alwaysApply: false
----
 # Collections Rules
 
 - Collections are stored in **src/collections** folder.
@@ -79,7 +74,7 @@ When creating a custom component, always use the appropriate type from Payload's
      - For text fields: `TextField`
      - For number fields: `NumberField`
      - For select fields: `SelectField`
-     - For date fields: `DateTimeField`
+     - For date fields: `DateField`
      - For rich text fields: `RichTextField`
      - For upload fields: `UploadField`
      - For relationship fields: `RelationshipField`
@@ -554,59 +549,6 @@ When working with collection hooks that need to access the selected tenant, foll
    - Enforcing tenant isolation in operations
    - Accessing tenant-specific settings or configurations
    - Applying tenant-specific business logic
-
-## Field Configuration Ordering
-
-When defining fields in collection configurations, follow this specific order for properties:
-
-### Guidelines
-1. Always start with `type` as it defines the field's nature.
-2. Follow with `name` and `label` as they are required for most fields.
-3. Add `access` if access control is needed.
-4. Add `admin` configuration next.
-5. Add `required` property to specify if the field is mandatory.
-6. Place `fields` array last if the field type supports nested fields.
-7. Maintain this same order for nested fields within the `fields` array.
-8. Other field-specific properties (like `defaultValue`, etc.) should be placed after these core properties.
-
-### Child Fields
-- Child fields, as well as grandchild fields and so on, are still considered fields and must follow the same ordering rules as parent fields.
-- Do not move child fields to the root level; they should remain nested within their parent field's `fields` array.
-
-### Example
-```typescript
-{
-  type: 'text',
-  name: 'content',
-  label: 'Content',
-  access: {
-    read: () => true,
-    update: () => true,
-  },
-  admin: {
-    description: 'Main content area',
-    condition: (data) => data?.type === 'article',
-  },
-  required: true,
-  fields: [
-    {
-      type: 'text',
-      name: 'title',
-      label: 'Title',
-      access: {
-        read: () => true,
-        update: () => true,
-      },
-      admin: {
-        placeholder: 'Enter title',
-      },
-      required: true,
-    },
-  ],
-}
-```
-
-This ordering ensures consistency and readability across all field configurations in the codebase.
 
 
 
