@@ -1032,7 +1032,6 @@ export default function AddTransactionPage() {
           </Group>
         )}
       </div>
-
       <Card withBorder radius="md" className={classes['footer--fixed']}>
         <Group justify="space-between">
           <Text size="sm" c="dimmed">
