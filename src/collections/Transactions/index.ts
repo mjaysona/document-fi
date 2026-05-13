@@ -83,7 +83,13 @@ const Transactions: CollectionConfig = {
       label: 'Financial Account',
       type: 'relationship',
       relationTo: 'financial-accounts',
-      required: true,
+      validate: (value: any, { data }: any) => {
+        // Only required if not a child transaction (parentTransaction is not set)
+        if (!data.parentTransaction && !value) {
+          return 'Financial account is required.'
+        }
+        return true
+      },
     },
     {
       name: 'from',
@@ -192,6 +198,27 @@ const Transactions: CollectionConfig = {
       admin: {
         readOnly: true,
         position: 'sidebar',
+      },
+    },
+    {
+      name: 'isFundTransfer',
+      label: 'Fund Transfer',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: {
+        position: 'sidebar',
+        description:
+          'Mark this transaction as a fund transfer to allocate across multiple accounts',
+      },
+    },
+    {
+      name: 'parentTransaction',
+      label: 'Parent Transaction',
+      type: 'relationship',
+      relationTo: 'transactions',
+      admin: {
+        position: 'sidebar',
+        description: 'Parent transaction for fund allocation purposes',
       },
     },
     {

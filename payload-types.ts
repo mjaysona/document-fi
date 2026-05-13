@@ -418,7 +418,7 @@ export interface Transaction {
   transactionType: 'debit' | 'credit';
   sourceAccount?: (string | null) | Bank;
   destinationAccount?: (string | null) | Bank;
-  financialAccount: string | FinancialAccount;
+  financialAccount?: (string | null) | FinancialAccount;
   from?: string | null;
   to?: string | null;
   referenceNumber?: string | null;
@@ -441,6 +441,14 @@ export interface Transaction {
   isAiGenerated?: boolean | null;
   isUserEdited?: boolean | null;
   uploadedAt?: string | null;
+  /**
+   * Mark this transaction as a fund transfer to allocate across multiple accounts
+   */
+  isFundTransfer?: boolean | null;
+  /**
+   * Parent transaction for fund allocation purposes
+   */
+  parentTransaction?: (string | null) | Transaction;
   createdBy?: (string | null) | User;
   updatedBy?: (string | null) | User;
   updatedAt: string;
@@ -941,6 +949,8 @@ export interface TransactionsSelect<T extends boolean = true> {
   isAiGenerated?: T;
   isUserEdited?: T;
   uploadedAt?: T;
+  isFundTransfer?: T;
+  parentTransaction?: T;
   createdBy?: T;
   updatedBy?: T;
   updatedAt?: T;

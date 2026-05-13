@@ -61,6 +61,8 @@ type TransactionFormValues = {
   amount: number | string
   transactionFee: number | string
   transactionStatus: TransactionStatus | null
+  isFundTransfer: boolean
+  parentTransaction: string | null
 }
 
 type NumericInputValue = number | string
@@ -86,10 +88,11 @@ export default function AddTransactionPage() {
   const params = useParams<{ id?: string }>()
   const transactionId = params?.id
   const isEditMode = pathname?.includes('/app/records/transactions/') && pathname?.endsWith('/edit')
+  const isForAllocation = pathname?.includes('/allocate')
 
   const [banks, setBanks] = useState<BankOption[]>([])
   const [financialAccounts, setFinancialAccounts] = useState<FinancialAccountOption[]>([])
-  const [isLoading, setIsLoading] = useState(Boolean(isEditMode))
+  const [isLoading, setIsLoading] = useState(Boolean(isEditMode || isForAllocation))
   const [isSaving, setIsSaving] = useState(false)
   const [isUploadingReceipt, setIsUploadingReceipt] = useState(false)
   const [isProcessingReceipt, setIsProcessingReceipt] = useState(false)
@@ -110,6 +113,8 @@ export default function AddTransactionPage() {
       amount: '',
       transactionFee: '',
       transactionStatus: 'completed',
+      isFundTransfer: false,
+      parentTransaction: null,
     },
     validate: {
       transactionDate: (value) => (value ? null : 'Transaction date is required.'),
@@ -121,7 +126,7 @@ export default function AddTransactionPage() {
       to: (value) => (value.trim() ? null : 'To is required.'),
       referenceNumber: (value) => (value.trim() ? null : 'Reference number is required.'),
       transactionStatus: (value) => (value ? null : 'Transaction status is required.'),
-      financialAccount: (value) => (value ? null : 'Financial account is required.'),
+      financialAccount: () => null, // Validation handled in handleSave
       amount: (value) =>
         typeof parseNumericInputValue(value) === 'number' ? null : 'Amount is required.',
     },
@@ -206,6 +211,8 @@ export default function AddTransactionPage() {
       amount: typeof tx.amount === 'number' ? tx.amount : '',
       transactionFee: typeof tx.transactionFee === 'number' ? tx.transactionFee : '',
       transactionStatus: tx.transactionStatus ?? 'completed',
+      isFundTransfer: tx.isFundTransfer ?? false,
+      parentTransaction: tx.parentTransaction ?? null,
     })
 
     const nextFinancialAccount = tx.financialAccount ?? null
@@ -274,7 +281,9 @@ export default function AddTransactionPage() {
       }
       if (result.description) form.setFieldValue('description', result.description)
       if (result.particulars) form.setFieldValue('particulars', result.particulars)
-      if (result.transactionType) form.setFieldValue('transactionType', result.transactionType)
+      // Skip transactionType in allocation mode (it's always credit)
+      if (result.transactionType && !isForAllocation)
+        form.setFieldValue('transactionType', result.transactionType)
       if (result.detectedDestinationBankId)
         form.setFieldValue('destinationAccount', result.detectedDestinationBankId)
       if (result.from) form.setFieldValue('from', result.from)
@@ -300,13 +309,50 @@ export default function AddTransactionPage() {
     let isMounted = true
 
     const load = async () => {
-      setIsLoading(Boolean(isEditMode))
+      setIsLoading(Boolean(isEditMode || isForAllocation))
 
       const [banksResult, accountsResult] = await Promise.all([getBanks(), getFinancialAccounts()])
 
       if (!isMounted) return
       if (banksResult.success) setBanks(banksResult.data)
       if (accountsResult.success) setFinancialAccounts(accountsResult.data)
+
+      if (isForAllocation) {
+        // Load parent transaction for allocation
+        if (!transactionId) {
+          setFeedback({ type: 'error', message: 'Missing parent transaction ID.' })
+          setIsLoading(false)
+          return
+        }
+
+        const parentResult = await getTransactionById(transactionId)
+        if (!isMounted) return
+
+        if (!parentResult.success || !parentResult.data) {
+          setFeedback({
+            type: 'error',
+            message: parentResult.error ?? 'Failed to load parent transaction.',
+          })
+          setIsLoading(false)
+          return
+        }
+
+        // Set parent transaction ID and transaction type to credit
+        form.setFieldValue('parentTransaction', transactionId)
+        form.setFieldValue('transactionType', 'credit')
+        form.setFieldValue('isFundTransfer', false)
+
+        // Set transaction date to today
+        const today = new Date()
+        const year = today.getFullYear()
+        const month = String(today.getMonth() + 1).padStart(2, '0')
+        const day = String(today.getDate()).padStart(2, '0')
+        const todayFormatted = `${year}-${month}-${day}`
+        form.setFieldValue('transactionDate', todayFormatted)
+
+        setIsLoading(false)
+        return
+      }
 
       if (!isEditMode) {
         setIsLoading(false)
@@ -344,6 +390,8 @@ export default function AddTransactionPage() {
         amount: typeof tx.amount === 'number' ? tx.amount : '',
         transactionFee: typeof tx.transactionFee === 'number' ? tx.transactionFee : 0,
         transactionStatus: tx.transactionStatus ?? 'completed',
+        isFundTransfer: tx.isFundTransfer ?? false,
+        parentTransaction: tx.parentTransaction ?? null,
       })
 
       const nextFinancialAccount = tx.financialAccount ?? null
@@ -389,18 +437,22 @@ export default function AddTransactionPage() {
     return () => {
       isMounted = false
     }
-  }, [isEditMode, transactionId])
+  }, [isEditMode, isForAllocation, transactionId])
 
   useEffect(() => {
+    // Skip default account selection in allocation mode
+    if (isForAllocation) return
     if (form.values.financialAccount || financialAccounts.length === 0) return
 
     const defaultAccount = financialAccounts.find((account) => account.isDefault)
     if (defaultAccount && form.values.financialAccount !== defaultAccount.id) {
       form.setFieldValue('financialAccount', defaultAccount.id)
     }
-  }, [financialAccounts, form.values.financialAccount])
+  }, [financialAccounts, form.values.financialAccount, isForAllocation])
 
   useEffect(() => {
+    // Skip automatic account syncing in allocation mode
+    if (isForAllocation) return
     if (!form.values.financialAccount || financialAccounts.length === 0) return
 
     const selectedAccount = financialAccounts.find(
@@ -416,11 +468,11 @@ export default function AddTransactionPage() {
     if (!form.values.from) {
       form.setFieldValue('from', selectedAccount.name)
     }
-  }, [financialAccounts, form.values.financialAccount])
+  }, [financialAccounts, form.values.financialAccount, isForAllocation])
 
   // Set transaction date to today when creating a new transaction
   useEffect(() => {
-    if (isEditMode || form.values.transactionDate) return
+    if (isEditMode || isForAllocation || form.values.transactionDate) return
 
     const today = new Date()
     const year = today.getFullYear()
@@ -429,7 +481,7 @@ export default function AddTransactionPage() {
     const todayFormatted = `${year}-${month}-${day}`
 
     form.setFieldValue('transactionDate', todayFormatted)
-  }, [isEditMode])
+  }, [isEditMode, isForAllocation])
 
   const selectedAccountCurrentBalance = useMemo<number | ''>(() => {
     if (!form.values.financialAccount) return ''
@@ -486,23 +538,9 @@ export default function AddTransactionPage() {
     runningBalance,
   ])
 
-  const handleSave = async () => {
-    setFeedback(null)
-    form.clearFieldError('referenceNumber')
-
-    const validation = form.validate()
-    if (validation.hasErrors) {
-      return
-    }
-
+  const createFormData = () => {
     const parsedAmount = parseNumericInputValue(form.values.amount)
     const parsedTransactionFee = parseNumericInputValue(form.values.transactionFee) ?? 0
-    if (typeof parsedAmount !== 'number') {
-      setFeedback({ type: 'error', message: 'Amount is required.' })
-      return
-    }
-
-    setIsSaving(true)
 
     const formData = new FormData()
     if (pendingReceiptFile) formData.append('file', pendingReceiptFile)
@@ -523,8 +561,38 @@ export default function AddTransactionPage() {
     formData.append('amount', String(parsedAmount))
     formData.append('transactionFee', String(parsedTransactionFee))
     formData.append('transactionStatus', form.values.transactionStatus || 'completed')
+    formData.append('isFundTransfer', String(form.values.isFundTransfer))
+    if (form.values.parentTransaction)
+      formData.append('parentTransaction', form.values.parentTransaction)
     if (receiptImageId) formData.append('existingReceiptImageId', receiptImageId)
     if (pendingRawOcrText) formData.append('rawOcrText', pendingRawOcrText)
+
+    return { formData, parsedAmount, parsedTransactionFee }
+  }
+
+  const handleSave = async () => {
+    setFeedback(null)
+    form.clearFieldError('referenceNumber')
+
+    const validation = form.validate()
+
+    // Add custom validation for financialAccount - only required if not allocating
+    if (!isForAllocation && !form.values.financialAccount) {
+      form.setFieldError('financialAccount', 'Financial account is required.')
+      return
+    }
+
+    if (validation.hasErrors) {
+      return
+    }
+
+    const { formData, parsedAmount } = createFormData()
+    if (typeof parsedAmount !== 'number') {
+      setFeedback({ type: 'error', message: 'Amount is required.' })
+      return
+    }
+
+    setIsSaving(true)
 
     if (isEditMode && transactionId) {
       const result = await updateTransactionWithReceipt(transactionId, formData)
@@ -547,6 +615,46 @@ export default function AddTransactionPage() {
         // Wait a moment to show the success message before redirecting
         await new Promise((resolve) => setTimeout(resolve, 800))
         router.push(`/app/records/transactions/${result.id}/edit`)
+      } else {
+        if (result.error === 'Reference number already exists.') {
+          form.setFieldError('referenceNumber', result.error)
+        }
+        setFeedback({ type: 'error', message: result.error ?? 'Failed to create transaction.' })
+      }
+    }
+
+    setIsSaving(false)
+  }
+
+  const handleSaveAndAllocate = async () => {
+    setFeedback(null)
+    form.clearFieldError('referenceNumber')
+
+    const validation = form.validate()
+    if (validation.hasErrors) {
+      return
+    }
+
+    const { formData, parsedAmount } = createFormData()
+    if (typeof parsedAmount !== 'number') {
+      setFeedback({ type: 'error', message: 'Amount is required.' })
+      return
+    }
+
+    setIsSaving(true)
+
+    if (isEditMode && transactionId) {
+      // In edit mode, just redirect to allocate page
+      router.push(`/app/records/transactions/${transactionId}/allocate`)
+    } else {
+      // In create mode, save first then redirect
+      const result = await createTransactionWithReceipt(formData)
+
+      if (result.success && result.id) {
+        setFeedback({ type: 'success', message: 'Transaction created successfully.' })
+        // Wait a moment to show the success message before redirecting
+        await new Promise((resolve) => setTimeout(resolve, 800))
+        router.push(`/app/records/transactions/${result.id}/allocate`)
       } else {
         if (result.error === 'Reference number already exists.') {
           form.setFieldError('referenceNumber', result.error)
@@ -603,15 +711,39 @@ export default function AddTransactionPage() {
             >
               <ArrowLeft size={16} />
             </ActionIcon>
-            <Title order={5}>{isEditMode ? 'Edit Transaction' : 'New Transaction'}</Title>
+            <Title order={5}>
+              {isForAllocation
+                ? 'Allocate Funds'
+                : isEditMode
+                  ? 'Edit Transaction'
+                  : 'New Transaction'}
+            </Title>
           </Group>
           <Group>
-            <Switch label="Fund transfer" />
-            <Tooltip label="Fund transfer - receiving account allocates across multiple transactions">
-              <span style={{ display: 'inline-flex', cursor: 'help' }}>
-                <CircleHelp size={14} />
-              </span>
-            </Tooltip>
+            {!isForAllocation && form.values.isFundTransfer && (
+              <Button
+                size="xs"
+                variant="light"
+                onClick={handleSaveAndAllocate}
+                loading={isSaving || overlayVisible || isLoading}
+              >
+                Allocate Funds
+              </Button>
+            )}
+            {!isForAllocation && (
+              <>
+                <Switch
+                  label="Fund transfer"
+                  checked={form.values.isFundTransfer}
+                  onChange={(e) => form.setFieldValue('isFundTransfer', e.currentTarget.checked)}
+                />
+                <Tooltip label="Fund transfer - receiving account allocates across multiple transactions">
+                  <span style={{ display: 'inline-flex', cursor: 'help' }}>
+                    <CircleHelp size={14} />
+                  </span>
+                </Tooltip>
+              </>
+            )}
           </Group>
         </Group>
 
@@ -652,32 +784,34 @@ export default function AddTransactionPage() {
                 Transaction Details
               </Text>
               <Stack gap="sm">
-                <Group grow>
-                  <Select
-                    label="Financial Account"
-                    searchable
-                    data={financialAccounts.map((account) => ({
-                      value: account.id,
-                      label: `${account.name} ${account.bankName ? ` - ${account.bankName}` : ''}${account.isDefault ? ' (Default)' : ''}`,
-                    }))}
-                    value={form.values.financialAccount}
-                    onChange={(value) => form.setFieldValue('financialAccount', value)}
-                    error={form.errors.financialAccount}
-                    required
-                  />
-                  <NumberInput
-                    label="Current Balance"
-                    value={selectedAccountCurrentBalance}
-                    min={0}
-                    leftSection="₱"
-                    decimalScale={2}
-                    fixedDecimalScale
-                    thousandSeparator=","
-                    hideControls
-                    readOnly
-                    placeholder="Select financial account"
-                  />
-                </Group>
+                {!isForAllocation && (
+                  <Group grow>
+                    <Select
+                      label="Financial Account"
+                      searchable
+                      data={financialAccounts.map((account) => ({
+                        value: account.id,
+                        label: `${account.name} ${account.bankName ? ` - ${account.bankName}` : ''}${account.isDefault ? ' (Default)' : ''}`,
+                      }))}
+                      value={form.values.financialAccount}
+                      onChange={(value) => form.setFieldValue('financialAccount', value)}
+                      error={form.errors.financialAccount}
+                      required
+                    />
+                    <NumberInput
+                      label="Current Balance"
+                      value={selectedAccountCurrentBalance}
+                      min={0}
+                      leftSection="₱"
+                      decimalScale={2}
+                      fixedDecimalScale
+                      thousandSeparator=","
+                      hideControls
+                      readOnly
+                      placeholder="Select financial account"
+                    />
+                  </Group>
+                )}
                 <Group grow>
                   <TextInput
                     label="Transaction Date"
@@ -686,7 +820,7 @@ export default function AddTransactionPage() {
                     onChange={(e) => form.setFieldValue('transactionDate', e.currentTarget.value)}
                     error={form.errors.transactionDate}
                     required
-                    disabled={!form.values.financialAccount}
+                    disabled={!form.values.financialAccount && !isForAllocation}
                   />
                   <Select
                     label="Transaction Type"
@@ -696,6 +830,7 @@ export default function AddTransactionPage() {
                     ]}
                     value={form.values.transactionType}
                     onChange={(value) => {
+                      if (isForAllocation) return // Prevent changes in allocation mode
                       if (value) {
                         const sourceBank = form.values.sourceAccount
                         const destinationBank = form.values.destinationAccount
@@ -711,7 +846,9 @@ export default function AddTransactionPage() {
                     clearable={false}
                     error={form.errors.transactionType}
                     required
-                    disabled={!form.values.financialAccount}
+                    readOnly={
+                      (!form.values.financialAccount && !isForAllocation) || isForAllocation
+                    }
                   />
                 </Group>
                 <Group grow>
@@ -726,8 +863,8 @@ export default function AddTransactionPage() {
                     onChange={(value) => form.setFieldValue('sourceAccount', value)}
                     error={form.errors.sourceAccount}
                     required
-                    disabled={!form.values.financialAccount}
-                    readOnly={form.values.transactionType === 'credit'}
+                    disabled={!isForAllocation && !form.values.financialAccount}
+                    readOnly={!isForAllocation && form.values.transactionType === 'credit'}
                   />
                   <Select
                     label="Destination Bank"
@@ -740,8 +877,8 @@ export default function AddTransactionPage() {
                     onChange={(value) => form.setFieldValue('destinationAccount', value)}
                     error={form.errors.destinationAccount}
                     required
-                    disabled={!form.values.financialAccount}
-                    readOnly={form.values.transactionType === 'debit'}
+                    disabled={!isForAllocation && !form.values.financialAccount}
+                    readOnly={!isForAllocation && form.values.transactionType === 'debit'}
                   />
                 </Group>
                 <Group grow>
@@ -751,7 +888,7 @@ export default function AddTransactionPage() {
                     onChange={(e) => form.setFieldValue('from', e.currentTarget.value)}
                     error={form.errors.from}
                     required
-                    disabled={!form.values.financialAccount}
+                    disabled={!isForAllocation && !form.values.financialAccount}
                   />
                   <TextInput
                     label="To"
@@ -759,7 +896,7 @@ export default function AddTransactionPage() {
                     onChange={(e) => form.setFieldValue('to', e.currentTarget.value)}
                     error={form.errors.to}
                     required
-                    disabled={!form.values.financialAccount}
+                    disabled={!isForAllocation && !form.values.financialAccount}
                   />
                 </Group>
                 <Group grow>
@@ -772,7 +909,7 @@ export default function AddTransactionPage() {
                     }}
                     error={form.errors.referenceNumber}
                     required
-                    disabled={!form.values.financialAccount}
+                    disabled={!isForAllocation && !form.values.financialAccount}
                   />
                   <Select
                     label="Transaction Status"
@@ -789,7 +926,7 @@ export default function AddTransactionPage() {
                     }
                     error={form.errors.transactionStatus}
                     required
-                    disabled={!form.values.financialAccount}
+                    disabled={!isForAllocation && !form.values.financialAccount}
                   />
                 </Group>
                 <Group grow>
@@ -818,29 +955,31 @@ export default function AddTransactionPage() {
                     hideControls
                   />
                 </Group>
-                <div>
-                  <Group gap={6} mb={4} align="center">
-                    <Text size="sm" fw={500}>
-                      Running Balance
-                    </Text>
-                    <Tooltip label="Running balance is the amount after this transaction is added or deducted (Amount + Transaction Fee).">
-                      <span style={{ display: 'inline-flex', cursor: 'help' }}>
-                        <CircleHelp size={14} />
-                      </span>
-                    </Tooltip>
-                  </Group>
-                  <NumberInput
-                    value={projectedRunningBalance}
-                    min={0}
-                    leftSection="₱"
-                    decimalScale={2}
-                    fixedDecimalScale
-                    thousandSeparator=","
-                    hideControls
-                    readOnly
-                    placeholder="Enter account, type, and amount"
-                  />
-                </div>
+                {!isForAllocation && (
+                  <div>
+                    <Group gap={6} mb={4} align="center">
+                      <Text size="sm" fw={500}>
+                        Running Balance
+                      </Text>
+                      <Tooltip label="Running balance is the amount after this transaction is added or deducted (Amount + Transaction Fee).">
+                        <span style={{ display: 'inline-flex', cursor: 'help' }}>
+                          <CircleHelp size={14} />
+                        </span>
+                      </Tooltip>
+                    </Group>
+                    <NumberInput
+                      value={projectedRunningBalance}
+                      min={0}
+                      leftSection="₱"
+                      decimalScale={2}
+                      fixedDecimalScale
+                      thousandSeparator=","
+                      hideControls
+                      readOnly
+                      placeholder="Enter account, type, and amount"
+                    />
+                  </div>
+                )}
                 <TextInput
                   label="Description"
                   value={form.values.description}
@@ -864,7 +1003,9 @@ export default function AddTransactionPage() {
                   mb="md"
                   onClick={handleProcessReceipt}
                   loading={isProcessingReceipt}
-                  disabled={isSaving || isUploadingReceipt}
+                  disabled={
+                    isSaving || isUploadingReceipt || (!receiptImageId && !activeReceiptImageUrl)
+                  }
                 >
                   Process Receipt
                 </Button>
@@ -998,6 +1139,16 @@ export default function AddTransactionPage() {
                         >
                           <Pencil size={14} />
                         </ActionIcon>
+                        <ActionIcon
+                          variant="subtle"
+                          color="red"
+                          size="sm"
+                          onClick={handleRemoveAttachedImage}
+                          disabled={isSaving || overlayVisible}
+                          aria-label="Remove attached image"
+                        >
+                          <Ban size={14} />
+                        </ActionIcon>
                       </Group>
                     </Group>
                     <div
@@ -1035,9 +1186,11 @@ export default function AddTransactionPage() {
       <Card withBorder radius="md" className={classes['footer--fixed']}>
         <Group justify="space-between">
           <Text size="sm" c="dimmed">
-            {isEditMode
-              ? 'Update fields or receipt, then save your changes.'
-              : 'Fill out transaction details and save. Receipt upload is optional.'}
+            {isForAllocation
+              ? 'Create a child transaction linked to the parent fund transfer. Receipt upload is optional.'
+              : isEditMode
+                ? 'Update fields or receipt, then save your changes.'
+                : 'Fill out transaction details and save. Receipt upload is optional.'}
           </Text>
           <Button onClick={handleSave} loading={isSaving || overlayVisible || isLoading}>
             Save

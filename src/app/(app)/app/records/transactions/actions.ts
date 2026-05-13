@@ -60,6 +60,8 @@ export type TransactionFormInput = {
   transactionStatus?: TransactionStatus | null
   receiptImageId?: string
   rawOcrText?: string
+  isFundTransfer?: boolean
+  parentTransaction?: string | null
 }
 
 export type TransactionDetail = TransactionFormInput & {
@@ -73,6 +75,8 @@ export type TransactionDetail = TransactionFormInput & {
   isAiGenerated?: boolean
   isUserEdited?: boolean
   runningBalance?: number
+  isFundTransfer?: boolean
+  parentTransaction?: string | null
 }
 
 export type ProcessTransactionReceiptResult = {
@@ -405,6 +409,8 @@ function mapTransactionInput(
     amount: input.amount,
     transactionFee: input.transactionFee,
     transactionStatus: normalizeTransactionStatus(input.transactionStatus) ?? 'completed',
+    isFundTransfer: input.isFundTransfer ?? false,
+    ...(input.parentTransaction ? { parentTransaction: input.parentTransaction } : {}),
     ...(input.receiptImageId ? { receiptImage: input.receiptImageId } : {}),
     ...(typeof input.rawOcrText !== 'undefined'
       ? {
@@ -643,6 +649,8 @@ export async function createTransactionWithReceipt(formData: FormData): Promise<
       transactionStatus: normalizeTransactionStatus(formData.get('transactionStatus')),
       receiptImageId: receiptResult?.id,
       rawOcrText: String(formData.get('rawOcrText') || '').trim() || receiptResult?.rawOcrText,
+      isFundTransfer: String(formData.get('isFundTransfer') || '').trim() === 'true',
+      parentTransaction: String(formData.get('parentTransaction') || '').trim() || undefined,
     })
 
     if (!createResult.success && receiptResult?.id) {
@@ -768,6 +776,13 @@ export async function getTransactionById(id: string): Promise<{
         isUserEdited: (doc as any).isUserEdited === true,
         runningBalance:
           typeof (doc as any).runningBalance === 'number' ? (doc as any).runningBalance : undefined,
+        isFundTransfer: (doc as any).isFundTransfer === true,
+        parentTransaction:
+          (doc as any).parentTransaction && typeof (doc as any).parentTransaction === 'object'
+            ? String((doc as any).parentTransaction.id)
+            : (doc as any).parentTransaction
+              ? String((doc as any).parentTransaction)
+              : null,
       },
     }
   } catch (error) {
@@ -893,6 +908,8 @@ export async function updateTransactionWithReceipt(
       transactionStatus: normalizeTransactionStatus(formData.get('transactionStatus')),
       receiptImageId,
       rawOcrText,
+      isFundTransfer: String(formData.get('isFundTransfer') || '').trim() === 'true',
+      parentTransaction: String(formData.get('parentTransaction') || '').trim() || undefined,
     })
   } catch (error) {
     console.error('Failed to update transaction with receipt:', error)
