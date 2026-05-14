@@ -70,9 +70,21 @@ export default function FinancialAccountDetailPage() {
     <Stack gap="md" style={{ flex: 1 }}>
       <Group justify="space-between" align="center">
         <Title order={4}>{account.name}</Title>
-        <Button onClick={() => router.push(`/app/financial-accounts/edit?id=${account.id}`)}>
-          Edit
-        </Button>
+        <Group gap="xs">
+          <Button
+            variant="light"
+            onClick={() =>
+              router.push(
+                `/app/records/transactions?financialAccount=${encodeURIComponent(account.name)}&financialAccountId=${encodeURIComponent(account.id)}`,
+              )
+            }
+          >
+            View Transactions
+          </Button>
+          <Button onClick={() => router.push(`/app/financial-accounts/edit?id=${account.id}`)}>
+            Edit
+          </Button>
+        </Group>
       </Group>
 
       {feedback && (

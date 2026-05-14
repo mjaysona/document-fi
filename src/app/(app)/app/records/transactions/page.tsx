@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import {
   ActionIcon,
   Alert,
@@ -60,6 +60,7 @@ const toTimestamp = (value?: string): number | null => {
 
 export default function TransactionsPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [items, setItems] = useState<TransactionListItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -77,6 +78,12 @@ export default function TransactionsPage() {
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
   const [feedback, setFeedback] = useState<FeedbackState | null>(null)
   const [expandedRows, setExpandedRows] = useState<string[]>([])
+  const hasAppliedInitialQueryFilters = useRef(false)
+
+  const initialFinancialAccountFilter = useMemo(
+    () => searchParams.get('financialAccount')?.trim() || '',
+    [searchParams],
+  )
 
   const load = async () => {
     setIsLoading(true)
@@ -92,6 +99,15 @@ export default function TransactionsPage() {
   useEffect(() => {
     void load()
   }, [])
+
+  useEffect(() => {
+    if (hasAppliedInitialQueryFilters.current) return
+    hasAppliedInitialQueryFilters.current = true
+
+    if (!initialFinancialAccountFilter) return
+
+    setFilterFinancialAccounts([initialFinancialAccountFilter])
+  }, [initialFinancialAccountFilter])
 
   const financialAccountOptions = useMemo(
     () =>
