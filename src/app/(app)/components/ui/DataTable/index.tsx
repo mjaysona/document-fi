@@ -2,6 +2,7 @@
 
 import { Checkbox, Flex, Pagination, Table, Text } from '@mantine/core'
 import type { ReactNode } from 'react'
+import { Fragment } from 'react'
 
 export type DataTableColumn<T> = {
   key: string
@@ -37,6 +38,9 @@ type Props<T> = {
   selectedIds?: string[]
   onToggleSelectAll?: (checked: boolean) => void
   onToggleSelectRow?: (id: string, checked: boolean) => void
+  onRowClick?: (row: T) => void
+  isRowExpanded?: (row: T) => boolean
+  renderExpandedRow?: (row: T) => ReactNode
 }
 
 export function DataTable<T>({
@@ -53,6 +57,9 @@ export function DataTable<T>({
   selectedIds,
   onToggleSelectAll,
   onToggleSelectRow,
+  onRowClick,
+  isRowExpanded,
+  renderExpandedRow,
 }: Props<T>) {
   const hasSelection = selectedIds !== undefined
 
@@ -109,24 +116,37 @@ export function DataTable<T>({
                   ? 'var(--mantine-color-blue-light)'
                   : undefined
               return (
-                <Table.Tr key={rowKey} bg={customBg ?? selectionBg}>
-                  {hasSelection && (
-                    <Table.Td>
-                      <Checkbox
-                        aria-label={`Select row ${rowKey}`}
-                        checked={selectedIds!.includes(rowKey)}
-                        onChange={(e) => onToggleSelectRow?.(rowKey, e.currentTarget.checked)}
-                      />
-                    </Table.Td>
+                <Fragment key={rowKey}>
+                  <Table.Tr
+                    bg={customBg ?? selectionBg}
+                    onClick={() => onRowClick?.(row)}
+                    style={onRowClick ? { cursor: 'pointer' } : undefined}
+                  >
+                    {hasSelection && (
+                      <Table.Td>
+                        <Checkbox
+                          aria-label={`Select row ${rowKey}`}
+                          checked={selectedIds!.includes(rowKey)}
+                          onChange={(e) => onToggleSelectRow?.(rowKey, e.currentTarget.checked)}
+                        />
+                      </Table.Td>
+                    )}
+                    {columns.map((col) => (
+                      <Table.Td key={col.key}>
+                        {col.render
+                          ? col.render(row)
+                          : String((row as Record<string, unknown>)[col.key] ?? '-')}
+                      </Table.Td>
+                    ))}
+                  </Table.Tr>
+                  {renderExpandedRow && isRowExpanded?.(row) && (
+                    <Table.Tr>
+                      <Table.Td colSpan={columns.length + (hasSelection ? 1 : 0)}>
+                        {renderExpandedRow(row)}
+                      </Table.Td>
+                    </Table.Tr>
                   )}
-                  {columns.map((col) => (
-                    <Table.Td key={col.key}>
-                      {col.render
-                        ? col.render(row)
-                        : String((row as Record<string, unknown>)[col.key] ?? '-')}
-                    </Table.Td>
-                  ))}
-                </Table.Tr>
+                </Fragment>
               )
             })}
           </Table.Tbody>

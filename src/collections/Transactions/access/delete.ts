@@ -1,7 +1,8 @@
 import type { Access } from 'payload'
+import getGenericRoleBasedAccess from '@/collections/utilities/access/getGenericRoleBasedAccess'
+import { AccessType } from '@/enums'
 
-// Transactions cannot be deleted - users must create reversing transactions instead
-// This maintains audit trails and prevents accidental data loss
-const deleteTransactions: Access<Record<string, unknown>> = () => false
+const deleteTransactions: Access<Record<string, unknown>> = async (args) =>
+  await getGenericRoleBasedAccess(args, 'transactions', AccessType.DELETE)
 
 export default deleteTransactions

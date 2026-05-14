@@ -201,14 +201,14 @@ const Transactions: CollectionConfig = {
       },
     },
     {
-      name: 'isFundTransfer',
-      label: 'Fund Transfer',
+      name: 'isFundAllocation',
+      label: 'Fund Allocation',
       type: 'checkbox',
       defaultValue: false,
       admin: {
         position: 'sidebar',
         description:
-          'Mark this transaction as a fund transfer to allocate across multiple accounts',
+          'Mark this transaction as a fund allocation to allocate across multiple accounts',
       },
     },
     {

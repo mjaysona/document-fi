@@ -442,9 +442,9 @@ export interface Transaction {
   isUserEdited?: boolean | null;
   uploadedAt?: string | null;
   /**
-   * Mark this transaction as a fund transfer to allocate across multiple accounts
+   * Mark this transaction as a fund allocation to allocate across multiple accounts
    */
-  isFundTransfer?: boolean | null;
+  isFundAllocation?: boolean | null;
   /**
    * Parent transaction for fund allocation purposes
    */
@@ -949,7 +949,7 @@ export interface TransactionsSelect<T extends boolean = true> {
   isAiGenerated?: T;
   isUserEdited?: T;
   uploadedAt?: T;
-  isFundTransfer?: T;
+  isFundAllocation?: T;
   parentTransaction?: T;
   createdBy?: T;
   updatedBy?: T;

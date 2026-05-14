@@ -31,10 +31,16 @@ export type FinancialAccountOption = {
 export type TransactionListItem = {
   id: string
   description: string
+  particulars?: string
   transactionType?: TransactionType
   financialAccountName?: string
   sourceAccountName?: string
   destinationAccountName?: string
+  from?: string
+  to?: string
+  referenceNumber?: string
+  isFundAllocation?: boolean
+  parentTransaction?: string | null
   transactionDate?: string
   amount?: number
   transactionFee?: number
@@ -60,7 +66,7 @@ export type TransactionFormInput = {
   transactionStatus?: TransactionStatus | null
   receiptImageId?: string
   rawOcrText?: string
-  isFundTransfer?: boolean
+  isFundAllocation?: boolean
   parentTransaction?: string | null
 }
 
@@ -75,7 +81,7 @@ export type TransactionDetail = TransactionFormInput & {
   isAiGenerated?: boolean
   isUserEdited?: boolean
   runningBalance?: number
-  isFundTransfer?: boolean
+  isFundAllocation?: boolean
   parentTransaction?: string | null
 }
 
@@ -281,7 +287,7 @@ async function createTransactionReceiptFromFormData(formData: FormData): Promise
       ? String(receipt.url)
       : (receipt as any).filename
         ? `/api/transaction-receipts/file/${encodeURIComponent(String((receipt as any).filename))}`
-        : `/api/transaction-receipts/${String(receipt.id)}`,
+        : undefined,
     rawOcrText: rawText,
   }
 }
@@ -392,7 +398,7 @@ function mapTransactionInput(
     amount: number
     transactionFee: number
     transactionType: TransactionType
-    financialAccount: string
+    financialAccount?: string
   },
 ) {
   return {
@@ -402,14 +408,14 @@ function mapTransactionInput(
     transactionType: input.transactionType,
     sourceAccount: input.sourceAccount || undefined,
     destinationAccount: input.destinationAccount || undefined,
-    financialAccount: input.financialAccount,
+    financialAccount: input.financialAccount || '',
     from: input.from?.trim() || undefined,
     to: input.to?.trim() || undefined,
     referenceNumber: input.referenceNumber?.trim() || undefined,
     amount: input.amount,
     transactionFee: input.transactionFee,
     transactionStatus: normalizeTransactionStatus(input.transactionStatus) ?? 'completed',
-    isFundTransfer: input.isFundTransfer ?? false,
+    isFundAllocation: input.isFundAllocation ?? false,
     ...(input.parentTransaction ? { parentTransaction: input.parentTransaction } : {}),
     ...(input.receiptImageId ? { receiptImage: input.receiptImageId } : {}),
     ...(typeof input.rawOcrText !== 'undefined'
@@ -509,6 +515,7 @@ export async function getTransactions(): Promise<{
       data: (result.docs as any[]).map((doc) => ({
         id: String(doc.id),
         description: String(doc.description || ''),
+        particulars: doc.particulars ? String(doc.particulars) : undefined,
         transactionType: normalizeTransactionType(doc.transactionType),
         financialAccountName:
           doc.financialAccount &&
@@ -526,6 +533,16 @@ export async function getTransactions(): Promise<{
           doc.destinationAccount.name
             ? String(doc.destinationAccount.name)
             : undefined,
+        from: doc.from ? String(doc.from) : undefined,
+        to: doc.to ? String(doc.to) : undefined,
+        referenceNumber: doc.referenceNumber ? String(doc.referenceNumber) : undefined,
+        isFundAllocation: doc.isFundAllocation === true,
+        parentTransaction:
+          doc.parentTransaction && typeof doc.parentTransaction === 'object'
+            ? String(doc.parentTransaction.id)
+            : doc.parentTransaction
+              ? String(doc.parentTransaction)
+              : null,
         transactionDate: doc.transactionDate ? String(doc.transactionDate) : undefined,
         amount: typeof doc.amount === 'number' ? doc.amount : undefined,
         transactionFee: typeof doc.transactionFee === 'number' ? doc.transactionFee : 0,
@@ -555,18 +572,30 @@ export async function createTransaction(input: TransactionFormInput): Promise<{
     const amount = normalizeAmount(input.amount)
     const transactionFee = normalizeNonNegativeAmount(input.transactionFee)
     const financialAccount = String(input.financialAccount || '').trim()
+    const parentTransaction = String(input.parentTransaction || '').trim()
+    const providedSourceAccount = String(input.sourceAccount || '').trim()
 
     if (!description) return { success: false, error: 'Description is required.' }
     if (!transactionType) return { success: false, error: 'Transaction type is required.' }
     if (!amount) return { success: false, error: 'Amount must be greater than zero.' }
-    if (!financialAccount) return { success: false, error: 'Financial account is required.' }
+    if (!financialAccount && !parentTransaction) {
+      return { success: false, error: 'Financial account is required.' }
+    }
 
-    const sourceBankResolution = await resolveSourceBankIdFromFinancialAccount(financialAccount)
-    if (!sourceBankResolution.bankId) {
-      return {
-        success: false,
-        error: sourceBankResolution.error ?? 'Selected financial account has no linked bank.',
+    let resolvedSourceAccount = providedSourceAccount || undefined
+    if (financialAccount) {
+      const sourceBankResolution = await resolveSourceBankIdFromFinancialAccount(financialAccount)
+      if (!sourceBankResolution.bankId) {
+        return {
+          success: false,
+          error: sourceBankResolution.error ?? 'Selected financial account has no linked bank.',
+        }
       }
+      resolvedSourceAccount = sourceBankResolution.bankId
+    }
+
+    if (!resolvedSourceAccount) {
+      return { success: false, error: 'Source bank is required.' }
     }
 
     const payload = await getPayload({ config })
@@ -584,12 +613,12 @@ export async function createTransaction(input: TransactionFormInput): Promise<{
       draft: false,
       data: mapTransactionInput({
         ...input,
-        sourceAccount: sourceBankResolution.bankId,
+        sourceAccount: resolvedSourceAccount,
         description,
         transactionType,
         amount,
         transactionFee,
-        financialAccount,
+        ...(financialAccount ? { financialAccount } : {}),
       }),
       depth: 0,
     })
@@ -649,7 +678,7 @@ export async function createTransactionWithReceipt(formData: FormData): Promise<
       transactionStatus: normalizeTransactionStatus(formData.get('transactionStatus')),
       receiptImageId: receiptResult?.id,
       rawOcrText: String(formData.get('rawOcrText') || '').trim() || receiptResult?.rawOcrText,
-      isFundTransfer: String(formData.get('isFundTransfer') || '').trim() === 'true',
+      isFundAllocation: String(formData.get('isFundAllocation') || '').trim() === 'true',
       parentTransaction: String(formData.get('parentTransaction') || '').trim() || undefined,
     })
 
@@ -678,6 +707,7 @@ export async function getTransactionById(id: string): Promise<{
       collection: 'transactions',
       id,
       depth: 1,
+      overrideAccess: true,
     })
 
     let receiptImageId: string | undefined
@@ -703,6 +733,7 @@ export async function getTransactionById(id: string): Promise<{
             collection: 'transaction-receipts',
             id: receiptImageId,
             depth: 0,
+            overrideAccess: true,
           })
 
           if (!receiptImageFileName && (receiptDoc as any).filename) {
@@ -718,10 +749,6 @@ export async function getTransactionById(id: string): Promise<{
 
       if (!receiptImageUrl && receiptImageFileName) {
         receiptImageUrl = `/api/transaction-receipts/file/${encodeURIComponent(receiptImageFileName)}`
-      }
-
-      if (!receiptImageUrl && receiptImageId) {
-        receiptImageUrl = `/api/transaction-receipts/${receiptImageId}`
       }
     }
 
@@ -776,7 +803,7 @@ export async function getTransactionById(id: string): Promise<{
         isUserEdited: (doc as any).isUserEdited === true,
         runningBalance:
           typeof (doc as any).runningBalance === 'number' ? (doc as any).runningBalance : undefined,
-        isFundTransfer: (doc as any).isFundTransfer === true,
+        isFundAllocation: (doc as any).isFundAllocation === true,
         parentTransaction:
           (doc as any).parentTransaction && typeof (doc as any).parentTransaction === 'object'
             ? String((doc as any).parentTransaction.id)
@@ -804,18 +831,30 @@ export async function updateTransaction(
     const amount = normalizeAmount(input.amount)
     const transactionFee = normalizeNonNegativeAmount(input.transactionFee)
     const financialAccount = String(input.financialAccount || '').trim()
+    const parentTransaction = String(input.parentTransaction || '').trim()
+    const providedSourceAccount = String(input.sourceAccount || '').trim()
 
     if (!description) return { success: false, error: 'Description is required.' }
     if (!transactionType) return { success: false, error: 'Transaction type is required.' }
     if (!amount) return { success: false, error: 'Amount must be greater than zero.' }
-    if (!financialAccount) return { success: false, error: 'Financial account is required.' }
+    if (!financialAccount && !parentTransaction) {
+      return { success: false, error: 'Financial account is required.' }
+    }
 
-    const sourceBankResolution = await resolveSourceBankIdFromFinancialAccount(financialAccount)
-    if (!sourceBankResolution.bankId) {
-      return {
-        success: false,
-        error: sourceBankResolution.error ?? 'Selected financial account has no linked bank.',
+    let resolvedSourceAccount = providedSourceAccount || undefined
+    if (financialAccount) {
+      const sourceBankResolution = await resolveSourceBankIdFromFinancialAccount(financialAccount)
+      if (!sourceBankResolution.bankId) {
+        return {
+          success: false,
+          error: sourceBankResolution.error ?? 'Selected financial account has no linked bank.',
+        }
       }
+      resolvedSourceAccount = sourceBankResolution.bankId
+    }
+
+    if (!resolvedSourceAccount) {
+      return { success: false, error: 'Source bank is required.' }
     }
 
     const payload = await getPayload({ config })
@@ -834,12 +873,12 @@ export async function updateTransaction(
       id,
       data: mapTransactionInput({
         ...input,
-        sourceAccount: sourceBankResolution.bankId,
+        sourceAccount: resolvedSourceAccount,
         description,
         transactionType,
         amount,
         transactionFee,
-        financialAccount,
+        ...(financialAccount ? { financialAccount } : {}),
       }),
       depth: 0,
     })
@@ -908,7 +947,7 @@ export async function updateTransactionWithReceipt(
       transactionStatus: normalizeTransactionStatus(formData.get('transactionStatus')),
       receiptImageId,
       rawOcrText,
-      isFundTransfer: String(formData.get('isFundTransfer') || '').trim() === 'true',
+      isFundAllocation: String(formData.get('isFundAllocation') || '').trim() === 'true',
       parentTransaction: String(formData.get('parentTransaction') || '').trim() || undefined,
     })
   } catch (error) {
@@ -918,12 +957,16 @@ export async function updateTransactionWithReceipt(
 }
 
 export async function deleteTransaction(id: string): Promise<{ success: boolean; error?: string }> {
-  // Transactions cannot be deleted - this maintains audit trail and prevents accidental data loss
-  // Users should create a reversing transaction instead
-  return {
-    success: false,
-    error:
-      'Transactions cannot be deleted. Please create a reversing transaction to reverse this entry.',
+  try {
+    const session = await auth.api.getSession({ headers: await headers() })
+    if (!session?.user?.id) return { success: false, error: 'Unauthorized' }
+
+    const payload = await getPayload({ config })
+    await payload.delete({ collection: 'transactions', id })
+    return { success: true }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to delete transaction.'
+    return { success: false, error: message }
   }
 }
 
@@ -1017,6 +1060,7 @@ export async function processTransactionReceipt(
       collection: 'transactions',
       id: transactionId,
       depth: 1,
+      overrideAccess: true,
     })
 
     const receipt = (tx as any).receiptImage
@@ -1043,6 +1087,7 @@ export async function processTransactionReceipt(
           collection: 'transaction-receipts',
           id: receiptImageId,
           depth: 0,
+          overrideAccess: true,
         })
 
         if (!receiptImageFileName && (receiptDoc as any).filename) {
@@ -1060,7 +1105,11 @@ export async function processTransactionReceipt(
       receiptImageUrl = `/api/transaction-receipts/file/${encodeURIComponent(receiptImageFileName)}`
     }
     if (!receiptImageUrl) {
-      receiptImageUrl = `/api/transaction-receipts/${receiptImageId}`
+      return {
+        success: false,
+        status: 'failed',
+        error: 'Could not resolve receipt image URL.',
+      }
     }
 
     let rawOcrText = (tx as any).rawOcrText ? String((tx as any).rawOcrText) : ''
