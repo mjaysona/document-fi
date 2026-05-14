@@ -837,7 +837,7 @@ export default function AddTransactionPage() {
 
   return (
     <div className={classes.wrapper}>
-      <div className={classes.card} style={{ flex: 1 }}>
+      <div className={classes.card} style={{ flex: 1, marginBottom: 16 }}>
         <Group mb="md" justify="space-between">
           <Group gap="sm" align="center">
             <ActionIcon
@@ -1327,7 +1327,7 @@ export default function AddTransactionPage() {
           isEditMode &&
           form.values.isFundAllocation &&
           childTransactions.length > 0 && (
-            <Card withBorder radius="md" mt="md" mb="xl">
+            <Card withBorder radius="md" mt="md">
               <Text fw={600} size="sm" mb="xs">
                 Child Transactions
               </Text>
