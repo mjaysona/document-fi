@@ -2,14 +2,25 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Alert, Button, Card, Group, Stack, Switch, Text, Title } from '@mantine/core'
+import {
+  Alert,
+  ActionIcon,
+  Badge,
+  Button,
+  Card,
+  Group,
+  Stack,
+  Switch,
+  Text,
+  Title,
+} from '@mantine/core'
 import {
   deleteFinancialAccount,
   getFinancialAccountById,
   setFinancialAccountDefault,
   type FinancialAccountDetail,
 } from '../actions'
-import { Landmark } from 'lucide-react'
+import { ArrowLeft, Landmark } from 'lucide-react'
 import classes from '../page.module.css'
 
 function formatCurrency(value: number): string {
@@ -70,14 +81,51 @@ export default function FinancialAccountDetailPage() {
 
   return (
     <Stack gap="md" style={{ flex: 1 }}>
-      <Group justify="space-between">
-        <Title order={4}>
-          <Group gap="xs" align="center">
-            <Landmark className={classes.icon} size={22} strokeWidth={1.5} />
-            {account.name}
-          </Group>
-        </Title>
-        <Group gap="xs">
+      <Group justify="space-between" align="flex-start">
+        <ActionIcon
+          variant="default"
+          size="lg"
+          radius="sm"
+          aria-label="Back"
+          onClick={() => router.push('/app/financial-accounts')}
+          style={{ flexShrink: 0 }}
+        >
+          <ArrowLeft size={16} />
+        </ActionIcon>
+        <Text
+          fw={700}
+          style={{ flex: 1, minWidth: 0, marginTop: 'calc(var(--mantine-spacing-xs)/2)' }}
+        >
+          <span style={{ marginRight: 'var(--mantine-spacing-xs)' }}>{account.name}</span>
+          {account.isDefault && <Badge style={{ flexShrink: 0 }}>Default</Badge>}
+        </Text>
+        <Group gap="xs" style={{ flexShrink: 0 }}>
+          {!account.isDefault && (
+            <Button
+              variant="outline"
+              loading={isUpdatingDefault}
+              disabled={isUpdatingDefault || isDeleting}
+              onClick={async () => {
+                setFeedback(null)
+                setIsUpdatingDefault(true)
+
+                const nextValue = !account.isDefault
+                const result = await setFinancialAccountDefault(account.id, nextValue)
+
+                if (!result.success) {
+                  setFeedback(result.error || 'Failed to update default account.')
+                } else {
+                  setAccount((current) =>
+                    current ? { ...current, isDefault: nextValue } : current,
+                  )
+                }
+
+                setIsUpdatingDefault(false)
+              }}
+            >
+              Set as Default
+            </Button>
+          )}
           <Button
             variant="light"
             onClick={() =>
@@ -86,9 +134,12 @@ export default function FinancialAccountDetailPage() {
               )
             }
           >
-            View Transactions
+            View transactions
           </Button>
-          <Button onClick={() => router.push(`/app/financial-accounts/edit?id=${account.id}`)}>
+          <Button
+            variant="light"
+            onClick={() => router.push(`/app/financial-accounts/edit?id=${account.id}`)}
+          >
             Edit
           </Button>
 
@@ -120,68 +171,30 @@ export default function FinancialAccountDetailPage() {
           </Button>
         </Group>
       </Group>
-      <div>
-        <Text>Current Balance</Text>
-        <Title order={1} fw={700}>
-          {formatCurrency(account.currentBalance)}
-        </Title>
-      </div>
+      <Group justify="space-between" align="top">
+        <div>
+          <Text>Current Balance</Text>
+          <Title order={1} fw={700}>
+            {formatCurrency(account.currentBalance)}
+          </Title>
+        </div>
+        <Group>
+          <div>
+            <Text size="xs">Bank account</Text>
+            <Text size="sm">{account.bankName || '-'}</Text>
+          </div>
+          <div>
+            <Text size="xs">Starting balance</Text>{' '}
+            <Text size="sm">{formatCurrency(account.startingBalance)}</Text>
+          </div>
+        </Group>
+      </Group>
 
       {feedback && (
         <Alert color="red" title="Notice">
           {feedback}
         </Alert>
       )}
-
-      <Card withBorder radius="md">
-        <Stack gap="xs">
-          <Switch
-            label="Set as default account"
-            checked={Boolean(account.isDefault)}
-            onChange={async (event) => {
-              setFeedback(null)
-              setIsUpdatingDefault(true)
-
-              const nextValue = event.currentTarget.checked
-              const result = await setFinancialAccountDefault(account.id, nextValue)
-
-              if (!result.success) {
-                setFeedback(result.error || 'Failed to update default account.')
-              } else {
-                setAccount((current) => (current ? { ...current, isDefault: nextValue } : current))
-              }
-
-              setIsUpdatingDefault(false)
-            }}
-            disabled={isUpdatingDefault || isDeleting}
-          />
-
-          <Text>
-            <Text span fw={700}>
-              Name:
-            </Text>{' '}
-            {account.name}
-          </Text>
-          <Text>
-            <Text span fw={700}>
-              Bank:
-            </Text>{' '}
-            {account.bankName || '-'}
-          </Text>
-          <Text>
-            <Text span fw={700}>
-              Starting Balance:
-            </Text>{' '}
-            {formatCurrency(account.startingBalance)}
-          </Text>
-          <Text>
-            <Text span fw={700}>
-              Current Balance:
-            </Text>{' '}
-            {formatCurrency(account.currentBalance)}
-          </Text>
-        </Stack>
-      </Card>
     </Stack>
   )
 }
