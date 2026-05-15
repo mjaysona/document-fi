@@ -92,13 +92,17 @@ export default function FinancialAccountDetailPage() {
         >
           <ArrowLeft size={16} />
         </ActionIcon>
-        <Text
-          fw={700}
-          style={{ flex: 1, minWidth: 0, marginTop: 'calc(var(--mantine-spacing-xs)/2)' }}
+        <div
+          style={{
+            flex: 1,
+            minWidth: 0,
+            fontWeight: 700,
+            marginTop: 'calc(var(--mantine-spacing-xs)/2)',
+          }}
         >
           <span style={{ marginRight: 'var(--mantine-spacing-xs)' }}>{account.name}</span>
           {account.isDefault && <Badge style={{ flexShrink: 0 }}>Default</Badge>}
-        </Text>
+        </div>
         <Group gap="xs" style={{ flexShrink: 0 }}>
           {!account.isDefault && (
             <Button

@@ -193,6 +193,7 @@ export default buildConfig({
               },
               region: process.env.S3_REGION || 'auto',
               endpoint: process.env.S3_ENDPOINT || '',
+              forcePathStyle: true,
             },
           }),
         ]
