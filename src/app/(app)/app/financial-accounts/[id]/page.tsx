@@ -9,6 +9,8 @@ import {
   setFinancialAccountDefault,
   type FinancialAccountDetail,
 } from '../actions'
+import { Landmark } from 'lucide-react'
+import classes from '../page.module.css'
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('en-PH', {
@@ -68,8 +70,13 @@ export default function FinancialAccountDetailPage() {
 
   return (
     <Stack gap="md" style={{ flex: 1 }}>
-      <Group justify="space-between" align="center">
-        <Title order={4}>{account.name}</Title>
+      <Group justify="space-between">
+        <Title order={4}>
+          <Group gap="xs" align="center">
+            <Landmark className={classes.icon} size={22} strokeWidth={1.5} />
+            {account.name}
+          </Group>
+        </Title>
         <Group gap="xs">
           <Button
             variant="light"
@@ -84,8 +91,41 @@ export default function FinancialAccountDetailPage() {
           <Button onClick={() => router.push(`/app/financial-accounts/edit?id=${account.id}`)}>
             Edit
           </Button>
+
+          <Button
+            color="red"
+            variant="light"
+            loading={isDeleting}
+            disabled={isUpdatingDefault}
+            onClick={async () => {
+              const shouldDelete = window.confirm(
+                'Delete this financial account? This action cannot be undone.',
+              )
+              if (!shouldDelete) return
+
+              setFeedback(null)
+              setIsDeleting(true)
+              const result = await deleteFinancialAccount(account.id)
+
+              if (!result.success) {
+                setFeedback(result.error || 'Failed to delete financial account.')
+                setIsDeleting(false)
+                return
+              }
+
+              router.push('/app/financial-accounts')
+            }}
+          >
+            Delete Account
+          </Button>
         </Group>
       </Group>
+      <div>
+        <Text>Current Balance</Text>
+        <Title order={1} fw={700}>
+          {formatCurrency(account.currentBalance)}
+        </Title>
+      </div>
 
       {feedback && (
         <Alert color="red" title="Notice">
@@ -140,35 +180,6 @@ export default function FinancialAccountDetailPage() {
             </Text>{' '}
             {formatCurrency(account.currentBalance)}
           </Text>
-
-          <Group justify="flex-end" mt="md">
-            <Button
-              color="red"
-              variant="light"
-              loading={isDeleting}
-              disabled={isUpdatingDefault}
-              onClick={async () => {
-                const shouldDelete = window.confirm(
-                  'Delete this financial account? This action cannot be undone.',
-                )
-                if (!shouldDelete) return
-
-                setFeedback(null)
-                setIsDeleting(true)
-                const result = await deleteFinancialAccount(account.id)
-
-                if (!result.success) {
-                  setFeedback(result.error || 'Failed to delete financial account.')
-                  setIsDeleting(false)
-                  return
-                }
-
-                router.push('/app/financial-accounts')
-              }}
-            >
-              Delete Account
-            </Button>
-          </Group>
         </Stack>
       </Card>
     </Stack>
