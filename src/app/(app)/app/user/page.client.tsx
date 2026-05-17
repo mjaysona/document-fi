@@ -84,7 +84,7 @@ export default function UserProfileClient() {
 
   const roles = (user?.userRoles || [])
     .map((r) => (typeof r !== 'string' ? (r as UserRole) : null))
-    .filter(Boolean) as UserRole[]
+    .filter((role): role is UserRole => Boolean(role) && role?.roleType === 'app')
 
   const initials = user?.name
     ? user.name
