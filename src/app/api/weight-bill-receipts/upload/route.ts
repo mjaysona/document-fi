@@ -40,7 +40,9 @@ export async function POST(request: NextRequest) {
       data: {
         id: String(media.id),
         fileName: media.filename || file.name,
-        url: media.url || '',
+        url: media.filename
+          ? `/api/weight-bill-receipts/file/${encodeURIComponent(media.filename)}`
+          : '',
       },
     })
   } catch (error) {

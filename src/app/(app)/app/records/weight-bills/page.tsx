@@ -17,7 +17,7 @@ import {
   Stack,
 } from '@mantine/core'
 import { DataTable, type DataTableColumn } from '@/app/(app)/components/ui/DataTable'
-import { Filter, Search, Download, Pencil, Plus, Trash2, CircleCheck, Upload } from 'lucide-react'
+import { Filter, Search, Download, Plus, Trash2, CircleCheck, Upload } from 'lucide-react'
 import {
   deleteWeightBill,
   deleteWeightBills,
@@ -774,7 +774,20 @@ export default function WeightBillsPage() {
   ]
 
   const weightBillColumns: DataTableColumn<WeightBill>[] = [
-    { key: 'weightBillNumber', label: 'Bill #' },
+    {
+      key: 'weightBillNumber',
+      label: 'Bill #',
+      render: (bill) => (
+        <Text
+          size="sm"
+          td="underline"
+          onClick={() => handleEdit(bill.id)}
+          style={{ cursor: 'pointer' }}
+        >
+          {bill.weightBillNumber}
+        </Text>
+      ),
+    },
     { key: 'date', label: 'Date', render: (bill) => formatDateForDisplay(bill.date) },
     {
       key: 'customerName',
@@ -810,28 +823,6 @@ export default function WeightBillsPage() {
                 ✓ Updated
               </Badge>
             ) : null)}
-        </Group>
-      ),
-    },
-    {
-      key: 'action',
-      label: 'Action',
-      width: 90,
-      render: (bill) => (
-        <Group gap="xs">
-          <ActionIcon variant="subtle" color="blue" onClick={() => handleEdit(bill.id)}>
-            <Pencil size={16} />
-          </ActionIcon>
-          <ActionIcon
-            variant="subtle"
-            color="red"
-            onClick={() => handleDelete(bill.id)}
-            loading={deletingId === bill.id}
-            disabled={isBulkDeleting || (deletingId !== null && deletingId !== bill.id)}
-            aria-label={`Delete weight bill ${bill.weightBillNumber}`}
-          >
-            <Trash2 size={16} />
-          </ActionIcon>
         </Group>
       ),
     },

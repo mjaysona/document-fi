@@ -747,8 +747,8 @@ export async function getTransactionById(id: string): Promise<{
         }
       }
 
-      if (!receiptImageUrl && receiptImageFileName) {
-        receiptImageUrl = `/api/transaction-receipts/file/${encodeURIComponent(receiptImageFileName)}`
+      if (!receiptImageUrl && receiptImageId) {
+        receiptImageUrl = `/api/transaction-receipts/${encodeURIComponent(receiptImageId)}`
       }
     }
 

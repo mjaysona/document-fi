@@ -264,15 +264,17 @@ export async function getWeightBillForEdit(weightBillId: string) {
     let fileName = 'Weight Bill'
 
     if (typeof weightBill.proofOfReceipt === 'string' && weightBill.proofOfReceipt) {
-      imagePreviewUrl = `/api/media/${weightBill.proofOfReceipt}`
-
-      const mediaDoc = await payload.findByID({
+      // Use the weight-bill-receipts file endpoint instead of media
+      const receiptDoc = await payload.findByID({
         collection: 'weight-bill-receipts',
         id: weightBill.proofOfReceipt,
         depth: 0,
       })
 
-      fileName = mediaDoc.filename || fileName
+      if (receiptDoc?.filename) {
+        imagePreviewUrl = `/api/weight-bill-receipts/file/${encodeURIComponent(receiptDoc.filename)}`
+        fileName = receiptDoc.filename
+      }
     }
 
     return {

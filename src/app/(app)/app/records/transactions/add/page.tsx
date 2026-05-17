@@ -225,8 +225,6 @@ export default function AddTransactionPage() {
     const normalizedFilename = String(receiptImageFileName || '').trim()
     if (normalizedFilename) {
       pushCandidate(`/api/transaction-receipts/file/${encodeURIComponent(normalizedFilename)}`)
-      pushCandidate(`/api/media/file/${encodeURIComponent(normalizedFilename)}`)
-      pushCandidate(`/media/${encodeURIComponent(normalizedFilename)}`)
     }
 
     return candidates

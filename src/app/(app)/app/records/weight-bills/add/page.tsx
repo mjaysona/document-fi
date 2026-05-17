@@ -289,7 +289,13 @@ export default function VerifyPage() {
 
         const newRecords: FileRecord[] = uploadsData.map((upload: any, idx: number) => {
           const media = upload.media
-          const mediaUrl = typeof media === 'string' ? `/api/media/${media}` : media?.url || ''
+          // Use weight-bill-receipts file endpoint with filename if available
+          const mediaUrl =
+            typeof media === 'string'
+              ? `/api/weight-bill-receipts/file/${encodeURIComponent(media)}`
+              : media?.filename
+                ? `/api/weight-bill-receipts/file/${encodeURIComponent(media.filename)}`
+                : media?.url || ''
 
           // Reuse existing record if it exists to preserve analyzed state
           const existingRecord = recordsMap.get(idx)
