@@ -155,7 +155,18 @@ const UserRoles: CollectionConfig = {
               type: 'select',
               hasMany: true,
               required: true,
+              admin: {
+                components: {
+                  Field: {
+                    path: '@/app/(payload)/components/SelectWithAllOptionField/index',
+                  },
+                },
+              },
               options: [
+                {
+                  label: 'All',
+                  value: 'all',
+                },
                 {
                   label: 'View',
                   value: AccessType.READ,
@@ -259,7 +270,18 @@ const UserRoles: CollectionConfig = {
               type: 'select',
               hasMany: true,
               required: true,
+              admin: {
+                components: {
+                  Field: {
+                    path: '@/app/(payload)/components/SelectWithAllOptionField/index',
+                  },
+                },
+              },
               options: [
+                {
+                  label: 'All',
+                  value: 'all',
+                },
                 {
                   label: 'View',
                   value: AccessType.READ,

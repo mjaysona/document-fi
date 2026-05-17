@@ -14,6 +14,7 @@ import { BoldFeatureClient as BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864
 import { BlockquoteFeatureClient as BlockquoteFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { default as default_8356743afc2593deaf789a209469933f } from '@/collections/APIConnections/components/GoogleOAuthConnectField/index'
 import { default as default_21770b7cd4c377f531de5c3939766e77 } from '@/collections/UserRoles/components/CollectionsSelectField/index'
+import { default as default_60f02a739bc2a48ca70ecdfa10b9ff23 } from '@/app/(payload)/components/SelectWithAllOptionField/index'
 import { default as default_9d1d0206a6be1ee07676dfd7d0f72d73 } from '@/collections/UserRoles/components/PermissionsCellComponent/index'
 import { default as default_ac0d74d254821713efdf45109a72e5b0 } from '@/collections/UserRoles/components/CollectionGroupsSelectField/index'
 import { default as default_ed3cbed3b52ba9e0c712bb19e7066c56 } from '@/app/(payload)/components/Logo'
@@ -37,6 +38,7 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#BlockquoteFeatureClient": BlockquoteFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@/collections/APIConnections/components/GoogleOAuthConnectField/index#default": default_8356743afc2593deaf789a209469933f,
   "@/collections/UserRoles/components/CollectionsSelectField/index#default": default_21770b7cd4c377f531de5c3939766e77,
+  "@/app/(payload)/components/SelectWithAllOptionField/index#default": default_60f02a739bc2a48ca70ecdfa10b9ff23,
   "@/collections/UserRoles/components/PermissionsCellComponent/index#default": default_9d1d0206a6be1ee07676dfd7d0f72d73,
   "@/collections/UserRoles/components/CollectionGroupsSelectField/index#default": default_ac0d74d254821713efdf45109a72e5b0,
   "@/app/(payload)/components/Logo#default": default_ed3cbed3b52ba9e0c712bb19e7066c56,

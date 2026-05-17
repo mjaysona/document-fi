@@ -210,7 +210,7 @@ export interface UserRole {
   permissions?:
     | {
         collectionSlug: string;
-        access: ('read' | 'create' | 'update' | 'delete')[];
+        access: ('all' | 'read' | 'create' | 'update' | 'delete')[];
         id?: string | null;
       }[]
     | null;
@@ -218,7 +218,7 @@ export interface UserRole {
     | {
         group: string;
         collections?: string[] | null;
-        access: ('read' | 'create' | 'update' | 'delete')[];
+        access: ('all' | 'read' | 'create' | 'update' | 'delete')[];
         id?: string | null;
       }[]
     | null;
