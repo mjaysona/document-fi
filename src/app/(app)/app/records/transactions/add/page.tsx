@@ -1327,10 +1327,8 @@ export default function AddTransactionPage() {
           isEditMode &&
           form.values.isFundAllocation &&
           childTransactions.length > 0 && (
-            <Card withBorder radius="md" mt="md">
-              <Text fw={600} size="sm" mb="xs">
-                Child Transactions
-              </Text>
+            <Stack mt="md">
+              <Title order={5}>Child Transactions</Title>
               <Table withTableBorder withColumnBorders striped highlightOnHover>
                 <Table.Thead>
                   <Table.Tr>
@@ -1383,7 +1381,7 @@ export default function AddTransactionPage() {
                   ))}
                 </Table.Tbody>
               </Table>
-            </Card>
+            </Stack>
           )}
       </div>
       <Card withBorder radius="md" className={classes['footer--fixed']}>
