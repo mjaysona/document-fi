@@ -50,8 +50,8 @@ const UserRoles: CollectionConfig = {
   // },
   admin: {
     description: 'User roles are used to control access to records in the system.',
-    useAsTitle: 'label',
-    defaultColumns: ['label', 'permissions'],
+    useAsTitle: 'roleDescription',
+    defaultColumns: ['label', 'roleType', 'permissions'],
   },
   fields: [
     createdByField,
@@ -67,6 +67,27 @@ const UserRoles: CollectionConfig = {
           return hasSuperAdminRole(req.user?.userRoles) || !doc?.isSystemRole
         },
       },
+    },
+    {
+      name: 'roleType',
+      type: 'radio',
+      label: 'Role Type',
+      required: true,
+      defaultValue: 'admin',
+      options: [
+        {
+          label: 'All',
+          value: 'all',
+        },
+        {
+          label: 'Admin',
+          value: 'admin',
+        },
+        {
+          label: 'App',
+          value: 'app',
+        },
+      ],
     },
     {
       name: 'permissions',
@@ -328,6 +349,20 @@ const UserRoles: CollectionConfig = {
       admin: {
         readOnly: true,
         position: 'sidebar',
+      },
+    },
+    {
+      name: 'roleDescription',
+      type: 'text',
+      admin: {
+        readOnly: true,
+      },
+      hooks: {
+        beforeChange: [
+          ({ siblingData }) => {
+            return `${siblingData.label} (${siblingData.roleType})`
+          },
+        ],
       },
     },
   ],

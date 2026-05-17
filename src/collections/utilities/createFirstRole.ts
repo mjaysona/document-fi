@@ -35,6 +35,7 @@ export const createFirstRole = async (payload: Payload): Promise<void> => {
         data: {
           label: 'Super Admin',
           isSystemRole: true,
+          roleType: 'admin',
           permissions,
         },
         draft: false,
@@ -67,6 +68,7 @@ export const createFirstRole = async (payload: Payload): Promise<void> => {
       data: {
         label: ROLES.USER,
         isSystemRole: true,
+        roleType: 'app',
         permissions: [
           {
             collectionSlug: 'users',

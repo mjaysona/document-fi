@@ -207,6 +207,7 @@ export interface UserRole {
   createdBy?: (string | null) | User;
   updatedBy?: (string | null) | User;
   label: string;
+  roleType: 'all' | 'admin' | 'app';
   permissions?:
     | {
         collectionSlug: string;
@@ -227,6 +228,7 @@ export interface UserRole {
    */
   isSystemRole?: boolean | null;
   selectedFeatures?: string[] | null;
+  roleDescription?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1071,6 +1073,7 @@ export interface UserRolesSelect<T extends boolean = true> {
   createdBy?: T;
   updatedBy?: T;
   label?: T;
+  roleType?: T;
   permissions?:
     | T
     | {
@@ -1088,6 +1091,7 @@ export interface UserRolesSelect<T extends boolean = true> {
       };
   isSystemRole?: T;
   selectedFeatures?: T;
+  roleDescription?: T;
   updatedAt?: T;
   createdAt?: T;
 }
