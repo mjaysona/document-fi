@@ -39,7 +39,8 @@ function toDiffPercent(startingBalance?: number, currentBalance?: number): numbe
     return current === 0 ? 0 : 100
   }
 
-  return Math.round(((current - start) / Math.abs(start)) * 100)
+  const percentage = ((current - start) / Math.abs(start)) * 100
+  return Math.round(percentage * 100) / 100
 }
 
 export default function FinancialAccountsPage() {
@@ -129,7 +130,7 @@ export default function FinancialAccountsPage() {
                   Compared to starting balance
                 </Text>
                 <Text c={stat.diff > 0 ? 'green' : 'red'} fz="sm" fw={500} className={classes.diff}>
-                  <span>{Math.abs(stat.diff)}%</span>
+                  <span>{Math.abs(stat.diff).toFixed(2)}%</span>
                   <DiffIcon size={16} strokeWidth={1.5} />
                 </Text>
               </Group>

@@ -28,6 +28,23 @@ export type FinancialAccountInput = {
   currentBalance: number
 }
 
+export type Transaction = {
+  transactionDate: string
+  transactionType: 'debit' | 'credit'
+  amount: number
+}
+
+export type PeriodStats = {
+  moneyIn: number
+  moneyOut: number
+  profit: number
+  lastActivity: Date | null
+  transactionCount: number
+  profitPercent?: number | null
+  moneyInPercent?: number | null
+  moneyOutPercent?: number | null
+}
+
 function normalizeNonNegativeNumber(value: unknown): number | undefined {
   if (typeof value === 'number' && Number.isFinite(value)) {
     return value >= 0 ? value : undefined
@@ -284,5 +301,154 @@ export async function deleteFinancialAccount(
   } catch (error) {
     console.error('Failed to delete financial account:', error)
     return { success: false, error: 'Failed to delete financial account.' }
+  }
+}
+
+export async function getFinancialAccountTransactions(financialAccountId: string): Promise<{
+  success: boolean
+  data: Transaction[]
+  error?: string
+}> {
+  try {
+    const payload = await getPayload({ config })
+    const result = await payload.find({
+      collection: 'transactions',
+      where: {
+        financialAccount: {
+          equals: financialAccountId,
+        },
+      },
+      limit: 10000,
+      sort: 'transactionDate',
+      depth: 0,
+    })
+
+    const transactions = (result.docs as any[])
+      .filter((doc) => doc.transactionDate && doc.transactionType && typeof doc.amount === 'number')
+      .map((doc) => ({
+        transactionDate: doc.transactionDate,
+        transactionType: doc.transactionType,
+        amount: doc.amount,
+      }))
+
+    return {
+      success: true,
+      data: transactions,
+    }
+  } catch (error) {
+    console.error('Failed to load transactions:', error)
+    return { success: false, data: [], error: 'Failed to load transactions.' }
+  }
+}
+
+export async function getFinancialAccountStatsByPeriod(
+  financialAccountId: string,
+  days: number,
+): Promise<{
+  success: boolean
+  data?: PeriodStats
+  error?: string
+}> {
+  try {
+    const payload = await getPayload({ config })
+    const now = new Date()
+    const periodStart = new Date(now.getTime() - days * 24 * 60 * 60 * 1000)
+    const previousPeriodStart = new Date(now.getTime() - days * 2 * 24 * 60 * 60 * 1000)
+
+    // Fetch current period stats
+    const currentResult = await payload.find({
+      collection: 'transactions',
+      where: {
+        and: [
+          {
+            financialAccount: {
+              equals: financialAccountId,
+            },
+          },
+          {
+            transactionDate: {
+              greater_than_equal: periodStart.toISOString(),
+            },
+          },
+        ],
+      },
+      limit: 10000,
+      depth: 0,
+    })
+
+    // Fetch previous period stats
+    const previousResult = await payload.find({
+      collection: 'transactions',
+      where: {
+        and: [
+          {
+            financialAccount: {
+              equals: financialAccountId,
+            },
+          },
+          {
+            transactionDate: {
+              greater_than_equal: previousPeriodStart.toISOString(),
+              less_than: periodStart.toISOString(),
+            },
+          },
+        ],
+      },
+      limit: 10000,
+      depth: 0,
+    })
+
+    const calculateStats = (transactions: any[]) => {
+      let moneyIn = 0
+      let moneyOut = 0
+      let lastActivity: Date | null = null
+
+      transactions.forEach((tx) => {
+        const amount = typeof tx.amount === 'number' ? tx.amount : 0
+        const transactionType = String(tx.transactionType || '').toLowerCase()
+
+        if (transactionType === 'credit') {
+          moneyIn += amount
+        } else if (transactionType === 'debit') {
+          moneyOut += amount
+        }
+
+        if (tx.transactionDate) {
+          const txDate = new Date(tx.transactionDate)
+          if (!lastActivity || txDate > lastActivity) {
+            lastActivity = txDate
+          }
+        }
+      })
+
+      return { moneyIn, moneyOut, profit: moneyIn - moneyOut, lastActivity }
+    }
+
+    const currentStats = calculateStats(currentResult.docs as any[])
+    const previousStats = calculateStats(previousResult.docs as any[])
+
+    // Calculate percentage changes
+    const calculatePercent = (current: number, previous: number): number | null => {
+      if (previous === 0) return null
+      const percentage = ((current - previous) / Math.abs(previous)) * 100
+      return Math.round(percentage * 100) / 100
+    }
+
+    return {
+      success: true,
+      data: {
+        moneyIn: currentStats.moneyIn,
+        moneyOut: currentStats.moneyOut,
+        profit: currentStats.profit,
+        lastActivity: currentStats.lastActivity,
+        transactionCount: (currentResult.docs as any[]).length,
+        profitPercent: calculatePercent(currentStats.profit, previousStats.profit),
+        moneyInPercent: calculatePercent(currentStats.moneyIn, previousStats.moneyIn),
+        moneyOutPercent: calculatePercent(currentStats.moneyOut, previousStats.moneyOut),
+      },
+    }
+  } catch (error) {
+    console.error('Failed to fetch financial account stats by period:', error)
+    return { success: false, error: 'Failed to fetch account statistics.' }
   }
 }
