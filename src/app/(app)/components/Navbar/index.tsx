@@ -1,6 +1,8 @@
 'use client'
 
 import { signOut } from '@/app/(app)/lib/auth-client'
+import { hasAppRoleReadAccess } from '@/app/(app)/utils/roleAccess'
+import { useAuth } from '@/app/providers/Auth'
 import { ActionIcon, AppShell, Button, Flex, Menu, NavLink, Stack, Tooltip } from '@mantine/core'
 import {
   ArrowLeftToLine,
@@ -28,6 +30,8 @@ export const Navbar = ({ isExpanded, toggleExpandCollapse, mobileBreakpoint }: N
   const [recordsOpened, setRecordsOpened] = useState(true)
   const router = useRouter()
   const pathname = usePathname()
+  const { user } = useAuth()
+  const hasReadAccess = hasAppRoleReadAccess(user?.userRoles, 'transactions')
 
   const isRecordsActive = pathname.startsWith('/app/records')
   const isWeightBillsActive = pathname.startsWith('/app/records/weight-bills')
@@ -46,6 +50,7 @@ export const Navbar = ({ isExpanded, toggleExpandCollapse, mobileBreakpoint }: N
       icon: Landmark,
       path: '/app/financial-accounts',
       active: isFinancialAccountsActive,
+      hidden: false,
     },
     {
       id: 'records',
@@ -61,6 +66,7 @@ export const Navbar = ({ isExpanded, toggleExpandCollapse, mobileBreakpoint }: N
           icon: Weight,
           path: '/app/records/weight-bills',
           active: isWeightBillsActive,
+          hidden: false,
         },
         {
           id: 'quotations',
@@ -68,6 +74,7 @@ export const Navbar = ({ isExpanded, toggleExpandCollapse, mobileBreakpoint }: N
           icon: FileText,
           path: '/app/records/quotations',
           active: isQuotationsActive,
+          hidden: false,
         },
         {
           id: 'transactions',
@@ -75,6 +82,7 @@ export const Navbar = ({ isExpanded, toggleExpandCollapse, mobileBreakpoint }: N
           icon: FileText,
           path: '/app/records/transactions',
           active: isTransactionsActive,
+          hidden: !hasReadAccess,
         },
       ],
     },
@@ -150,66 +158,70 @@ export const Navbar = ({ isExpanded, toggleExpandCollapse, mobileBreakpoint }: N
             )}
           </Flex>
           <Flex direction="column">
-            {navItems.map(({ id, label, path, active, icon: Icon, children, opened }) => (
-              <Tooltip
-                key={id}
-                arrowOffset={30}
-                arrowSize={4}
-                label={label}
-                withArrow
-                position="right"
-                disabled={isExpanded}
-              >
-                <NavLink
-                  styles={{
-                    body: { display: isExpanded ? 'block' : 'none' },
-                    section: { marginInlineEnd: isExpanded ? 'var(--mantine-spacing-xs)' : '0' },
-                  }}
-                  active={active}
-                  label={isExpanded ? label : undefined}
-                  leftSection={<Icon size={16} />}
-                  rightSection={
-                    isExpanded && children?.length ? (
-                      <ChevronUp
-                        size={16}
-                        style={{
-                          transform: opened ? 'rotate(90deg)' : 'rotate(0deg)',
-                          transition: 'transform 150ms ease',
-                        }}
-                      />
-                    ) : undefined
-                  }
-                  variant="subtle"
-                  h={40}
-                  childrenOffset={20}
-                  opened={isExpanded ? opened : undefined}
-                  onClick={() => {
-                    if (!isExpanded) {
-                      router.push(path)
-                      return
-                    }
-
-                    if (id === 'records' && children?.length) {
-                      setRecordsOpened((prev) => !prev)
-                      return
-                    }
-
-                    router.push(path)
-                  }}
+            {navItems
+              .filter((item) => !item.hidden)
+              .map(({ id, label, path, active, icon: Icon, children, opened }) => (
+                <Tooltip
+                  key={id}
+                  arrowOffset={30}
+                  arrowSize={4}
+                  label={label}
+                  withArrow
+                  position="right"
+                  disabled={isExpanded}
                 >
-                  {children?.map((child) => (
-                    <NavLink
-                      key={child.id}
-                      label={child.label}
-                      leftSection={child.icon ? <child.icon size={14} /> : undefined}
-                      active={child.active}
-                      variant="subtle"
-                      onClick={() => router.push(child.path)}
-                    />
-                  ))}
-                </NavLink>
-              </Tooltip>
-            ))}
+                  <NavLink
+                    styles={{
+                      body: { display: isExpanded ? 'block' : 'none' },
+                      section: { marginInlineEnd: isExpanded ? 'var(--mantine-spacing-xs)' : '0' },
+                    }}
+                    active={active}
+                    label={isExpanded ? label : undefined}
+                    leftSection={<Icon size={16} />}
+                    rightSection={
+                      isExpanded && children?.length ? (
+                        <ChevronUp
+                          size={16}
+                          style={{
+                            transform: opened ? 'rotate(90deg)' : 'rotate(0deg)',
+                            transition: 'transform 150ms ease',
+                          }}
+                        />
+                      ) : undefined
+                    }
+                    variant="subtle"
+                    h={40}
+                    childrenOffset={20}
+                    opened={isExpanded ? opened : undefined}
+                    onClick={() => {
+                      if (!isExpanded) {
+                        router.push(path)
+                        return
+                      }
+
+                      if (id === 'records' && children?.length) {
+                        setRecordsOpened((prev) => !prev)
+                        return
+                      }
+
+                      router.push(path)
+                    }}
+                  >
+                    {children
+                      ?.filter((child) => !child.hidden)
+                      .map((child) => (
+                        <NavLink
+                          key={child.id}
+                          label={child.label}
+                          leftSection={child.icon ? <child.icon size={14} /> : undefined}
+                          active={child.active}
+                          variant="subtle"
+                          onClick={() => router.push(child.path)}
+                        />
+                      ))}
+                  </NavLink>
+                </Tooltip>
+              ))}
           </Flex>
         </Flex>
         <Flex direction="column">

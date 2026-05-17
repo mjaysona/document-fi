@@ -21,6 +21,8 @@ import { CircleCheck, Filter, Plus, Search } from 'lucide-react'
 import { DataTable, type DataTableColumn } from '@/app/(app)/components/ui/DataTable'
 import { getTransactions, type TransactionListItem } from './actions'
 import classes from '../page.module.scss'
+import { useAuth } from '@/app/providers/Auth'
+import { hasAppRoleReadAccess } from '@/app/(app)/utils/roleAccess'
 
 type FeedbackState = {
   tone: 'success' | 'error'
@@ -59,7 +61,18 @@ const toTimestamp = (value?: string): number | null => {
 }
 
 export default function TransactionsPage() {
+  const { user } = useAuth()
   const router = useRouter()
+  // Only allow users with an app role that has read access to transactions
+  const hasReadAccess = hasAppRoleReadAccess(user?.userRoles, 'transactions')
+
+  // Redirect on client if no access, but do not call router.replace during render
+  useEffect(() => {
+    if (!hasReadAccess) {
+      router.replace('/app/no-access')
+    }
+  }, [hasReadAccess, router])
+  if (!hasReadAccess) return null
   const searchParams = useSearchParams()
   const [items, setItems] = useState<TransactionListItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
