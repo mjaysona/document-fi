@@ -679,21 +679,6 @@ export default function TransactionsPage() {
               ) : null}
             </div>
 
-            <Group gap="xs">
-              {row.parent.isFundAllocation && (
-                <Button
-                  size="xs"
-                  variant="light"
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    router.push(`/app/records/transactions/${row.parent.id}/allocate`)
-                  }}
-                >
-                  Allocate Funds
-                </Button>
-              )}
-            </Group>
-
             {row.children.length > 0 && (
               <>
                 <Text fw={600} size="sm" mt="xs">
