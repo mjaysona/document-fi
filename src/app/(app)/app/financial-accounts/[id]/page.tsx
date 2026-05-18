@@ -8,6 +8,7 @@ import {
   Badge,
   Button,
   Card,
+  Center,
   Chip,
   Group,
   Paper,
@@ -39,6 +40,7 @@ import {
   ArrowLeftRight,
 } from 'lucide-react'
 import FinancialChart from './FinancialChart'
+import { BarChart, PieChart } from '@mantine/charts'
 import classes from '../page.module.css'
 import '@mantine/core/styles.css'
 import '@mantine/charts/styles.css'
@@ -74,6 +76,9 @@ export default function FinancialAccountDetailPage() {
   const [chartTimePeriod, setChartTimePeriod] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>(
     'daily',
   )
+
+  // Bar and Pie chart time period (1D, 7D, 30D, 60D)
+  const [chartsPeriod, setChartsPeriod] = useState<1 | 7 | 30 | 60>(30)
 
   useEffect(() => {
     const load = async () => {
@@ -125,6 +130,41 @@ export default function FinancialAccountDetailPage() {
     moneyIn: stats?.moneyInPercent ?? 0,
     moneyOut: stats?.moneyOutPercent ?? 0,
   }
+
+  // Prepare data for bar and pie charts - aggregate by day
+  const chartsData = transactions
+    .filter((tx) => {
+      const txDate = new Date(tx.transactionDate)
+      const now = new Date()
+      const periodStart = new Date(now.getTime() - chartsPeriod * 24 * 60 * 60 * 1000)
+      return txDate >= periodStart
+    })
+    .reduce(
+      (acc, tx) => {
+        const date = new Date(tx.transactionDate).toLocaleDateString('en-PH', {
+          month: 'short',
+          day: 'numeric',
+        })
+        const existing = acc.find((item) => item.date === date)
+
+        if (existing) {
+          if (tx.transactionType === 'credit') {
+            existing.moneyIn += tx.amount
+          } else {
+            existing.moneyOut += tx.amount
+          }
+        } else {
+          acc.push({
+            date,
+            moneyIn: tx.transactionType === 'credit' ? tx.amount : 0,
+            moneyOut: tx.transactionType === 'debit' ? tx.amount : 0,
+          })
+        }
+        return acc
+      },
+      [] as Array<{ date: string; moneyIn: number; moneyOut: number }>,
+    )
+    .sort((a, b) => new Date(`${a.date} 2026`).getTime() - new Date(`${b.date} 2026`).getTime())
 
   if (error || !account) {
     return (
@@ -468,37 +508,132 @@ export default function FinancialAccountDetailPage() {
           </SimpleGrid>
         )}
       </Paper>
-      <Paper withBorder p="md" radius="md">
-        <Group justify="space-between" align="center" mb="md">
-          <Title order={5} fw={700}>
-            Trends
-          </Title>
-          <Group gap="xs">
-            <Chip.Group
-              value={chartTimePeriod}
-              onChange={(val) =>
-                setChartTimePeriod(val as 'daily' | 'weekly' | 'monthly' | 'yearly')
-              }
-            >
-              <Group gap="xs">
-                <Chip value="daily" size="sm">
-                  Daily
-                </Chip>
-                <Chip value="weekly" size="sm">
-                  Weekly
-                </Chip>
-                <Chip value="monthly" size="sm">
-                  Monthly
-                </Chip>
-                <Chip value="yearly" size="sm">
-                  Yearly
-                </Chip>
-              </Group>
-            </Chip.Group>
+
+      {/* Charts Section - Side by Side */}
+      <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="md">
+        {/* Trends Chart */}
+        <Paper withBorder p="md" radius="md">
+          <Group justify="space-between" align="center" mb="md">
+            <Title order={5} fw={700}>
+              Trends
+            </Title>
+            <Group gap="xs">
+              <Chip.Group
+                value={chartTimePeriod}
+                onChange={(val) =>
+                  setChartTimePeriod(val as 'daily' | 'weekly' | 'monthly' | 'yearly')
+                }
+              >
+                <Group gap="xs">
+                  <Chip value="daily" size="sm">
+                    Daily
+                  </Chip>
+                  <Chip value="weekly" size="sm">
+                    Weekly
+                  </Chip>
+                  <Chip value="monthly" size="sm">
+                    Monthly
+                  </Chip>
+                  <Chip value="yearly" size="sm">
+                    Yearly
+                  </Chip>
+                </Group>
+              </Chip.Group>
+            </Group>
           </Group>
-        </Group>
-        <FinancialChart transactions={transactions} timePeriod={chartTimePeriod} />
-      </Paper>
+          <FinancialChart transactions={transactions} timePeriod={chartTimePeriod} />
+        </Paper>
+
+        {/* Bar and Pie Charts */}
+        <Paper withBorder p="md" radius="md">
+          <Group justify="space-between" align="center" mb="md">
+            <Title order={5} fw={700}>
+              Distribution
+            </Title>
+            <Group gap="xs">
+              <Chip.Group
+                value={String(chartsPeriod)}
+                onChange={(val) => setChartsPeriod(Number(val) as 1 | 7 | 30 | 60)}
+              >
+                <Group gap="xs">
+                  <Chip value="1" size="sm">
+                    Day
+                  </Chip>
+                  <Chip value="7" size="sm">
+                    7d
+                  </Chip>
+                  <Chip value="30" size="sm">
+                    30d
+                  </Chip>
+                  <Chip value="60" size="sm">
+                    60d
+                  </Chip>
+                </Group>
+              </Chip.Group>
+            </Group>
+          </Group>
+
+          {chartsData.length > 0 ? (
+            <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
+              {/* Bar Chart */}
+              <Stack gap="md">
+                <Text fw={500} size="sm">
+                  Money In vs Money Out
+                </Text>
+                <BarChart
+                  h={300}
+                  w="100%"
+                  pl="lg"
+                  data={chartsData}
+                  dataKey="date"
+                  series={[
+                    { name: 'moneyIn', label: 'Money In', color: 'teal' },
+                    { name: 'moneyOut', label: 'Money Out', color: 'red' },
+                  ]}
+                  yAxisProps={{ tickFormatter: (value) => formatCurrency(value as number) }}
+                  tooltipProps={{
+                    formatter: (value: any) => formatCurrency(value as number),
+                  }}
+                  valueFormatter={(value) => formatCurrency(value as number)}
+                />
+              </Stack>
+
+              {/* Pie Chart */}
+              <Stack gap="md">
+                <Text fw={500} size="sm">
+                  Total Distribution
+                </Text>
+                <PieChart
+                  h={300}
+                  w="100%"
+                  data={[
+                    {
+                      name: 'Money In',
+                      value: chartsData.reduce((sum, d) => sum + d.moneyIn, 0),
+                      color: 'teal',
+                    },
+                    {
+                      name: 'Money Out',
+                      value: chartsData.reduce((sum, d) => sum + d.moneyOut, 0),
+                      color: 'red',
+                    },
+                  ]}
+                  tooltipDataSource="segment"
+                  withLabels
+                  withLabelsLine
+                  labelsPosition="outside"
+                  labelsType="value"
+                  valueFormatter={(value) => formatCurrency(value as number)}
+                />
+              </Stack>
+            </SimpleGrid>
+          ) : (
+            <Center p="xl">
+              <Text c="dimmed">No transaction data available for this period</Text>
+            </Center>
+          )}
+        </Paper>
+      </SimpleGrid>
     </Stack>
   )
 }
