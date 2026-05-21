@@ -22,7 +22,9 @@ const PermissionsCellComponentServer: React.FC<DefaultServerCellComponentProps> 
   }
 
   const getAccessPermissions = (permission: Permission) => {
-    const accessLabels = permission.access?.map((access) => AccessTypeLabel[access]) || []
+    const accessLabels =
+      permission.access?.map((access) => AccessTypeLabel[access as keyof typeof AccessTypeLabel]) ||
+      []
     const sortedAccessLabels = accessLabels.sort((a, b) => {
       const aIndex = Object.values(AccessTypeLabel).indexOf(a)
       const bIndex = Object.values(AccessTypeLabel).indexOf(b)

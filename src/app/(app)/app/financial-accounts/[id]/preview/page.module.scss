@@ -1,0 +1,78 @@
+.toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 24px;
+  background: var(--mantine-color-body);
+  border-bottom: 1px solid var(--mantine-color-default-border);
+}
+
+.toolbarRight {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.printAreaWrapper {
+  overflow-x: auto;
+  padding: 32px 16px 64px;
+  display: flex;
+  justify-content: center;
+}
+
+.printArea {
+  width: 794px; /* A4 width at 96dpi */
+  min-width: 794px;
+  flex: 0 0 auto;
+  padding: 0;
+}
+
+@media print {
+  :global(html),
+  :global(body) {
+    background: #fff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .page {
+    min-height: 0 !important;
+    background: #fff !important;
+  }
+
+  :global(body *) {
+    visibility: hidden !important;
+  }
+
+  .printArea,
+  .printArea * {
+    visibility: visible !important;
+  }
+
+  .printAreaWrapper {
+    overflow: visible !important;
+    padding: 0 !important;
+    display: block !important;
+  }
+
+  .printArea {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    flex: none;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 14mm;
+  }
+}

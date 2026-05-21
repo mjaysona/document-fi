@@ -211,6 +211,7 @@ export default function FinancialAccountDetailPage() {
               variant="outline"
               loading={isUpdatingDefault}
               disabled={isUpdatingDefault || isDeleting}
+              size="xs"
               onClick={async () => {
                 setFeedback(null)
                 setIsUpdatingDefault(true)
@@ -232,30 +233,10 @@ export default function FinancialAccountDetailPage() {
               Set as Default
             </Button>
           )}
-
-          <Button
-            variant="light"
-            onClick={() =>
-              router.push(
-                `/app/records/transactions?financialAccount=${encodeURIComponent(account.name)}&financialAccountId=${encodeURIComponent(account.id)}`,
-              )
-            }
-          >
-            View transactions
-          </Button>
-          <Button variant="light" onClick={() => router.push('/app/records/transactions/add')}>
-            Add Transaction
-          </Button>
-          <Button
-            variant="light"
-            onClick={() => router.push(`/app/financial-accounts/edit?id=${account.id}`)}
-          >
-            Edit
-          </Button>
-
           <Button
             color="red"
             variant="light"
+            size="xs"
             loading={isDeleting}
             disabled={isUpdatingDefault}
             onClick={async () => {
@@ -277,9 +258,43 @@ export default function FinancialAccountDetailPage() {
               router.push('/app/financial-accounts')
             }}
           >
-            Delete Account
+            Delete account
           </Button>
         </Group>
+      </Group>
+      <Group>
+        <Button
+          size="xs"
+          variant="default"
+          onClick={() =>
+            router.push(
+              `/app/records/transactions?financialAccount=${encodeURIComponent(account.name)}&financialAccountId=${encodeURIComponent(account.id)}`,
+            )
+          }
+        >
+          View transactions
+        </Button>
+        <Button
+          size="xs"
+          variant="default"
+          onClick={() => router.push(`/app/financial-accounts/${account.id}/preview`)}
+        >
+          Preview report
+        </Button>
+        <Button
+          size="xs"
+          variant="default"
+          onClick={() => router.push('/app/records/transactions/add')}
+        >
+          Add transaction
+        </Button>
+        <Button
+          size="xs"
+          variant="default"
+          onClick={() => router.push(`/app/financial-accounts/edit?id=${account.id}`)}
+        >
+          Edit account
+        </Button>
       </Group>
       <Group justify="space-between" align="top">
         <div>

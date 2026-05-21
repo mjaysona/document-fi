@@ -5,6 +5,7 @@ import {
   readFinancialAccounts,
   updateFinancialAccounts,
 } from './access'
+import { hasSuperAdminRole } from '@/utilities/getRole'
 
 const FinancialAccounts: CollectionConfig = {
   slug: 'financial-accounts',
@@ -36,6 +37,11 @@ const FinancialAccounts: CollectionConfig = {
       type: 'relationship',
       relationTo: 'banks',
       required: true,
+      access: {
+        update: ({ data, req }) => {
+          return hasSuperAdminRole(req.user?.userRoles) && !data?.bank
+        },
+      },
     },
     {
       name: 'isDefault',
@@ -53,6 +59,11 @@ const FinancialAccounts: CollectionConfig = {
       required: true,
       defaultValue: 0,
       min: 0,
+      access: {
+        update: ({ data, req }) => {
+          return hasSuperAdminRole(req.user?.userRoles) && !data?.bank
+        },
+      },
     },
     {
       name: 'currentBalance',
@@ -61,6 +72,11 @@ const FinancialAccounts: CollectionConfig = {
       required: true,
       defaultValue: 0,
       min: 0,
+      access: {
+        update: ({ data, req }) => {
+          return hasSuperAdminRole(req.user?.userRoles) && !data?.bank
+        },
+      },
     },
   ],
   hooks: {
@@ -98,6 +114,7 @@ const FinancialAccounts: CollectionConfig = {
     ],
   },
   timestamps: true,
+  versions: true,
 }
 
 export default FinancialAccounts

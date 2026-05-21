@@ -102,7 +102,7 @@ export default function FinancialAccountsPage() {
     <div>
       <Group justify="space-between" mb="md">
         <Text fw={700}>Financial Accounts</Text>
-        <Button variant="light" onClick={goToCreate}>
+        <Button variant="primary" onClick={goToCreate}>
           New Financial Account
         </Button>
       </Group>

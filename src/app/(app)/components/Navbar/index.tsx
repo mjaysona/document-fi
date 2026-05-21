@@ -126,7 +126,7 @@ export const Navbar = ({ isExpanded, toggleExpandCollapse, mobileBreakpoint }: N
                   <Button
                     fullWidth
                     variant="primary"
-                    rightSection={<ChevronUp size={16} />}
+                    rightSection={<ChevronDown size={16} />}
                     justify="space-between"
                     size="md"
                   >

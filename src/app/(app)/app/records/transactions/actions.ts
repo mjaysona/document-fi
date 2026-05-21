@@ -33,8 +33,11 @@ export type TransactionListItem = {
   description: string
   particulars?: string
   transactionType?: TransactionType
+  financialAccountId?: string
   financialAccountName?: string
+  sourceAccountCode?: string
   sourceAccountName?: string
+  destinationAccountCode?: string
   destinationAccountName?: string
   from?: string
   to?: string
@@ -517,6 +520,12 @@ export async function getTransactions(): Promise<{
         description: String(doc.description || ''),
         particulars: doc.particulars ? String(doc.particulars) : undefined,
         transactionType: normalizeTransactionType(doc.transactionType),
+        financialAccountId:
+          doc.financialAccount && typeof doc.financialAccount === 'object'
+            ? String(doc.financialAccount.id)
+            : doc.financialAccount
+              ? String(doc.financialAccount)
+              : undefined,
         financialAccountName:
           doc.financialAccount &&
           typeof doc.financialAccount === 'object' &&
@@ -527,11 +536,21 @@ export async function getTransactions(): Promise<{
           doc.sourceAccount && typeof doc.sourceAccount === 'object' && doc.sourceAccount.name
             ? String(doc.sourceAccount.name)
             : undefined,
+        sourceAccountCode:
+          doc.sourceAccount && typeof doc.sourceAccount === 'object' && doc.sourceAccount.code
+            ? String(doc.sourceAccount.code)
+            : undefined,
         destinationAccountName:
           doc.destinationAccount &&
           typeof doc.destinationAccount === 'object' &&
           doc.destinationAccount.name
             ? String(doc.destinationAccount.name)
+            : undefined,
+        destinationAccountCode:
+          doc.destinationAccount &&
+          typeof doc.destinationAccount === 'object' &&
+          doc.destinationAccount.code
+            ? String(doc.destinationAccount.code)
             : undefined,
         from: doc.from ? String(doc.from) : undefined,
         to: doc.to ? String(doc.to) : undefined,

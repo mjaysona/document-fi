@@ -40,9 +40,11 @@ export default function FinancialAccountCreatePage() {
   const [name, setName] = useState('')
   const [bankId, setBankId] = useState<string | null>(null)
   const [startingBalance, setStartingBalance] = useState<number | string>('')
+  const [currentBalance, setCurrentBalance] = useState<number | string>('')
   const [nameError, setNameError] = useState<string | null>(null)
   const [bankError, setBankError] = useState<string | null>(null)
   const [startingBalanceError, setStartingBalanceError] = useState<string | null>(null)
+  const [currentBalanceError, setCurrentBalanceError] = useState<string | null>(null)
 
   useEffect(() => {
     const load = async () => {
@@ -75,6 +77,7 @@ export default function FinancialAccountCreatePage() {
       setName(accountResult.data.name)
       setBankId(accountResult.data.bankId)
       setStartingBalance(accountResult.data.startingBalance)
+      setCurrentBalance(accountResult.data.currentBalance)
       setIsLoading(false)
     }
 
@@ -90,7 +93,7 @@ export default function FinancialAccountCreatePage() {
     [banks],
   )
 
-  const currentBalanceValue = useMemo<number | string>(() => startingBalance, [startingBalance])
+  const currentBalanceValue = useMemo<number | string>(() => currentBalance, [currentBalance])
 
   const handleSave = async () => {
     setFeedback(null)
@@ -123,6 +126,16 @@ export default function FinancialAccountCreatePage() {
       setStartingBalanceError(null)
     }
 
+    const parsedCurrentBalance =
+      typeof currentBalance === 'number'
+        ? currentBalance
+        : Number(currentBalance.replace(/,/g, '').trim())
+
+    if (currentBalance === '' || Number.isNaN(parsedCurrentBalance)) {
+      setFeedback({ type: 'error', message: 'Current Balance is required' })
+      return
+    }
+
     if (hasError) return
 
     const validatedBankId = bankId
@@ -141,7 +154,7 @@ export default function FinancialAccountCreatePage() {
         name: trimmedName,
         bankId: validatedBankId,
         startingBalance: parsedStartingBalance,
-        currentBalance: parsedStartingBalance,
+        currentBalance: parsedCurrentBalance,
       })
 
       if (result.success) {
@@ -157,7 +170,7 @@ export default function FinancialAccountCreatePage() {
         name: trimmedName,
         bankId: validatedBankId,
         startingBalance: parsedStartingBalance,
-        currentBalance: parsedStartingBalance,
+        currentBalance: parsedCurrentBalance,
       })
 
       if (result.success && result.id) {
@@ -213,7 +226,7 @@ export default function FinancialAccountCreatePage() {
                 setBankError(null)
               }}
               searchable
-              disabled={isSaving}
+              disabled={isSaving || (isEditMode && Boolean(bankId))}
               error={bankError}
               required
             />
@@ -231,22 +244,27 @@ export default function FinancialAccountCreatePage() {
               fixedDecimalScale
               thousandSeparator=","
               hideControls
-              disabled={isSaving}
+              disabled={isSaving || (isEditMode && Boolean(startingBalance))}
               error={startingBalanceError}
               required
             />
 
             <NumberInput
               label="Current Balance"
-              value={currentBalanceValue}
+              value={
+                typeof currentBalance === 'number'
+                  ? currentBalance
+                  : parseFloat(currentBalance.replace(/,/g, '')) || ''
+              }
+              onChange={(value) => setCurrentBalance(value || '')}
               min={0}
               leftSection="₱"
               decimalScale={2}
               fixedDecimalScale
               thousandSeparator=","
               hideControls
-              disabled={isSaving}
-              readOnly
+              disabled={isSaving || (isEditMode && Boolean(currentBalance))}
+              error={currentBalanceError}
               required
             />
 
