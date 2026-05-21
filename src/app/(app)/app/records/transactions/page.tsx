@@ -180,9 +180,6 @@ export default function TransactionsPage() {
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
   const [feedback, setFeedback] = useState<FeedbackState | null>(null)
   const [expandedRows, setExpandedRows] = useState<string[]>([])
-  const [draggingColumnKey, setDraggingColumnKey] = useState<TransactionReportColumnKey | null>(
-    null,
-  )
   const hasAppliedInitialQueryFilters = useRef(false)
   const tableColsParam = searchParams.get('tableCols')
   const [selectedTableColumns, setSelectedTableColumns] = useState<TransactionReportColumnKey[]>(
@@ -230,24 +227,6 @@ export default function TransactionsPage() {
     const parsed = parseTableColumnKeys(nextColumns.join(','))
     setSelectedTableColumns(parsed)
     pushTableColumnsToUrl(parsed)
-  }
-
-  const reorderSelectedColumns = (
-    draggedKey: TransactionReportColumnKey,
-    targetKey: TransactionReportColumnKey,
-  ) => {
-    if (draggedKey === targetKey) return
-
-    const fromIndex = selectedTableColumns.indexOf(draggedKey)
-    const toIndex = selectedTableColumns.indexOf(targetKey)
-    if (fromIndex < 0 || toIndex < 0) return
-
-    const next = [...selectedTableColumns]
-    const [moved] = next.splice(fromIndex, 1)
-    next.splice(toIndex, 0, moved)
-
-    setSelectedTableColumns(next)
-    pushTableColumnsToUrl(next)
   }
 
   const selectedTableColumnOptions = useMemo(() => {
@@ -653,7 +632,7 @@ export default function TransactionsPage() {
           </Button>
         </Group>
 
-        <Collapse in={filterOpen}>
+        <Collapse expanded={filterOpen}>
           <Stack
             gap="sm"
             mb="md"
@@ -755,43 +734,13 @@ export default function TransactionsPage() {
               hidePickedOptions
               searchable
               clearable={false}
+              withPillsReorder
               size="sm"
               styles={{
                 root: { minWidth: 280 },
                 input: { minHeight: 36 },
               }}
             />
-            <Text size="sm">Column Order</Text>
-            <Group gap="xs" align="center" wrap="wrap">
-              {selectedTableColumnOptions.map((column) => (
-                <Badge
-                  key={column.key}
-                  draggable
-                  onDragStart={() => setDraggingColumnKey(column.key)}
-                  onDragOver={(event) => {
-                    event.preventDefault()
-                  }}
-                  onDrop={(event) => {
-                    event.preventDefault()
-                    if (!draggingColumnKey) return
-                    reorderSelectedColumns(draggingColumnKey, column.key)
-                    setDraggingColumnKey(null)
-                  }}
-                  onDragEnd={() => setDraggingColumnKey(null)}
-                  style={{
-                    cursor: 'grab',
-                    opacity: draggingColumnKey === column.key ? 0.5 : 1,
-                    border:
-                      draggingColumnKey === column.key
-                        ? '2px dashed var(--mantine-color-blue-5)'
-                        : undefined,
-                  }}
-                  variant="light"
-                >
-                  {column.label}
-                </Badge>
-              ))}
-            </Group>
           </Stack>
         </Collapse>
         <Group justify="flex-end">

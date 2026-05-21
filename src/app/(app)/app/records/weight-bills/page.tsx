@@ -870,7 +870,7 @@ export default function WeightBillsPage() {
           </Button>
         </Group>
 
-        <Collapse in={filterOpen}>
+        <Collapse expanded={filterOpen}>
           <Stack
             gap="sm"
             mb="md"
