@@ -20,6 +20,12 @@ import { DatePickerInput } from '@mantine/dates'
 import { CircleCheck, Filter, Plus, Search } from 'lucide-react'
 import { DataTable, type DataTableColumn } from '@/app/(app)/components/ui/DataTable'
 import { getTransactions, type TransactionListItem } from './actions'
+import {
+  parseReportColumnKeys,
+  serializeReportColumnKeys,
+  TRANSACTION_REPORT_COLUMN_OPTIONS,
+  type TransactionReportColumnKey,
+} from '../../financial-accounts/[id]/preview/columns'
 import classes from '../page.module.scss'
 import { useAuth } from '@/app/providers/Auth'
 import { hasAppRoleReadAccess } from '@/app/(app)/utils/roleAccess'
@@ -32,6 +38,18 @@ type FeedbackState = {
 type SortBy = 'date' | 'amount'
 type SortOrder = 'asc' | 'desc'
 type TransactionParentRow = { parent: TransactionListItem; children: TransactionListItem[] }
+
+const DEFAULT_TABLE_COLUMNS: TransactionReportColumnKey[] = [
+  'referenceNumber',
+  'transactionDate',
+  'sourceBank',
+  'destinationBank',
+  'currentBalance',
+  'type',
+  'totalAmount',
+  'runningBalance',
+  'status',
+]
 
 const formatDate = (value?: string): string => {
   if (!value) return '-'
@@ -92,6 +110,14 @@ export default function TransactionsPage() {
   const [feedback, setFeedback] = useState<FeedbackState | null>(null)
   const [expandedRows, setExpandedRows] = useState<string[]>([])
   const hasAppliedInitialQueryFilters = useRef(false)
+  const tableColsParam = searchParams.get('tableCols')
+  const initialTableColumns = useMemo(() => {
+    if (!tableColsParam) return DEFAULT_TABLE_COLUMNS
+    const parsed = parseReportColumnKeys(tableColsParam)
+    return parsed.length > 0 ? parsed : DEFAULT_TABLE_COLUMNS
+  }, [tableColsParam])
+  const [selectedTableColumns, setSelectedTableColumns] =
+    useState<TransactionReportColumnKey[]>(initialTableColumns)
 
   const initialFinancialAccountFilter = useMemo(
     () => searchParams.get('financialAccount')?.trim() || '',
@@ -121,6 +147,25 @@ export default function TransactionsPage() {
 
     setFilterFinancialAccounts([initialFinancialAccountFilter])
   }, [initialFinancialAccountFilter])
+
+  useEffect(() => {
+    setSelectedTableColumns(initialTableColumns)
+  }, [initialTableColumns])
+
+  const pushTableColumnsToUrl = (nextColumns: string[]) => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('tableCols', serializeReportColumnKeys(nextColumns))
+
+    const query = params.toString()
+    router.push(query ? `/app/records/transactions?${query}` : '/app/records/transactions')
+  }
+
+  const handleTableColumnsChange = (nextColumns: string[]) => {
+    const parsed =
+      nextColumns.length > 0 ? parseReportColumnKeys(nextColumns.join(',')) : DEFAULT_TABLE_COLUMNS
+    setSelectedTableColumns(parsed)
+    pushTableColumnsToUrl(parsed)
+  }
 
   const financialAccountOptions = useMemo(
     () =>
@@ -322,99 +367,189 @@ export default function TransactionsPage() {
     setSortOrder('desc')
   }
 
-  const columns: DataTableColumn<TransactionParentRow>[] = [
-    {
-      key: 'referenceNumber',
-      label: 'Reference #',
-      render: (row) => (
-        <span
-          style={{ cursor: 'pointer', textDecoration: 'underline' }}
-          onClick={(event) => {
-            event.stopPropagation()
-            router.push(`/app/records/transactions/${row.parent.id}/edit`)
-          }}
-        >
-          {row.parent.referenceNumber || '-'}
-        </span>
-      ),
-    },
-    {
-      key: 'transactionDate',
-      label: 'Date',
-      render: (row) => formatDate(row.parent.transactionDate),
-    },
-    {
-      key: 'sourceDestination',
-      label: 'Source to Destination',
-      render: (row) => {
-        const source = row.parent.sourceAccountName || '-'
-        const destination = row.parent.destinationAccountName || '-'
-        if (source === '-' && destination === '-') return '-'
-        return `${source} to ${destination}`
-      },
-    },
-    {
-      key: 'currentBalance',
-      label: 'Current Balance',
-      render: (row) => formatCurrency(row.parent.currentBalance),
-    },
-    {
-      key: 'transactionType',
-      label: 'Type',
-      render: (row) => {
-        if (!row.parent.transactionType) return '-'
-        return (
-          <Badge
-            color={row.parent.transactionType === 'debit' ? 'blue' : 'grape'}
-            variant="light"
-            tt="capitalize"
-          >
-            {row.parent.transactionType}
-          </Badge>
-        )
-      },
-    },
-    {
-      key: 'totalAmount',
-      label: 'Total Amount',
-      render: (row) => formatTotalAmount(row.parent.amount, row.parent.transactionFee),
-    },
-    {
-      key: 'runningBalance',
-      label: 'Running Balance',
-      render: (row) => formatCurrency(row.parent.runningBalance),
-    },
-    {
-      key: 'transactionStatus',
-      label: 'Status',
-      render: (row) => {
-        const totalAllocatedWithFees = row.children.reduce(
-          (sum, child) => sum + ((child.amount || 0) + (child.transactionFee || 0)),
-          0,
-        )
-        const isForAllocation =
-          row.parent.isFundAllocation && totalAllocatedWithFees !== (row.parent.amount || 0)
+  const columns = useMemo<DataTableColumn<TransactionParentRow>[]>(() => {
+    const getAllocation = (row: TransactionParentRow) => {
+      const totalAllocatedWithFees = row.children.reduce(
+        (sum, child) => sum + ((child.amount || 0) + (child.transactionFee || 0)),
+        0,
+      )
+      const parentAmount = row.parent.amount || 0
+      return { totalAllocatedWithFees, parentAmount }
+    }
 
-        if (isForAllocation) {
+    const byKey: Record<TransactionReportColumnKey, DataTableColumn<TransactionParentRow>> = {
+      referenceNumber: {
+        key: 'referenceNumber',
+        label: 'Reference #',
+        render: (row) => (
+          <span
+            style={{ cursor: 'pointer', textDecoration: 'underline' }}
+            onClick={(event) => {
+              event.stopPropagation()
+              router.push(`/app/records/transactions/${row.parent.id}/edit`)
+            }}
+          >
+            {row.parent.referenceNumber || '-'}
+          </span>
+        ),
+      },
+      transactionDate: {
+        key: 'transactionDate',
+        label: 'Transaction Date',
+        render: (row) => formatDate(row.parent.transactionDate),
+      },
+      createdAt: {
+        key: 'createdAt',
+        label: 'Created',
+        render: (row) => formatDate(row.parent.createdAt),
+      },
+      updatedAt: {
+        key: 'updatedAt',
+        label: 'Last Updated',
+        render: (row) => formatDate(row.parent.updatedAt),
+      },
+      type: {
+        key: 'type',
+        label: 'Type',
+        render: (row) => {
+          if (!row.parent.transactionType) return '-'
           return (
-            <Badge color="yellow" variant="light" tt="capitalize">
-              For allocation
+            <Badge
+              color={row.parent.transactionType === 'debit' ? 'blue' : 'grape'}
+              variant="light"
+              tt="capitalize"
+            >
+              {row.parent.transactionType}
             </Badge>
           )
-        }
-
-        return (
-          <Badge
-            color={row.parent.transactionStatus === 'failed' ? 'red' : 'teal'}
-            variant="light"
-            tt="capitalize"
-          >
-            {row.parent.transactionStatus || '-'}
-          </Badge>
-        )
+        },
       },
-    },
-  ]
+      status: {
+        key: 'status',
+        label: 'Status',
+        render: (row) => {
+          const { totalAllocatedWithFees, parentAmount } = getAllocation(row)
+          const isForAllocation =
+            row.parent.isFundAllocation && totalAllocatedWithFees !== parentAmount
+
+          if (isForAllocation) {
+            return (
+              <Badge color="yellow" variant="light" tt="capitalize">
+                For allocation
+              </Badge>
+            )
+          }
+
+          return (
+            <Badge
+              color={row.parent.transactionStatus === 'failed' ? 'red' : 'teal'}
+              variant="light"
+              tt="capitalize"
+            >
+              {row.parent.transactionStatus || '-'}
+            </Badge>
+          )
+        },
+      },
+      sourceBank: {
+        key: 'sourceBank',
+        label: 'Source Bank',
+        render: (row) => row.parent.sourceAccountName || '-',
+      },
+      destinationBank: {
+        key: 'destinationBank',
+        label: 'Destination Bank',
+        render: (row) => row.parent.destinationAccountName || '-',
+      },
+      fromWithSourceBank: {
+        key: 'fromWithSourceBank',
+        label: 'From + Source Bank',
+        render: (row) => {
+          const from = row.parent.from || '-'
+          const source = row.parent.sourceAccountName || '-'
+          return `${from} (${source})`
+        },
+      },
+      toWithDestinationBank: {
+        key: 'toWithDestinationBank',
+        label: 'To + Destination Bank',
+        render: (row) => {
+          const to = row.parent.to || '-'
+          const destination = row.parent.destinationAccountName || '-'
+          return `${to} (${destination})`
+        },
+      },
+      financialAccount: {
+        key: 'financialAccount',
+        label: 'Financial Account',
+        render: (row) => row.parent.financialAccountName || '-',
+      },
+      from: {
+        key: 'from',
+        label: 'From',
+        render: (row) => row.parent.from || '-',
+      },
+      to: {
+        key: 'to',
+        label: 'To',
+        render: (row) => row.parent.to || '-',
+      },
+      amount: {
+        key: 'amount',
+        label: 'Amount',
+        render: (row) => formatCurrency(row.parent.amount),
+      },
+      fee: {
+        key: 'fee',
+        label: 'Fee',
+        render: (row) => formatCurrency(row.parent.transactionFee),
+      },
+      totalAmount: {
+        key: 'totalAmount',
+        label: 'Total Amount',
+        render: (row) => formatTotalAmount(row.parent.amount, row.parent.transactionFee),
+      },
+      currentBalance: {
+        key: 'currentBalance',
+        label: 'Current Balance',
+        render: (row) => formatCurrency(row.parent.currentBalance),
+      },
+      runningBalance: {
+        key: 'runningBalance',
+        label: 'Running Balance',
+        render: (row) => formatCurrency(row.parent.runningBalance),
+      },
+      fundAllocation: {
+        key: 'fundAllocation',
+        label: 'Fund Allocation',
+        render: (row) => (row.parent.isFundAllocation ? 'Yes' : 'No'),
+      },
+      allocatedFunds: {
+        key: 'allocatedFunds',
+        label: 'Allocated Funds',
+        render: (row) => {
+          const { totalAllocatedWithFees, parentAmount } = getAllocation(row)
+          if (!row.parent.isFundAllocation) return '-'
+          return `${formatCurrency(totalAllocatedWithFees)} / ${formatCurrency(parentAmount)}`
+        },
+      },
+      description: {
+        key: 'description',
+        label: 'Description',
+        render: (row) => row.parent.description || '-',
+      },
+      particulars: {
+        key: 'particulars',
+        label: 'Particulars',
+        render: (row) => row.parent.particulars || '-',
+      },
+    }
+
+    const activeColumns =
+      selectedTableColumns.length > 0 ? selectedTableColumns : DEFAULT_TABLE_COLUMNS
+
+    return activeColumns.map((key) => byKey[key]).filter(Boolean)
+  }, [router, selectedTableColumns])
 
   return (
     <div className={classes.wrapper}>
@@ -522,6 +657,7 @@ export default function TransactionsPage() {
                 clearable
               />
             </Group>
+
             {activeFilterCount > 0 && (
               <Group justify="flex-end">
                 <Button
@@ -540,6 +676,24 @@ export default function TransactionsPage() {
                 </Button>
               </Group>
             )}
+            <MultiSelect
+              label="Table Columns"
+              placeholder="Shown table columns"
+              data={TRANSACTION_REPORT_COLUMN_OPTIONS.map((column) => ({
+                value: column.value,
+                label: column.label,
+              }))}
+              value={selectedTableColumns}
+              onChange={handleTableColumnsChange}
+              hidePickedOptions
+              searchable
+              clearable={false}
+              size="sm"
+              styles={{
+                root: { minWidth: 280 },
+                input: { minHeight: 36 },
+              }}
+            />
           </Stack>
         </Collapse>
         <Group justify="flex-end">
