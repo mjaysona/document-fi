@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { BarChart, LineChart } from '@mantine/charts'
 import '@mantine/charts/styles.css'
 import styles from './TransactionReportDocument.module.scss'
@@ -54,14 +55,18 @@ export function TransactionReportDocument({ report }: TransactionReportDocumentP
 
   return (
     <article className={styles.document} aria-label="Transaction report document">
-      <header className={styles.header}>
-        <div className={styles.headerLeft}>
-          {header.logoUrl && <img src={header.logoUrl} alt="Logo" className={styles.logo} />}
-          <h1 className={styles.title}>{header.title}</h1>
-        </div>
-        <p className={styles.meta}>Date: {formatDate(header.date)}</p>
-      </header>
-      <h5 className={styles.documentTitle}>TRANSACTIONS REPORT</h5>
+      <h3 className={styles.header}>{header.title}</h3>
+      <div className={styles.documentTitle}>
+        <span>
+          TRANSACTIONS REPORT
+          {header.fromDate || header.toDate ? (
+            <>
+              {' '}
+              ({formatDate(header.fromDate)} - {formatDate(header.toDate)})
+            </>
+          ) : null}
+        </span>
+      </div>
       <section className={styles.chartSection} aria-label="Charts preview section">
         <div className={styles.chartGrid}>
           <div className={styles.chartCard}>
@@ -164,15 +169,35 @@ export function TransactionReportDocument({ report }: TransactionReportDocumentP
             </thead>
             <tbody>
               {rows.map((row, index) => (
-                <tr key={`${row.referenceNumber}-${row.date}-${index}`}>
-                  <td>{row.referenceNumber}</td>
-                  <td>{row.date}</td>
-                  <td>{row.sourceBank}</td>
-                  <td>{row.destinationBank}</td>
-                  <td>{formatType(row.type)}</td>
-                  <td className={styles.cellRight}>{formatMoney(row.totalAmount)}</td>
-                  <td className={styles.cellRight}>{formatMoney(row.runningBalance)}</td>
-                </tr>
+                <React.Fragment key={`${row.referenceNumber}-${row.date}-${index}`}>
+                  <tr>
+                    <td>{row.referenceNumber}</td>
+                    <td>{row.date}</td>
+                    <td>{row.sourceBank}</td>
+                    <td>{row.destinationBank}</td>
+                    <td>{formatType(row.type)}</td>
+                    <td className={styles.cellRight}>{formatMoney(row.totalAmount)}</td>
+                    <td className={styles.cellRight}>{formatMoney(row.runningBalance)}</td>
+                  </tr>
+                  {row.isFundAllocation && row.children && row.children.length > 0 && (
+                    <>
+                      {row.children.map((child, childIndex) => (
+                        <tr
+                          key={`${row.referenceNumber}-child-${childIndex}`}
+                          style={{ backgroundColor: '#f9fafb' }}
+                        >
+                          <td style={{ paddingLeft: '32px' }}>{child.referenceNumber}</td>
+                          <td>{child.date}</td>
+                          <td>{child.sourceBank}</td>
+                          <td>{child.destinationBank}</td>
+                          <td>{formatType(child.type)}</td>
+                          <td className={styles.cellRight}>{formatMoney(child.totalAmount)}</td>
+                          <td className={styles.cellRight}>{formatMoney(child.runningBalance)}</td>
+                        </tr>
+                      ))}
+                    </>
+                  )}
+                </React.Fragment>
               ))}
             </tbody>
           </table>

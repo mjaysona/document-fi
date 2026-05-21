@@ -5,6 +5,8 @@ export type TransactionReportHeaderData = {
   logoUrl?: string | null
   referenceNumber?: string | null
   date?: string | null
+  fromDate?: string | null
+  toDate?: string | null
 }
 
 export type TransactionReportLinePoint = {
@@ -26,6 +28,8 @@ export type TransactionReportTableRow = {
   type: string
   totalAmount: number | null
   runningBalance: number | null
+  isFundAllocation?: boolean
+  children?: TransactionReportTableRow[]
 }
 
 export type TransactionReportData = {
@@ -95,25 +99,63 @@ export function buildTransactionReportData(args: {
   transactions: TransactionListItem[]
 }): TransactionReportData {
   const sortedTransactions = sortTransactions(args.transactions)
+  const childrenByParentId = new Map<string, TransactionListItem[]>()
 
-  const rows: TransactionReportTableRow[] = sortedTransactions.map((item) => ({
-    referenceNumber: normalizeString(item.referenceNumber),
-    date: formatDate(item.transactionDate),
-    sourceBank: normalizeString(item.sourceAccountCode),
-    destinationBank: normalizeString(item.destinationAccountCode),
-    type: normalizeType(item.transactionType),
-    totalAmount:
-      typeof item.amount === 'number' || typeof item.transactionFee === 'number'
-        ? (typeof item.amount === 'number' ? item.amount : 0) +
-          (typeof item.transactionFee === 'number' ? item.transactionFee : 0)
-        : null,
-    runningBalance: typeof item.runningBalance === 'number' ? item.runningBalance : null,
-  }))
+  // Group children by parent ID
+  for (const item of sortedTransactions) {
+    if (item.parentTransaction) {
+      const parentId = item.parentTransaction
+      if (!childrenByParentId.has(parentId)) {
+        childrenByParentId.set(parentId, [])
+      }
+      childrenByParentId.get(parentId)!.push(item)
+    }
+  }
+
+  const rows: TransactionReportTableRow[] = sortedTransactions
+    .filter((item) => !item.parentTransaction) // Only include parent transactions
+    .map((item) => {
+      const children = childrenByParentId.get(item.id) || []
+      return {
+        referenceNumber: normalizeString(item.referenceNumber),
+        date: formatDate(item.transactionDate),
+        sourceBank: normalizeString(item.sourceAccountCode),
+        destinationBank: normalizeString(item.destinationAccountCode),
+        type: normalizeType(item.transactionType),
+        totalAmount:
+          typeof item.amount === 'number' || typeof item.transactionFee === 'number'
+            ? (typeof item.amount === 'number' ? item.amount : 0) +
+              (typeof item.transactionFee === 'number' ? item.transactionFee : 0)
+            : null,
+        runningBalance: typeof item.runningBalance === 'number' ? item.runningBalance : null,
+        isFundAllocation: item.isFundAllocation ?? false,
+        children:
+          item.isFundAllocation && children.length > 0
+            ? children.map((child) => ({
+                referenceNumber: normalizeString(child.referenceNumber),
+                date: formatDate(child.transactionDate),
+                sourceBank: normalizeString(child.sourceAccountCode),
+                destinationBank: normalizeString(child.destinationAccountCode),
+                type: normalizeType(child.transactionType),
+                totalAmount:
+                  typeof child.amount === 'number' || typeof child.transactionFee === 'number'
+                    ? (typeof child.amount === 'number' ? child.amount : 0) +
+                      (typeof child.transactionFee === 'number' ? child.transactionFee : 0)
+                    : null,
+                runningBalance:
+                  typeof child.runningBalance === 'number' ? child.runningBalance : null,
+              }))
+            : undefined,
+      }
+    })
 
   const barsByDate = new Map<string, { credit: number; debit: number }>()
   const lineByDate = new Map<string, number | null>()
 
-  for (const item of sortedTransactions) {
+  // Only include parent transactions in chart data
+  const parentTransactions = sortedTransactions.filter((item) => !item.parentTransaction)
+
+  for (const item of parentTransactions) {
     const dateKey = toDateKey(item.transactionDate)
     if (!dateKey) continue
 

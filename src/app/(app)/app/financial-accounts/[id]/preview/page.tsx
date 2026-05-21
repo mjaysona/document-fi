@@ -59,18 +59,30 @@ export default async function FinancialAccountPreviewPage({ params, searchParams
     ;[fromDate, toDate] = [toDate, fromDate]
   }
 
-  const accountTransactions = allTransactions
-    .filter((item) => item.financialAccountId === id)
-    .filter((item) => {
-      if (!fromDate && !toDate) return true
+  const hasDateRange = fromDate || toDate
+  const accountTransactions = hasDateRange
+    ? (() => {
+        const parentTransactions = allTransactions
+          .filter((item) => item.financialAccountId === id && !item.parentTransaction)
+          .filter((item) => {
+            const transactionDate = parseTransactionDate(item.transactionDate)
+            if (!transactionDate) return false
 
-      const transactionDate = parseTransactionDate(item.transactionDate)
-      if (!transactionDate) return false
+            if (fromDate && transactionDate.getTime() < fromDate.getTime()) return false
+            if (toDate && transactionDate.getTime() > toDate.getTime()) return false
+            return true
+          })
 
-      if (fromDate && transactionDate.getTime() < fromDate.getTime()) return false
-      if (toDate && transactionDate.getTime() > toDate.getTime()) return false
-      return true
-    })
+        const parentIds = new Set(parentTransactions.map((t) => t.id))
+
+        // Include all child transactions of filtered parents
+        const childTransactions = allTransactions.filter(
+          (item) => item.parentTransaction && parentIds.has(item.parentTransaction),
+        )
+
+        return [...parentTransactions, ...childTransactions]
+      })()
+    : []
 
   const report = buildTransactionReportData({
     header: {
@@ -78,6 +90,8 @@ export default async function FinancialAccountPreviewPage({ params, searchParams
       logoUrl: logoUrl ?? null,
       referenceNumber: account.id,
       date: new Date().toISOString(),
+      fromDate: fromDate?.toISOString() ?? null,
+      toDate: toDate?.toISOString() ?? null,
     },
     transactions: accountTransactions,
   })
