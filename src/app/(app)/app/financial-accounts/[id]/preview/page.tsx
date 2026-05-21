@@ -7,12 +7,14 @@ import { getTransactions } from '../../../records/transactions/actions'
 import { buildTransactionReportData } from './reportData'
 import { PrintButton } from './PrintButton'
 import { DateRangeFilter } from './DateRangeFilter'
+import { ReportColumnsFilter } from './ReportColumnsFilter'
+import { parseReportColumnKeys } from './columns'
 import styles from './page.module.scss'
 import { TransactionReportDocument } from '@/app/(app)/app/financial-accounts/[id]/preview/components/TransactionReportDocument'
 
 type Props = {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ logoUrl?: string; from?: string; to?: string }>
+  searchParams: Promise<{ logoUrl?: string; from?: string; to?: string; cols?: string }>
 }
 
 const parseDateInput = (value?: string, mode: 'start' | 'end' = 'start'): Date | null => {
@@ -38,7 +40,8 @@ const parseTransactionDate = (value?: string): Date | null => {
 
 export default async function FinancialAccountPreviewPage({ params, searchParams }: Props) {
   const { id } = await params
-  const { logoUrl, from, to } = await searchParams
+  const { logoUrl, from, to, cols } = await searchParams
+  const visibleColumns = parseReportColumnKeys(cols)
 
   const [accountResult, transactionsResult] = await Promise.all([
     getFinancialAccountById(id),
@@ -128,10 +131,10 @@ export default async function FinancialAccountPreviewPage({ params, searchParams
           <PrintButton />
         </Group>
       </Group>
-
+      <ReportColumnsFilter initialColumns={visibleColumns} />
       <div className={styles.printAreaWrapper}>
         <div className={styles.printArea}>
-          <TransactionReportDocument report={report} />
+          <TransactionReportDocument report={report} visibleColumns={visibleColumns} />
         </div>
       </div>
     </Stack>

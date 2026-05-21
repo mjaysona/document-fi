@@ -4,10 +4,16 @@ import React from 'react'
 import { BarChart, LineChart } from '@mantine/charts'
 import '@mantine/charts/styles.css'
 import styles from './TransactionReportDocument.module.scss'
-import type { TransactionReportData } from '../reportData'
+import {
+  DEFAULT_TRANSACTION_REPORT_COLUMNS,
+  TRANSACTION_REPORT_COLUMN_OPTIONS,
+  type TransactionReportColumnKey,
+} from '../columns'
+import type { TransactionReportData, TransactionReportTableRow } from '../reportData'
 
 type TransactionReportDocumentProps = {
   report: TransactionReportData
+  visibleColumns?: TransactionReportColumnKey[]
 }
 
 const formatDate = (value?: string | null): string => {
@@ -43,8 +49,100 @@ const getTypeColor = (value: string): string | undefined => {
   return undefined
 }
 
-export function TransactionReportDocument({ report }: TransactionReportDocumentProps) {
+const getStatusColor = (value: string): string | undefined => {
+  const normalized = String(value || '').toLowerCase()
+  if (normalized === 'completed') return '#2f9e44'
+  if (normalized === 'failed') return '#e03131'
+  return undefined
+}
+
+const isRightAlignedColumn = (column: TransactionReportColumnKey): boolean => {
+  return [
+    'amount',
+    'fee',
+    'totalAmount',
+    'currentBalance',
+    'runningBalance',
+    'allocatedFunds',
+  ].includes(column)
+}
+
+const formatAllocatedFunds = (row: TransactionReportTableRow): string => {
+  if (!row.isFundAllocation) return '-'
+
+  const allocated = (row.children || []).reduce((sum, child) => {
+    return sum + (typeof child.totalAmount === 'number' ? child.totalAmount : 0)
+  }, 0)
+
+  if (typeof row.amount === 'number') {
+    return `${formatMoney(allocated)} / ${formatMoney(row.amount)}`
+  }
+
+  return formatMoney(allocated)
+}
+
+const combineNameAndBank = (name: string, bank: string): string => {
+  const normalizedName = String(name || '').trim()
+  const normalizedBank = String(bank || '').trim()
+
+  const hasName = normalizedName && normalizedName !== '-'
+  const hasBank = normalizedBank && normalizedBank !== '-'
+
+  if (hasName && hasBank) return `${normalizedName} (${normalizedBank})`
+  if (hasName) return normalizedName
+  if (hasBank) return normalizedBank
+  return '-'
+}
+
+const renderCellValue = (row: TransactionReportTableRow, column: TransactionReportColumnKey) => {
+  if (column === 'referenceNumber') return row.referenceNumber
+  if (column === 'transactionDate') return row.transactionDate
+  if (column === 'createdAt') return row.createdAt
+  if (column === 'updatedAt') return row.updatedAt
+  if (column === 'sourceBank') return row.sourceBank
+  if (column === 'destinationBank') return row.destinationBank
+  if (column === 'fromWithSourceBank') return combineNameAndBank(row.from, row.sourceBank)
+  if (column === 'toWithDestinationBank') return combineNameAndBank(row.to, row.destinationBank)
+  if (column === 'financialAccount') return row.financialAccount
+  if (column === 'from') return row.from
+  if (column === 'to') return row.to
+  if (column === 'amount') return formatMoney(row.amount)
+  if (column === 'fee') return formatMoney(row.fee)
+  if (column === 'totalAmount') return formatMoney(row.totalAmount)
+  if (column === 'currentBalance') return formatMoney(row.currentBalance)
+  if (column === 'runningBalance') return formatMoney(row.runningBalance)
+  if (column === 'fundAllocation') return row.isFundAllocation ? 'Yes' : 'No'
+  if (column === 'allocatedFunds') return formatAllocatedFunds(row)
+  if (column === 'description') return row.description
+  if (column === 'particulars') return row.particulars
+
+  if (column === 'type') {
+    return (
+      <span style={{ color: getTypeColor(row.type), fontWeight: 600 }}>{formatType(row.type)}</span>
+    )
+  }
+
+  if (column === 'status') {
+    return (
+      <span style={{ color: getStatusColor(row.status), fontWeight: 600 }}>
+        {row.status === '-' ? '-' : row.status.charAt(0).toUpperCase() + row.status.slice(1)}
+      </span>
+    )
+  }
+
+  return '-'
+}
+
+export function TransactionReportDocument({
+  report,
+  visibleColumns = DEFAULT_TRANSACTION_REPORT_COLUMNS,
+}: TransactionReportDocumentProps) {
   const { header, lineChartData, barChartData, rows } = report
+  const selectedColumns =
+    visibleColumns.length > 0 ? visibleColumns : DEFAULT_TRANSACTION_REPORT_COLUMNS
+  const columnHeaders = TRANSACTION_REPORT_COLUMN_OPTIONS.filter((column) =>
+    selectedColumns.includes(column.value),
+  )
 
   const hasLineData = lineChartData.some((point) => typeof point.runningBalance === 'number')
   const hasBarData = barChartData.length > 0
@@ -164,45 +262,54 @@ export function TransactionReportDocument({ report }: TransactionReportDocumentP
           <table className={styles.table}>
             <thead>
               <tr>
-                <th>Reference #</th>
-                <th>Date</th>
-                <th>Source Bank</th>
-                <th>Destination Bank</th>
-                <th>Type</th>
-                <th className={styles.cellRight}>Total Amount</th>
-                <th className={styles.cellRight}>Running Balance</th>
+                {columnHeaders.map((column) => (
+                  <th
+                    key={column.value}
+                    className={isRightAlignedColumn(column.value) ? styles.cellRight : undefined}
+                  >
+                    {column.label}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
               {rows.map((row, index) => (
-                <React.Fragment key={`${row.referenceNumber}-${row.date}-${index}`}>
+                <React.Fragment
+                  key={`${row.referenceNumber}-${row.transactionDate}-${row.createdAt}-${index}`}
+                >
                   <tr>
-                    <td>{row.referenceNumber}</td>
-                    <td>{row.date}</td>
-                    <td>{row.sourceBank}</td>
-                    <td>{row.destinationBank}</td>
-                    <td style={{ color: getTypeColor(row.type), fontWeight: 600 }}>
-                      {formatType(row.type)}
-                    </td>
-                    <td className={styles.cellRight}>{formatMoney(row.totalAmount)}</td>
-                    <td className={styles.cellRight}>{formatMoney(row.runningBalance)}</td>
+                    {columnHeaders.map((column) => (
+                      <td
+                        key={`${row.referenceNumber}-${column.value}`}
+                        className={
+                          isRightAlignedColumn(column.value) ? styles.cellRight : undefined
+                        }
+                      >
+                        {renderCellValue(row, column.value)}
+                      </td>
+                    ))}
                   </tr>
                   {row.isFundAllocation && row.children && row.children.length > 0 && (
                     <>
                       {row.children.map((child, childIndex) => (
                         <tr
-                          key={`${row.referenceNumber}-child-${childIndex}`}
+                          key={`${row.referenceNumber}-${child.referenceNumber}-child-${childIndex}`}
                           style={{ backgroundColor: '#f9fafb' }}
                         >
-                          <td style={{ paddingLeft: '32px' }}>{child.referenceNumber}</td>
-                          <td>{child.date}</td>
-                          <td>{child.sourceBank}</td>
-                          <td>{child.destinationBank}</td>
-                          <td style={{ color: getTypeColor(child.type), fontWeight: 600 }}>
-                            {formatType(child.type)}
-                          </td>
-                          <td className={styles.cellRight}>{formatMoney(child.totalAmount)}</td>
-                          <td className={styles.cellRight}>{formatMoney(child.runningBalance)}</td>
+                          {columnHeaders.map((column) => {
+                            const shouldIndent = column.value === 'referenceNumber'
+                            return (
+                              <td
+                                key={`${row.referenceNumber}-child-${childIndex}-${column.value}`}
+                                className={
+                                  isRightAlignedColumn(column.value) ? styles.cellRight : undefined
+                                }
+                                style={shouldIndent ? { paddingLeft: '32px' } : undefined}
+                              >
+                                {renderCellValue(child, column.value)}
+                              </td>
+                            )
+                          })}
                         </tr>
                       ))}
                     </>
