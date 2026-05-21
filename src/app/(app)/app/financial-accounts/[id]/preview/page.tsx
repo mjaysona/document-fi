@@ -1,11 +1,12 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Button, Stack, Group, ActionIcon, TextInput } from '@mantine/core'
+import { Stack, Group, ActionIcon } from '@mantine/core'
 import { ArrowLeft } from 'lucide-react'
 import { getFinancialAccountById } from '../../actions'
 import { getTransactions } from '../../../records/transactions/actions'
 import { buildTransactionReportData } from './reportData'
 import { PrintButton } from './PrintButton'
+import { DateRangeFilter } from './DateRangeFilter'
 import styles from './page.module.scss'
 import { TransactionReportDocument } from '@/app/(app)/app/financial-accounts/[id]/preview/components/TransactionReportDocument'
 
@@ -71,13 +72,6 @@ export default async function FinancialAccountPreviewPage({ params, searchParams
       return true
     })
 
-  const queryWithoutDate = new URLSearchParams()
-  if (logoUrl) queryWithoutDate.set('logoUrl', logoUrl)
-
-  const clearDateHref = queryWithoutDate.toString()
-    ? `/app/financial-accounts/${account.id}/preview?${queryWithoutDate.toString()}`
-    : `/app/financial-accounts/${account.id}/preview`
-
   const report = buildTransactionReportData({
     header: {
       title: account.name,
@@ -104,22 +98,7 @@ export default async function FinancialAccountPreviewPage({ params, searchParams
         </Link>
 
         <Group className={styles.toolbarRight}>
-          <form method="get">
-            {logoUrl ? <input type="hidden" name="logoUrl" value={logoUrl} /> : null}
-            <Group align="end" gap="xs" wrap="nowrap">
-              <TextInput type="date" name="from" label="From" defaultValue={from || ''} size="sm" />
-              <TextInput type="date" name="to" label="To" defaultValue={to || ''} size="sm" />
-              <Button type="submit" variant="default" size="sm">
-                Apply
-              </Button>
-            </Group>
-          </form>
-
-          <Link href={clearDateHref}>
-            <Button variant="subtle" size="sm">
-              Clear date
-            </Button>
-          </Link>
+          <DateRangeFilter logoUrl={logoUrl} initialFrom={from} initialTo={to} />
           <PrintButton />
         </Group>
       </Group>

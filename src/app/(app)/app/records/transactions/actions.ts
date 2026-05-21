@@ -47,6 +47,7 @@ export type TransactionListItem = {
   transactionDate?: string
   amount?: number
   transactionFee?: number
+  currentBalance?: number
   runningBalance?: number
   transactionStatus?: TransactionStatus
   createdAt: string
@@ -66,6 +67,7 @@ export type TransactionFormInput = {
   referenceNumber?: string
   amount?: number
   transactionFee?: number
+  currentBalance?: number
   transactionStatus?: TransactionStatus | null
   receiptImageId?: string
   rawOcrText?: string
@@ -417,6 +419,10 @@ function mapTransactionInput(
     referenceNumber: input.referenceNumber?.trim() || undefined,
     amount: input.amount,
     transactionFee: input.transactionFee,
+    currentBalance:
+      typeof input.currentBalance === 'number' && Number.isFinite(input.currentBalance)
+        ? input.currentBalance
+        : undefined,
     transactionStatus: normalizeTransactionStatus(input.transactionStatus) ?? 'completed',
     isFundAllocation: input.isFundAllocation ?? false,
     ...(input.parentTransaction ? { parentTransaction: input.parentTransaction } : {}),
@@ -565,6 +571,7 @@ export async function getTransactions(): Promise<{
         transactionDate: doc.transactionDate ? String(doc.transactionDate) : undefined,
         amount: typeof doc.amount === 'number' ? doc.amount : undefined,
         transactionFee: typeof doc.transactionFee === 'number' ? doc.transactionFee : 0,
+        currentBalance: typeof doc.currentBalance === 'number' ? doc.currentBalance : undefined,
         runningBalance: typeof doc.runningBalance === 'number' ? doc.runningBalance : undefined,
         transactionStatus: normalizeTransactionStatus(doc.transactionStatus),
         createdAt: String(doc.createdAt || ''),
@@ -694,6 +701,7 @@ export async function createTransactionWithReceipt(formData: FormData): Promise<
       referenceNumber: String(formData.get('referenceNumber') || '').trim() || undefined,
       amount: normalizeAmount(formData.get('amount')),
       transactionFee: normalizeNonNegativeAmount(formData.get('transactionFee')),
+      currentBalance: normalizeNonNegativeAmount(formData.get('currentBalance')),
       transactionStatus: normalizeTransactionStatus(formData.get('transactionStatus')),
       receiptImageId: receiptResult?.id,
       rawOcrText: String(formData.get('rawOcrText') || '').trim() || receiptResult?.rawOcrText,
@@ -963,6 +971,7 @@ export async function updateTransactionWithReceipt(
       referenceNumber: String(formData.get('referenceNumber') || '').trim() || undefined,
       amount: normalizeAmount(formData.get('amount')),
       transactionFee: normalizeNonNegativeAmount(formData.get('transactionFee')),
+      currentBalance: normalizeNonNegativeAmount(formData.get('currentBalance')),
       transactionStatus: normalizeTransactionStatus(formData.get('transactionStatus')),
       receiptImageId,
       rawOcrText,

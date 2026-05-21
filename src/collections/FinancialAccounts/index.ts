@@ -39,7 +39,7 @@ const FinancialAccounts: CollectionConfig = {
       required: true,
       access: {
         update: ({ data, req }) => {
-          return hasSuperAdminRole(req.user?.userRoles) && !data?.bank
+          return hasSuperAdminRole(req.user?.userRoles) || !data?.bank
         },
       },
     },
@@ -61,7 +61,7 @@ const FinancialAccounts: CollectionConfig = {
       min: 0,
       access: {
         update: ({ data, req }) => {
-          return hasSuperAdminRole(req.user?.userRoles) && !data?.bank
+          return hasSuperAdminRole(req.user?.userRoles) || !data?.bank
         },
       },
     },
@@ -74,7 +74,7 @@ const FinancialAccounts: CollectionConfig = {
       min: 0,
       access: {
         update: ({ data, req }) => {
-          return hasSuperAdminRole(req.user?.userRoles) && !data?.bank
+          return hasSuperAdminRole(req.user?.userRoles) || !data?.bank
         },
       },
     },

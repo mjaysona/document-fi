@@ -12,6 +12,8 @@ type TransactionRecord = {
   transactionType?: string | null
   transactionStatus?: string | null
   runningBalance?: number | null
+  transactionDate?: string | null
+  createdAt?: string | null
 }
 
 type MaybeRelationship = string | { id?: string | number } | null | undefined
@@ -61,6 +63,7 @@ function getSignedAmount(transaction: TransactionRecord): number {
 export async function syncAccountBalances(args: {
   req: PayloadRequest
   accountIds: Array<string | null | undefined>
+  changedTransactionId?: string
 }) {
   const uniqueIds = [...new Set(args.accountIds.filter((value): value is string => Boolean(value)))]
   if (uniqueIds.length === 0) return
@@ -109,12 +112,40 @@ export async function syncAccountBalances(args: {
       req,
     })
 
+    const sortedTransactions = [...(transactions.docs as Array<TransactionRecord>)].sort((a, b) => {
+      const aDate = a.transactionDate
+        ? new Date(a.transactionDate).getTime()
+        : Number.POSITIVE_INFINITY
+      const bDate = b.transactionDate
+        ? new Date(b.transactionDate).getTime()
+        : Number.POSITIVE_INFINITY
+      if (aDate !== bDate) return aDate - bDate
+
+      const aCreated = a.createdAt ? new Date(a.createdAt).getTime() : Number.POSITIVE_INFINITY
+      const bCreated = b.createdAt ? new Date(b.createdAt).getTime() : Number.POSITIVE_INFINITY
+      if (aCreated !== bCreated) return aCreated - bCreated
+
+      return String(a.id).localeCompare(String(b.id))
+    })
+
     let runningBalance =
       typeof account.startingBalance === 'number'
         ? account.startingBalance
         : Number(account.startingBalance || 0)
 
-    for (const transaction of transactions.docs as Array<TransactionRecord>) {
+    for (const transaction of sortedTransactions) {
+      const isChangedTransaction =
+        typeof args.changedTransactionId === 'string' &&
+        args.changedTransactionId.length > 0 &&
+        String(transaction.id) === args.changedTransactionId
+      const hasPersistedRunningBalance = typeof transaction.runningBalance === 'number'
+
+      if (!isChangedTransaction && hasPersistedRunningBalance) {
+        // Preserve historical values to avoid mutating prior ledger rows.
+        runningBalance = Number(transaction.runningBalance)
+        continue
+      }
+
       const nextRunningBalance =
         transaction.transactionStatus === 'completed'
           ? runningBalance + getSignedAmount(transaction)

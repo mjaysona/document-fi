@@ -684,6 +684,9 @@ export default function AddTransactionPage() {
       formData.append('referenceNumber', form.values.referenceNumber.trim())
     formData.append('amount', String(parsedAmount))
     formData.append('transactionFee', String(parsedTransactionFee))
+    if (typeof selectedAccountCurrentBalance === 'number') {
+      formData.append('currentBalance', String(selectedAccountCurrentBalance))
+    }
     formData.append('transactionStatus', form.values.transactionStatus || 'completed')
     formData.append('isFundAllocation', String(form.values.isFundAllocation))
     if (form.values.parentTransaction)
@@ -850,11 +853,11 @@ export default function AddTransactionPage() {
             <Title order={5}>
               {isAllocationContext
                 ? isEditMode
-                  ? `Edit Allocated Funds${allocationTitleSuffix}`
-                  : `Allocate Funds${allocationTitleSuffix}`
+                  ? `Edit allocated funds${allocationTitleSuffix}`
+                  : `Allocate funds${allocationTitleSuffix}`
                 : isEditMode
-                  ? 'Edit Transaction'
-                  : 'New Transaction'}
+                  ? 'Edit transaction'
+                  : 'New transaction'}
             </Title>
           </Group>
           <Group>
@@ -865,7 +868,7 @@ export default function AddTransactionPage() {
                 onClick={handleSaveAndAllocate}
                 loading={isSaving || overlayVisible || isLoading}
               >
-                Allocate Funds
+                Allocate funds
               </Button>
             )}
             {!isAllocationContext && (
@@ -935,6 +938,7 @@ export default function AddTransactionPage() {
                       onChange={(value) => form.setFieldValue('financialAccount', value)}
                       error={form.errors.financialAccount}
                       required
+                      disabled={isEditMode}
                     />
                     <NumberInput
                       label="Current Balance"
@@ -945,7 +949,7 @@ export default function AddTransactionPage() {
                       fixedDecimalScale
                       thousandSeparator=","
                       hideControls
-                      readOnly
+                      disabled
                       placeholder="Select financial account"
                     />
                   </Group>
@@ -984,8 +988,10 @@ export default function AddTransactionPage() {
                     clearable={false}
                     error={form.errors.transactionType}
                     required
-                    readOnly={
-                      (!form.values.financialAccount && !isAllocationContext) || isAllocationContext
+                    disabled={
+                      (!form.values.financialAccount && !isAllocationContext) ||
+                      isAllocationContext ||
+                      isEditMode
                     }
                   />
                 </Group>
@@ -1001,8 +1007,11 @@ export default function AddTransactionPage() {
                     onChange={(value) => form.setFieldValue('sourceAccount', value)}
                     error={form.errors.sourceAccount}
                     required
-                    disabled={!isAllocationContext && !form.values.financialAccount}
-                    readOnly={!isAllocationContext && form.values.transactionType === 'credit'}
+                    disabled={
+                      (!isAllocationContext && !form.values.financialAccount) ||
+                      (!isAllocationContext && form.values.transactionType === 'credit') ||
+                      isEditMode
+                    }
                   />
                   <Select
                     label="Destination Bank"
@@ -1015,8 +1024,10 @@ export default function AddTransactionPage() {
                     onChange={(value) => form.setFieldValue('destinationAccount', value)}
                     error={form.errors.destinationAccount}
                     required
-                    disabled={!isAllocationContext && !form.values.financialAccount}
-                    readOnly={!isAllocationContext && form.values.transactionType === 'debit'}
+                    disabled={
+                      (!isAllocationContext && !form.values.financialAccount) ||
+                      (isEditMode && form.values.transactionType === 'debit')
+                    }
                   />
                 </Group>
                 <Group grow>
@@ -1026,7 +1037,10 @@ export default function AddTransactionPage() {
                     onChange={(e) => form.setFieldValue('from', e.currentTarget.value)}
                     error={form.errors.from}
                     required
-                    disabled={!isAllocationContext && !form.values.financialAccount}
+                    disabled={
+                      (!isAllocationContext && !form.values.financialAccount) ||
+                      (isEditMode && form.values.transactionType === 'credit')
+                    }
                   />
                   <TextInput
                     label="To"
@@ -1034,7 +1048,10 @@ export default function AddTransactionPage() {
                     onChange={(e) => form.setFieldValue('to', e.currentTarget.value)}
                     error={form.errors.to}
                     required
-                    disabled={!isAllocationContext && !form.values.financialAccount}
+                    disabled={
+                      (!isAllocationContext && !form.values.financialAccount) ||
+                      (isEditMode && form.values.transactionType === 'debit')
+                    }
                   />
                 </Group>
                 <Group grow>
@@ -1064,7 +1081,7 @@ export default function AddTransactionPage() {
                     }
                     error={form.errors.transactionStatus}
                     required
-                    disabled={!isAllocationContext && !form.values.financialAccount}
+                    disabled={(!isAllocationContext && !form.values.financialAccount) || isEditMode}
                   />
                 </Group>
                 <Group grow>
@@ -1080,6 +1097,7 @@ export default function AddTransactionPage() {
                     thousandSeparator=","
                     hideControls
                     required
+                    disabled={isEditMode}
                   />
                   <NumberInput
                     label="Transaction Fee"
@@ -1091,6 +1109,7 @@ export default function AddTransactionPage() {
                     fixedDecimalScale
                     thousandSeparator=","
                     hideControls
+                    disabled={isEditMode}
                   />
                 </Group>
                 {!isAllocationContext && (
@@ -1113,7 +1132,7 @@ export default function AddTransactionPage() {
                       fixedDecimalScale
                       thousandSeparator=","
                       hideControls
-                      readOnly
+                      disabled
                       placeholder="Enter account, type, and amount"
                     />
                   </div>
@@ -1124,12 +1143,14 @@ export default function AddTransactionPage() {
                   onChange={(e) => form.setFieldValue('description', e.currentTarget.value)}
                   error={form.errors.description}
                   required
+                  disabled={isEditMode}
                 />
                 <Textarea
                   label="Particulars"
                   value={form.values.particulars}
                   onChange={(e) => form.setFieldValue('particulars', e.currentTarget.value)}
                   minRows={2}
+                  disabled={isEditMode}
                 />
               </Stack>
             </Card>

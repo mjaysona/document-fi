@@ -58,7 +58,6 @@ export function TransactionReportDocument({ report }: TransactionReportDocumentP
         <div className={styles.headerLeft}>
           {header.logoUrl && <img src={header.logoUrl} alt="Logo" className={styles.logo} />}
           <h1 className={styles.title}>{header.title}</h1>
-          <p className={styles.meta}>Reference #: {header.referenceNumber || '-'}</p>
         </div>
         <p className={styles.meta}>Date: {formatDate(header.date)}</p>
       </header>

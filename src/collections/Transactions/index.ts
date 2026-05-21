@@ -122,6 +122,14 @@ const Transactions: CollectionConfig = {
       defaultValue: 0,
     },
     {
+      name: 'currentBalance',
+      label: 'Current Balance',
+      type: 'number',
+      admin: {
+        readOnly: true,
+      },
+    },
+    {
       name: 'runningBalance',
       label: 'Running Balance',
       type: 'number',
@@ -249,6 +257,7 @@ const Transactions: CollectionConfig = {
             doc: doc as Record<string, unknown>,
             previousDoc: previousDoc as Record<string, unknown>,
           }),
+          changedTransactionId: doc?.id ? String(doc.id) : undefined,
         })
 
         return doc

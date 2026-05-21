@@ -370,6 +370,11 @@ export default function TransactionsPage() {
       },
     },
     {
+      key: 'currentBalance',
+      label: 'Current Balance',
+      render: (row) => formatCurrency(row.parent.currentBalance),
+    },
+    {
       key: 'totalAmount',
       label: 'Total Amount',
       render: (row) => formatTotalAmount(row.parent.amount, row.parent.transactionFee),
@@ -382,15 +387,32 @@ export default function TransactionsPage() {
     {
       key: 'transactionStatus',
       label: 'Status',
-      render: (row) => (
-        <Badge
-          color={row.parent.transactionStatus === 'failed' ? 'red' : 'teal'}
-          variant="light"
-          tt="capitalize"
-        >
-          {row.parent.transactionStatus || '-'}
-        </Badge>
-      ),
+      render: (row) => {
+        const totalAllocatedWithFees = row.children.reduce(
+          (sum, child) => sum + ((child.amount || 0) + (child.transactionFee || 0)),
+          0,
+        )
+        const isForAllocation =
+          row.parent.isFundAllocation && totalAllocatedWithFees !== (row.parent.amount || 0)
+
+        if (isForAllocation) {
+          return (
+            <Badge color="yellow" variant="light" tt="capitalize">
+              For allocation
+            </Badge>
+          )
+        }
+
+        return (
+          <Badge
+            color={row.parent.transactionStatus === 'failed' ? 'red' : 'teal'}
+            variant="light"
+            tt="capitalize"
+          >
+            {row.parent.transactionStatus || '-'}
+          </Badge>
+        )
+      },
     },
   ]
 
@@ -560,199 +582,245 @@ export default function TransactionsPage() {
           )
         }}
         isRowExpanded={(row) => expandedRows.includes(row.parent.id)}
-        renderExpandedRow={(row: TransactionParentRow): React.ReactNode => (
-          <Stack gap="md" p="sm" className={classes.expandedContent}>
-            <Group gap="md">
-              <Text size="xs">Created: {formatDate(row.parent.createdAt)}</Text>
-              <Text size="xs">Last Updated: {formatDate(row.parent.updatedAt)}</Text>
-            </Group>
-            <div className={classes.detailGrid}>
-              <Flex direction="column" className={classes.detailItem}>
-                <Text size="xs" c="dimmed">
-                  Reference #
-                </Text>
-                <Text size="sm">{row.parent.referenceNumber || '-'}</Text>
-              </Flex>
+        renderExpandedRow={(row: TransactionParentRow): React.ReactNode => {
+          const totalAllocated = row.children.reduce(
+            (sum, child) => sum + ((child.amount || 0) + (child.transactionFee || 0)),
+            0,
+          )
+          const parentAmount = row.parent.amount || 0
+          const allocationStatus =
+            totalAllocated === parentAmount
+              ? 'complete'
+              : totalAllocated > parentAmount
+                ? 'exceeded'
+                : 'partial'
+          const allocationColor =
+            allocationStatus === 'complete'
+              ? 'green'
+              : allocationStatus === 'exceeded'
+                ? 'red'
+                : 'orange'
 
-              <Flex direction="column" className={classes.detailItem}>
-                <Text size="xs" c="dimmed">
-                  Transaction Date
-                </Text>
-                <Text size="sm">{formatDate(row.parent.transactionDate)}</Text>
-              </Flex>
+          return (
+            <Stack gap="md" p="sm" className={classes.expandedContent}>
+              <Group gap="md" justify="space-between">
+                <Group>
+                  <Text size="xs">Created: {formatDate(row.parent.createdAt)}</Text>
+                  <Text size="xs">Last Updated: {formatDate(row.parent.updatedAt)}</Text>
+                </Group>
+                {row.parent.isFundAllocation && (
+                  <Text size="xs" fw={500} c={allocationColor}>
+                    Allocated funds: {formatCurrency(totalAllocated)}/{formatCurrency(parentAmount)}
+                  </Text>
+                )}
+              </Group>
+              <div className={classes.detailGrid}>
+                <Flex direction="column" className={classes.detailItem}>
+                  <Text size="xs" c="dimmed">
+                    Reference #
+                  </Text>
+                  <Text size="sm">{row.parent.referenceNumber || '-'}</Text>
+                </Flex>
 
-              <Flex direction="column" className={classes.detailItem}>
-                <Text size="xs" c="dimmed">
-                  Type
-                </Text>
-                <Text size="sm" tt="capitalize">
-                  {row.parent.transactionType || '-'}
-                </Text>
-              </Flex>
+                <Flex direction="column" className={classes.detailItem}>
+                  <Text size="xs" c="dimmed">
+                    Transaction Date
+                  </Text>
+                  <Text size="sm">{formatDate(row.parent.transactionDate)}</Text>
+                </Flex>
 
-              <Flex direction="column" className={classes.detailItem}>
-                <Text size="xs" c="dimmed">
-                  Status
-                </Text>
-                <Text size="sm" tt="capitalize">
-                  {row.parent.transactionStatus || '-'}
-                </Text>
-              </Flex>
+                <Flex direction="column" className={classes.detailItem}>
+                  <Text size="xs" c="dimmed">
+                    Type
+                  </Text>
+                  <Text size="sm" tt="capitalize">
+                    {row.parent.transactionType || '-'}
+                  </Text>
+                </Flex>
 
-              <Flex direction="column" className={classes.detailItem}>
-                <Text size="xs" c="dimmed">
-                  Source Bank
-                </Text>
-                <Text size="sm">{row.parent.sourceAccountName || '-'}</Text>
-              </Flex>
+                <Flex direction="column" className={classes.detailItem}>
+                  <Text size="xs" c="dimmed">
+                    Status
+                  </Text>
+                  <Text size="sm" tt="capitalize">
+                    {row.parent.transactionStatus || '-'}
+                  </Text>
+                </Flex>
 
-              <Flex direction="column" className={classes.detailItem}>
-                <Text size="xs" c="dimmed">
-                  Destination Bank
-                </Text>
-                <Text size="sm">{row.parent.destinationAccountName || '-'}</Text>
-              </Flex>
+                <Flex direction="column" className={classes.detailItem}>
+                  <Text size="xs" c="dimmed">
+                    Source Bank
+                  </Text>
+                  <Text size="sm">{row.parent.sourceAccountName || '-'}</Text>
+                </Flex>
 
-              <Flex direction="column" className={classes.detailItem}>
-                <Text size="xs" c="dimmed">
-                  Financial Account
-                </Text>
-                <Text size="sm">{row.parent.financialAccountName || '-'}</Text>
-              </Flex>
+                <Flex direction="column" className={classes.detailItem}>
+                  <Text size="xs" c="dimmed">
+                    Destination Bank
+                  </Text>
+                  <Text size="sm">{row.parent.destinationAccountName || '-'}</Text>
+                </Flex>
 
-              <Flex direction="column" className={classes.detailItem}>
-                <Text size="xs" c="dimmed">
-                  From
-                </Text>
-                <Text size="sm">{row.parent.from || '-'}</Text>
-              </Flex>
+                <Flex direction="column" className={classes.detailItem}>
+                  <Text size="xs" c="dimmed">
+                    Financial Account
+                  </Text>
+                  <Text size="sm">{row.parent.financialAccountName || '-'}</Text>
+                </Flex>
 
-              <Flex direction="column" className={classes.detailItem}>
-                <Text size="xs" c="dimmed">
-                  To
-                </Text>
-                <Text size="sm">{row.parent.to || '-'}</Text>
-              </Flex>
+                <Flex direction="column" className={classes.detailItem}>
+                  <Text size="xs" c="dimmed">
+                    From
+                  </Text>
+                  <Text size="sm">{row.parent.from || '-'}</Text>
+                </Flex>
 
-              <Flex direction="column" className={classes.detailItem}>
-                <Text size="xs" c="dimmed">
-                  Amount
-                </Text>
-                <Text size="sm">{formatCurrency(row.parent.amount)}</Text>
-              </Flex>
+                <Flex direction="column" className={classes.detailItem}>
+                  <Text size="xs" c="dimmed">
+                    To
+                  </Text>
+                  <Text size="sm">{row.parent.to || '-'}</Text>
+                </Flex>
 
-              <Flex direction="column" className={classes.detailItem}>
-                <Text size="xs" c="dimmed">
-                  Fee
-                </Text>
-                <Text size="sm">{formatCurrency(row.parent.transactionFee)}</Text>
-              </Flex>
+                <Flex direction="column" className={classes.detailItem}>
+                  <Text size="xs" c="dimmed">
+                    Amount
+                  </Text>
+                  <Text size="sm">{formatCurrency(row.parent.amount)}</Text>
+                </Flex>
 
-              <Flex direction="column" className={classes.detailItem}>
-                <Text size="xs" c="dimmed">
-                  Total Amount
-                </Text>
-                <Text size="sm">
-                  {formatTotalAmount(row.parent.amount, row.parent.transactionFee)}
-                </Text>
-              </Flex>
+                <Flex direction="column" className={classes.detailItem}>
+                  <Text size="xs" c="dimmed">
+                    Fee
+                  </Text>
+                  <Text size="sm">{formatCurrency(row.parent.transactionFee)}</Text>
+                </Flex>
 
-              <Flex direction="column" className={classes.detailItem}>
-                <Text size="xs" c="dimmed">
-                  Running Balance
-                </Text>
-                <Text size="sm">{formatCurrency(row.parent.runningBalance)}</Text>
-              </Flex>
+                <Flex direction="column" className={classes.detailItem}>
+                  <Text size="xs" c="dimmed">
+                    Total Amount
+                  </Text>
+                  <Text size="sm">
+                    {formatTotalAmount(row.parent.amount, row.parent.transactionFee)}
+                  </Text>
+                </Flex>
 
-              <Flex direction="column" className={classes.detailItem}>
-                <Text size="xs" c="dimmed">
-                  Fund Allocation
-                </Text>
-                <Text size="sm">{row.parent.isFundAllocation ? 'Yes' : 'No'}</Text>
-              </Flex>
-              <Flex
-                direction="column"
-                className={`${classes.detailItem} ${classes.detailItemWide}`}
-              >
-                <Text size="xs" c="dimmed">
-                  Description
-                </Text>
-                <Text size="sm">{row.parent.description || '-'}</Text>
-              </Flex>
-              {row.parent.particulars ? (
+                <Flex direction="column" className={classes.detailItem}>
+                  <Text size="xs" c="dimmed">
+                    Current Balance
+                  </Text>
+                  <Text size="sm">{formatCurrency(row.parent.currentBalance)}</Text>
+                </Flex>
+
+                <Flex direction="column" className={classes.detailItem}>
+                  <Text size="xs" c="dimmed">
+                    Running Balance
+                  </Text>
+                  <Text size="sm">{formatCurrency(row.parent.runningBalance)}</Text>
+                </Flex>
+
+                <Flex direction="column" className={classes.detailItem}>
+                  <Text size="xs" c="dimmed">
+                    Fund Allocation
+                  </Text>
+                  <Text size="sm">{row.parent.isFundAllocation ? 'Yes' : 'No'}</Text>
+                </Flex>
                 <Flex
                   direction="column"
                   className={`${classes.detailItem} ${classes.detailItemWide}`}
                 >
                   <Text size="xs" c="dimmed">
-                    Particulars
+                    Description
                   </Text>
-                  <Text size="sm">{row.parent.particulars}</Text>
+                  <Text size="sm">{row.parent.description || '-'}</Text>
                 </Flex>
-              ) : null}
-            </div>
+                {row.parent.particulars ? (
+                  <Flex
+                    direction="column"
+                    className={`${classes.detailItem} ${classes.detailItemWide}`}
+                  >
+                    <Text size="xs" c="dimmed">
+                      Particulars
+                    </Text>
+                    <Text size="sm">{row.parent.particulars}</Text>
+                  </Flex>
+                ) : null}
+              </div>
 
-            {row.children.length > 0 && (
-              <>
-                <Text fw={600} size="sm" mt="xs">
-                  Child Transactions
-                </Text>
-                <Table withTableBorder withColumnBorders striped highlightOnHover>
-                  <Table.Thead>
-                    <Table.Tr>
-                      <Table.Th>Reference #</Table.Th>
-                      <Table.Th>Date</Table.Th>
-                      <Table.Th>Source to Destination</Table.Th>
-                      <Table.Th>Amount</Table.Th>
-                      <Table.Th>Fee</Table.Th>
-                      <Table.Th>Status</Table.Th>
-                    </Table.Tr>
-                  </Table.Thead>
-                  <Table.Tbody>
-                    {row.children.map((child: TransactionListItem) => (
-                      <Table.Tr key={child.id}>
-                        <Table.Td>
-                          <span
-                            style={{
-                              cursor: 'pointer',
-                              textDecoration: 'underline',
-                            }}
-                            onClick={(event) => {
-                              event.stopPropagation()
-                              router.push(`/app/records/transactions/${child.id}/edit`)
-                            }}
-                          >
-                            {child.referenceNumber || '-'}
-                          </span>
-                        </Table.Td>
-                        <Table.Td>{formatDate(child.transactionDate)}</Table.Td>
-                        <Table.Td>
-                          {(() => {
-                            const source = child.sourceAccountName || '-'
-                            const destination = child.destinationAccountName || '-'
-                            if (source === '-' && destination === '-') return '-'
-                            return `${source} to ${destination}`
-                          })()}
-                        </Table.Td>
-                        <Table.Td>{formatCurrency(child.amount)}</Table.Td>
-                        <Table.Td>{formatCurrency(child.transactionFee)}</Table.Td>
-                        <Table.Td>
-                          <Badge
-                            color={child.transactionStatus === 'failed' ? 'red' : 'teal'}
-                            variant="light"
-                            tt="capitalize"
-                          >
-                            {child.transactionStatus || '-'}
-                          </Badge>
-                        </Table.Td>
+              {row.children.length > 0 && (
+                <>
+                  <Group justify="space-between" align="center">
+                    <Text fw={600} size="sm" mt="xs">
+                      Child transactions
+                    </Text>
+                    <Button
+                      size="xs"
+                      variant="light"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        router.push(`/app/records/transactions/${row.parent.id}/allocate`)
+                      }}
+                    >
+                      Allocate funds
+                    </Button>
+                  </Group>
+                  <Table withTableBorder withColumnBorders striped highlightOnHover>
+                    <Table.Thead>
+                      <Table.Tr>
+                        <Table.Th>Reference #</Table.Th>
+                        <Table.Th>Date</Table.Th>
+                        <Table.Th>Source to Destination</Table.Th>
+                        <Table.Th>Amount</Table.Th>
+                        <Table.Th>Fee</Table.Th>
+                        <Table.Th>Status</Table.Th>
                       </Table.Tr>
-                    ))}
-                  </Table.Tbody>
-                </Table>
-              </>
-            )}
-          </Stack>
-        )}
+                    </Table.Thead>
+                    <Table.Tbody>
+                      {row.children.map((child: TransactionListItem) => (
+                        <Table.Tr key={child.id}>
+                          <Table.Td>
+                            <span
+                              style={{
+                                cursor: 'pointer',
+                                textDecoration: 'underline',
+                              }}
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                router.push(`/app/records/transactions/${child.id}/edit`)
+                              }}
+                            >
+                              {child.referenceNumber || '-'}
+                            </span>
+                          </Table.Td>
+                          <Table.Td>{formatDate(child.transactionDate)}</Table.Td>
+                          <Table.Td>
+                            {(() => {
+                              const source = child.sourceAccountName || '-'
+                              const destination = child.destinationAccountName || '-'
+                              if (source === '-' && destination === '-') return '-'
+                              return `${source} to ${destination}`
+                            })()}
+                          </Table.Td>
+                          <Table.Td>{formatCurrency(child.amount)}</Table.Td>
+                          <Table.Td>{formatCurrency(child.transactionFee)}</Table.Td>
+                          <Table.Td>
+                            <Badge
+                              color={child.transactionStatus === 'failed' ? 'red' : 'teal'}
+                              variant="light"
+                              tt="capitalize"
+                            >
+                              {child.transactionStatus || '-'}
+                            </Badge>
+                          </Table.Td>
+                        </Table.Tr>
+                      ))}
+                    </Table.Tbody>
+                  </Table>
+                </>
+              )}
+            </Stack>
+          )
+        }}
       />
     </div>
   )
