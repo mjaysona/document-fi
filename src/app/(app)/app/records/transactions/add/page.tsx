@@ -848,7 +848,7 @@ export default function AddTransactionPage() {
 
   return (
     <div className={classes.wrapper}>
-      <div className={classes.card} style={{ flex: 1, marginBottom: 16 }}>
+      <div style={{ flex: 1, marginBottom: 16 }}>
         <Group mb="md" justify="space-between">
           <Group gap="sm" align="center">
             <ActionIcon
@@ -907,8 +907,18 @@ export default function AddTransactionPage() {
         {isLoading ? (
           <Text c="dimmed">Loading...</Text>
         ) : (
-          <Group grow align="flex-start" wrap="nowrap" gap="md">
-            <Card withBorder radius="md" style={{ flex: 1, position: 'relative' }}>
+          <Group
+            align="flex-start"
+            wrap="nowrap"
+            gap="md"
+            className={classes.transactionFormLayout}
+          >
+            <Card
+              withBorder
+              radius="md"
+              style={{ position: 'relative' }}
+              className={classes.transactionDetailsPane}
+            >
               <LoadingOverlay
                 visible={overlayVisible}
                 zIndex={100}
@@ -1164,7 +1174,7 @@ export default function AddTransactionPage() {
               </Stack>
             </Card>
 
-            <div style={{ minWidth: 320 }}>
+            <div className={classes.transactionReceiptPane}>
               {isEditMode ? (
                 <Button
                   fullWidth
