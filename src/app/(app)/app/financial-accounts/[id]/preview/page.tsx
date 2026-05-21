@@ -51,6 +51,9 @@ export default async function FinancialAccountPreviewPage({ params, searchParams
 
   const account = accountResult.data
   const allTransactions = transactionsResult.success ? transactionsResult.data : []
+  const allAccountParentTransactions = allTransactions.filter(
+    (item) => item.financialAccountId === id && !item.parentTransaction,
+  )
 
   let fromDate = parseDateInput(from, 'start')
   let toDate = parseDateInput(to, 'end')
@@ -94,6 +97,15 @@ export default async function FinancialAccountPreviewPage({ params, searchParams
       toDate: toDate?.toISOString() ?? null,
     },
     transactions: accountTransactions,
+    allAccountParentTransactions,
+    openingBalance:
+      typeof account.startingBalance === 'number'
+        ? account.startingBalance
+        : Number(account.startingBalance || 0),
+    range: {
+      fromDate: fromDate?.toISOString() ?? null,
+      toDate: toDate?.toISOString() ?? null,
+    },
   })
 
   return (

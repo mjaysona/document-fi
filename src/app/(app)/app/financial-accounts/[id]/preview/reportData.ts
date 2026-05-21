@@ -39,6 +39,11 @@ export type TransactionReportData = {
   rows: TransactionReportTableRow[]
 }
 
+type ReportRange = {
+  fromDate?: string | null
+  toDate?: string | null
+}
+
 const formatDate = (value?: string): string => {
   if (!value) return '-'
   const parsed = new Date(value)
@@ -82,6 +87,33 @@ const normalizeString = (value?: string): string => {
   return normalized || '-'
 }
 
+const toNumberOrZero = (value: unknown): number => {
+  if (typeof value === 'number' && Number.isFinite(value)) return value
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
+const getTransactionImpact = (item: TransactionListItem): number => {
+  if (item.transactionStatus !== 'completed') return 0
+
+  const amount = toNumberOrZero(item.amount)
+  const fee = Math.max(toNumberOrZero(item.transactionFee), 0)
+  if (amount <= 0) return 0
+
+  const total = amount + fee
+  const type = normalizeType(item.transactionType)
+
+  if (type === 'debit') return total
+  if (type === 'credit') return -total
+  return 0
+}
+
+const toBoundaryTimestamp = (value?: string | null): number | null => {
+  if (!value) return null
+  const parsed = new Date(value).getTime()
+  return Number.isNaN(parsed) ? null : parsed
+}
+
 const sortTransactions = (transactions: TransactionListItem[]): TransactionListItem[] => {
   return [...transactions].sort((a, b) => {
     const byDate = toTimestamp(a.transactionDate) - toTimestamp(b.transactionDate)
@@ -97,6 +129,9 @@ const sortTransactions = (transactions: TransactionListItem[]): TransactionListI
 export function buildTransactionReportData(args: {
   header: TransactionReportHeaderData
   transactions: TransactionListItem[]
+  allAccountParentTransactions?: TransactionListItem[]
+  openingBalance?: number
+  range?: ReportRange
 }): TransactionReportData {
   const sortedTransactions = sortTransactions(args.transactions)
   const childrenByParentId = new Map<string, TransactionListItem[]>()
@@ -112,48 +147,90 @@ export function buildTransactionReportData(args: {
     }
   }
 
-  const rows: TransactionReportTableRow[] = sortedTransactions
-    .filter((item) => !item.parentTransaction) // Only include parent transactions
-    .map((item) => {
-      const children = childrenByParentId.get(item.id) || []
-      return {
-        referenceNumber: normalizeString(item.referenceNumber),
-        date: formatDate(item.transactionDate),
-        sourceBank: normalizeString(item.sourceAccountCode),
-        destinationBank: normalizeString(item.destinationAccountCode),
-        type: normalizeType(item.transactionType),
-        totalAmount:
-          typeof item.amount === 'number' || typeof item.transactionFee === 'number'
-            ? (typeof item.amount === 'number' ? item.amount : 0) +
-              (typeof item.transactionFee === 'number' ? item.transactionFee : 0)
-            : null,
-        runningBalance: typeof item.runningBalance === 'number' ? item.runningBalance : null,
-        isFundAllocation: item.isFundAllocation ?? false,
-        children:
-          item.isFundAllocation && children.length > 0
-            ? children.map((child) => ({
-                referenceNumber: normalizeString(child.referenceNumber),
-                date: formatDate(child.transactionDate),
-                sourceBank: normalizeString(child.sourceAccountCode),
-                destinationBank: normalizeString(child.destinationAccountCode),
-                type: normalizeType(child.transactionType),
-                totalAmount:
-                  typeof child.amount === 'number' || typeof child.transactionFee === 'number'
-                    ? (typeof child.amount === 'number' ? child.amount : 0) +
-                      (typeof child.transactionFee === 'number' ? child.transactionFee : 0)
-                    : null,
-                runningBalance:
-                  typeof child.runningBalance === 'number' ? child.runningBalance : null,
-              }))
-            : undefined,
+  const parentTransactions = sortedTransactions.filter((item) => !item.parentTransaction)
+
+  const fromTimestamp = toBoundaryTimestamp(args.range?.fromDate)
+  const toTimestampBoundary = toBoundaryTimestamp(args.range?.toDate)
+  const hasRangeFilter = fromTimestamp !== null || toTimestampBoundary !== null
+
+  const runningBalanceByParentId = new Map<string, number | null>()
+
+  if (hasRangeFilter) {
+    const allAccountParents = sortTransactions(
+      (args.allAccountParentTransactions || parentTransactions).filter(
+        (item) => !item.parentTransaction,
+      ),
+    )
+
+    const baseOpeningBalance =
+      typeof args.openingBalance === 'number' && Number.isFinite(args.openingBalance)
+        ? args.openingBalance
+        : 0
+
+    let openingBalance = baseOpeningBalance
+    if (fromTimestamp !== null) {
+      for (const item of allAccountParents) {
+        const transactionTime = toBoundaryTimestamp(item.transactionDate)
+        if (transactionTime === null || transactionTime >= fromTimestamp) continue
+        openingBalance += getTransactionImpact(item)
       }
-    })
+    }
+
+    let runningBalance = openingBalance
+    for (const item of parentTransactions) {
+      if (item.transactionStatus === 'completed') {
+        runningBalance += getTransactionImpact(item)
+        runningBalanceByParentId.set(item.id, runningBalance)
+      } else {
+        runningBalanceByParentId.set(item.id, null)
+      }
+    }
+  } else {
+    for (const item of parentTransactions) {
+      runningBalanceByParentId.set(
+        item.id,
+        typeof item.runningBalance === 'number' ? item.runningBalance : null,
+      )
+    }
+  }
+
+  const rows: TransactionReportTableRow[] = parentTransactions.map((item) => {
+    const children = childrenByParentId.get(item.id) || []
+    return {
+      referenceNumber: normalizeString(item.referenceNumber),
+      date: formatDate(item.transactionDate),
+      sourceBank: normalizeString(item.sourceAccountCode),
+      destinationBank: normalizeString(item.destinationAccountCode),
+      type: normalizeType(item.transactionType),
+      totalAmount:
+        typeof item.amount === 'number' || typeof item.transactionFee === 'number'
+          ? (typeof item.amount === 'number' ? item.amount : 0) +
+            (typeof item.transactionFee === 'number' ? item.transactionFee : 0)
+          : null,
+      runningBalance: runningBalanceByParentId.get(item.id) ?? null,
+      isFundAllocation: item.isFundAllocation ?? false,
+      children:
+        item.isFundAllocation && children.length > 0
+          ? children.map((child) => ({
+              referenceNumber: normalizeString(child.referenceNumber),
+              date: formatDate(child.transactionDate),
+              sourceBank: normalizeString(child.sourceAccountCode),
+              destinationBank: normalizeString(child.destinationAccountCode),
+              type: normalizeType(child.transactionType),
+              totalAmount:
+                typeof child.amount === 'number' || typeof child.transactionFee === 'number'
+                  ? (typeof child.amount === 'number' ? child.amount : 0) +
+                    (typeof child.transactionFee === 'number' ? child.transactionFee : 0)
+                  : null,
+              runningBalance:
+                typeof child.runningBalance === 'number' ? child.runningBalance : null,
+            }))
+          : undefined,
+    }
+  })
 
   const barsByDate = new Map<string, { credit: number; debit: number }>()
   const lineByDate = new Map<string, number | null>()
-
-  // Only include parent transactions in chart data
-  const parentTransactions = sortedTransactions.filter((item) => !item.parentTransaction)
 
   for (const item of parentTransactions) {
     const dateKey = toDateKey(item.transactionDate)
@@ -171,9 +248,9 @@ export function buildTransactionReportData(args: {
 
     barsByDate.set(dateKey, bar)
 
-    if (typeof item.runningBalance === 'number') {
-      // Running balance policy: use stored values only, no computed fallback.
-      lineByDate.set(dateKey, item.runningBalance)
+    const computedBalance = runningBalanceByParentId.get(item.id)
+    if (typeof computedBalance === 'number') {
+      lineByDate.set(dateKey, computedBalance)
     } else if (!lineByDate.has(dateKey)) {
       lineByDate.set(dateKey, null)
     }

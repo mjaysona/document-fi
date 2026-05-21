@@ -741,7 +741,17 @@ export default function AddTransactionPage() {
         setFeedback({ type: 'success', message: 'Transaction created successfully.' })
         // Wait a moment to show the success message before redirecting
         await new Promise((resolve) => setTimeout(resolve, 800))
-        router.push(`/app/records/transactions/${result.id}/edit`)
+
+        if (isAllocationContext) {
+          const parentTransactionId = form.values.parentTransaction || transactionId
+          if (parentTransactionId) {
+            router.push(`/app/records/transactions/${parentTransactionId}/edit`)
+          } else {
+            router.push(`/app/records/transactions`)
+          }
+        } else {
+          router.push(`/app/records/transactions`)
+        }
       } else {
         if (result.error === 'Reference number already exists.') {
           form.setFieldError('referenceNumber', result.error)
@@ -989,9 +999,7 @@ export default function AddTransactionPage() {
                     error={form.errors.transactionType}
                     required
                     disabled={
-                      (!form.values.financialAccount && !isAllocationContext) ||
-                      isAllocationContext ||
-                      isEditMode
+                      (!form.values.financialAccount && !isAllocationContext) || isAllocationContext // || isEditMode
                     }
                   />
                 </Group>
@@ -1097,7 +1105,7 @@ export default function AddTransactionPage() {
                     thousandSeparator=","
                     hideControls
                     required
-                    disabled={isEditMode}
+                    // disabled={isEditMode}
                   />
                   <NumberInput
                     label="Transaction Fee"
@@ -1109,7 +1117,7 @@ export default function AddTransactionPage() {
                     fixedDecimalScale
                     thousandSeparator=","
                     hideControls
-                    disabled={isEditMode}
+                    // disabled={isEditMode}
                   />
                 </Group>
                 {!isAllocationContext && (

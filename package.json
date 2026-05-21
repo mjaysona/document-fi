@@ -14,6 +14,7 @@
     "lint": "cross-env NODE_OPTIONS=--no-deprecation next lint",
     "payload": "payload",
     "seed": "payload run ./src/scripts/seed.ts -- standalone",
+    "resync:balances": "payload run ./src/scripts/resync-transaction-balances.ts -- standalone",
     "assign": "payload run ./src/scripts/assign-roles.ts -- standalone",
     "standalone-script": "payload run ./src/scripts/standalone-script.ts",
     "start": "cross-env NODE_OPTIONS=--no-deprecation next start",

@@ -37,6 +37,12 @@ const formatType = (value: string): string => {
   return '-'
 }
 
+const getTypeColor = (value: string): string | undefined => {
+  if (value === 'credit') return '#2f9e44'
+  if (value === 'debit') return '#e03131'
+  return undefined
+}
+
 export function TransactionReportDocument({ report }: TransactionReportDocumentProps) {
   const { header, lineChartData, barChartData, rows } = report
 
@@ -175,7 +181,9 @@ export function TransactionReportDocument({ report }: TransactionReportDocumentP
                     <td>{row.date}</td>
                     <td>{row.sourceBank}</td>
                     <td>{row.destinationBank}</td>
-                    <td>{formatType(row.type)}</td>
+                    <td style={{ color: getTypeColor(row.type), fontWeight: 600 }}>
+                      {formatType(row.type)}
+                    </td>
                     <td className={styles.cellRight}>{formatMoney(row.totalAmount)}</td>
                     <td className={styles.cellRight}>{formatMoney(row.runningBalance)}</td>
                   </tr>
@@ -190,7 +198,9 @@ export function TransactionReportDocument({ report }: TransactionReportDocumentP
                           <td>{child.date}</td>
                           <td>{child.sourceBank}</td>
                           <td>{child.destinationBank}</td>
-                          <td>{formatType(child.type)}</td>
+                          <td style={{ color: getTypeColor(child.type), fontWeight: 600 }}>
+                            {formatType(child.type)}
+                          </td>
                           <td className={styles.cellRight}>{formatMoney(child.totalAmount)}</td>
                           <td className={styles.cellRight}>{formatMoney(child.runningBalance)}</td>
                         </tr>

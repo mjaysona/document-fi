@@ -1,7 +1,7 @@
 import type { CollectionConfig, Field } from 'payload'
 import { createdByField } from '@/fields/CreatedByField'
 import { updatedByField } from '@/fields/UpdatedByField'
-import { getAffectedAccountIds, syncAccountBalances } from './balanceSync'
+import { getAffectedAccountIds, getRecomputeHints, syncAccountBalances } from './balanceSync'
 import {
   createTransactions,
   readTransactions,
@@ -257,7 +257,27 @@ const Transactions: CollectionConfig = {
             doc: doc as Record<string, unknown>,
             previousDoc: previousDoc as Record<string, unknown>,
           }),
-          changedTransactionId: doc?.id ? String(doc.id) : undefined,
+          recomputeHints: getRecomputeHints({
+            doc: doc as Record<string, unknown>,
+            previousDoc: previousDoc as Record<string, unknown>,
+          }),
+        })
+
+        return doc
+      },
+    ],
+    afterDelete: [
+      async ({ doc, req }) => {
+        if (req.context?.skipTransactionBalanceSync) return doc
+
+        await syncAccountBalances({
+          req,
+          accountIds: getAffectedAccountIds({
+            previousDoc: doc as Record<string, unknown>,
+          }),
+          recomputeHints: getRecomputeHints({
+            previousDoc: doc as Record<string, unknown>,
+          }),
         })
 
         return doc

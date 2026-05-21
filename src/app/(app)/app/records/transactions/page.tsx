@@ -354,6 +354,11 @@ export default function TransactionsPage() {
       },
     },
     {
+      key: 'currentBalance',
+      label: 'Current Balance',
+      render: (row) => formatCurrency(row.parent.currentBalance),
+    },
+    {
       key: 'transactionType',
       label: 'Type',
       render: (row) => {
@@ -368,11 +373,6 @@ export default function TransactionsPage() {
           </Badge>
         )
       },
-    },
-    {
-      key: 'currentBalance',
-      label: 'Current Balance',
-      render: (row) => formatCurrency(row.parent.currentBalance),
     },
     {
       key: 'totalAmount',
