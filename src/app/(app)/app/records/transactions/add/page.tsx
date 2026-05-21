@@ -636,7 +636,7 @@ export default function AddTransactionPage() {
     const amountNumber = parseNumericInputValue(form.values.amount)
     if (typeof amountNumber !== 'number') return runningBalance
 
-    const signedImpact = (form.values.transactionType === 'debit' ? 1 : -1) * (amountNumber + fee)
+    const signedImpact = (form.values.transactionType === 'credit' ? 1 : -1) * (amountNumber + fee)
     let baselineBalance = selectedAccount.currentBalance
 
     if (
@@ -645,7 +645,7 @@ export default function AddTransactionPage() {
       originalTransactionSnapshot.financialAccount === form.values.financialAccount
     ) {
       const originalSignedImpact =
-        (originalTransactionSnapshot.transactionType === 'debit' ? 1 : -1) *
+        (originalTransactionSnapshot.transactionType === 'credit' ? 1 : -1) *
         (originalTransactionSnapshot.amount + originalTransactionSnapshot.transactionFee)
       baselineBalance -= originalSignedImpact
     }
@@ -1034,7 +1034,8 @@ export default function AddTransactionPage() {
                     required
                     disabled={
                       (!isAllocationContext && !form.values.financialAccount) ||
-                      (isEditMode && form.values.transactionType === 'debit')
+                      (!isAllocationContext && form.values.transactionType === 'debit') ||
+                      isEditMode
                     }
                   />
                 </Group>

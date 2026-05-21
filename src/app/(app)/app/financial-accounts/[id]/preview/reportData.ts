@@ -114,8 +114,8 @@ const getTransactionImpact = (item: TransactionListItem): number => {
   const total = amount + fee
   const type = normalizeType(item.transactionType)
 
-  if (type === 'debit') return total
-  if (type === 'credit') return -total
+  if (type === 'credit') return total
+  if (type === 'debit') return -total
   return 0
 }
 

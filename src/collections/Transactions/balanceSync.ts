@@ -66,7 +66,7 @@ function getSignedAmount(transaction: TransactionRecord): number {
   const totalImpact = safeAmount + safeFee
   if (totalImpact <= 0) return 0
 
-  return transaction.transactionType === 'debit' ? totalImpact : -totalImpact
+  return transaction.transactionType === 'credit' ? totalImpact : -totalImpact
 }
 
 function toSortTime(value?: string | null): number {
