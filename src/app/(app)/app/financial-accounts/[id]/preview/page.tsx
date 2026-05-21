@@ -8,9 +8,27 @@ import { buildTransactionReportData } from './reportData'
 import { PrintButton } from './PrintButton'
 import { DateRangeFilter } from './DateRangeFilter'
 import { ReportColumnsFilter } from './ReportColumnsFilter'
-import { parseReportColumnKeys } from './columns'
+import { TRANSACTION_REPORT_COLUMN_OPTIONS, type TransactionReportColumnKey } from './columns'
 import styles from './page.module.scss'
 import { TransactionReportDocument } from '@/app/(app)/app/financial-accounts/[id]/preview/components/TransactionReportDocument'
+
+const REPORT_COLUMN_KEY_SET = new Set<TransactionReportColumnKey>(
+  TRANSACTION_REPORT_COLUMN_OPTIONS.map((option) => option.value),
+)
+
+const parseReportColumnKeys = (value?: string | null): TransactionReportColumnKey[] => {
+  const normalized = String(value || '').trim()
+  if (!normalized) return []
+
+  const parsed = normalized
+    .split(',')
+    .map((item) => item.trim())
+    .filter((item): item is TransactionReportColumnKey =>
+      REPORT_COLUMN_KEY_SET.has(item as TransactionReportColumnKey),
+    )
+
+  return Array.from(new Set(parsed))
+}
 
 type Props = {
   params: Promise<{ id: string }>

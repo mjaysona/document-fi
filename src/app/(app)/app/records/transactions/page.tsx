@@ -21,14 +21,38 @@ import { CircleCheck, Filter, Plus, Search } from 'lucide-react'
 import { DataTable, type DataTableColumn } from '@/app/(app)/components/ui/DataTable'
 import { getTransactions, type TransactionListItem } from './actions'
 import {
-  parseReportColumnKeys,
-  serializeReportColumnKeys,
   TRANSACTION_REPORT_COLUMN_OPTIONS,
   type TransactionReportColumnKey,
 } from '../../financial-accounts/[id]/preview/columns'
 import classes from '../page.module.scss'
 import { useAuth } from '@/app/providers/Auth'
 import { hasAppRoleReadAccess } from '@/app/(app)/utils/roleAccess'
+
+const TABLE_COLUMN_KEY_SET = new Set<TransactionReportColumnKey>(
+  TRANSACTION_REPORT_COLUMN_OPTIONS.map((option) => option.value),
+)
+
+const parseTableColumnKeys = (value?: string | null): TransactionReportColumnKey[] => {
+  const normalized = String(value || '').trim()
+  if (!normalized) return []
+
+  const parsed = normalized
+    .split(',')
+    .map((item) => item.trim())
+    .filter((item): item is TransactionReportColumnKey =>
+      TABLE_COLUMN_KEY_SET.has(item as TransactionReportColumnKey),
+    )
+
+  return Array.from(new Set(parsed))
+}
+
+const serializeTableColumnKeys = (keys: string[]): string => {
+  const valid = keys.filter((item): item is TransactionReportColumnKey =>
+    TABLE_COLUMN_KEY_SET.has(item as TransactionReportColumnKey),
+  )
+
+  return Array.from(new Set(valid)).join(',')
+}
 
 type FeedbackState = {
   tone: 'success' | 'error'
@@ -109,15 +133,14 @@ export default function TransactionsPage() {
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
   const [feedback, setFeedback] = useState<FeedbackState | null>(null)
   const [expandedRows, setExpandedRows] = useState<string[]>([])
+  const [draggingColumnKey, setDraggingColumnKey] = useState<TransactionReportColumnKey | null>(
+    null,
+  )
   const hasAppliedInitialQueryFilters = useRef(false)
   const tableColsParam = searchParams.get('tableCols')
-  const initialTableColumns = useMemo(() => {
-    if (!tableColsParam) return DEFAULT_TABLE_COLUMNS
-    const parsed = parseReportColumnKeys(tableColsParam)
-    return parsed.length > 0 ? parsed : DEFAULT_TABLE_COLUMNS
-  }, [tableColsParam])
-  const [selectedTableColumns, setSelectedTableColumns] =
-    useState<TransactionReportColumnKey[]>(initialTableColumns)
+  const [selectedTableColumns, setSelectedTableColumns] = useState<TransactionReportColumnKey[]>(
+    parseTableColumnKeys(tableColsParam),
+  )
 
   const initialFinancialAccountFilter = useMemo(
     () => searchParams.get('financialAccount')?.trim() || '',
@@ -148,24 +171,44 @@ export default function TransactionsPage() {
     setFilterFinancialAccounts([initialFinancialAccountFilter])
   }, [initialFinancialAccountFilter])
 
-  useEffect(() => {
-    setSelectedTableColumns(initialTableColumns)
-  }, [initialTableColumns])
-
   const pushTableColumnsToUrl = (nextColumns: string[]) => {
     const params = new URLSearchParams(searchParams.toString())
-    params.set('tableCols', serializeReportColumnKeys(nextColumns))
+    params.set('tableCols', serializeTableColumnKeys(nextColumns))
 
     const query = params.toString()
     router.push(query ? `/app/records/transactions?${query}` : '/app/records/transactions')
   }
 
   const handleTableColumnsChange = (nextColumns: string[]) => {
-    const parsed =
-      nextColumns.length > 0 ? parseReportColumnKeys(nextColumns.join(',')) : DEFAULT_TABLE_COLUMNS
+    const parsed = parseTableColumnKeys(nextColumns.join(','))
     setSelectedTableColumns(parsed)
     pushTableColumnsToUrl(parsed)
   }
+
+  const reorderSelectedColumns = (
+    draggedKey: TransactionReportColumnKey,
+    targetKey: TransactionReportColumnKey,
+  ) => {
+    if (draggedKey === targetKey) return
+
+    const fromIndex = selectedTableColumns.indexOf(draggedKey)
+    const toIndex = selectedTableColumns.indexOf(targetKey)
+    if (fromIndex < 0 || toIndex < 0) return
+
+    const next = [...selectedTableColumns]
+    const [moved] = next.splice(fromIndex, 1)
+    next.splice(toIndex, 0, moved)
+
+    setSelectedTableColumns(next)
+    pushTableColumnsToUrl(next)
+  }
+
+  const selectedTableColumnOptions = useMemo(() => {
+    const labelMap = new Map(
+      TRANSACTION_REPORT_COLUMN_OPTIONS.map((option) => [option.value, option.label]),
+    )
+    return selectedTableColumns.map((key) => ({ key, label: labelMap.get(key) || key }))
+  }, [selectedTableColumns])
 
   const financialAccountOptions = useMemo(
     () =>
@@ -694,6 +737,37 @@ export default function TransactionsPage() {
                 input: { minHeight: 36 },
               }}
             />
+            <Text size="sm">Column Order</Text>
+            <Group gap="xs" align="center" wrap="wrap">
+              {selectedTableColumnOptions.map((column) => (
+                <Badge
+                  key={column.key}
+                  draggable
+                  onDragStart={() => setDraggingColumnKey(column.key)}
+                  onDragOver={(event) => {
+                    event.preventDefault()
+                  }}
+                  onDrop={(event) => {
+                    event.preventDefault()
+                    if (!draggingColumnKey) return
+                    reorderSelectedColumns(draggingColumnKey, column.key)
+                    setDraggingColumnKey(null)
+                  }}
+                  onDragEnd={() => setDraggingColumnKey(null)}
+                  style={{
+                    cursor: 'grab',
+                    opacity: draggingColumnKey === column.key ? 0.5 : 1,
+                    border:
+                      draggingColumnKey === column.key
+                        ? '2px dashed var(--mantine-color-blue-5)'
+                        : undefined,
+                  }}
+                  variant="light"
+                >
+                  {column.label}
+                </Badge>
+              ))}
+            </Group>
           </Stack>
         </Collapse>
         <Group justify="flex-end">

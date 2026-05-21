@@ -140,8 +140,8 @@ export function TransactionReportDocument({
   const { header, lineChartData, barChartData, rows } = report
   const selectedColumns =
     visibleColumns.length > 0 ? visibleColumns : DEFAULT_TRANSACTION_REPORT_COLUMNS
-  const columnHeaders = TRANSACTION_REPORT_COLUMN_OPTIONS.filter((column) =>
-    selectedColumns.includes(column.value),
+  const columnHeaders = selectedColumns.map(
+    (columnKey) => TRANSACTION_REPORT_COLUMN_OPTIONS.find((option) => option.value === columnKey)!,
   )
 
   const hasLineData = lineChartData.some((point) => typeof point.runningBalance === 'number')
