@@ -103,6 +103,52 @@ const toTimestamp = (value?: string): number | null => {
   return Number.isNaN(timestamp) ? null : timestamp
 }
 
+const compareNumeric = (a: number, b: number): number => (a < b ? -1 : a > b ? 1 : 0)
+
+const compareText = (a?: string, b?: string): number =>
+  String(a || '').localeCompare(String(b || ''), undefined, { numeric: true, sensitivity: 'base' })
+
+const compareTransactions = (
+  a: TransactionListItem,
+  b: TransactionListItem,
+  sortBy: SortBy,
+  sortOrder: SortOrder,
+): number => {
+  const direction = sortOrder === 'asc' ? 1 : -1
+
+  const amountA = typeof a.amount === 'number' ? a.amount : Number.NEGATIVE_INFINITY
+  const amountB = typeof b.amount === 'number' ? b.amount : Number.NEGATIVE_INFINITY
+  const txDateA = toTimestamp(a.transactionDate) ?? Number.NEGATIVE_INFINITY
+  const txDateB = toTimestamp(b.transactionDate) ?? Number.NEGATIVE_INFINITY
+  const createdA = toTimestamp(a.createdAt) ?? Number.NEGATIVE_INFINITY
+  const createdB = toTimestamp(b.createdAt) ?? Number.NEGATIVE_INFINITY
+  const updatedA = toTimestamp(a.updatedAt) ?? Number.NEGATIVE_INFINITY
+  const updatedB = toTimestamp(b.updatedAt) ?? Number.NEGATIVE_INFINITY
+
+  if (sortBy === 'amount') {
+    const amountCmp = compareNumeric(amountA, amountB)
+    if (amountCmp !== 0) return amountCmp * direction
+
+    // Keep amount ties deterministic by newest transaction date, then creation metadata.
+    const dateCmp = compareNumeric(txDateA, txDateB)
+    if (dateCmp !== 0) return dateCmp * direction
+  } else {
+    const dateCmp = compareNumeric(txDateA, txDateB)
+    if (dateCmp !== 0) return dateCmp * direction
+  }
+
+  const createdCmp = compareNumeric(createdA, createdB)
+  if (createdCmp !== 0) return createdCmp * direction
+
+  const updatedCmp = compareNumeric(updatedA, updatedB)
+  if (updatedCmp !== 0) return updatedCmp * direction
+
+  const referenceCmp = compareText(a.referenceNumber, b.referenceNumber)
+  if (referenceCmp !== 0) return referenceCmp * direction
+
+  return compareText(a.id, b.id) * direction
+}
+
 export default function TransactionsPage() {
   const { user } = useAuth()
   const router = useRouter()
@@ -330,19 +376,7 @@ export default function TransactionsPage() {
       )
     })
 
-    return filtered.sort((a, b) => {
-      if (sortBy === 'amount') {
-        const aVal = typeof a.amount === 'number' ? a.amount : -Infinity
-        const bVal = typeof b.amount === 'number' ? b.amount : -Infinity
-        const cmp = aVal < bVal ? -1 : aVal > bVal ? 1 : 0
-        return sortOrder === 'asc' ? cmp : -cmp
-      }
-
-      const aTs = a.transactionDate ? new Date(a.transactionDate).getTime() : -Infinity
-      const bTs = b.transactionDate ? new Date(b.transactionDate).getTime() : -Infinity
-      const cmp = aTs < bTs ? -1 : aTs > bTs ? 1 : 0
-      return sortOrder === 'asc' ? cmp : -cmp
-    })
+    return filtered.sort((a, b) => compareTransactions(a, b, sortBy, sortOrder))
   }, [
     filterDateRange,
     filterDestinationAccounts,
@@ -377,19 +411,8 @@ export default function TransactionsPage() {
       }
     }
 
-    const sortItems = (a: TransactionListItem, b: TransactionListItem) => {
-      if (sortBy === 'amount') {
-        const aVal = typeof a.amount === 'number' ? a.amount : -Infinity
-        const bVal = typeof b.amount === 'number' ? b.amount : -Infinity
-        const cmp = aVal < bVal ? -1 : aVal > bVal ? 1 : 0
-        return sortOrder === 'asc' ? cmp : -cmp
-      }
-
-      const aTs = a.transactionDate ? new Date(a.transactionDate).getTime() : -Infinity
-      const bTs = b.transactionDate ? new Date(b.transactionDate).getTime() : -Infinity
-      const cmp = aTs < bTs ? -1 : aTs > bTs ? 1 : 0
-      return sortOrder === 'asc' ? cmp : -cmp
-    }
+    const sortItems = (a: TransactionListItem, b: TransactionListItem) =>
+      compareTransactions(a, b, sortBy, sortOrder)
 
     return Array.from(visibleParentIds)
       .map((parentId) => allItemsById.get(parentId))
