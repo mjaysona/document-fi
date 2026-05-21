@@ -1,9 +1,13 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Badge, Group, MultiSelect, Stack, Text } from '@mantine/core'
-import { TRANSACTION_REPORT_COLUMN_OPTIONS, type TransactionReportColumnKey } from './columns'
+import {
+  DEFAULT_TRANSACTION_REPORT_COLUMNS,
+  TRANSACTION_REPORT_COLUMN_OPTIONS,
+  type TransactionReportColumnKey,
+} from './columns'
 
 const REPORT_COLUMN_KEY_SET = new Set<TransactionReportColumnKey>(
   TRANSACTION_REPORT_COLUMN_OPTIONS.map((option) => option.value),
@@ -11,7 +15,7 @@ const REPORT_COLUMN_KEY_SET = new Set<TransactionReportColumnKey>(
 
 const parseReportColumnKeys = (value?: string | null): TransactionReportColumnKey[] => {
   const normalized = String(value || '').trim()
-  if (!normalized) return []
+  if (!normalized) return DEFAULT_TRANSACTION_REPORT_COLUMNS
 
   const parsed = normalized
     .split(',')
@@ -20,7 +24,8 @@ const parseReportColumnKeys = (value?: string | null): TransactionReportColumnKe
       REPORT_COLUMN_KEY_SET.has(item as TransactionReportColumnKey),
     )
 
-  return Array.from(new Set(parsed))
+  const unique = Array.from(new Set(parsed))
+  return unique.length > 0 ? unique : DEFAULT_TRANSACTION_REPORT_COLUMNS
 }
 
 const serializeReportColumnKeys = (keys: string[]): string => {
@@ -40,12 +45,20 @@ export function ReportColumnsFilter({ initialColumns }: ReportColumnsFilterProps
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
-  const [selectedColumns, setSelectedColumns] = useState<TransactionReportColumnKey[]>(
-    parseReportColumnKeys(initialColumns.join(',')),
+  const normalizedInitialColumns = useMemo(
+    () => parseReportColumnKeys(initialColumns.join(',')),
+    [initialColumns],
   )
+
+  const [selectedColumns, setSelectedColumns] =
+    useState<TransactionReportColumnKey[]>(normalizedInitialColumns)
   const [draggingColumnKey, setDraggingColumnKey] = useState<TransactionReportColumnKey | null>(
     null,
   )
+
+  useEffect(() => {
+    setSelectedColumns(normalizedInitialColumns)
+  }, [normalizedInitialColumns])
 
   const pushColumnsToUrl = (nextColumns: string[]) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -56,9 +69,17 @@ export function ReportColumnsFilter({ initialColumns }: ReportColumnsFilterProps
   }
 
   const handleColumnsChange = (nextColumns: string[]) => {
-    const parsed = parseReportColumnKeys(nextColumns.join(','))
-    setSelectedColumns(parsed)
-    pushColumnsToUrl(parsed)
+    // MultiSelect can emit values in option-list order, so preserve current visible order.
+    const nextSet = new Set(nextColumns as TransactionReportColumnKey[])
+    const prevSet = new Set(selectedColumns)
+    const added = nextColumns.filter(
+      (column) => !prevSet.has(column as TransactionReportColumnKey),
+    ) as TransactionReportColumnKey[]
+
+    const next = [...selectedColumns.filter((column) => nextSet.has(column)), ...added]
+
+    setSelectedColumns(next)
+    pushColumnsToUrl(next)
   }
 
   const reorderSelectedColumns = (

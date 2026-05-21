@@ -34,7 +34,7 @@ const TABLE_COLUMN_KEY_SET = new Set<TransactionReportColumnKey>(
 
 const parseTableColumnKeys = (value?: string | null): TransactionReportColumnKey[] => {
   const normalized = String(value || '').trim()
-  if (!normalized) return []
+  if (!normalized) return DEFAULT_TABLE_COLUMNS
 
   const parsed = normalized
     .split(',')
@@ -43,7 +43,8 @@ const parseTableColumnKeys = (value?: string | null): TransactionReportColumnKey
       TABLE_COLUMN_KEY_SET.has(item as TransactionReportColumnKey),
     )
 
-  return Array.from(new Set(parsed))
+  const unique = Array.from(new Set(parsed))
+  return unique.length > 0 ? unique : DEFAULT_TABLE_COLUMNS
 }
 
 const serializeTableColumnKeys = (keys: string[]): string => {
