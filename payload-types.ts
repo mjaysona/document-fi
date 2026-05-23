@@ -393,6 +393,7 @@ export interface Bank {
   id: string;
   code: string;
   name: string;
+  shortName?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1000,6 +1001,7 @@ export interface WeightBillsSelect<T extends boolean = true> {
 export interface BanksSelect<T extends boolean = true> {
   code?: T;
   name?: T;
+  shortName?: T;
   updatedAt?: T;
   createdAt?: T;
 }

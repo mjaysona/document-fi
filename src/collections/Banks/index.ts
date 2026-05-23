@@ -32,6 +32,13 @@ const Banks: CollectionConfig = {
       required: true,
       unique: true,
     },
+    {
+      name: 'shortName',
+      label: 'Short Name',
+      type: 'text',
+      required: false,
+      unique: true,
+    },
   ],
   timestamps: true,
 }
