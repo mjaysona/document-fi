@@ -464,6 +464,10 @@ export interface Transaction {
    */
   isFundAllocation?: boolean | null;
   /**
+   * Auto-computed from child transactions amount + transaction fee.
+   */
+  allocatedFunds?: number | null;
+  /**
    * Parent transaction for fund allocation purposes
    */
   parentTransaction?: (string | null) | Transaction;
@@ -527,6 +531,7 @@ export interface UserConfiguration {
           | 'aiExtractedJson'
           | 'extractionConfidence'
           | 'isFundAllocation'
+          | 'allocatedFunds'
           | 'parentTransaction'
         )[]
       | null;
@@ -557,6 +562,7 @@ export interface UserConfiguration {
           | 'aiExtractedJson'
           | 'extractionConfidence'
           | 'isFundAllocation'
+          | 'allocatedFunds'
           | 'parentTransaction'
         )[]
       | null;
@@ -1049,6 +1055,7 @@ export interface TransactionsSelect<T extends boolean = true> {
   isUserEdited?: T;
   uploadedAt?: T;
   isFundAllocation?: T;
+  allocatedFunds?: T;
   parentTransaction?: T;
   createdBy?: T;
   updatedBy?: T;

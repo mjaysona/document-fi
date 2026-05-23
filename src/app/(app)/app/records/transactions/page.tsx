@@ -475,10 +475,8 @@ export default function TransactionsPage() {
 
   const columns = useMemo<DataTableColumn<TransactionParentRow>[]>(() => {
     const getAllocation = (row: TransactionParentRow) => {
-      const totalAllocatedWithFees = row.children.reduce(
-        (sum, child) => sum + ((child.amount || 0) + (child.transactionFee || 0)),
-        0,
-      )
+      const totalAllocatedWithFees =
+        typeof row.parent.allocatedFunds === 'number' ? row.parent.allocatedFunds : 0
       const parentAmount = row.parent.amount || 0
       return { totalAllocatedWithFees, parentAmount }
     }
@@ -1009,10 +1007,8 @@ export default function TransactionsPage() {
           }}
           isRowExpanded={(row) => expandedRows.includes(row.parent.id)}
           renderExpandedRow={(row: TransactionParentRow): React.ReactNode => {
-            const totalAllocated = row.children.reduce(
-              (sum, child) => sum + ((child.amount || 0) + (child.transactionFee || 0)),
-              0,
-            )
+            const totalAllocated =
+              typeof row.parent.allocatedFunds === 'number' ? row.parent.allocatedFunds : 0
             const parentAmount = row.parent.amount || 0
             const allocationStatus =
               totalAllocated === parentAmount

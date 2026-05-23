@@ -10,6 +10,7 @@ import {
   Card,
   Group,
   LoadingOverlay,
+  Modal,
   NumberInput,
   Select,
   Table,
@@ -27,6 +28,7 @@ import { ArrowLeft, Ban, CheckCircle, CircleHelp, Pencil, Upload } from 'lucide-
 import {
   analyzeReceiptFile,
   createTransactionWithReceipt,
+  deleteTransaction,
   getBanks,
   getFinancialAccounts,
   getTransactions,
@@ -133,11 +135,14 @@ export default function AddTransactionPage() {
   const [financialAccounts, setFinancialAccounts] = useState<FinancialAccountOption[]>([])
   const [isLoading, setIsLoading] = useState(Boolean(isEditMode || isForAllocation))
   const [isSaving, setIsSaving] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [isUploadingReceipt, setIsUploadingReceipt] = useState(false)
   const [isProcessingReceipt, setIsProcessingReceipt] = useState(false)
   const [feedback, setFeedback] = useState<Feedback | null>(null)
   const [parentReferenceNumber, setParentReferenceNumber] = useState('')
   const [childTransactions, setChildTransactions] = useState<TransactionListItem[]>([])
+  const [allocatedFunds, setAllocatedFunds] = useState(0)
 
   const form = useForm<TransactionFormValues>({
     initialValues: {
@@ -299,6 +304,7 @@ export default function AddTransactionPage() {
     }
     form.clearFieldError('referenceNumber')
     setRunningBalance(typeof tx.runningBalance === 'number' ? tx.runningBalance : '')
+    setAllocatedFunds(typeof tx.allocatedFunds === 'number' ? tx.allocatedFunds : 0)
     setOriginalTransactionSnapshot(
       tx.financialAccount &&
         tx.transactionType &&
@@ -520,6 +526,7 @@ export default function AddTransactionPage() {
       }
       form.clearFieldError('referenceNumber')
       setRunningBalance(typeof tx.runningBalance === 'number' ? tx.runningBalance : '')
+      setAllocatedFunds(typeof tx.allocatedFunds === 'number' ? tx.allocatedFunds : 0)
       setOriginalTransactionSnapshot(
         tx.financialAccount &&
           tx.transactionType &&
@@ -819,6 +826,29 @@ export default function AddTransactionPage() {
     setIsSaving(false)
   }
 
+  const handleDelete = async () => {
+    if (!isEditMode || !transactionId) return
+
+    setDeleteConfirmOpen(true)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!isEditMode || !transactionId) return
+
+    setFeedback(null)
+    setDeleteConfirmOpen(false)
+    setIsDeleting(true)
+
+    const result = await deleteTransaction(transactionId)
+    if (result.success) {
+      router.push('/app/records/transactions')
+      return
+    }
+
+    setFeedback({ type: 'error', message: result.error ?? 'Failed to delete transaction.' })
+    setIsDeleting(false)
+  }
+
   const handleProcessReceipt = async () => {
     if (!isEditMode || !transactionId) return
 
@@ -921,12 +951,25 @@ export default function AddTransactionPage() {
             </Title>
           </Group>
           <Group>
+            {!isAllocationContext && isEditMode && transactionId && (
+              <Button
+                size="xs"
+                variant="light"
+                color="red"
+                onClick={handleDelete}
+                loading={isDeleting}
+                disabled={isSaving || overlayVisible || isLoading}
+              >
+                Delete
+              </Button>
+            )}
             {!isAllocationContext && form.values.isFundAllocation && (
               <Button
                 size="xs"
                 variant="light"
                 onClick={handleSaveAndAllocate}
-                loading={isSaving || overlayVisible || isLoading}
+                loading={isSaving || isDeleting || overlayVisible || isLoading}
+                disabled={isDeleting}
               >
                 Allocate funds
               </Button>
@@ -1415,63 +1458,85 @@ export default function AddTransactionPage() {
         {!isLoading &&
           isEditMode &&
           form.values.isFundAllocation &&
-          childTransactions.length > 0 && (
-            <Stack mt="md">
-              <Title order={5}>Child Transactions</Title>
-              <Table withTableBorder withColumnBorders striped highlightOnHover>
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th>Reference #</Table.Th>
-                    <Table.Th>Date</Table.Th>
-                    <Table.Th>Source to Destination</Table.Th>
-                    <Table.Th>Amount</Table.Th>
-                    <Table.Th>Fee</Table.Th>
-                    <Table.Th>Status</Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {childTransactions.map((child) => (
-                    <Table.Tr key={child.id}>
-                      <Table.Td>
-                        <span
-                          style={{
-                            cursor: 'pointer',
-                            textDecoration: 'underline',
-                          }}
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            router.push(`/app/records/transactions/${child.id}/edit`)
-                          }}
-                        >
-                          {child.referenceNumber || '-'}
-                        </span>
-                      </Table.Td>
-                      <Table.Td>{formatDate(child.transactionDate)}</Table.Td>
-                      <Table.Td>
-                        {(() => {
-                          const source = child.sourceAccountName || '-'
-                          const destination = child.destinationAccountName || '-'
-                          if (source === '-' && destination === '-') return '-'
-                          return `${source} to ${destination}`
-                        })()}
-                      </Table.Td>
-                      <Table.Td>{formatCurrency(child.amount)}</Table.Td>
-                      <Table.Td>{formatCurrency(child.transactionFee)}</Table.Td>
-                      <Table.Td>
-                        <Badge
-                          color={child.transactionStatus === 'failed' ? 'red' : 'teal'}
-                          variant="light"
-                          tt="capitalize"
-                        >
-                          {child.transactionStatus || '-'}
-                        </Badge>
-                      </Table.Td>
+          childTransactions.length > 0 &&
+          (() => {
+            const parentAmount = parseNumericInputValue(form.values.amount) ?? 0
+            const allocationStatus =
+              allocatedFunds === parentAmount
+                ? 'complete'
+                : allocatedFunds > parentAmount
+                  ? 'exceeded'
+                  : 'partial'
+            const allocationColor =
+              allocationStatus === 'complete'
+                ? 'green'
+                : allocationStatus === 'exceeded'
+                  ? 'red'
+                  : 'orange'
+
+            return (
+              <Stack mt="md">
+                <Group justify="space-between" align="center">
+                  <Title order={5}>Child Transactions</Title>
+                  <Text size="sm" fw={500} c={allocationColor}>
+                    Allocated funds: {formatCurrency(allocatedFunds)}/{formatCurrency(parentAmount)}
+                  </Text>
+                </Group>
+                <Table withTableBorder withColumnBorders striped highlightOnHover>
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th>Reference #</Table.Th>
+                      <Table.Th>Date</Table.Th>
+                      <Table.Th>Source to Destination</Table.Th>
+                      <Table.Th>Amount</Table.Th>
+                      <Table.Th>Fee</Table.Th>
+                      <Table.Th>Status</Table.Th>
                     </Table.Tr>
-                  ))}
-                </Table.Tbody>
-              </Table>
-            </Stack>
-          )}
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {childTransactions.map((child) => (
+                      <Table.Tr key={child.id}>
+                        <Table.Td>
+                          <span
+                            style={{
+                              cursor: 'pointer',
+                              textDecoration: 'underline',
+                            }}
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              router.push(`/app/records/transactions/${child.id}/edit`)
+                            }}
+                          >
+                            {child.referenceNumber || '-'}
+                          </span>
+                        </Table.Td>
+                        <Table.Td>{formatDate(child.transactionDate)}</Table.Td>
+                        <Table.Td>
+                          {(() => {
+                            const source = child.sourceAccountName || '-'
+                            const destination = child.destinationAccountName || '-'
+                            if (source === '-' && destination === '-') return '-'
+                            return `${source} to ${destination}`
+                          })()}
+                        </Table.Td>
+                        <Table.Td>{formatCurrency(child.amount)}</Table.Td>
+                        <Table.Td>{formatCurrency(child.transactionFee)}</Table.Td>
+                        <Table.Td>
+                          <Badge
+                            color={child.transactionStatus === 'failed' ? 'red' : 'teal'}
+                            variant="light"
+                            tt="capitalize"
+                          >
+                            {child.transactionStatus || '-'}
+                          </Badge>
+                        </Table.Td>
+                      </Table.Tr>
+                    ))}
+                  </Table.Tbody>
+                </Table>
+              </Stack>
+            )
+          })()}
       </div>
       <Card withBorder radius="md" className={classes['footer--fixed']}>
         <Group justify="space-between">
@@ -1487,6 +1552,25 @@ export default function AddTransactionPage() {
           </Button>
         </Group>
       </Card>
+
+      <Modal
+        opened={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        title="Confirm deletion"
+        centered
+      >
+        <Text size="sm" mb="lg">
+          Delete this transaction? This cannot be undone.
+        </Text>
+        <Group justify="end" gap="sm">
+          <Button variant="outline" onClick={() => setDeleteConfirmOpen(false)}>
+            Cancel
+          </Button>
+          <Button color="red" onClick={handleDeleteConfirm} loading={isDeleting}>
+            Delete
+          </Button>
+        </Group>
+      </Modal>
     </div>
   )
 }

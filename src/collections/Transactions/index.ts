@@ -9,6 +9,130 @@ import {
   deleteTransactions,
 } from './access'
 
+type MaybeRelationship = string | { id?: string | number } | null | undefined
+
+const getRelationshipId = (value: MaybeRelationship): string | null => {
+  if (!value) return null
+  if (typeof value === 'string') return value
+  if (typeof value.id === 'string') return value.id
+  if (typeof value.id === 'number') return String(value.id)
+  return null
+}
+
+const toSafeNonNegativeNumber = (value: unknown): number => {
+  if (typeof value === 'number' && Number.isFinite(value) && value > 0) return value
+  const parsed = Number(value || 0)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0
+}
+
+const getParentTransactionIds = (args: {
+  doc?: Record<string, unknown>
+  previousDoc?: Record<string, unknown>
+}): string[] => {
+  const parentIds = [
+    getRelationshipId(args.doc?.parentTransaction as MaybeRelationship),
+    getRelationshipId(args.previousDoc?.parentTransaction as MaybeRelationship),
+  ]
+
+  return [...new Set(parentIds.filter((value): value is string => Boolean(value)))]
+}
+
+const getAllChildTransactions = async (args: {
+  req: any
+  parentTransactionId: string
+}): Promise<Array<Record<string, unknown>>> => {
+  const docs: Array<Record<string, unknown>> = []
+  let page = 1
+
+  while (true) {
+    const result = await args.req.payload.find({
+      collection: 'transactions',
+      where: {
+        parentTransaction: {
+          equals: args.parentTransactionId,
+        },
+      },
+      depth: 0,
+      limit: 200,
+      page,
+      overrideAccess: true,
+      req: args.req,
+    })
+
+    docs.push(...(result.docs as Array<Record<string, unknown>>))
+
+    const currentPage = Number(result.page || 1)
+    const totalPages = Number(result.totalPages || 1)
+    if (currentPage >= totalPages) break
+
+    page = currentPage + 1
+  }
+
+  return docs
+}
+
+const syncParentAllocatedFunds = async (args: { req: any; parentTransactionIds: string[] }) => {
+  const uniqueParentIds = [...new Set(args.parentTransactionIds.filter(Boolean))]
+  if (uniqueParentIds.length === 0) return
+
+  for (const parentTransactionId of uniqueParentIds) {
+    let parentDoc: Record<string, unknown>
+    try {
+      parentDoc = (await args.req.payload.findByID({
+        collection: 'transactions',
+        id: parentTransactionId,
+        depth: 0,
+        overrideAccess: true,
+        req: args.req,
+      })) as Record<string, unknown>
+    } catch (error) {
+      const status =
+        typeof error === 'object' && error && 'status' in error
+          ? Number((error as { status?: unknown }).status)
+          : undefined
+
+      if (status === 404) continue
+      throw error
+    }
+
+    let nextAllocatedFunds = 0
+    if (parentDoc.isFundAllocation === true) {
+      const childTransactions = await getAllChildTransactions({
+        req: args.req,
+        parentTransactionId,
+      })
+
+      nextAllocatedFunds = childTransactions.reduce((sum, transaction) => {
+        const amount = toSafeNonNegativeNumber(transaction.amount)
+        const fee = toSafeNonNegativeNumber(transaction.transactionFee)
+        return sum + amount + fee
+      }, 0)
+    }
+
+    const currentAllocatedFunds =
+      typeof parentDoc.allocatedFunds === 'number' && Number.isFinite(parentDoc.allocatedFunds)
+        ? parentDoc.allocatedFunds
+        : 0
+
+    if (currentAllocatedFunds !== nextAllocatedFunds) {
+      await args.req.payload.update({
+        collection: 'transactions',
+        id: parentTransactionId,
+        data: {
+          allocatedFunds: nextAllocatedFunds,
+        },
+        depth: 0,
+        overrideAccess: true,
+        req: args.req,
+        context: {
+          ...(args.req.context || {}),
+          skipTransactionBalanceSync: true,
+        },
+      })
+    }
+  }
+}
+
 const getBankShortName = async (bankValue: unknown, req: any): Promise<string> => {
   if (!bankValue) return ''
 
@@ -303,6 +427,17 @@ const Transactions: CollectionConfig = {
       },
     },
     {
+      name: 'allocatedFunds',
+      label: 'Allocated Funds',
+      type: 'number',
+      defaultValue: 0,
+      admin: {
+        position: 'sidebar',
+        readOnly: true,
+        description: 'Auto-computed from child transactions amount + transaction fee.',
+      },
+    },
+    {
       name: 'parentTransaction',
       label: 'Parent Transaction',
       type: 'relationship',
@@ -346,6 +481,14 @@ const Transactions: CollectionConfig = {
           }),
         })
 
+        await syncParentAllocatedFunds({
+          req,
+          parentTransactionIds: getParentTransactionIds({
+            doc: doc as Record<string, unknown>,
+            previousDoc: previousDoc as Record<string, unknown>,
+          }),
+        })
+
         return doc
       },
     ],
@@ -359,6 +502,13 @@ const Transactions: CollectionConfig = {
             previousDoc: doc as Record<string, unknown>,
           }),
           recomputeHints: getRecomputeHints({
+            previousDoc: doc as Record<string, unknown>,
+          }),
+        })
+
+        await syncParentAllocatedFunds({
+          req,
+          parentTransactionIds: getParentTransactionIds({
             previousDoc: doc as Record<string, unknown>,
           }),
         })

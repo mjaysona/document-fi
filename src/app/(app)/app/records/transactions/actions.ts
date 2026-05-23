@@ -45,6 +45,7 @@ export type TransactionListItem = {
   to?: string
   referenceNumber?: string
   isFundAllocation?: boolean
+  allocatedFunds?: number
   parentTransaction?: string | null
   transactionDate?: string
   amount?: number
@@ -89,6 +90,7 @@ export type TransactionDetail = TransactionFormInput & {
   isUserEdited?: boolean
   runningBalance?: number
   isFundAllocation?: boolean
+  allocatedFunds?: number
   parentTransaction?: string | null
 }
 
@@ -585,6 +587,7 @@ export async function getTransactions(): Promise<{
         to: doc.to ? String(doc.to) : undefined,
         referenceNumber: doc.referenceNumber ? String(doc.referenceNumber) : undefined,
         isFundAllocation: doc.isFundAllocation === true,
+        allocatedFunds: typeof doc.allocatedFunds === 'number' ? doc.allocatedFunds : 0,
         parentTransaction:
           doc.parentTransaction && typeof doc.parentTransaction === 'object'
             ? String(doc.parentTransaction.id)
@@ -852,6 +855,8 @@ export async function getTransactionById(id: string): Promise<{
         runningBalance:
           typeof (doc as any).runningBalance === 'number' ? (doc as any).runningBalance : undefined,
         isFundAllocation: (doc as any).isFundAllocation === true,
+        allocatedFunds:
+          typeof (doc as any).allocatedFunds === 'number' ? (doc as any).allocatedFunds : 0,
         parentTransaction:
           (doc as any).parentTransaction && typeof (doc as any).parentTransaction === 'object'
             ? String((doc as any).parentTransaction.id)
