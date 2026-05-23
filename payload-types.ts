@@ -79,6 +79,7 @@ export interface Config {
     'financial-accounts': FinancialAccount;
     transactions: Transaction;
     'transaction-receipts': TransactionReceipt;
+    'user-configurations': UserConfiguration;
     quotes: Quote;
     'weight-bill-receipts': WeightBillReceipt;
     'session-uploads': SessionUpload;
@@ -106,6 +107,7 @@ export interface Config {
     'financial-accounts': FinancialAccountsSelect<false> | FinancialAccountsSelect<true>;
     transactions: TransactionsSelect<false> | TransactionsSelect<true>;
     'transaction-receipts': TransactionReceiptsSelect<false> | TransactionReceiptsSelect<true>;
+    'user-configurations': UserConfigurationsSelect<false> | UserConfigurationsSelect<true>;
     quotes: QuotesSelect<false> | QuotesSelect<true>;
     'weight-bill-receipts': WeightBillReceiptsSelect<false> | WeightBillReceiptsSelect<true>;
     'session-uploads': SessionUploadsSelect<false> | SessionUploadsSelect<true>;
@@ -426,6 +428,18 @@ export interface Transaction {
   referenceNumber?: string | null;
   amount: number;
   transactionFee: number;
+  /**
+   * Auto-computed from From and Source Bank fields
+   */
+  sender?: string | null;
+  /**
+   * Auto-computed from To and Destination Bank fields
+   */
+  receiver?: string | null;
+  /**
+   * Auto-computed from Amount + Transaction Fee
+   */
+  totalAmount?: number | null;
   currentBalance?: number | null;
   runningBalance?: number | null;
   transactionStatus: 'completed' | 'failed';
@@ -476,6 +490,78 @@ export interface TransactionReceipt {
   height?: number | null;
   focalX?: number | null;
   focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "user-configurations".
+ */
+export interface UserConfiguration {
+  id: string;
+  user: string | User;
+  transactionsConfig?: {
+    /**
+     * Select which transaction fields should appear in the table.
+     */
+    tableColumns?:
+      | (
+          | 'transactionDate'
+          | 'description'
+          | 'particulars'
+          | 'transactionType'
+          | 'sourceAccount'
+          | 'destinationAccount'
+          | 'financialAccount'
+          | 'from'
+          | 'to'
+          | 'referenceNumber'
+          | 'amount'
+          | 'transactionFee'
+          | 'sender'
+          | 'receiver'
+          | 'totalAmount'
+          | 'currentBalance'
+          | 'runningBalance'
+          | 'transactionStatus'
+          | 'receiptImage'
+          | 'aiExtractedJson'
+          | 'extractionConfidence'
+          | 'isFundAllocation'
+          | 'parentTransaction'
+        )[]
+      | null;
+    /**
+     * Select which transaction fields should appear in preview tables.
+     */
+    previewTableColumns?:
+      | (
+          | 'transactionDate'
+          | 'description'
+          | 'particulars'
+          | 'transactionType'
+          | 'sourceAccount'
+          | 'destinationAccount'
+          | 'financialAccount'
+          | 'from'
+          | 'to'
+          | 'referenceNumber'
+          | 'amount'
+          | 'transactionFee'
+          | 'sender'
+          | 'receiver'
+          | 'totalAmount'
+          | 'currentBalance'
+          | 'runningBalance'
+          | 'transactionStatus'
+          | 'receiptImage'
+          | 'aiExtractedJson'
+          | 'extractionConfidence'
+          | 'isFundAllocation'
+          | 'parentTransaction'
+        )[]
+      | null;
+  };
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -678,6 +764,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'transaction-receipts';
         value: string | TransactionReceipt;
+      } | null)
+    | ({
+        relationTo: 'user-configurations';
+        value: string | UserConfiguration;
       } | null)
     | ({
         relationTo: 'quotes';
@@ -943,6 +1033,9 @@ export interface TransactionsSelect<T extends boolean = true> {
   referenceNumber?: T;
   amount?: T;
   transactionFee?: T;
+  sender?: T;
+  receiver?: T;
+  totalAmount?: T;
   currentBalance?: T;
   runningBalance?: T;
   transactionStatus?: T;
@@ -978,6 +1071,21 @@ export interface TransactionReceiptsSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "user-configurations_select".
+ */
+export interface UserConfigurationsSelect<T extends boolean = true> {
+  user?: T;
+  transactionsConfig?:
+    | T
+    | {
+        tableColumns?: T;
+        previewTableColumns?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

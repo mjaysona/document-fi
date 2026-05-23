@@ -42,6 +42,7 @@ import Banks from './src/collections/Banks'
 import FinancialAccounts from './src/collections/FinancialAccounts'
 import Transactions from './src/collections/Transactions'
 import TransactionReceipts from './src/collections/TransactionReceipts'
+import UserConfigurations from './src/collections/UserConfigurations'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -80,6 +81,7 @@ export default buildConfig({
     FinancialAccounts,
     Transactions,
     TransactionReceipts,
+    UserConfigurations,
     Quotes,
     WeightBillReceipts,
     SessionUploads,

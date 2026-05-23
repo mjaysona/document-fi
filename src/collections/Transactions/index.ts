@@ -9,6 +9,29 @@ import {
   deleteTransactions,
 } from './access'
 
+const getBankName = async (bankValue: unknown, req: any): Promise<string> => {
+  if (!bankValue) return ''
+
+  if (typeof bankValue === 'string') {
+    try {
+      const bank = await req.payload.findByID({
+        collection: 'banks',
+        id: bankValue,
+      })
+      return bank?.name || ''
+    } catch {
+      return ''
+    }
+  }
+
+  if (typeof bankValue === 'object' && bankValue !== null && 'name' in bankValue) {
+    const name = (bankValue as { name?: unknown }).name
+    return typeof name === 'string' ? name : ''
+  }
+
+  return ''
+}
+
 const Transactions: CollectionConfig = {
   slug: 'transactions',
   labels: {
@@ -120,6 +143,67 @@ const Transactions: CollectionConfig = {
       min: 0,
       required: true,
       defaultValue: 0,
+    },
+    {
+      name: 'sender',
+      label: 'Sender',
+      type: 'text',
+      admin: {
+        description: 'Auto-computed from From and Source Bank fields',
+      },
+      hooks: {
+        beforeChange: [
+          async ({ siblingData, req }) => {
+            const senderFrom = typeof siblingData?.from === 'string' ? siblingData.from : ''
+            const sourceBankName = await getBankName(siblingData?.sourceAccount, req)
+
+            if (senderFrom && sourceBankName) return `${senderFrom} (${sourceBankName})`
+            if (senderFrom) return senderFrom
+            if (sourceBankName) return sourceBankName
+            return ''
+          },
+        ],
+      },
+    },
+    {
+      name: 'receiver',
+      label: 'Receiver',
+      type: 'text',
+      admin: {
+        description: 'Auto-computed from To and Destination Bank fields',
+      },
+      hooks: {
+        beforeChange: [
+          async ({ siblingData, req }) => {
+            const receiverTo = typeof siblingData?.to === 'string' ? siblingData.to : ''
+            const destinationBankName = await getBankName(siblingData?.destinationAccount, req)
+
+            if (receiverTo && destinationBankName) return `${receiverTo} (${destinationBankName})`
+            if (receiverTo) return receiverTo
+            if (destinationBankName) return destinationBankName
+            return ''
+          },
+        ],
+      },
+    },
+    {
+      name: 'totalAmount',
+      label: 'Total Amount',
+      type: 'number',
+      admin: {
+        description: 'Auto-computed from Amount + Transaction Fee',
+      },
+      hooks: {
+        beforeChange: [
+          ({ siblingData }) => {
+            const amount = typeof siblingData?.amount === 'number' ? siblingData.amount : 0
+            const transactionFee =
+              typeof siblingData?.transactionFee === 'number' ? siblingData.transactionFee : 0
+
+            return amount + transactionFee
+          },
+        ],
+      },
     },
     {
       name: 'currentBalance',
