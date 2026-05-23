@@ -1009,7 +1009,7 @@ export default function AddTransactionPage() {
                     error={form.errors.transactionType}
                     required
                     disabled={
-                      (!form.values.financialAccount && !isAllocationContext) || isAllocationContext // || isEditMode
+                      (!form.values.financialAccount && !isAllocationContext) || isAllocationContext
                     }
                   />
                 </Group>
@@ -1025,7 +1025,7 @@ export default function AddTransactionPage() {
                     onChange={(value) => form.setFieldValue('sourceAccount', value)}
                     error={form.errors.sourceAccount}
                     required
-                    disabled={(!isAllocationContext && !form.values.financialAccount) || isEditMode}
+                    disabled={!isAllocationContext && !form.values.financialAccount}
                   />
                   <Select
                     label="Destination Bank"
@@ -1038,7 +1038,7 @@ export default function AddTransactionPage() {
                     onChange={(value) => form.setFieldValue('destinationAccount', value)}
                     error={form.errors.destinationAccount}
                     required
-                    disabled={(!isAllocationContext && !form.values.financialAccount) || isEditMode}
+                    disabled={!isAllocationContext && !form.values.financialAccount}
                   />
                 </Group>
                 <Group grow>
@@ -1048,7 +1048,7 @@ export default function AddTransactionPage() {
                     onChange={(e) => form.setFieldValue('from', e.currentTarget.value)}
                     error={form.errors.from}
                     required
-                    disabled={(!isAllocationContext && !form.values.financialAccount) || isEditMode}
+                    disabled={!isAllocationContext && !form.values.financialAccount}
                   />
                   <TextInput
                     label="To"
@@ -1056,7 +1056,7 @@ export default function AddTransactionPage() {
                     onChange={(e) => form.setFieldValue('to', e.currentTarget.value)}
                     error={form.errors.to}
                     required
-                    disabled={(!isAllocationContext && !form.values.financialAccount) || isEditMode}
+                    disabled={!isAllocationContext && !form.values.financialAccount}
                   />
                 </Group>
                 <Group grow>
