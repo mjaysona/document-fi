@@ -377,13 +377,20 @@ export default function AddTransactionPage() {
       // Skip transactionType in allocation mode (it's always debit)
       if (result.transactionType && !isAllocationContext)
         form.setFieldValue('transactionType', result.transactionType)
-      if (isAllocationContext && result.detectedSourceBankId && result.transactionType === 'credit')
+      if (
+        result.detectedSourceBankId &&
+        (result.transactionType === 'credit' || isAllocationContext)
+      )
         form.setFieldValue('sourceAccount', result.detectedSourceBankId)
-      if (result.detectedDestinationBankId && result.transactionType === 'debit')
+      if (
+        result.detectedDestinationBankId &&
+        (result.transactionType === 'debit' || isAllocationContext)
+      )
         form.setFieldValue('destinationAccount', result.detectedDestinationBankId)
-      if (result.from && result.transactionType === 'credit')
+      if (result.from && (result.transactionType === 'credit' || isAllocationContext))
         form.setFieldValue('from', result.from)
-      if (result.to && result.transactionType === 'debit') form.setFieldValue('to', result.to)
+      if (result.to && (result.transactionType === 'debit' || isAllocationContext))
+        form.setFieldValue('to', result.to)
       if (result.referenceNumber) form.setFieldValue('referenceNumber', result.referenceNumber)
       if (typeof result.amount === 'number') form.setFieldValue('amount', result.amount)
       if (typeof result.transactionFee === 'number')
@@ -852,13 +859,20 @@ export default function AddTransactionPage() {
       if (result.transactionType && !isAllocationContext)
         // Skip transactionType in allocation mode (it's always debit)
         form.setFieldValue('transactionType', result.transactionType)
-      if (isAllocationContext && result.detectedSourceBankId && result.transactionType === 'credit')
+      if (
+        result.detectedSourceBankId &&
+        (result.transactionType === 'credit' || isAllocationContext)
+      )
         form.setFieldValue('sourceAccount', result.detectedSourceBankId)
-      if (result.detectedDestinationBankId && result.transactionType === 'debit')
+      if (
+        result.detectedDestinationBankId &&
+        (result.transactionType === 'debit' || isAllocationContext)
+      )
         form.setFieldValue('destinationAccount', result.detectedDestinationBankId)
-      if (result.from && result.transactionType === 'credit')
+      if (result.from && (result.transactionType === 'credit' || isAllocationContext))
         form.setFieldValue('from', result.from)
-      if (result.to && result.transactionType === 'debit') form.setFieldValue('to', result.to)
+      if (result.to && (result.transactionType === 'debit' || isAllocationContext))
+        form.setFieldValue('to', result.to)
       if (result.referenceNumber) form.setFieldValue('referenceNumber', result.referenceNumber)
       if (typeof result.amount === 'number') form.setFieldValue('amount', result.amount)
       if (typeof result.transactionFee === 'number')
@@ -1054,7 +1068,10 @@ export default function AddTransactionPage() {
                     searchable
                     data={banks.map((bank) => ({
                       value: bank.id,
-                      label: bank.name,
+                      label:
+                        bank.name && bank.shortName
+                          ? `${bank.name} (${bank.shortName})`
+                          : bank.name || bank.shortName || bank.code || bank.id,
                     }))}
                     value={form.values.sourceAccount}
                     onChange={(value) => form.setFieldValue('sourceAccount', value)}
@@ -1070,7 +1087,10 @@ export default function AddTransactionPage() {
                     searchable
                     data={banks.map((bank) => ({
                       value: bank.id,
-                      label: `${bank.name} (${bank.code})`,
+                      label:
+                        bank.name && bank.shortName
+                          ? `${bank.name} (${bank.shortName})`
+                          : bank.name || bank.shortName || bank.code || bank.id,
                     }))}
                     value={form.values.destinationAccount}
                     onChange={(value) => form.setFieldValue('destinationAccount', value)}

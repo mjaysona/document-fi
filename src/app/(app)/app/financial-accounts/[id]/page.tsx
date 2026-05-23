@@ -306,7 +306,7 @@ export default function FinancialAccountDetailPage() {
         <Group>
           <div>
             <Text size="xs">Bank account</Text>
-            <Text size="sm">{account.bankName || '-'}</Text>
+            <Text size="sm">{account.bankShortName || account.bankName || '-'}</Text>
           </div>
           <div>
             <Text size="xs">Starting balance</Text>{' '}

@@ -14,6 +14,7 @@ export type TransactionStatus = 'completed' | 'failed'
 export type BankOption = {
   id: string
   name: string
+  shortName?: string
   code: string
 }
 
@@ -24,6 +25,7 @@ export type FinancialAccountOption = {
   isDefault?: boolean
   bankId?: string
   bankName?: string
+  bankShortName?: string
   startingBalance?: number
   currentBalance?: number
 }
@@ -363,11 +365,14 @@ function textContainsBankReference(
   const normalizedText = ` ${normalizeTextToken(value)} `
   const codeToken = normalizeTextToken(bank.code)
   const nameToken = normalizeTextToken(bank.name)
+  const shortNameToken = normalizeTextToken(bank.shortName || '')
 
   const codeMatch = codeToken.length >= 2 && normalizedText.includes(` ${codeToken} `)
   const nameMatch = nameToken.length >= 3 && normalizedText.includes(` ${nameToken} `)
+  const shortNameMatch =
+    shortNameToken.length >= 2 && normalizedText.includes(` ${shortNameToken} `)
 
-  return codeMatch || nameMatch
+  return codeMatch || nameMatch || shortNameMatch
 }
 
 function detectBankMentionFromText(
@@ -508,6 +513,10 @@ export async function getFinancialAccounts(): Promise<{
         bankName:
           doc.bank && typeof doc.bank === 'object' && doc.bank.name
             ? String(doc.bank.name)
+            : undefined,
+        bankShortName:
+          doc.bank && typeof doc.bank === 'object' && doc.bank.shortName
+            ? String(doc.bank.shortName)
             : undefined,
         startingBalance: typeof doc.startingBalance === 'number' ? doc.startingBalance : undefined,
         currentBalance: typeof doc.currentBalance === 'number' ? doc.currentBalance : undefined,

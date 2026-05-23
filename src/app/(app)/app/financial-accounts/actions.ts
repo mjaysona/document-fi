@@ -8,6 +8,7 @@ import config from '~/payload.config'
 export type BankOption = {
   id: string
   name: string
+  shortName: string
   code: string
 }
 
@@ -16,6 +17,7 @@ export type FinancialAccountDetail = {
   name: string
   bankId: string
   bankName?: string
+  bankShortName?: string
   isDefault: boolean
   startingBalance: number
   currentBalance: number
@@ -66,11 +68,17 @@ function mapFinancialAccount(doc: any): FinancialAccountDetail {
   const bankName =
     doc.bank && typeof doc.bank === 'object' && doc.bank.name ? String(doc.bank.name) : undefined
 
+  const bankShortName =
+    doc.bank && typeof doc.bank === 'object' && doc.bank.shortName
+      ? String(doc.bank.shortName)
+      : undefined
+
   return {
     id: String(doc.id),
     name: String(doc.name || ''),
     bankId,
     bankName,
+    bankShortName,
     isDefault: Boolean(doc.isDefault),
     startingBalance:
       typeof doc.startingBalance === 'number' && Number.isFinite(doc.startingBalance)
@@ -102,6 +110,7 @@ export async function getBanksOptions(): Promise<{
       data: (result.docs as any[]).map((doc) => ({
         id: String(doc.id),
         name: String(doc.name || ''),
+        shortName: String(doc.shortName || ''),
         code: String(doc.code || ''),
       })),
     }

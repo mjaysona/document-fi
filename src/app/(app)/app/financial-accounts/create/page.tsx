@@ -88,7 +88,10 @@ export default function FinancialAccountCreatePage() {
     () =>
       banks.map((bank) => ({
         value: bank.id,
-        label: `${bank.name} (${bank.code})`,
+        label:
+          bank.name && bank.shortName
+            ? `${bank.name} (${bank.shortName})`
+            : bank.name || bank.shortName || bank.code || bank.id,
       })),
     [banks],
   )

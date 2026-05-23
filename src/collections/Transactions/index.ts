@@ -9,7 +9,7 @@ import {
   deleteTransactions,
 } from './access'
 
-const getBankName = async (bankValue: unknown, req: any): Promise<string> => {
+const getBankShortName = async (bankValue: unknown, req: any): Promise<string> => {
   if (!bankValue) return ''
 
   if (typeof bankValue === 'string') {
@@ -155,7 +155,7 @@ const Transactions: CollectionConfig = {
         beforeChange: [
           async ({ siblingData, req }) => {
             const senderFrom = typeof siblingData?.from === 'string' ? siblingData.from : ''
-            const sourceBankName = await getBankName(siblingData?.sourceAccount, req)
+            const sourceBankName = await getBankShortName(siblingData?.sourceAccount, req)
 
             if (senderFrom && sourceBankName) return `${senderFrom} (${sourceBankName})`
             if (senderFrom) return senderFrom
@@ -176,7 +176,7 @@ const Transactions: CollectionConfig = {
         beforeChange: [
           async ({ siblingData, req }) => {
             const receiverTo = typeof siblingData?.to === 'string' ? siblingData.to : ''
-            const destinationBankName = await getBankName(siblingData?.destinationAccount, req)
+            const destinationBankName = await getBankShortName(siblingData?.destinationAccount, req)
 
             if (receiverTo && destinationBankName) return `${receiverTo} (${destinationBankName})`
             if (receiverTo) return receiverTo

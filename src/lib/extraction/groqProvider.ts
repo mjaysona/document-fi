@@ -1,6 +1,7 @@
 export type BankEntry = {
   id: string
   name: string
+  shortName?: string
   code: string
 }
 
@@ -91,7 +92,9 @@ export async function extractTransactionWithGroq(params: {
     throw new Error('Missing GROQ_API_KEY in environment.')
   }
 
-  const bankList = params.banks.map((bank) => `${bank.code}: ${bank.name}`).join('\n')
+  const bankList = params.banks
+    .map((bank) => `${bank.code}: ${bank.name} (${bank.shortName})`)
+    .join('\n')
 
   const defaultAccountInfo = params.defaultFinancialAccount
     ? `\nDefault financial account (for sender/receiver matching):\nBank code: ${params.defaultFinancialAccount.bankCode}\nAccount name: ${params.defaultFinancialAccount.name}`
