@@ -1016,18 +1016,7 @@ export default function AddTransactionPage() {
                     ]}
                     value={form.values.transactionType}
                     onChange={(value) => {
-                      if (isAllocationContext) return // Prevent changes in allocation mode
-                      if (value) {
-                        const sourceBank = form.values.sourceAccount
-                        const destinationBank = form.values.destinationAccount
-                        const fromValue = form.values.from
-                        const toValue = form.values.to
-                        form.setFieldValue('transactionType', value as TransactionType)
-                        form.setFieldValue('sourceAccount', destinationBank)
-                        form.setFieldValue('destinationAccount', sourceBank)
-                        form.setFieldValue('from', toValue)
-                        form.setFieldValue('to', fromValue)
-                      }
+                      if (isAllocationContext) return
                     }}
                     clearable={false}
                     error={form.errors.transactionType}
