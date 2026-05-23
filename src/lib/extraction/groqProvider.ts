@@ -84,6 +84,7 @@ function hasWaivedFeeSignal(rawOcrText: string): boolean {
 export async function extractTransactionWithGroq(params: {
   rawOcrText: string
   banks: BankEntry[]
+  defaultFinancialAccount?: { bankCode: string; name: string }
 }): Promise<GroqExtractionResult> {
   const apiKey = process.env.GROQ_API_KEY
   if (!apiKey) {
@@ -92,10 +93,15 @@ export async function extractTransactionWithGroq(params: {
 
   const bankList = params.banks.map((bank) => `${bank.code}: ${bank.name}`).join('\n')
 
+  const defaultAccountInfo = params.defaultFinancialAccount
+    ? `\nDefault financial account (for sender/receiver matching):\nBank code: ${params.defaultFinancialAccount.bankCode}\nAccount name: ${params.defaultFinancialAccount.name}`
+    : ''
+
   const prompt = `You are extracting financial transaction fields from OCR text for a Philippine account receipt or statement.
 
 Available banks (code: name):
 ${bankList}
+${defaultAccountInfo}
 
 Return ONLY strict JSON with these keys:
 {
@@ -119,6 +125,7 @@ Rules:
 - particulars should contain the detailed narration, merchant/payment context, or notes from the receipt text
 - description must be a readable sentence derived from particulars when particulars exists (example: "Send Money via instaPay ... Notes Tennis coaching" -> "Sent money via Instapay to 099... from Maria Angelica Pascua for tennis coaching.")
 - transactionType must be debit or credit only
+- If the sender (from) or receiver (to) details match the default financial account's bank code and name, infer the transactionType as follows: if sender matches, set transactionType to debit; if receiver matches, set transactionType to credit. Otherwise, use the best available information from the OCR text.
 - amount must be a positive number excluding transaction fee
 - transactionFee must be a non-negative number (use 0 when none)
 - amountIncludesFee should be true only when extracted amount already includes transaction fee; otherwise false

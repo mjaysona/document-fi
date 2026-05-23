@@ -393,20 +393,20 @@ function inferTransactionTypeFromBankContext(params: {
 
   // Strong signal: destination bank was identified and it is not the selected account bank.
   if (detectedDestinationBankId && detectedDestinationBankId !== selectedBankId) {
-    return 'credit'
+    return 'debit'
   }
 
   const mentionedToBankId = detectBankMentionFromText(toText, banks)
   const mentionedFromBankId = detectBankMentionFromText(fromText, banks)
 
-  // User rule: if "to" clearly points to a different bank than selected account bank, classify as credit.
+  // User rule: if "to" clearly points to a different bank than selected account bank, classify as debit.
   if (mentionedToBankId && mentionedToBankId !== selectedBankId) {
-    return 'credit'
+    return 'debit'
   }
 
-  // If "from" explicitly references the selected bank, treat it as debit unless a stronger rule matched.
+  // If "from" explicitly references the selected bank, treat it as credit unless a stronger rule matched.
   if (mentionedFromBankId && mentionedFromBankId === selectedBankId) {
-    return 'debit'
+    return 'credit'
   }
 
   return extractedType

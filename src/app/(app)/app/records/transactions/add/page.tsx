@@ -144,7 +144,7 @@ export default function AddTransactionPage() {
       transactionDate: '',
       description: '',
       particulars: '',
-      transactionType: 'credit',
+      transactionType: 'debit',
       sourceAccount: null,
       destinationAccount: null,
       financialAccount: null,
@@ -374,15 +374,16 @@ export default function AddTransactionPage() {
       }
       if (result.description) form.setFieldValue('description', result.description)
       if (result.particulars) form.setFieldValue('particulars', result.particulars)
-      // Skip transactionType in allocation mode (it's always credit)
+      // Skip transactionType in allocation mode (it's always debit)
       if (result.transactionType && !isAllocationContext)
         form.setFieldValue('transactionType', result.transactionType)
-      if (isAllocationContext && result.detectedSourceBankId)
+      if (isAllocationContext && result.detectedSourceBankId && result.transactionType === 'credit')
         form.setFieldValue('sourceAccount', result.detectedSourceBankId)
-      if (result.detectedDestinationBankId)
+      if (result.detectedDestinationBankId && result.transactionType === 'debit')
         form.setFieldValue('destinationAccount', result.detectedDestinationBankId)
-      if (result.from) form.setFieldValue('from', result.from)
-      if (result.to) form.setFieldValue('to', result.to)
+      if (result.from && result.transactionType === 'credit')
+        form.setFieldValue('from', result.from)
+      if (result.to && result.transactionType === 'debit') form.setFieldValue('to', result.to)
       if (result.referenceNumber) form.setFieldValue('referenceNumber', result.referenceNumber)
       if (typeof result.amount === 'number') form.setFieldValue('amount', result.amount)
       if (typeof result.transactionFee === 'number')
@@ -434,9 +435,9 @@ export default function AddTransactionPage() {
           return
         }
 
-        // Set parent transaction ID and transaction type to credit
+        // Set parent transaction ID and transaction type to debit
         form.setFieldValue('parentTransaction', transactionId)
-        form.setFieldValue('transactionType', 'credit')
+        form.setFieldValue('transactionType', 'debit')
         form.setFieldValue('isFundAllocation', false)
         setParentReferenceNumber(parentResult.data.referenceNumber ?? '')
 
@@ -584,14 +585,24 @@ export default function AddTransactionPage() {
 
     if (!selectedAccount) return
 
-    // Set source account to the financial account's bank and from to account name
-    if (form.values.sourceAccount !== selectedAccount.bankId) {
-      form.setFieldValue('sourceAccount', selectedAccount.bankId ?? null)
+    // If destination bank is empty, transaction type is credit, and not allocation context, default to financial account's bank
+    if (!isAllocationContext && selectedAccount.bankId) {
+      if (form.values.transactionType === 'credit' && !form.values.destinationAccount) {
+        form.setFieldValue('destinationAccount', selectedAccount.bankId)
+        form.setFieldValue('to', selectedAccount.name)
+      } else if (form.values.transactionType === 'debit' && !form.values.sourceAccount) {
+        form.setFieldValue('sourceAccount', selectedAccount.bankId)
+        form.setFieldValue('from', selectedAccount.name)
+      }
     }
-    if (!form.values.from) {
-      form.setFieldValue('from', selectedAccount.name)
-    }
-  }, [financialAccounts, form.values.financialAccount, isAllocationContext])
+  }, [
+    financialAccounts,
+    form.values.financialAccount,
+    isAllocationContext,
+    form.values.transactionType,
+    form.values.sourceAccount,
+    form.values.destinationAccount,
+  ])
 
   // Set transaction date to today when creating a new transaction
   useEffect(() => {
@@ -839,13 +850,15 @@ export default function AddTransactionPage() {
       if (result.description) form.setFieldValue('description', result.description)
       if (result.particulars) form.setFieldValue('particulars', result.particulars)
       if (result.transactionType && !isAllocationContext)
+        // Skip transactionType in allocation mode (it's always debit)
         form.setFieldValue('transactionType', result.transactionType)
-      if (isAllocationContext && result.detectedSourceBankId)
+      if (isAllocationContext && result.detectedSourceBankId && result.transactionType === 'credit')
         form.setFieldValue('sourceAccount', result.detectedSourceBankId)
-      if (result.detectedDestinationBankId)
+      if (result.detectedDestinationBankId && result.transactionType === 'debit')
         form.setFieldValue('destinationAccount', result.detectedDestinationBankId)
-      if (result.from) form.setFieldValue('from', result.from)
-      if (result.to) form.setFieldValue('to', result.to)
+      if (result.from && result.transactionType === 'credit')
+        form.setFieldValue('from', result.from)
+      if (result.to && result.transactionType === 'debit') form.setFieldValue('to', result.to)
       if (result.referenceNumber) form.setFieldValue('referenceNumber', result.referenceNumber)
       if (typeof result.amount === 'number') form.setFieldValue('amount', result.amount)
       if (typeof result.transactionFee === 'number')
@@ -1011,19 +1024,28 @@ export default function AddTransactionPage() {
                   <Select
                     label="Transaction Type"
                     data={[
-                      { label: 'Debit', value: 'debit' },
-                      { label: 'Credit', value: 'credit' },
+                      { label: 'Debit (Cash Out)', value: 'debit' },
+                      { label: 'Credit (Cash In)', value: 'credit' },
                     ]}
                     value={form.values.transactionType}
                     onChange={(value) => {
                       if (isAllocationContext) return
+                      if (value) {
+                        const sourceBank = form.values.sourceAccount
+                        const destinationBank = form.values.destinationAccount
+                        const fromValue = form.values.from
+                        const toValue = form.values.to
+                        form.setFieldValue('transactionType', value as TransactionType)
+                        form.setFieldValue('sourceAccount', destinationBank)
+                        form.setFieldValue('destinationAccount', sourceBank)
+                        form.setFieldValue('from', toValue)
+                        form.setFieldValue('to', fromValue)
+                      }
                     }}
                     clearable={false}
                     error={form.errors.transactionType}
                     required
-                    disabled={
-                      (!form.values.financialAccount && !isAllocationContext) || isAllocationContext
-                    }
+                    disabled={!form.values.financialAccount || isAllocationContext}
                   />
                 </Group>
                 <Group grow>
@@ -1032,13 +1054,16 @@ export default function AddTransactionPage() {
                     searchable
                     data={banks.map((bank) => ({
                       value: bank.id,
-                      label: `${bank.name} (${bank.code})`,
+                      label: bank.name,
                     }))}
                     value={form.values.sourceAccount}
                     onChange={(value) => form.setFieldValue('sourceAccount', value)}
                     error={form.errors.sourceAccount}
                     required
-                    disabled={!isAllocationContext && !form.values.financialAccount}
+                    disabled={
+                      !isAllocationContext &&
+                      (!form.values.financialAccount || form.values.transactionType === 'debit')
+                    }
                   />
                   <Select
                     label="Destination Bank"
@@ -1051,7 +1076,10 @@ export default function AddTransactionPage() {
                     onChange={(value) => form.setFieldValue('destinationAccount', value)}
                     error={form.errors.destinationAccount}
                     required
-                    disabled={!isAllocationContext && !form.values.financialAccount}
+                    disabled={
+                      !isAllocationContext &&
+                      (!form.values.financialAccount || form.values.transactionType === 'credit')
+                    }
                   />
                 </Group>
                 <Group grow>
@@ -1061,7 +1089,10 @@ export default function AddTransactionPage() {
                     onChange={(e) => form.setFieldValue('from', e.currentTarget.value)}
                     error={form.errors.from}
                     required
-                    disabled={!isAllocationContext && !form.values.financialAccount}
+                    disabled={
+                      !isAllocationContext &&
+                      (!form.values.financialAccount || form.values.transactionType === 'debit')
+                    }
                   />
                   <TextInput
                     label="To"
@@ -1069,7 +1100,10 @@ export default function AddTransactionPage() {
                     onChange={(e) => form.setFieldValue('to', e.currentTarget.value)}
                     error={form.errors.to}
                     required
-                    disabled={!isAllocationContext && !form.values.financialAccount}
+                    disabled={
+                      !isAllocationContext &&
+                      (!form.values.financialAccount || form.values.transactionType === 'credit')
+                    }
                   />
                 </Group>
                 <Group grow>
