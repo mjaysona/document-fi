@@ -157,6 +157,14 @@ export function TransactionReportDocument({
     dateLabel: formatDate(point.date),
   }))
 
+  // Determine starting balance: balance of the first day in the selected date range
+  let startingBalance: number | null = null
+  if (lineChartData.length > 0 && typeof lineChartData[0].runningBalance === 'number') {
+    startingBalance = lineChartData[0].runningBalance
+  } else if (rows.length > 0 && typeof rows[0].runningBalance === 'number') {
+    startingBalance = rows[0].runningBalance
+  }
+
   return (
     <article className={styles.document} aria-label="Transaction report document">
       <h3 className={styles.header}>{header.title}</h3>
@@ -171,6 +179,16 @@ export function TransactionReportDocument({
           ) : null}
         </span>
       </div>
+      <div className={styles.transactionDetails}>
+        <div className={styles.transactionDetail}>
+          <p className={styles.transactionDetailLabel}>Starting balance</p>
+          <p className={styles.transactionDetailValue}>{formatMoney(startingBalance)}</p>
+        </div>
+        <div className={styles.transactionDetail}>
+          <p className={styles.transactionDetailLabel}>Transactions</p>
+          <p className={styles.transactionDetailValue}>{rows.length}</p>
+        </div>
+      </div>
       <section className={styles.chartSection} aria-label="Charts preview section">
         <div className={styles.chartGrid}>
           <div className={styles.chartCard}>
@@ -178,7 +196,7 @@ export function TransactionReportDocument({
             {hasLineData ? (
               <div className={styles.chartViewport}>
                 <LineChart
-                  h={200}
+                  h={300}
                   data={lineChartSeries}
                   dataKey="dateLabel"
                   series={[{ name: 'runningBalance', label: 'Running Balance', color: 'teal.6' }]}
@@ -216,7 +234,7 @@ export function TransactionReportDocument({
             {hasBarData ? (
               <div className={styles.chartViewport}>
                 <BarChart
-                  h={200}
+                  h={300}
                   data={barChartSeries}
                   dataKey="dateLabel"
                   series={[
