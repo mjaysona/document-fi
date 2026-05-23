@@ -159,7 +159,6 @@ export default function AddTransactionPage() {
     },
     validate: {
       transactionDate: (value) => (value ? null : 'Transaction date is required.'),
-      description: (value) => (value.trim() ? null : 'Description is required.'),
       transactionType: (value) => (value ? null : 'Transaction type is required.'),
       sourceAccount: (value) => (value ? null : 'Source bank is required.'),
       destinationAccount: (value) => (value ? null : 'Destination bank is required.'),
@@ -1214,7 +1213,6 @@ export default function AddTransactionPage() {
                   value={form.values.description}
                   onChange={(e) => form.setFieldValue('description', e.currentTarget.value)}
                   error={form.errors.description}
-                  required
                   disabled={isEditMode}
                 />
                 <Textarea

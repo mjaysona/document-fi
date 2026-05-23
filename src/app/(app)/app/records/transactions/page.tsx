@@ -11,6 +11,7 @@ import {
   Flex,
   Group,
   MultiSelect,
+  Select,
   Stack,
   Table,
   Text,
@@ -19,7 +20,12 @@ import {
 import { DatePickerInput } from '@mantine/dates'
 import { CircleCheck, Filter, Plus, Search } from 'lucide-react'
 import { DataTable, type DataTableColumn } from '@/app/(app)/components/ui/DataTable'
-import { getTransactions, type TransactionListItem } from './actions'
+import {
+  getFinancialAccounts,
+  getTransactions,
+  type FinancialAccountOption,
+  type TransactionListItem,
+} from './actions'
 import {
   TRANSACTION_REPORT_COLUMN_OPTIONS,
   type TransactionReportColumnKey,
@@ -69,7 +75,6 @@ const DEFAULT_TABLE_COLUMNS: TransactionReportColumnKey[] = [
   'transactionDate',
   'sourceBank',
   'destinationBank',
-  'currentBalance',
   'type',
   'totalAmount',
   'runningBalance',
@@ -164,10 +169,11 @@ export default function TransactionsPage() {
   if (!hasReadAccess) return null
   const searchParams = useSearchParams()
   const [items, setItems] = useState<TransactionListItem[]>([])
+  const [financialAccounts, setFinancialAccounts] = useState<FinancialAccountOption[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [filterOpen, setFilterOpen] = useState(false)
-  const [filterFinancialAccounts, setFilterFinancialAccounts] = useState<string[]>([])
+  const [filterFinancialAccount, setFilterFinancialAccount] = useState<string | null>(null)
   const [filterTypes, setFilterTypes] = useState<string[]>([])
   const [filterStatuses, setFilterStatuses] = useState<string[]>([])
   const [filterSourceAccounts, setFilterSourceAccounts] = useState<string[]>([])
@@ -193,12 +199,29 @@ export default function TransactionsPage() {
 
   const load = async () => {
     setIsLoading(true)
-    const result = await getTransactions()
-    if (result.success) {
-      setItems(result.data)
+    const [transactionsResult, financialAccountsResult] = await Promise.all([
+      getTransactions(),
+      getFinancialAccounts(),
+    ])
+
+    if (transactionsResult.success) {
+      setItems(transactionsResult.data)
     } else {
-      setFeedback({ tone: 'error', message: result.error ?? 'Failed to load transactions.' })
+      setFeedback({
+        tone: 'error',
+        message: transactionsResult.error ?? 'Failed to load transactions.',
+      })
     }
+
+    if (financialAccountsResult.success) {
+      setFinancialAccounts(financialAccountsResult.data)
+    } else if (!transactionsResult.success) {
+      setFeedback({
+        tone: 'error',
+        message: financialAccountsResult.error ?? 'Failed to load financial accounts.',
+      })
+    }
+
     setIsLoading(false)
   }
 
@@ -212,8 +235,22 @@ export default function TransactionsPage() {
 
     if (!initialFinancialAccountFilter) return
 
-    setFilterFinancialAccounts([initialFinancialAccountFilter])
+    setFilterFinancialAccount(initialFinancialAccountFilter)
   }, [initialFinancialAccountFilter])
+
+  useEffect(() => {
+    if (filterFinancialAccount) return
+    if (initialFinancialAccountFilter) return
+    if (financialAccounts.length === 0) return
+
+    const defaultAccount = financialAccounts.find(
+      (account) => account.isDefault && Boolean(account.name),
+    )
+
+    if (defaultAccount?.name) {
+      setFilterFinancialAccount(defaultAccount.name)
+    }
+  }, [filterFinancialAccount, financialAccounts, initialFinancialAccountFilter])
 
   const pushTableColumnsToUrl = (nextColumns: string[]) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -240,14 +277,14 @@ export default function TransactionsPage() {
     () =>
       Array.from(
         new Set(
-          items
-            .map((item) => item.financialAccountName)
+          financialAccounts
+            .map((account) => account.name)
             .filter((name): name is string => Boolean(name)),
         ),
       )
         .sort((a, b) => a.localeCompare(b))
         .map((name) => ({ value: name, label: name })),
-    [items],
+    [financialAccounts],
   )
 
   const sourceAccountOptions = useMemo(
@@ -278,8 +315,22 @@ export default function TransactionsPage() {
     [items],
   )
 
+  const selectedFinancialAccountCurrentBalance = useMemo(() => {
+    if (!filterFinancialAccount) return '-'
+
+    const selectedAccount = financialAccounts.find(
+      (account) => account.name === filterFinancialAccount,
+    )
+
+    if (!selectedAccount || typeof selectedAccount.currentBalance !== 'number') {
+      return '-'
+    }
+
+    return formatCurrency(selectedAccount.currentBalance)
+  }, [filterFinancialAccount, financialAccounts])
+
   const activeFilterCount =
-    filterFinancialAccounts.length +
+    (filterFinancialAccount ? 1 : 0) +
     filterTypes.length +
     filterStatuses.length +
     filterSourceAccounts.length +
@@ -289,13 +340,8 @@ export default function TransactionsPage() {
   const displayed = useMemo(() => {
     const query = search.toLowerCase().trim()
     const filtered = items.filter((item) => {
-      if (filterFinancialAccounts.length > 0) {
-        if (
-          !item.financialAccountName ||
-          !filterFinancialAccounts.includes(item.financialAccountName)
-        ) {
-          return false
-        }
+      if (filterFinancialAccount && item.financialAccountName !== filterFinancialAccount) {
+        return false
       }
 
       if (filterTypes.length > 0) {
@@ -359,7 +405,7 @@ export default function TransactionsPage() {
   }, [
     filterDateRange,
     filterDestinationAccounts,
-    filterFinancialAccounts,
+    filterFinancialAccount,
     filterSourceAccounts,
     filterStatuses,
     filterTypes,
@@ -374,13 +420,21 @@ export default function TransactionsPage() {
     const childrenByParentId = new Map<string, TransactionListItem[]>()
     const visibleParentIds = new Set<string>()
 
+    // Always build child groupings from the full dataset so expanding a visible
+    // parent can still show its linked children even when child rows are filtered out.
+    for (const item of items) {
+      const parentId = item.parentTransaction || null
+      if (!parentId) continue
+
+      const existing = childrenByParentId.get(parentId) ?? []
+      existing.push(item)
+      childrenByParentId.set(parentId, existing)
+    }
+
     for (const item of displayed) {
       const parentId = item.parentTransaction || null
       if (parentId) {
         if (allItemsById.has(parentId)) {
-          const existing = childrenByParentId.get(parentId) ?? []
-          existing.push(item)
-          childrenByParentId.set(parentId, existing)
           visibleParentIds.add(parentId)
         } else {
           visibleParentIds.add(item.id)
@@ -644,15 +698,6 @@ export default function TransactionsPage() {
           >
             <Group grow gap="sm" align="flex-end">
               <MultiSelect
-                label="Financial Account"
-                placeholder="All financial accounts"
-                data={financialAccountOptions}
-                value={filterFinancialAccounts}
-                onChange={setFilterFinancialAccounts}
-                clearable
-                searchable
-              />
-              <MultiSelect
                 label="Type"
                 placeholder="All types"
                 data={[
@@ -674,8 +719,6 @@ export default function TransactionsPage() {
                 onChange={setFilterStatuses}
                 clearable
               />
-            </Group>
-            <Group grow gap="sm" align="flex-end">
               <MultiSelect
                 label="Source Account"
                 placeholder="All source accounts"
@@ -703,25 +746,6 @@ export default function TransactionsPage() {
                 clearable
               />
             </Group>
-
-            {activeFilterCount > 0 && (
-              <Group justify="flex-end">
-                <Button
-                  variant="subtle"
-                  size="xs"
-                  onClick={() => {
-                    setFilterFinancialAccounts([])
-                    setFilterTypes([])
-                    setFilterStatuses([])
-                    setFilterSourceAccounts([])
-                    setFilterDestinationAccounts([])
-                    setFilterDateRange([null, null])
-                  }}
-                >
-                  Clear filters ({activeFilterCount})
-                </Button>
-              </Group>
-            )}
             <MultiSelect
               label="Table Columns"
               placeholder="Shown table columns"
@@ -741,9 +765,40 @@ export default function TransactionsPage() {
                 input: { minHeight: 36 },
               }}
             />
+
+            {activeFilterCount > 0 && (
+              <Group justify="flex-end">
+                <Button
+                  variant="subtle"
+                  size="xs"
+                  onClick={() => {
+                    setFilterFinancialAccount(null)
+                    setFilterTypes([])
+                    setFilterStatuses([])
+                    setFilterSourceAccounts([])
+                    setFilterDestinationAccounts([])
+                    setFilterDateRange([null, null])
+                  }}
+                >
+                  Clear filters ({activeFilterCount})
+                </Button>
+              </Group>
+            )}
           </Stack>
         </Collapse>
-        <Group justify="flex-end">
+        <Group justify="space-between" align="center" mb="md">
+          <Group>
+            <Select
+              placeholder="Select financial account"
+              data={financialAccountOptions}
+              value={filterFinancialAccount}
+              onChange={setFilterFinancialAccount}
+              clearable
+              searchable
+              style={{ minWidth: 260 }}
+            />
+            <Text>Current balance: {selectedFinancialAccountCurrentBalance}</Text>
+          </Group>
           <Button
             variant="filled"
             size="sm"
