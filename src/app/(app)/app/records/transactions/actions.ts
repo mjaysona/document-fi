@@ -93,6 +93,20 @@ export type TransactionDetail = TransactionFormInput & {
 export type ProcessTransactionReceiptResult = {
   success: boolean
   status?: 'idle' | 'processing' | 'partial-success' | 'success' | 'failed'
+  rawOcrText?: string
+  detectedSourceBankId?: string
+  detectedDestinationBankId?: string
+  transactionDate?: string
+  description?: string
+  particulars?: string
+  transactionType?: TransactionType
+  referenceNumber?: string
+  amount?: number
+  transactionFee?: number
+  transactionStatus?: TransactionStatus
+  from?: string
+  to?: string
+  confidence?: number
   error?: string
   warning?: string
 }
@@ -1141,7 +1155,6 @@ export async function processTransactionReceipt(
     }
 
     let rawOcrText = (tx as any).rawOcrText ? String((tx as any).rawOcrText) : ''
-    let ocrPersisted = false
 
     if (!rawOcrText.trim()) {
       const resolvedImageUrl = receiptImageUrl.startsWith('http')
@@ -1160,17 +1173,6 @@ export async function processTransactionReceipt(
       const imageBuffer = Buffer.from(await imageResponse.arrayBuffer())
       const ocrResult = await extractTextFromImageBuffer(imageBuffer)
       rawOcrText = ocrResult.rawText
-
-      await payload.update({
-        collection: 'transactions',
-        id: transactionId,
-        data: {
-          rawOcrText,
-          isAiGenerated: true,
-        },
-        depth: 0,
-      })
-      ocrPersisted = true
     }
 
     const banksResult = await getBanks()
@@ -1209,51 +1211,31 @@ export async function processTransactionReceipt(
         banks: banksResult.data,
       })
 
-      await payload.update({
-        collection: 'transactions',
-        id: transactionId,
-        data: {
-          aiExtractedJson: extraction.rawJson as Record<string, unknown>,
-          extractionConfidence: extraction.confidence,
-          sourceAccount: sourceBankResolution.bankId ?? (tx as any).sourceAccount ?? null,
-          destinationAccount: destinationBank?.id ?? (tx as any).destinationAccount ?? null,
-          transactionDate:
-            normalizeTransactionDate(extraction.extracted.transactionDate) ??
-            (tx as any).transactionDate ??
-            null,
-          description: readableDescription ?? (tx as any).description ?? null,
-          particulars:
-            extraction.extracted.particulars ??
-            extraction.extracted.description ??
-            (tx as any).particulars ??
-            null,
-          transactionType: inferredTransactionType ?? (tx as any).transactionType ?? null,
-          from: extraction.extracted.from ?? (tx as any).from ?? null,
-          to: extraction.extracted.to ?? (tx as any).to ?? null,
-          referenceNumber:
-            extraction.extracted.referenceNumber ?? (tx as any).referenceNumber ?? null,
-          amount:
-            typeof extraction.extracted.amount === 'number'
-              ? extraction.extracted.amount
-              : ((tx as any).amount ?? null),
-          transactionFee:
-            typeof extraction.extracted.transactionFee === 'number'
-              ? extraction.extracted.transactionFee
-              : ((tx as any).transactionFee ?? 0),
-          transactionStatus:
-            extraction.extracted.transactionStatus ?? (tx as any).transactionStatus ?? 'completed',
-          isAiGenerated: true,
-        },
-        depth: 0,
-      })
-
-      return { success: true, status: 'success' }
+      return {
+        success: true,
+        status: 'success',
+        rawOcrText,
+        detectedSourceBankId: sourceBankResolution.bankId,
+        detectedDestinationBankId: destinationBank?.id,
+        transactionDate: extraction.extracted.transactionDate,
+        description: readableDescription,
+        particulars: extraction.extracted.particulars ?? extraction.extracted.description,
+        transactionType: inferredTransactionType,
+        referenceNumber: extraction.extracted.referenceNumber,
+        amount: extraction.extracted.amount,
+        transactionFee: extraction.extracted.transactionFee ?? 0,
+        transactionStatus: extraction.extracted.transactionStatus,
+        from: extraction.extracted.from,
+        to: extraction.extracted.to,
+        confidence: extraction.confidence,
+      }
     } catch (error) {
       const errMsg = error instanceof Error ? error.message : String(error)
       console.error('Groq extraction failed:', errMsg)
       return {
         success: false,
-        status: ocrPersisted ? 'partial-success' : 'failed',
+        status: rawOcrText.trim() ? 'partial-success' : 'failed',
+        rawOcrText: rawOcrText.trim() ? rawOcrText : undefined,
         error: `AI extraction failed: ${errMsg}`,
       }
     }

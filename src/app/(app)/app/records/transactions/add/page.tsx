@@ -366,7 +366,6 @@ export default function AddTransactionPage() {
 
     if (result.success || result.rawOcrText) {
       setPendingRawOcrText(result.rawOcrText)
-
       if (result.transactionDate) {
         const parsed = new Date(result.transactionDate)
         if (!Number.isNaN(parsed.getTime())) {
@@ -826,16 +825,41 @@ export default function AddTransactionPage() {
     setIsProcessingReceipt(true)
 
     const result = await processTransactionReceipt(transactionId)
+    if (result.rawOcrText) {
+      setPendingRawOcrText(result.rawOcrText)
+    }
+
     if (result.success || result.status === 'partial-success') {
-      await hydrateFromTransaction()
+      if (result.transactionDate) {
+        const parsed = new Date(result.transactionDate)
+        if (!Number.isNaN(parsed.getTime())) {
+          form.setFieldValue('transactionDate', parsed.toISOString().split('T')[0])
+        }
+      }
+      if (result.description) form.setFieldValue('description', result.description)
+      if (result.particulars) form.setFieldValue('particulars', result.particulars)
+      if (result.transactionType && !isAllocationContext)
+        form.setFieldValue('transactionType', result.transactionType)
+      if (isAllocationContext && result.detectedSourceBankId)
+        form.setFieldValue('sourceAccount', result.detectedSourceBankId)
+      if (result.detectedDestinationBankId)
+        form.setFieldValue('destinationAccount', result.detectedDestinationBankId)
+      if (result.from) form.setFieldValue('from', result.from)
+      if (result.to) form.setFieldValue('to', result.to)
+      if (result.referenceNumber) form.setFieldValue('referenceNumber', result.referenceNumber)
+      if (typeof result.amount === 'number') form.setFieldValue('amount', result.amount)
+      if (typeof result.transactionFee === 'number')
+        form.setFieldValue('transactionFee', result.transactionFee)
+      if (result.transactionStatus)
+        form.setFieldValue('transactionStatus', result.transactionStatus)
     }
 
     if (result.success) {
-      setFeedback({ type: 'success', message: 'Receipt processed successfully.' })
+      setFeedback({ type: 'success', message: 'Receipt processed. Review fields, then save.' })
     } else if (result.status === 'partial-success') {
       setFeedback({
         type: 'success',
-        message: result.error ?? 'Partial success. Retry processing.',
+        message: result.error ?? 'OCR complete. Review fields, then save.',
       })
     } else {
       setFeedback({ type: 'error', message: result.error ?? 'Failed to process receipt.' })
