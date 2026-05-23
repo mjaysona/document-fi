@@ -72,7 +72,6 @@ const Transactions: CollectionConfig = {
       name: 'description',
       label: 'Description',
       type: 'text',
-      required: true,
     },
     {
       name: 'particulars',

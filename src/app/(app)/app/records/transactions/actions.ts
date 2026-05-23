@@ -624,7 +624,6 @@ export async function createTransaction(input: TransactionFormInput): Promise<{
     const parentTransaction = String(input.parentTransaction || '').trim()
     const providedSourceAccount = String(input.sourceAccount || '').trim()
 
-    if (!description) return { success: false, error: 'Description is required.' }
     if (!transactionType) return { success: false, error: 'Transaction type is required.' }
     if (!amount) return { success: false, error: 'Amount must be greater than zero.' }
     if (!financialAccount && !parentTransaction) {
@@ -689,7 +688,6 @@ export async function createTransactionWithReceipt(formData: FormData): Promise<
     if (!session?.user?.id) return { success: false, error: 'Unauthorized' }
 
     const description = String(formData.get('description') || '').trim()
-    if (!description) return { success: false, error: 'Description is required.' }
 
     const file = formData.get('file')
     const hasFile = file instanceof File && file.size > 0
@@ -884,7 +882,6 @@ export async function updateTransaction(
     const parentTransaction = String(input.parentTransaction || '').trim()
     const providedSourceAccount = String(input.sourceAccount || '').trim()
 
-    if (!description) return { success: false, error: 'Description is required.' }
     if (!transactionType) return { success: false, error: 'Transaction type is required.' }
     if (!amount) return { success: false, error: 'Amount must be greater than zero.' }
     if (!financialAccount && !parentTransaction) {

@@ -418,7 +418,7 @@ export interface FinancialAccount {
 export interface Transaction {
   id: string;
   transactionDate?: string | null;
-  description: string;
+  description?: string | null;
   particulars?: string | null;
   transactionType: 'debit' | 'credit';
   sourceAccount?: (string | null) | Bank;

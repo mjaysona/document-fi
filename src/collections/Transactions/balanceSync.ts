@@ -297,6 +297,7 @@ export async function syncAccountBalances(args: {
     }
 
     const nextCurrentBalance = Number.isFinite(runningBalance) ? runningBalance : 0
+
     if (account.currentBalance !== nextCurrentBalance) {
       await req.payload.update({
         collection: 'financial-accounts',
