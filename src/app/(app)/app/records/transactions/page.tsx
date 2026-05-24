@@ -25,6 +25,8 @@ import { DataTable, type DataTableColumn } from '@/app/(app)/components/ui/DataT
 import {
   getFinancialAccounts,
   getTransactions,
+  getUserTransactionTableColumnsConfig,
+  saveTransactionTableColumns,
   type FinancialAccountOption,
   type TransactionListItem,
 } from './actions'
@@ -81,12 +83,12 @@ type ChildTableColumn = {
 const DEFAULT_TABLE_COLUMNS: TransactionReportColumnKey[] = [
   'referenceNumber',
   'transactionDate',
-  'sourceBank',
-  'destinationBank',
-  'type',
+  'sourceAccount',
+  'destinationAccount',
+  'transactionType',
   'totalAmount',
   'runningBalance',
-  'status',
+  'transactionStatus',
 ]
 
 const formatDate = (value?: string): string => {
@@ -195,6 +197,7 @@ export default function TransactionsPage() {
   const [sortBy, setSortBy] = useState<SortBy>('date')
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
   const [feedback, setFeedback] = useState<FeedbackState | null>(null)
+  const [isSavingTableColumns, setIsSavingTableColumns] = useState(false)
   const [expandedRows, setExpandedRows] = useState<string[]>([])
   const hasAppliedInitialQueryFilters = useRef(false)
   const tableColsParam = searchParams.get('tableCols')
@@ -209,9 +212,10 @@ export default function TransactionsPage() {
 
   const load = async () => {
     setIsLoading(true)
-    const [transactionsResult, financialAccountsResult] = await Promise.all([
+    const [transactionsResult, financialAccountsResult, savedColumnsResult] = await Promise.all([
       getTransactions(),
       getFinancialAccounts(),
+      getUserTransactionTableColumnsConfig(),
     ])
 
     if (transactionsResult.success) {
@@ -230,6 +234,12 @@ export default function TransactionsPage() {
         tone: 'error',
         message: financialAccountsResult.error ?? 'Failed to load financial accounts.',
       })
+    }
+
+    // Initialize table columns: URL params > saved config > defaults
+    if (!tableColsParam && savedColumnsResult.success && savedColumnsResult.columns?.length) {
+      const parsed = parseTableColumnKeys(savedColumnsResult.columns.join(','))
+      setSelectedTableColumns(parsed)
     }
 
     setIsLoading(false)
@@ -291,6 +301,26 @@ export default function TransactionsPage() {
       if (next) setFilterOpen(false)
       return next
     })
+  }
+
+  const handleSaveTableColumns = async () => {
+    setIsSavingTableColumns(true)
+    const result = await saveTransactionTableColumns(selectedTableColumns)
+
+    if (!result.success) {
+      setFeedback({
+        tone: 'error',
+        message: result.error ?? 'Failed to save table columns configuration.',
+      })
+      setIsSavingTableColumns(false)
+      return
+    }
+
+    setFeedback({
+      tone: 'success',
+      message: 'Table columns configuration saved.',
+    })
+    setIsSavingTableColumns(false)
   }
 
   const selectedTableColumnOptions = useMemo(() => {
@@ -522,18 +552,8 @@ export default function TransactionsPage() {
         label: 'Transaction Date',
         render: (row) => formatDate(row.parent.transactionDate),
       },
-      createdAt: {
-        key: 'createdAt',
-        label: 'Created',
-        render: (row) => formatDate(row.parent.createdAt),
-      },
-      updatedAt: {
-        key: 'updatedAt',
-        label: 'Last Updated',
-        render: (row) => formatDate(row.parent.updatedAt),
-      },
-      type: {
-        key: 'type',
+      transactionType: {
+        key: 'transactionType',
         label: 'Type',
         render: (row) => {
           if (!row.parent.transactionType) return '-'
@@ -548,8 +568,8 @@ export default function TransactionsPage() {
           )
         },
       },
-      status: {
-        key: 'status',
+      transactionStatus: {
+        key: 'transactionStatus',
         label: 'Status',
         render: (row) => {
           const { totalAllocatedWithFees, parentAmount } = getAllocation(row)
@@ -575,33 +595,15 @@ export default function TransactionsPage() {
           )
         },
       },
-      sourceBank: {
-        key: 'sourceBank',
+      sourceAccount: {
+        key: 'sourceAccount',
         label: 'Source Bank',
         render: (row) => row.parent.sourceAccountName || '-',
       },
-      destinationBank: {
-        key: 'destinationBank',
+      destinationAccount: {
+        key: 'destinationAccount',
         label: 'Destination Bank',
         render: (row) => row.parent.destinationAccountName || '-',
-      },
-      fromWithSourceBank: {
-        key: 'fromWithSourceBank',
-        label: 'From + Source Bank',
-        render: (row) => {
-          const from = row.parent.from || '-'
-          const source = row.parent.sourceAccountName || '-'
-          return `${from} (${source})`
-        },
-      },
-      toWithDestinationBank: {
-        key: 'toWithDestinationBank',
-        label: 'To + Destination Bank',
-        render: (row) => {
-          const to = row.parent.to || '-'
-          const destination = row.parent.destinationAccountName || '-'
-          return `${to} (${destination})`
-        },
       },
       financialAccount: {
         key: 'financialAccount',
@@ -618,13 +620,23 @@ export default function TransactionsPage() {
         label: 'To',
         render: (row) => row.parent.to || '-',
       },
+      sender: {
+        key: 'sender',
+        label: 'Sender',
+        render: (row) => row.parent.sender || '-',
+      },
+      receiver: {
+        key: 'receiver',
+        label: 'Receiver',
+        render: (row) => row.parent.receiver || '-',
+      },
       amount: {
         key: 'amount',
         label: 'Amount',
         render: (row) => formatCurrency(row.parent.amount),
       },
-      fee: {
-        key: 'fee',
+      transactionFee: {
+        key: 'transactionFee',
         label: 'Fee',
         render: (row) => formatCurrency(row.parent.transactionFee),
       },
@@ -643,8 +655,8 @@ export default function TransactionsPage() {
         label: 'Running Balance',
         render: (row) => formatCurrency(row.parent.runningBalance),
       },
-      fundAllocation: {
-        key: 'fundAllocation',
+      isFundAllocation: {
+        key: 'isFundAllocation',
         label: 'Fund Allocation',
         render: (row) => (row.parent.isFundAllocation ? 'Yes' : 'No'),
       },
@@ -700,18 +712,8 @@ export default function TransactionsPage() {
         label: 'Date',
         render: (child) => formatDate(child.transactionDate),
       },
-      createdAt: {
-        key: 'createdAt',
-        label: 'Created',
-        render: (child) => formatDate(child.createdAt),
-      },
-      updatedAt: {
-        key: 'updatedAt',
-        label: 'Last Updated',
-        render: (child) => formatDate(child.updatedAt),
-      },
-      type: {
-        key: 'type',
+      transactionType: {
+        key: 'transactionType',
         label: 'Type',
         render: (child) => {
           if (!child.transactionType) return '-'
@@ -726,8 +728,8 @@ export default function TransactionsPage() {
           )
         },
       },
-      status: {
-        key: 'status',
+      transactionStatus: {
+        key: 'transactionStatus',
         label: 'Status',
         render: (child) => (
           <Badge
@@ -739,33 +741,15 @@ export default function TransactionsPage() {
           </Badge>
         ),
       },
-      sourceBank: {
-        key: 'sourceBank',
+      sourceAccount: {
+        key: 'sourceAccount',
         label: 'Source Bank',
         render: (child) => child.sourceAccountName || '-',
       },
-      destinationBank: {
-        key: 'destinationBank',
+      destinationAccount: {
+        key: 'destinationAccount',
         label: 'Destination Bank',
         render: (child) => child.destinationAccountName || '-',
-      },
-      fromWithSourceBank: {
-        key: 'fromWithSourceBank',
-        label: 'From + Source Bank',
-        render: (child) => {
-          const from = child.from || '-'
-          const source = child.sourceAccountName || '-'
-          return `${from} (${source})`
-        },
-      },
-      toWithDestinationBank: {
-        key: 'toWithDestinationBank',
-        label: 'To + Destination Bank',
-        render: (child) => {
-          const to = child.to || '-'
-          const destination = child.destinationAccountName || '-'
-          return `${to} (${destination})`
-        },
       },
       financialAccount: {
         key: 'financialAccount',
@@ -782,13 +766,23 @@ export default function TransactionsPage() {
         label: 'To',
         render: (child) => child.to || '-',
       },
+      sender: {
+        key: 'sender',
+        label: 'Sender',
+        render: (child) => child.sender || '-',
+      },
+      receiver: {
+        key: 'receiver',
+        label: 'Receiver',
+        render: (child) => child.receiver || '-',
+      },
       amount: {
         key: 'amount',
         label: 'Amount',
         render: (child) => formatCurrency(child.amount),
       },
-      fee: {
-        key: 'fee',
+      transactionFee: {
+        key: 'transactionFee',
         label: 'Fee',
         render: (child) => formatCurrency(child.transactionFee),
       },
@@ -807,8 +801,8 @@ export default function TransactionsPage() {
         label: 'Running Balance',
         render: (child) => formatCurrency(child.runningBalance),
       },
-      fundAllocation: {
-        key: 'fundAllocation',
+      isFundAllocation: {
+        key: 'isFundAllocation',
         label: 'Fund Allocation',
         render: (child) => (child.isFundAllocation ? 'Yes' : 'No'),
       },
@@ -884,6 +878,19 @@ export default function TransactionsPage() {
             New transaction
           </Button>
         </Group>
+
+        {feedback && (
+          <Alert
+            mt="sm"
+            variant="outline"
+            icon={<CircleCheck size={16} />}
+            withCloseButton
+            onClose={() => setFeedback(null)}
+            color={feedback.tone === 'success' ? 'green' : 'red'}
+          >
+            {feedback.message}
+          </Alert>
+        )}
         <Group justify="space-between" align="center">
           {selectedFinancialAccountCurrentBalance && (
             <Stack gap={0} align="flex-start">
@@ -989,6 +996,12 @@ export default function TransactionsPage() {
                   onDropdownClose={() => setOpenMultiSelect(null)}
                   clearable
                   searchable
+                  styles={{
+                    pillsList: {
+                      flexWrap: 'nowrap',
+                      overflowX: 'auto',
+                    },
+                  }}
                 />
               </Grid.Col>
               <Grid.Col span={6}>
@@ -1067,24 +1080,17 @@ export default function TransactionsPage() {
               }}
             />
             <Group justify="flex-end">
-              <Button disabled variant="default" size="xs">
+              <Button
+                variant="default"
+                size="xs"
+                onClick={handleSaveTableColumns}
+                loading={isSavingTableColumns}
+              >
                 Save
               </Button>
             </Group>
           </Stack>
         </Collapse>
-        {feedback && (
-          <Alert
-            mt="sm"
-            variant="light"
-            icon={<CircleCheck size={16} />}
-            withCloseButton
-            onClose={() => setFeedback(null)}
-            color={feedback.tone === 'success' ? 'green' : 'red'}
-          >
-            {feedback.message}
-          </Alert>
-        )}
         <DataTable
           columns={columns}
           data={parentRows}

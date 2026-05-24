@@ -31,6 +31,8 @@ export type TransactionReportTableRow = {
   status: string
   from: string
   to: string
+  sender: string
+  receiver: string
   amount: number | null
   fee: number | null
   type: string
@@ -218,6 +220,8 @@ export function buildTransactionReportData(args: {
       status: normalizeString(item.transactionStatus),
       from: normalizeString(item.from),
       to: normalizeString(item.to),
+      sender: normalizeString(item.sender),
+      receiver: normalizeString(item.receiver),
       amount: typeof item.amount === 'number' ? item.amount : null,
       fee: typeof item.transactionFee === 'number' ? item.transactionFee : null,
       type: normalizeType(item.transactionType),
@@ -244,6 +248,8 @@ export function buildTransactionReportData(args: {
               status: normalizeString(child.transactionStatus),
               from: normalizeString(child.from),
               to: normalizeString(child.to),
+              sender: normalizeString(child.sender),
+              receiver: normalizeString(child.receiver),
               amount: typeof child.amount === 'number' ? child.amount : null,
               fee: typeof child.transactionFee === 'number' ? child.transactionFee : null,
               type: normalizeType(child.transactionType),

@@ -7,6 +7,7 @@ import { getServerSideURL } from '@/utilities/getURL'
 import { headers } from 'next/headers'
 import { getPayload } from 'payload'
 import config from '~/payload.config'
+import type { UserConfiguration } from '~/payload-types'
 
 export type TransactionType = 'debit' | 'credit'
 export type TransactionStatus = 'completed' | 'failed'
@@ -43,6 +44,8 @@ export type TransactionListItem = {
   destinationAccountName?: string
   from?: string
   to?: string
+  sender?: string
+  receiver?: string
   referenceNumber?: string
   isFundAllocation?: boolean
   allocatedFunds?: number
@@ -585,6 +588,8 @@ export async function getTransactions(): Promise<{
             : undefined,
         from: doc.from ? String(doc.from) : undefined,
         to: doc.to ? String(doc.to) : undefined,
+        sender: doc.sender ? String(doc.sender) : undefined,
+        receiver: doc.receiver ? String(doc.receiver) : undefined,
         referenceNumber: doc.referenceNumber ? String(doc.referenceNumber) : undefined,
         isFundAllocation: doc.isFundAllocation === true,
         allocatedFunds: typeof doc.allocatedFunds === 'number' ? doc.allocatedFunds : 0,
@@ -607,6 +612,274 @@ export async function getTransactions(): Promise<{
   } catch (error) {
     console.error('Failed to fetch transactions:', error)
     return { success: false, data: [], error: 'Failed to load transactions.' }
+  }
+}
+
+export async function getUserTransactionTableColumnsConfig(): Promise<{
+  success: boolean
+  columns?: string[]
+  error?: string
+}> {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() })
+    if (!session?.user?.id) return { success: true, columns: undefined }
+
+    const payload = await getPayload({ config })
+    const result = await payload.find({
+      collection: 'user-configurations',
+      where: {
+        user: {
+          equals: session.user.id,
+        },
+      },
+      depth: 0,
+      limit: 1,
+      overrideAccess: true,
+    })
+
+    const doc = result.docs[0] as any | undefined
+    const savedColumns = doc?.transactionsConfig?.tableColumns
+
+    return {
+      success: true,
+      columns: Array.isArray(savedColumns) ? savedColumns : undefined,
+    }
+  } catch (error) {
+    console.error('Failed to fetch user transaction table columns config:', error)
+    return { success: true, columns: undefined }
+  }
+}
+
+export async function getUserTransactionPreviewTableColumnsConfig(): Promise<{
+  success: boolean
+  columns?: string[]
+  error?: string
+}> {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() })
+    if (!session?.user?.id) return { success: true, columns: undefined }
+
+    const payload = await getPayload({ config })
+    const result = await payload.find({
+      collection: 'user-configurations',
+      where: {
+        user: {
+          equals: session.user.id,
+        },
+      },
+      depth: 0,
+      limit: 1,
+      overrideAccess: true,
+    })
+
+    const doc = result.docs[0] as any | undefined
+    const savedColumns = doc?.transactionsConfig?.previewTableColumns
+
+    return {
+      success: true,
+      columns: Array.isArray(savedColumns) ? savedColumns : undefined,
+    }
+  } catch (error) {
+    console.error('Failed to fetch user transaction preview table columns config:', error)
+    return { success: true, columns: undefined }
+  }
+}
+
+export async function saveTransactionTableColumns(columns: string[]): Promise<{
+  success: boolean
+  error?: string
+}> {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() })
+    if (!session?.user?.id) return { success: false, error: 'Unauthorized' }
+
+    type PersistedTableColumn = NonNullable<
+      NonNullable<UserConfiguration['transactionsConfig']>['tableColumns']
+    >[number]
+
+    const allowedColumns = new Set<PersistedTableColumn>([
+      'transactionDate',
+      'description',
+      'particulars',
+      'transactionType',
+      'sourceAccount',
+      'destinationAccount',
+      'financialAccount',
+      'from',
+      'to',
+      'referenceNumber',
+      'amount',
+      'transactionFee',
+      'sender',
+      'receiver',
+      'totalAmount',
+      'currentBalance',
+      'runningBalance',
+      'transactionStatus',
+      'receiptImage',
+      'aiExtractedJson',
+      'extractionConfidence',
+      'isFundAllocation',
+      'allocatedFunds',
+      'parentTransaction',
+    ])
+
+    const sanitizedColumns: PersistedTableColumn[] = Array.from(
+      new Set(
+        columns
+          .map((column) => String(column || '').trim())
+          .filter((column) => column.length > 0)
+          .filter((column): column is PersistedTableColumn =>
+            allowedColumns.has(column as PersistedTableColumn),
+          ),
+      ),
+    )
+
+    const payload = await getPayload({ config })
+    const existing = await payload.find({
+      collection: 'user-configurations',
+      where: {
+        user: {
+          equals: session.user.id,
+        },
+      },
+      depth: 0,
+      limit: 1,
+      overrideAccess: true,
+    })
+
+    const existingDoc = existing.docs[0] as any | undefined
+
+    if (existingDoc?.id) {
+      await payload.update({
+        collection: 'user-configurations',
+        id: String(existingDoc.id),
+        data: {
+          transactionsConfig: {
+            ...(existingDoc.transactionsConfig || {}),
+            tableColumns: sanitizedColumns,
+          },
+        },
+        depth: 0,
+        overrideAccess: true,
+      })
+    } else {
+      await payload.create({
+        collection: 'user-configurations',
+        data: {
+          user: session.user.id,
+          transactionsConfig: {
+            tableColumns: sanitizedColumns,
+          },
+        },
+        depth: 0,
+        overrideAccess: true,
+      })
+    }
+
+    return { success: true }
+  } catch (error) {
+    console.error('Failed to save transaction table columns:', error)
+    return { success: false, error: 'Failed to save table columns configuration.' }
+  }
+}
+
+export async function saveTransactionPreviewTableColumns(columns: string[]): Promise<{
+  success: boolean
+  error?: string
+}> {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() })
+    if (!session?.user?.id) return { success: false, error: 'Unauthorized' }
+
+    type PersistedPreviewTableColumn = NonNullable<
+      NonNullable<UserConfiguration['transactionsConfig']>['previewTableColumns']
+    >[number]
+
+    const allowedColumns = new Set<PersistedPreviewTableColumn>([
+      'transactionDate',
+      'description',
+      'particulars',
+      'transactionType',
+      'sourceAccount',
+      'destinationAccount',
+      'financialAccount',
+      'from',
+      'to',
+      'referenceNumber',
+      'amount',
+      'transactionFee',
+      'sender',
+      'receiver',
+      'totalAmount',
+      'currentBalance',
+      'runningBalance',
+      'transactionStatus',
+      'receiptImage',
+      'aiExtractedJson',
+      'extractionConfidence',
+      'isFundAllocation',
+      'allocatedFunds',
+      'parentTransaction',
+    ])
+
+    const sanitizedColumns: PersistedPreviewTableColumn[] = Array.from(
+      new Set(
+        columns
+          .map((column) => String(column || '').trim())
+          .filter((column) => column.length > 0)
+          .filter((column): column is PersistedPreviewTableColumn =>
+            allowedColumns.has(column as PersistedPreviewTableColumn),
+          ),
+      ),
+    )
+
+    const payload = await getPayload({ config })
+    const existing = await payload.find({
+      collection: 'user-configurations',
+      where: {
+        user: {
+          equals: session.user.id,
+        },
+      },
+      depth: 0,
+      limit: 1,
+      overrideAccess: true,
+    })
+
+    const existingDoc = existing.docs[0] as any | undefined
+
+    if (existingDoc?.id) {
+      await payload.update({
+        collection: 'user-configurations',
+        id: String(existingDoc.id),
+        data: {
+          transactionsConfig: {
+            ...(existingDoc.transactionsConfig || {}),
+            previewTableColumns: sanitizedColumns,
+          },
+        },
+        depth: 0,
+        overrideAccess: true,
+      })
+    } else {
+      await payload.create({
+        collection: 'user-configurations',
+        data: {
+          user: session.user.id,
+          transactionsConfig: {
+            previewTableColumns: sanitizedColumns,
+          },
+        },
+        depth: 0,
+        overrideAccess: true,
+      })
+    }
+
+    return { success: true }
+  } catch (error) {
+    console.error('Failed to save transaction preview table columns:', error)
+    return { success: false, error: 'Failed to save preview table columns configuration.' }
   }
 }
 

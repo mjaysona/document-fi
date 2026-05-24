@@ -142,32 +142,30 @@ const combineNameAndBank = (name: string, bank: string): string => {
 const renderCellValue = (row: TransactionReportTableRow, column: TransactionReportColumnKey) => {
   if (column === 'referenceNumber') return row.referenceNumber
   if (column === 'transactionDate') return row.transactionDate
-  if (column === 'createdAt') return row.createdAt
-  if (column === 'updatedAt') return row.updatedAt
-  if (column === 'sourceBank') return row.sourceBank
-  if (column === 'destinationBank') return row.destinationBank
-  if (column === 'fromWithSourceBank') return combineNameAndBank(row.from, row.sourceBank)
-  if (column === 'toWithDestinationBank') return combineNameAndBank(row.to, row.destinationBank)
+  if (column === 'sourceAccount') return row.sourceBank
+  if (column === 'destinationAccount') return row.destinationBank
   if (column === 'financialAccount') return row.financialAccount
   if (column === 'from') return row.from
   if (column === 'to') return row.to
+  if (column === 'sender') return row.sender
+  if (column === 'receiver') return row.receiver
   if (column === 'amount') return formatMoney(row.amount)
-  if (column === 'fee') return formatMoney(row.fee)
+  if (column === 'transactionFee') return formatMoney(row.fee)
   if (column === 'totalAmount') return formatMoney(row.totalAmount)
   if (column === 'currentBalance') return formatMoney(row.currentBalance)
   if (column === 'runningBalance') return formatMoney(row.runningBalance)
-  if (column === 'fundAllocation') return row.isFundAllocation ? 'Yes' : 'No'
+  if (column === 'isFundAllocation') return row.isFundAllocation ? 'Yes' : 'No'
   if (column === 'allocatedFunds') return formatAllocatedFunds(row)
   if (column === 'description') return row.description
   if (column === 'particulars') return row.particulars
 
-  if (column === 'type') {
+  if (column === 'transactionType') {
     return (
       <span style={{ color: getTypeColor(row.type), fontWeight: 600 }}>{formatType(row.type)}</span>
     )
   }
 
-  if (column === 'status') {
+  if (column === 'transactionStatus') {
     return (
       <span style={{ color: getStatusColor(row.status), fontWeight: 600 }}>
         {row.status === '-' ? '-' : row.status.charAt(0).toUpperCase() + row.status.slice(1)}

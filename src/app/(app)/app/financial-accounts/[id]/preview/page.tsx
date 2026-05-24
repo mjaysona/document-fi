@@ -1,9 +1,12 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Stack, Group, ActionIcon } from '@mantine/core'
+import { Stack, Group, ActionIcon, Title } from '@mantine/core'
 import { ArrowLeft } from 'lucide-react'
 import { getFinancialAccountById } from '../../actions'
-import { getTransactions } from '../../../records/transactions/actions'
+import {
+  getTransactions,
+  getUserTransactionPreviewTableColumnsConfig,
+} from '../../../records/transactions/actions'
 import { buildTransactionReportData } from './reportData'
 import { PrintButton } from './PrintButton'
 import { DateRangeFilter } from './DateRangeFilter'
@@ -64,12 +67,17 @@ const parseTransactionDate = (value?: string): Date | null => {
 export default async function FinancialAccountPreviewPage({ params, searchParams }: Props) {
   const { id } = await params
   const { logoUrl, from, to, cols } = await searchParams
-  const visibleColumns = parseReportColumnKeys(cols)
 
-  const [accountResult, transactionsResult] = await Promise.all([
+  const [accountResult, transactionsResult, previewColumnsResult] = await Promise.all([
     getFinancialAccountById(id),
     getTransactions(),
+    getUserTransactionPreviewTableColumnsConfig(),
   ])
+
+  const normalizedColsParam = String(cols || '').trim()
+  const visibleColumns = normalizedColsParam
+    ? parseReportColumnKeys(normalizedColsParam)
+    : parseReportColumnKeys(previewColumnsResult.columns?.join(','))
 
   if (!accountResult.success || !accountResult.data) {
     redirect('/app/financial-accounts')
@@ -137,17 +145,20 @@ export default async function FinancialAccountPreviewPage({ params, searchParams
   return (
     <Stack>
       <Group className={styles.toolbar}>
-        <Link href={`/app/financial-accounts/${account.id}`}>
-          <ActionIcon
-            variant="default"
-            size="lg"
-            radius="sm"
-            aria-label="Back"
-            style={{ flexShrink: 0 }}
-          >
-            <ArrowLeft size={16} />
-          </ActionIcon>
-        </Link>
+        <Group gap="sm" align="center">
+          <Link href={`/app/financial-accounts/${account.id}`}>
+            <ActionIcon
+              variant="default"
+              size="lg"
+              radius="sm"
+              aria-label="Back"
+              style={{ flexShrink: 0 }}
+            >
+              <ArrowLeft size={16} />
+            </ActionIcon>
+          </Link>
+          <Title order={5}>Transaction Report for {account.name}</Title>
+        </Group>
 
         <Group className={styles.toolbarRight}>
           <DateRangeFilter logoUrl={logoUrl} initialFrom={from} initialTo={to} />

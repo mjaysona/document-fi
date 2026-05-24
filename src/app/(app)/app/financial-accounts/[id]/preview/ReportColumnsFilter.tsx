@@ -2,12 +2,14 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { MultiSelect, Stack } from '@mantine/core'
+import { Alert, Button, Group, MultiSelect, Stack } from '@mantine/core'
+import { CircleCheck } from 'lucide-react'
 import {
   DEFAULT_TRANSACTION_REPORT_COLUMNS,
   TRANSACTION_REPORT_COLUMN_OPTIONS,
   type TransactionReportColumnKey,
 } from './columns'
+import { saveTransactionPreviewTableColumns } from '../../../records/transactions/actions'
 
 const REPORT_COLUMN_KEY_SET = new Set<TransactionReportColumnKey>(
   TRANSACTION_REPORT_COLUMN_OPTIONS.map((option) => option.value),
@@ -53,6 +55,11 @@ export function ReportColumnsFilter({ initialColumns }: ReportColumnsFilterProps
   const [selectedColumns, setSelectedColumns] =
     useState<TransactionReportColumnKey[]>(normalizedInitialColumns)
   const [dropdownOpened, setDropdownOpened] = useState(false)
+  const [isSavingColumns, setIsSavingColumns] = useState(false)
+  const [feedback, setFeedback] = useState<{
+    tone: 'success' | 'error'
+    message: string
+  } | null>(null)
 
   useEffect(() => {
     setSelectedColumns(normalizedInitialColumns)
@@ -74,30 +81,71 @@ export function ReportColumnsFilter({ initialColumns }: ReportColumnsFilterProps
     setDropdownOpened(false)
   }
 
+  const handleSaveColumns = async () => {
+    setIsSavingColumns(true)
+    const result = await saveTransactionPreviewTableColumns(selectedColumns)
+
+    if (!result.success) {
+      setFeedback({
+        tone: 'error',
+        message: result.error ?? 'Failed to save shown columns configuration.',
+      })
+      setIsSavingColumns(false)
+      return
+    }
+
+    setFeedback({
+      tone: 'success',
+      message: 'Shown columns configuration saved.',
+    })
+    setIsSavingColumns(false)
+  }
+
   return (
     <Stack gap="xs">
-      <MultiSelect
-        placeholder="Shown columns"
-        data={TRANSACTION_REPORT_COLUMN_OPTIONS.map((column) => ({
-          value: column.value,
-          label: column.label,
-        }))}
-        value={selectedColumns}
-        onChange={handleColumnsChange}
-        dropdownOpened={dropdownOpened}
-        onDropdownOpen={() => setDropdownOpened(true)}
-        onDropdownClose={() => setDropdownOpened(false)}
-        hidePickedOptions
-        searchable
-        clearable={false}
-        withPillsReorder
-        size="sm"
-        className="reportColumnsFilter"
-        styles={{
-          root: { minWidth: 280 },
-          input: { minHeight: 36 },
-        }}
-      />
+      {feedback && (
+        <Alert
+          variant="outline"
+          icon={<CircleCheck size={16} />}
+          withCloseButton
+          onClose={() => setFeedback(null)}
+          color={feedback.tone === 'success' ? 'green' : 'red'}
+        >
+          {feedback.message}
+        </Alert>
+      )}
+      <Group align="start">
+        <MultiSelect
+          flex={1}
+          placeholder="Shown columns"
+          data={TRANSACTION_REPORT_COLUMN_OPTIONS.map((column) => ({
+            value: column.value,
+            label: column.label,
+          }))}
+          value={selectedColumns}
+          onChange={handleColumnsChange}
+          dropdownOpened={dropdownOpened}
+          onDropdownOpen={() => setDropdownOpened(true)}
+          onDropdownClose={() => setDropdownOpened(false)}
+          hidePickedOptions
+          searchable
+          clearable={false}
+          withPillsReorder
+          size="sm"
+          className="reportColumnsFilter"
+          styles={{
+            root: { minWidth: 280 },
+            input: { minHeight: 36 },
+            pillsList: {
+              flexWrap: 'nowrap',
+              overflowX: 'auto',
+            },
+          }}
+        />
+        <Button variant="default" onClick={handleSaveColumns} loading={isSavingColumns}>
+          Save
+        </Button>
+      </Group>
     </Stack>
   )
 }
