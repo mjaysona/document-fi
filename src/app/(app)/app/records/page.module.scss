@@ -108,29 +108,6 @@
   min-width: 0;
 }
 
-.transactionReceiptPane {
-  flex: 0 0 320px;
-  width: 320px;
-  min-width: 320px;
-}
-
-@media (max-width: 62rem) {
-  .transactionFormLayout {
-    flex-direction: column;
-  }
-
-  .transactionReceiptPane {
-    order: -1;
-    width: 100%;
-    min-width: 0;
-    flex: 1 1 auto;
-  }
-
-  .transactionDetailsPane {
-    width: 100%;
-  }
-}
-
 @container expanded-row (max-width: 1300px) {
   .detailGrid {
     grid-template-columns: repeat(4, minmax(0, 1fr));

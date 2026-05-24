@@ -8,6 +8,8 @@ import {
   Badge,
   Button,
   Card,
+  Flex,
+  Grid,
   Group,
   LoadingOverlay,
   Modal,
@@ -43,6 +45,7 @@ import {
 } from '../actions'
 import { useForm } from '@mantine/form'
 import classes from '../../page.module.scss'
+import { CONTAINER_BREAKPOINTS } from '@/constants/breakpoints'
 
 type Feedback = { type: 'success' | 'error'; message: string }
 
@@ -1055,475 +1058,498 @@ export default function AddTransactionPage() {
         {isLoading ? (
           <Text c="dimmed">Loading...</Text>
         ) : (
-          <Group
-            align="flex-start"
-            wrap="nowrap"
-            gap="md"
+          <Grid
+            type="container"
+            breakpoints={CONTAINER_BREAKPOINTS}
+            gap="lg"
             className={classes.transactionFormLayout}
           >
-            <Card
-              withBorder
-              radius="md"
-              style={{ position: 'relative' }}
-              className={classes.transactionDetailsPane}
-            >
-              <LoadingOverlay
-                visible={overlayVisible}
-                zIndex={100}
-                overlayProps={{ radius: 'md', blur: 2 }}
-              />
-              {overlayVisible && (
-                <Text
-                  size="sm"
-                  fw={600}
-                  c="white"
-                  style={{
-                    position: 'absolute',
-                    top: '50%',
-                    left: '50%',
-                    transform: 'translate(-50%, 28px)',
-                    zIndex: 101,
-                    pointerEvents: 'none',
-                  }}
-                >
-                  {isProcessingReceipt ? 'Processing receipt' : 'Analyzing receipt'}
+            <Grid.Col span={{ base: 12, md: 6, lg: 8 }} order={{ base: 2, md: 1 }}>
+              <Card
+                withBorder
+                radius="md"
+                style={{ position: 'relative' }}
+                className={classes.transactionDetailsPane}
+              >
+                <LoadingOverlay
+                  visible={overlayVisible}
+                  zIndex={100}
+                  overlayProps={{ radius: 'md', blur: 2 }}
+                />
+                {overlayVisible && (
+                  <Text
+                    size="sm"
+                    fw={600}
+                    c="white"
+                    style={{
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      transform: 'translate(-50%, 28px)',
+                      zIndex: 101,
+                      pointerEvents: 'none',
+                    }}
+                  >
+                    {isProcessingReceipt ? 'Processing receipt' : 'Analyzing receipt'}
+                  </Text>
+                )}
+                <Text fw={700} mb="md">
+                  Transaction Details
                 </Text>
-              )}
-              <Text fw={700} mb="md">
-                Transaction Details
-              </Text>
-              <Stack gap="sm">
-                {!isAllocationContext && (
-                  <Group grow>
-                    <Select
-                      label="Financial Account"
-                      searchable
-                      data={financialAccounts.map((account) => ({
-                        value: account.id,
-                        label: `${account.name} ${account.bankName ? ` - ${account.bankName}` : ''}${account.isDefault ? ' (Default)' : ''}`,
-                      }))}
-                      value={form.values.financialAccount}
-                      onChange={(value) => form.setFieldValue('financialAccount', value)}
-                      error={form.errors.financialAccount}
+                <Grid gap="sm">
+                  {!isAllocationContext && (
+                    <>
+                      <Grid.Col span={{ base: 12, sm: 6 }}>
+                        <Select
+                          label="Financial Account"
+                          searchable
+                          data={financialAccounts.map((account) => ({
+                            value: account.id,
+                            label: `${account.name} ${account.bankName ? ` - ${account.bankName}` : ''}${account.isDefault ? ' (Default)' : ''}`,
+                          }))}
+                          value={form.values.financialAccount}
+                          onChange={(value) => form.setFieldValue('financialAccount', value)}
+                          error={form.errors.financialAccount}
+                          required
+                          disabled={isEditMode}
+                        />
+                      </Grid.Col>
+                      <Grid.Col span={{ base: 12, sm: 6 }}>
+                        <NumberInput
+                          label="Current Balance"
+                          value={selectedAccountCurrentBalance}
+                          min={0}
+                          leftSection="₱"
+                          decimalScale={2}
+                          fixedDecimalScale
+                          thousandSeparator=","
+                          hideControls
+                          disabled
+                          placeholder="Select financial account"
+                        />
+                      </Grid.Col>
+                    </>
+                  )}
+                  <Grid.Col span={{ base: 12, sm: 6 }}>
+                    <TextInput
+                      label="Transaction Date"
+                      type="date"
+                      value={form.values.transactionDate}
+                      onChange={(e) => form.setFieldValue('transactionDate', e.currentTarget.value)}
+                      error={form.errors.transactionDate}
                       required
+                      disabled={!form.values.financialAccount && !isAllocationContext}
+                    />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 6 }}>
+                    <Select
+                      label="Transaction Type"
+                      data={[
+                        { label: 'Debit (Cash Out)', value: 'debit' },
+                        { label: 'Credit (Cash In)', value: 'credit' },
+                      ]}
+                      value={form.values.transactionType}
+                      onChange={(value) => {
+                        if (isAllocationContext) return
+                        if (value) {
+                          const sourceBank = form.values.sourceAccount
+                          const destinationBank = form.values.destinationAccount
+                          const fromValue = form.values.from
+                          const toValue = form.values.to
+                          form.setFieldValue('transactionType', value as TransactionType)
+                          form.setFieldValue('sourceAccount', destinationBank)
+                          form.setFieldValue('destinationAccount', sourceBank)
+                          form.setFieldValue('from', toValue)
+                          form.setFieldValue('to', fromValue)
+                        }
+                      }}
+                      clearable={false}
+                      error={form.errors.transactionType}
+                      required
+                      disabled={!form.values.financialAccount || isAllocationContext}
+                    />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 6 }}>
+                    <Select
+                      label="Source Bank"
+                      searchable
+                      data={banks.map((bank) => ({
+                        value: bank.id,
+                        label:
+                          bank.name && bank.shortName
+                            ? `${bank.name} (${bank.shortName})`
+                            : bank.name || bank.shortName || bank.code || bank.id,
+                      }))}
+                      value={form.values.sourceAccount}
+                      onChange={(value) => form.setFieldValue('sourceAccount', value)}
+                      error={form.errors.sourceAccount}
+                      required
+                      disabled={
+                        !isAllocationContext &&
+                        (!form.values.financialAccount || form.values.transactionType === 'debit')
+                      }
+                    />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 6 }}>
+                    <Select
+                      label="Destination Bank"
+                      searchable
+                      data={banks.map((bank) => ({
+                        value: bank.id,
+                        label:
+                          bank.name && bank.shortName
+                            ? `${bank.name} (${bank.shortName})`
+                            : bank.name || bank.shortName || bank.code || bank.id,
+                      }))}
+                      value={form.values.destinationAccount}
+                      onChange={(value) => form.setFieldValue('destinationAccount', value)}
+                      error={form.errors.destinationAccount}
+                      required
+                      disabled={
+                        !isAllocationContext &&
+                        (!form.values.financialAccount || form.values.transactionType === 'credit')
+                      }
+                    />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 6 }}>
+                    <TextInput
+                      label="From"
+                      value={form.values.from}
+                      onChange={(e) => form.setFieldValue('from', e.currentTarget.value)}
+                      error={form.errors.from}
+                      required
+                      disabled={
+                        !isAllocationContext &&
+                        (!form.values.financialAccount || form.values.transactionType === 'debit')
+                      }
+                    />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 6 }}>
+                    <TextInput
+                      label="To"
+                      value={form.values.to}
+                      onChange={(e) => form.setFieldValue('to', e.currentTarget.value)}
+                      error={form.errors.to}
+                      required
+                      disabled={
+                        !isAllocationContext &&
+                        (!form.values.financialAccount || form.values.transactionType === 'credit')
+                      }
+                    />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 6 }}>
+                    <TextInput
+                      label="Reference Number"
+                      value={form.values.referenceNumber}
+                      onChange={(e) => {
+                        form.setFieldValue('referenceNumber', e.currentTarget.value)
+                        form.clearFieldError('referenceNumber')
+                      }}
+                      error={form.errors.referenceNumber}
+                      required
+                      disabled={!isAllocationContext && !form.values.financialAccount}
+                    />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 6 }}>
+                    <Select
+                      label="Transaction Status"
+                      data={[
+                        { label: 'Completed', value: 'completed' },
+                        { label: 'Failed', value: 'failed' },
+                      ]}
+                      value={form.values.transactionStatus}
+                      onChange={(value) =>
+                        form.setFieldValue(
+                          'transactionStatus',
+                          (value as TransactionStatus | null) ?? 'completed',
+                        )
+                      }
+                      error={form.errors.transactionStatus}
+                      required
+                      disabled={
+                        (!isAllocationContext && !form.values.financialAccount) || isEditMode
+                      }
+                    />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 6 }}>
+                    <NumberInput
+                      label="Amount"
+                      value={form.values.amount}
+                      onChange={(value) => form.setFieldValue('amount', value)}
+                      error={form.errors.amount}
+                      min={0}
+                      leftSection="₱"
+                      decimalScale={2}
+                      fixedDecimalScale
+                      thousandSeparator=","
+                      hideControls
+                      required
+                      // disabled={isEditMode}
+                    />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 6 }}>
+                    <NumberInput
+                      label="Transaction Fee"
+                      value={form.values.transactionFee}
+                      onChange={(value) => form.setFieldValue('transactionFee', value)}
+                      min={0}
+                      leftSection="₱"
+                      decimalScale={2}
+                      fixedDecimalScale
+                      thousandSeparator=","
+                      hideControls
+                      // disabled={isEditMode}
+                    />
+                  </Grid.Col>
+                  {!isAllocationContext && (
+                    <Grid.Col span={12}>
+                      <Group gap={6} mb={4} align="center">
+                        <Text size="sm" fw={500}>
+                          Running Balance
+                        </Text>
+                        <Tooltip label="Running balance is the amount after this transaction is added or deducted (Amount + Transaction Fee).">
+                          <span style={{ display: 'inline-flex', cursor: 'help' }}>
+                            <CircleHelp size={14} />
+                          </span>
+                        </Tooltip>
+                      </Group>
+                      <NumberInput
+                        value={projectedRunningBalance}
+                        min={0}
+                        leftSection="₱"
+                        decimalScale={2}
+                        fixedDecimalScale
+                        thousandSeparator=","
+                        hideControls
+                        disabled
+                        placeholder="Enter account, type, and amount"
+                      />
+                    </Grid.Col>
+                  )}
+                  <Grid.Col span={12}>
+                    <TextInput
+                      label="Description"
+                      value={form.values.description}
+                      onChange={(e) => form.setFieldValue('description', e.currentTarget.value)}
+                      error={form.errors.description}
                       disabled={isEditMode}
                     />
-                    <NumberInput
-                      label="Current Balance"
-                      value={selectedAccountCurrentBalance}
-                      min={0}
-                      leftSection="₱"
-                      decimalScale={2}
-                      fixedDecimalScale
-                      thousandSeparator=","
-                      hideControls
-                      disabled
-                      placeholder="Select financial account"
+                  </Grid.Col>
+                  <Grid.Col span={12}>
+                    <Textarea
+                      label="Particulars"
+                      value={form.values.particulars}
+                      onChange={(e) => form.setFieldValue('particulars', e.currentTarget.value)}
+                      minRows={2}
+                      disabled={isEditMode}
                     />
-                  </Group>
-                )}
-                <Group grow>
-                  <TextInput
-                    label="Transaction Date"
-                    type="date"
-                    value={form.values.transactionDate}
-                    onChange={(e) => form.setFieldValue('transactionDate', e.currentTarget.value)}
-                    error={form.errors.transactionDate}
-                    required
-                    disabled={!form.values.financialAccount && !isAllocationContext}
-                  />
-                  <Select
-                    label="Transaction Type"
-                    data={[
-                      { label: 'Debit (Cash Out)', value: 'debit' },
-                      { label: 'Credit (Cash In)', value: 'credit' },
-                    ]}
-                    value={form.values.transactionType}
-                    onChange={(value) => {
-                      if (isAllocationContext) return
-                      if (value) {
-                        const sourceBank = form.values.sourceAccount
-                        const destinationBank = form.values.destinationAccount
-                        const fromValue = form.values.from
-                        const toValue = form.values.to
-                        form.setFieldValue('transactionType', value as TransactionType)
-                        form.setFieldValue('sourceAccount', destinationBank)
-                        form.setFieldValue('destinationAccount', sourceBank)
-                        form.setFieldValue('from', toValue)
-                        form.setFieldValue('to', fromValue)
-                      }
-                    }}
-                    clearable={false}
-                    error={form.errors.transactionType}
-                    required
-                    disabled={!form.values.financialAccount || isAllocationContext}
-                  />
-                </Group>
-                <Group grow>
-                  <Select
-                    label="Source Bank"
-                    searchable
-                    data={banks.map((bank) => ({
-                      value: bank.id,
-                      label:
-                        bank.name && bank.shortName
-                          ? `${bank.name} (${bank.shortName})`
-                          : bank.name || bank.shortName || bank.code || bank.id,
-                    }))}
-                    value={form.values.sourceAccount}
-                    onChange={(value) => form.setFieldValue('sourceAccount', value)}
-                    error={form.errors.sourceAccount}
-                    required
+                  </Grid.Col>
+                </Grid>
+              </Card>
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, md: 6, lg: 4 }} order={{ base: 1, md: 2 }}>
+              <div className={classes.transactionReceiptPane}>
+                {isEditMode ? (
+                  <Button
+                    fullWidth
+                    mb="md"
+                    onClick={handleProcessReceipt}
+                    loading={isProcessingReceipt}
                     disabled={
-                      !isAllocationContext &&
-                      (!form.values.financialAccount || form.values.transactionType === 'debit')
+                      isSaving || isUploadingReceipt || (!receiptImageId && !pendingReceiptFile)
                     }
-                  />
-                  <Select
-                    label="Destination Bank"
-                    searchable
-                    data={banks.map((bank) => ({
-                      value: bank.id,
-                      label:
-                        bank.name && bank.shortName
-                          ? `${bank.name} (${bank.shortName})`
-                          : bank.name || bank.shortName || bank.code || bank.id,
-                    }))}
-                    value={form.values.destinationAccount}
-                    onChange={(value) => form.setFieldValue('destinationAccount', value)}
-                    error={form.errors.destinationAccount}
-                    required
-                    disabled={
-                      !isAllocationContext &&
-                      (!form.values.financialAccount || form.values.transactionType === 'credit')
-                    }
-                  />
-                </Group>
-                <Group grow>
-                  <TextInput
-                    label="From"
-                    value={form.values.from}
-                    onChange={(e) => form.setFieldValue('from', e.currentTarget.value)}
-                    error={form.errors.from}
-                    required
-                    disabled={
-                      !isAllocationContext &&
-                      (!form.values.financialAccount || form.values.transactionType === 'debit')
-                    }
-                  />
-                  <TextInput
-                    label="To"
-                    value={form.values.to}
-                    onChange={(e) => form.setFieldValue('to', e.currentTarget.value)}
-                    error={form.errors.to}
-                    required
-                    disabled={
-                      !isAllocationContext &&
-                      (!form.values.financialAccount || form.values.transactionType === 'credit')
-                    }
-                  />
-                </Group>
-                <Group grow>
-                  <TextInput
-                    label="Reference Number"
-                    value={form.values.referenceNumber}
-                    onChange={(e) => {
-                      form.setFieldValue('referenceNumber', e.currentTarget.value)
-                      form.clearFieldError('referenceNumber')
-                    }}
-                    error={form.errors.referenceNumber}
-                    required
-                    disabled={!isAllocationContext && !form.values.financialAccount}
-                  />
-                  <Select
-                    label="Transaction Status"
-                    data={[
-                      { label: 'Completed', value: 'completed' },
-                      { label: 'Failed', value: 'failed' },
-                    ]}
-                    value={form.values.transactionStatus}
-                    onChange={(value) =>
-                      form.setFieldValue(
-                        'transactionStatus',
-                        (value as TransactionStatus | null) ?? 'completed',
-                      )
-                    }
-                    error={form.errors.transactionStatus}
-                    required
-                    disabled={(!isAllocationContext && !form.values.financialAccount) || isEditMode}
-                  />
-                </Group>
-                <Group grow>
-                  <NumberInput
-                    label="Amount"
-                    value={form.values.amount}
-                    onChange={(value) => form.setFieldValue('amount', value)}
-                    error={form.errors.amount}
-                    min={0}
-                    leftSection="₱"
-                    decimalScale={2}
-                    fixedDecimalScale
-                    thousandSeparator=","
-                    hideControls
-                    required
-                    // disabled={isEditMode}
-                  />
-                  <NumberInput
-                    label="Transaction Fee"
-                    value={form.values.transactionFee}
-                    onChange={(value) => form.setFieldValue('transactionFee', value)}
-                    min={0}
-                    leftSection="₱"
-                    decimalScale={2}
-                    fixedDecimalScale
-                    thousandSeparator=","
-                    hideControls
-                    // disabled={isEditMode}
-                  />
-                </Group>
-                {!isAllocationContext && (
-                  <div>
-                    <Group gap={6} mb={4} align="center">
-                      <Text size="sm" fw={500}>
-                        Running Balance
-                      </Text>
-                      <Tooltip label="Running balance is the amount after this transaction is added or deducted (Amount + Transaction Fee).">
-                        <span style={{ display: 'inline-flex', cursor: 'help' }}>
-                          <CircleHelp size={14} />
-                        </span>
-                      </Tooltip>
-                    </Group>
-                    <NumberInput
-                      value={projectedRunningBalance}
-                      min={0}
-                      leftSection="₱"
-                      decimalScale={2}
-                      fixedDecimalScale
-                      thousandSeparator=","
-                      hideControls
-                      disabled
-                      placeholder="Enter account, type, and amount"
-                    />
-                  </div>
-                )}
-                <TextInput
-                  label="Description"
-                  value={form.values.description}
-                  onChange={(e) => form.setFieldValue('description', e.currentTarget.value)}
-                  error={form.errors.description}
-                  disabled={isEditMode}
-                />
-                <Textarea
-                  label="Particulars"
-                  value={form.values.particulars}
-                  onChange={(e) => form.setFieldValue('particulars', e.currentTarget.value)}
-                  minRows={2}
-                  disabled={isEditMode}
-                />
-              </Stack>
-            </Card>
-
-            <div className={classes.transactionReceiptPane}>
-              {isEditMode ? (
-                <Button
-                  fullWidth
-                  mb="md"
-                  onClick={handleProcessReceipt}
-                  loading={isProcessingReceipt}
-                  disabled={
-                    isSaving || isUploadingReceipt || (!receiptImageId && !pendingReceiptFile)
-                  }
-                >
-                  Process Receipt
-                </Button>
-              ) : null}
-
-              <input
-                hidden
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                onChange={(event) => {
-                  const file = event.currentTarget.files?.[0]
-                  if (!file) return
-                  void handleFileAnalysis(file)
-                  event.currentTarget.value = ''
-                }}
-                ref={(node) => {
-                  receiptInputRef.current = () => node?.click()
-                }}
-              />
-
-              {!activeReceiptImageUrl ? (
-                <Card
-                  withBorder
-                  radius="md"
-                  className={classes.uploadCard}
-                  style={{ position: 'relative' }}
-                >
-                  <LoadingOverlay
-                    visible={overlayVisible}
-                    zIndex={100}
-                    overlayProps={{ radius: 'md', blur: 2 }}
-                  />
-                  {overlayVisible && (
-                    <Text
-                      size="sm"
-                      fw={600}
-                      c="white"
-                      style={{
-                        position: 'absolute',
-                        top: '50%',
-                        left: '50%',
-                        transform: 'translate(-50%, 28px)',
-                        zIndex: 101,
-                        pointerEvents: 'none',
-                      }}
-                    >
-                      {isProcessingReceipt ? 'Processing receipt' : 'Analyzing image'}
-                    </Text>
-                  )}
-                  <Dropzone
-                    className={classes.dropzone}
-                    radius="md"
-                    onDrop={(files) => {
-                      const file = files[0]
-                      if (file) void handleFileAnalysis(file)
-                    }}
-                    onReject={() => {
-                      setFeedback({
-                        type: 'error',
-                        message: 'Invalid file. Please upload an image.',
-                      })
-                    }}
-                    maxFiles={1}
-                    accept={[MIME_TYPES.png, MIME_TYPES.jpeg, MIME_TYPES.webp]}
-                    disabled={isSaving || overlayVisible}
-                    aria-label="Drop receipt here"
                   >
-                    <div style={{ pointerEvents: 'none' }}>
-                      <Group justify="center">
-                        <Dropzone.Accept>
-                          <CheckCircle size={50} className={classes.icon} />
-                        </Dropzone.Accept>
-                        <Dropzone.Reject>
-                          <Ban size={50} className={classes.icon} />
-                        </Dropzone.Reject>
-                        <Dropzone.Idle>
-                          <Upload size={50} className={classes.icon} />
-                        </Dropzone.Idle>
-                      </Group>
+                    Process Receipt
+                  </Button>
+                ) : null}
 
-                      <Text ta="center" fw={700} fz="lg" mt="xl">
-                        <Dropzone.Accept>Drop receipt here</Dropzone.Accept>
-                        <Dropzone.Reject>File is invalid</Dropzone.Reject>
-                        <Dropzone.Idle>Upload proof of receipt</Dropzone.Idle>
-                      </Text>
+                <input
+                  hidden
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={(event) => {
+                    const file = event.currentTarget.files?.[0]
+                    if (!file) return
+                    void handleFileAnalysis(file)
+                    event.currentTarget.value = ''
+                  }}
+                  ref={(node) => {
+                    receiptInputRef.current = () => node?.click()
+                  }}
+                />
 
-                      <Text className={classes.description}>
-                        Drag & drop an image here, or click to select a file.
+                {!activeReceiptImageUrl ? (
+                  <Card
+                    withBorder
+                    radius="md"
+                    className={classes.uploadCard}
+                    style={{ position: 'relative' }}
+                  >
+                    <LoadingOverlay
+                      visible={overlayVisible}
+                      zIndex={100}
+                      overlayProps={{ radius: 'md', blur: 2 }}
+                    />
+                    {overlayVisible && (
+                      <Text
+                        size="sm"
+                        fw={600}
+                        c="white"
+                        style={{
+                          position: 'absolute',
+                          top: '50%',
+                          left: '50%',
+                          transform: 'translate(-50%, 28px)',
+                          zIndex: 101,
+                          pointerEvents: 'none',
+                        }}
+                      >
+                        {isProcessingReceipt ? 'Processing receipt' : 'Analyzing image'}
                       </Text>
-                    </div>
-                  </Dropzone>
-                </Card>
-              ) : (
-                <Card withBorder radius="md" style={{ position: 'relative' }}>
-                  <LoadingOverlay
-                    visible={overlayVisible}
-                    zIndex={100}
-                    overlayProps={{ radius: 'md', blur: 2 }}
-                  />
-                  {overlayVisible && (
-                    <Text
-                      size="sm"
-                      fw={600}
-                      c="white"
-                      style={{
-                        position: 'absolute',
-                        top: '50%',
-                        left: '50%',
-                        transform: 'translate(-50%, 28px)',
-                        zIndex: 101,
-                        pointerEvents: 'none',
+                    )}
+                    <Dropzone
+                      className={classes.dropzone}
+                      radius="md"
+                      onDrop={(files) => {
+                        const file = files[0]
+                        if (file) void handleFileAnalysis(file)
                       }}
-                    >
-                      {isProcessingReceipt ? 'Processing receipt' : 'Analyzing image'}
-                    </Text>
-                  )}
-                  <Stack gap="sm">
-                    <Group justify="space-between" align="center">
-                      <Text fw={700}>
-                        Image preview (
-                        {pendingReceiptFile?.name || receiptImageFileName || 'Receipt'})
-                      </Text>
-                      <Group gap="xs">
-                        <ActionIcon
-                          variant="subtle"
-                          color="blue"
-                          size="sm"
-                          onClick={() => receiptInputRef.current()}
-                          disabled={isSaving || overlayVisible}
-                          aria-label="Edit attached image"
-                        >
-                          <Pencil size={14} />
-                        </ActionIcon>
-                        <ActionIcon
-                          variant="subtle"
-                          color="red"
-                          size="sm"
-                          onClick={handleRemoveAttachedImage}
-                          disabled={isSaving || overlayVisible}
-                          aria-label="Remove attached image"
-                        >
-                          <Ban size={14} />
-                        </ActionIcon>
-                      </Group>
-                    </Group>
-                    <div
-                      style={{
-                        position: 'relative',
-                        width: '100%',
-                        maxHeight: '400px',
-                        overflow: 'auto',
+                      onReject={() => {
+                        setFeedback({
+                          type: 'error',
+                          message: 'Invalid file. Please upload an image.',
+                        })
                       }}
+                      maxFiles={1}
+                      accept={[MIME_TYPES.png, MIME_TYPES.jpeg, MIME_TYPES.webp]}
+                      disabled={isSaving || overlayVisible}
+                      aria-label="Drop receipt here"
                     >
-                      {receiptPreviewError ? (
-                        <Alert withCloseButton color="red" title="Receipt preview failed">
-                          {receiptPreviewError}
-                        </Alert>
-                      ) : (
-                        <img
-                          src={activeReceiptImageUrl}
-                          alt="Receipt preview"
-                          onError={() => {
-                            setReceiptPreviewAttempt((current) => {
-                              const next = current + 1
-                              if (next < receiptPreviewCandidates.length) {
-                                return next
-                              }
+                      <div style={{ pointerEvents: 'none' }}>
+                        <Group justify="center">
+                          <Dropzone.Accept>
+                            <CheckCircle size={50} className={classes.icon} />
+                          </Dropzone.Accept>
+                          <Dropzone.Reject>
+                            <Ban size={50} className={classes.icon} />
+                          </Dropzone.Reject>
+                          <Dropzone.Idle>
+                            <Upload size={50} className={classes.icon} />
+                          </Dropzone.Idle>
+                        </Group>
 
-                              void resolveReceiptPreviewError(
-                                activeReceiptImageUrl || receiptPreviewCandidates[current] || '',
-                              ).then((message) => {
-                                setReceiptPreviewError(message)
+                        <Text ta="center" fw={700} fz="lg" mt="xl">
+                          <Dropzone.Accept>Drop receipt here</Dropzone.Accept>
+                          <Dropzone.Reject>File is invalid</Dropzone.Reject>
+                          <Dropzone.Idle>Upload proof of receipt</Dropzone.Idle>
+                        </Text>
+
+                        <Text className={classes.description}>
+                          Drag & drop an image here, or click to select a file.
+                        </Text>
+                      </div>
+                    </Dropzone>
+                  </Card>
+                ) : (
+                  <Card withBorder radius="md" style={{ position: 'relative' }}>
+                    <LoadingOverlay
+                      visible={overlayVisible}
+                      zIndex={100}
+                      overlayProps={{ radius: 'md', blur: 2 }}
+                    />
+                    {overlayVisible && (
+                      <Text
+                        size="sm"
+                        fw={600}
+                        c="white"
+                        style={{
+                          position: 'absolute',
+                          top: '50%',
+                          left: '50%',
+                          transform: 'translate(-50%, 28px)',
+                          zIndex: 101,
+                          pointerEvents: 'none',
+                        }}
+                      >
+                        {isProcessingReceipt ? 'Processing receipt' : 'Analyzing image'}
+                      </Text>
+                    )}
+                    <Stack gap="sm">
+                      <Group justify="space-between" align="center">
+                        <Text fw={700}>
+                          Image preview (
+                          {pendingReceiptFile?.name || receiptImageFileName || 'Receipt'})
+                        </Text>
+                        <Group gap="xs">
+                          <ActionIcon
+                            variant="subtle"
+                            color="blue"
+                            size="sm"
+                            onClick={() => receiptInputRef.current()}
+                            disabled={isSaving || overlayVisible}
+                            aria-label="Edit attached image"
+                          >
+                            <Pencil size={14} />
+                          </ActionIcon>
+                          <ActionIcon
+                            variant="subtle"
+                            color="red"
+                            size="sm"
+                            onClick={handleRemoveAttachedImage}
+                            disabled={isSaving || overlayVisible}
+                            aria-label="Remove attached image"
+                          >
+                            <Ban size={14} />
+                          </ActionIcon>
+                        </Group>
+                      </Group>
+                      <div
+                        style={{
+                          position: 'relative',
+                          width: '100%',
+                          maxHeight: '400px',
+                          overflow: 'auto',
+                        }}
+                      >
+                        {receiptPreviewError ? (
+                          <Alert withCloseButton color="red" title="Receipt preview failed">
+                            {receiptPreviewError}
+                          </Alert>
+                        ) : (
+                          <img
+                            src={activeReceiptImageUrl}
+                            alt="Receipt preview"
+                            onError={() => {
+                              setReceiptPreviewAttempt((current) => {
+                                const next = current + 1
+                                if (next < receiptPreviewCandidates.length) {
+                                  return next
+                                }
+
+                                void resolveReceiptPreviewError(
+                                  activeReceiptImageUrl || receiptPreviewCandidates[current] || '',
+                                ).then((message) => {
+                                  setReceiptPreviewError(message)
+                                })
+
+                                return current
                               })
-
-                              return current
-                            })
-                          }}
-                          style={{
-                            width: '100%',
-                            height: 'auto',
-                            objectFit: 'contain',
-                            borderRadius: 4,
-                          }}
-                        />
-                      )}
-                    </div>
-                  </Stack>
-                </Card>
-              )}
-            </div>
-          </Group>
+                            }}
+                            style={{
+                              width: '100%',
+                              height: 'auto',
+                              objectFit: 'contain',
+                              borderRadius: 4,
+                            }}
+                          />
+                        )}
+                      </div>
+                    </Stack>
+                  </Card>
+                )}
+              </div>
+            </Grid.Col>
+          </Grid>
         )}
 
         {!isLoading &&

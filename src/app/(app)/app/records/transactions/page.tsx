@@ -833,7 +833,7 @@ export default function TransactionsPage() {
 
   return (
     <div className={classes.wrapper}>
-      <Stack>
+      <Flex gap={{ base: 'xs', xs: 'xs', md: 'md' }} direction="column">
         <Group gap="xs" align="center">
           <TextInput
             placeholder="Search by description, accounts, type, or status..."
@@ -843,9 +843,14 @@ export default function TransactionsPage() {
             style={{ flex: 1 }}
           />
         </Group>
-        <Group justify="space-between">
-          <Group>
+        <Flex gap={{ base: 'xs', xs: 'xs', md: 'sm' }} justify="space-between" wrap="wrap">
+          <Flex
+            w={{ base: '100%', md: 'auto' }}
+            gap={{ base: 'xs', xs: 'xs', md: 'sm' }}
+            wrap="wrap"
+          >
             <Select
+              w={{ base: '100%', md: 'auto' }}
               placeholder="Select financial account"
               data={financialAccountOptions}
               value={filterFinancialAccount}
@@ -854,31 +859,41 @@ export default function TransactionsPage() {
               searchable
               style={{ minWidth: 260 }}
             />
-            <Button
-              variant={sortBy === 'date' ? 'light' : 'default'}
-              size="sm"
-              onClick={() => toggleSort('date')}
+            <Flex
+              w={{ base: '100%', md: 'auto' }}
+              gap={{ base: 'xs', xs: 'xs', md: 'sm' }}
+              justify="space-evenly"
             >
-              Date {sortBy === 'date' && (sortOrder === 'asc' ? '↑' : '↓')}
-            </Button>
+              <Button
+                w={{ base: '100%', md: 'auto' }}
+                variant={sortBy === 'date' ? 'light' : 'default'}
+                size="sm"
+                onClick={() => toggleSort('date')}
+              >
+                Date {sortBy === 'date' && (sortOrder === 'asc' ? '↑' : '↓')}
+              </Button>
+              <Button
+                w={{ base: '100%', md: 'auto' }}
+                variant={sortBy === 'amount' ? 'light' : 'default'}
+                size="sm"
+                onClick={() => toggleSort('amount')}
+              >
+                Amount {sortBy === 'amount' && (sortOrder === 'asc' ? '↑' : '↓')}
+              </Button>
+            </Flex>
+          </Flex>
+          <Group w={{ base: '100%', xs: '100%', md: 'auto' }}>
             <Button
-              variant={sortBy === 'amount' ? 'light' : 'default'}
+              w={{ base: '100%', xs: '100%', md: 'auto' }}
+              variant="filled"
               size="sm"
-              onClick={() => toggleSort('amount')}
+              leftSection={<Plus size={14} />}
+              onClick={() => router.push('/app/records/transactions/add')}
             >
-              Amount {sortBy === 'amount' && (sortOrder === 'asc' ? '↑' : '↓')}
+              New transaction
             </Button>
           </Group>
-          <Button
-            variant="filled"
-            size="sm"
-            leftSection={<Plus size={14} />}
-            onClick={() => router.push('/app/records/transactions/add')}
-          >
-            New transaction
-          </Button>
-        </Group>
-
+        </Flex>
         {feedback && (
           <Alert
             mt="sm"
@@ -1313,7 +1328,7 @@ export default function TransactionsPage() {
             )
           }}
         />
-      </Stack>
+      </Flex>
     </div>
   )
 }
