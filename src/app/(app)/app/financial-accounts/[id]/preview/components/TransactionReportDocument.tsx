@@ -139,6 +139,18 @@ const combineNameAndBank = (name: string, bank: string): string => {
   return '-'
 }
 
+const getRowImpact = (row: TransactionReportTableRow): number | null => {
+  if (row.status !== 'completed') return null
+  if (typeof row.amount !== 'number') return null
+
+  const fee = typeof row.fee === 'number' ? Math.max(row.fee, 0) : 0
+  const total = row.amount + fee
+
+  if (row.type === 'credit') return total
+  if (row.type === 'debit') return -total
+  return null
+}
+
 const renderCellValue = (row: TransactionReportTableRow, column: TransactionReportColumnKey) => {
   if (column === 'referenceNumber') return row.referenceNumber
   if (column === 'transactionDate') return row.transactionDate
@@ -206,12 +218,18 @@ export function TransactionReportDocument({
   const nextPageBaseRef = useRef<HTMLDivElement | null>(null)
   const rowRefs = useRef<Record<string, HTMLTableRowElement | null>>({})
 
-  // Determine starting balance: balance of the first day in the selected date range
+  // Starting balance is the account value before the first transaction in range.
   let startingBalance: number | null = null
-  if (lineChartData.length > 0 && typeof lineChartData[0].runningBalance === 'number') {
-    startingBalance = lineChartData[0].runningBalance
+  if (rows.length > 0 && typeof rows[0].currentBalance === 'number') {
+    startingBalance = rows[0].currentBalance
   } else if (rows.length > 0 && typeof rows[0].runningBalance === 'number') {
-    startingBalance = rows[0].runningBalance
+    const firstImpact = getRowImpact(rows[0])
+    startingBalance =
+      typeof firstImpact === 'number'
+        ? rows[0].runningBalance - firstImpact
+        : rows[0].runningBalance
+  } else if (lineChartData.length > 0 && typeof lineChartData[0].runningBalance === 'number') {
+    startingBalance = lineChartData[0].runningBalance
   }
 
   useLayoutEffect(() => {
