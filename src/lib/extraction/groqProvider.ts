@@ -73,6 +73,31 @@ function asOptionalBoolean(value: unknown): boolean | undefined {
   return undefined
 }
 
+function sanitizeCounterpartyName(value: unknown): string | undefined {
+  const raw = String(value || '')
+    .replace(/&amp;/gi, '&')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  if (!raw) return undefined
+
+  const cutoffPatterns = [
+    /\b(?:acct(?:ount)?\s*(?:no|number)?|account\s*(?:no|number)?|iban|swift|routing|ref(?:erence)?\s*(?:no|number)?|transfer\s*(?:amount|method)|transaction\s*date|notes?)\b/i,
+    /\b(?:g-?xchange|gcash|instapay|mari\s*bank|bank|wallet|e-?wallet)\b/i,
+  ]
+
+  let sanitized = raw
+  for (const pattern of cutoffPatterns) {
+    const match = sanitized.match(pattern)
+    if (match?.index && match.index > 0) {
+      sanitized = sanitized.slice(0, match.index).trim()
+    }
+  }
+
+  sanitized = sanitized.replace(/[|,;:\-\s]+$/g, '').trim()
+  return sanitized || undefined
+}
+
 function hasWaivedFeeSignal(rawOcrText: string): boolean {
   const normalized = String(rawOcrText || '').toLowerCase()
   if (!normalized) return false
@@ -137,6 +162,10 @@ Rules:
 - Example: if receipt says "Total Debited 1010" with "Fee 10", then amount=1010, transactionFee=10, amountIncludesFee=true
 - Example: if receipt says "Transfer Amount 25,900", "Transfer Fee 15.00 FREE", "Total Amount 25,900", then amount=25900, transactionFee=0, amountIncludesFee=false
 - transactionStatus should default to completed unless the OCR clearly indicates failure, reversal, or cancellation
+- For from and to, extract ONLY the person or account holder display name.
+- Do NOT include bank names, wallet brands, account numbers, labels, or metadata such as "Acct No.", "Account Number", "G-Xchange", "GCash", "MariBank", "Transfer Method", or "instaPay".
+- If a line after the name contains bank/channel/account metadata, exclude that next line from from/to.
+- Keep punctuation inside names when valid (e.g., "MARIA ANGELICA P.") but strip trailing metadata.
 - do not hallucinate; use null when missing
 - confidence must be between 0 and 100
 
@@ -218,8 +247,8 @@ ${params.rawOcrText}`
     amount: amountExcludingFee,
     transactionFee: safeTransactionFee,
     transactionStatus: sanitizeTransactionStatus(parsed.transactionStatus),
-    from: parsed.from || undefined,
-    to: parsed.to || undefined,
+    from: sanitizeCounterpartyName(parsed.from),
+    to: sanitizeCounterpartyName(parsed.to),
   }
 
   return {
