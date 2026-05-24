@@ -11,6 +11,7 @@ import config from '~/payload.config'
 import { User } from '~/payload-types'
 import { ROLES } from '@/collections/UserRoles/roles.enum'
 import { QueryProvider } from '@/app/providers/Query'
+import { NavigationHistoryProvider } from '@/app/providers/NavigationHistory'
 
 export const dynamic = 'force-dynamic'
 
@@ -69,9 +70,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <QueryProvider>
           <ThemeProvider>
-            <AuthProvider user={user} isValidSession={Boolean(session)}>
-              {children}
-            </AuthProvider>
+            <NavigationHistoryProvider>
+              <AuthProvider user={user} isValidSession={Boolean(session)}>
+                {children}
+              </AuthProvider>
+            </NavigationHistoryProvider>
           </ThemeProvider>
         </QueryProvider>
       </body>

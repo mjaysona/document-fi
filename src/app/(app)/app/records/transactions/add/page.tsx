@@ -46,6 +46,7 @@ import {
 import { useForm } from '@mantine/form'
 import classes from '../../page.module.scss'
 import { CONTAINER_BREAKPOINTS } from '@/constants/breakpoints'
+import { useNavigationHistory } from '@/app/providers/NavigationHistory'
 
 type Feedback = { type: 'success' | 'error'; message: string }
 
@@ -135,6 +136,7 @@ function formatCurrency(value?: number): string {
 export default function AddTransactionPage() {
   const pathname = usePathname()
   const router = useRouter()
+  const { getBackPath } = useNavigationHistory()
   const params = useParams<{ id?: string }>()
   const transactionId = params?.id
   const isEditMode = pathname?.includes('/app/records/transactions/') && pathname?.endsWith('/edit')
@@ -882,8 +884,19 @@ export default function AddTransactionPage() {
     setIsSaving(true)
 
     if (isEditMode && transactionId) {
-      // In edit mode, just redirect to allocate page
-      router.push(`/app/records/transactions/${transactionId}/allocate`)
+      // In edit mode, save first so isFundAllocation and other edits persist before redirect.
+      const result = await updateTransactionWithReceipt(transactionId, formData)
+
+      if (result.success) {
+        setPendingReceiptFile(null)
+        setFeedback({ type: 'success', message: 'Transaction updated.' })
+        router.push(`/app/records/transactions/${transactionId}/allocate`)
+      } else {
+        if (result.error === 'Reference number already exists.') {
+          form.setFieldError('referenceNumber', result.error)
+        }
+        setFeedback({ type: 'error', message: result.error ?? 'Failed to update transaction.' })
+      }
     } else {
       // In create mode, save first then redirect
       const result = await createTransactionWithReceipt(formData)
@@ -1016,7 +1029,7 @@ export default function AddTransactionPage() {
               size="lg"
               radius="sm"
               aria-label="Back"
-              onClick={() => router.push('/app/records/transactions')}
+              onClick={() => router.push(getBackPath('/app/records/transactions'))}
             >
               <ArrowLeft size={16} />
             </ActionIcon>
@@ -1311,7 +1324,6 @@ export default function AddTransactionPage() {
                       thousandSeparator=","
                       hideControls
                       required
-                      // disabled={isEditMode}
                     />
                   </Grid.Col>
                   <Grid.Col span={{ base: 12, sm: 6 }}>
@@ -1325,7 +1337,6 @@ export default function AddTransactionPage() {
                       fixedDecimalScale
                       thousandSeparator=","
                       hideControls
-                      // disabled={isEditMode}
                     />
                   </Grid.Col>
                   {!isAllocationContext && (
@@ -1359,7 +1370,6 @@ export default function AddTransactionPage() {
                       value={form.values.description}
                       onChange={(e) => form.setFieldValue('description', e.currentTarget.value)}
                       error={form.errors.description}
-                      disabled={isEditMode}
                     />
                   </Grid.Col>
                   <Grid.Col span={12}>
@@ -1368,7 +1378,6 @@ export default function AddTransactionPage() {
                       value={form.values.particulars}
                       onChange={(e) => form.setFieldValue('particulars', e.currentTarget.value)}
                       minRows={2}
-                      disabled={isEditMode}
                     />
                   </Grid.Col>
                 </Grid>
