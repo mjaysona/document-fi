@@ -170,6 +170,7 @@ const Transactions: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'description',
+    listSearchableFields: ['description', 'referenceNumber'],
     defaultColumns: [
       'description',
       'transactionDate',

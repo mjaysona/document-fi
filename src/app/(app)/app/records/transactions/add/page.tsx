@@ -200,6 +200,12 @@ export default function AddTransactionPage() {
   const [receiptPreviewError, setReceiptPreviewError] = useState<string | null>(null)
   const [pendingReceiptFile, setPendingReceiptFile] = useState<File | null>(null)
   const [pendingRawOcrText, setPendingRawOcrText] = useState<string | undefined>()
+  const [pendingAiExtractedJson, setPendingAiExtractedJson] = useState<
+    string | number | boolean | null | Record<string, unknown> | unknown[] | undefined
+  >()
+  const [pendingExtractionConfidence, setPendingExtractionConfidence] = useState<
+    number | undefined
+  >()
   const receiptInputRef = useRef<() => void>(() => {})
 
   const resolveReceiptPreviewError = async (failedUrl: string): Promise<string> => {
@@ -377,6 +383,8 @@ export default function AddTransactionPage() {
     setReceiptImageFileName(hydratedReceiptFileName)
     setPendingReceiptFile(null)
     setPendingRawOcrText(tx.rawOcrText ?? undefined)
+    setPendingAiExtractedJson(tx.aiExtractedJson)
+    setPendingExtractionConfidence(tx.extractionConfidence)
     await loadChildTransactions(String(tx.id), tx.isFundAllocation === true)
 
     const parentId = tx.parentTransaction ?? null
@@ -398,6 +406,8 @@ export default function AddTransactionPage() {
     setReceiptImageUrl(undefined)
     setPendingReceiptFile(null)
     setPendingRawOcrText(undefined)
+    setPendingAiExtractedJson(undefined)
+    setPendingExtractionConfidence(undefined)
   }
 
   const handleFileAnalysis = async (file: File): Promise<boolean> => {
@@ -413,6 +423,8 @@ export default function AddTransactionPage() {
     setReceiptImageFileName(file.name)
     setPendingReceiptFile(file)
     setPendingRawOcrText(undefined)
+    setPendingAiExtractedJson(undefined)
+    setPendingExtractionConfidence(undefined)
     setFeedback(null)
     setIsUploadingReceipt(true)
 
@@ -424,6 +436,8 @@ export default function AddTransactionPage() {
 
     if (result.success || result.rawOcrText) {
       setPendingRawOcrText(result.rawOcrText)
+      setPendingAiExtractedJson(result.aiExtractedJson)
+      setPendingExtractionConfidence(result.confidence)
       if (result.transactionDate) {
         const parsed = new Date(result.transactionDate)
         if (!Number.isNaN(parsed.getTime())) {
@@ -607,6 +621,8 @@ export default function AddTransactionPage() {
       setReceiptImageFileName(hydratedReceiptFileName)
       setPendingReceiptFile(null)
       setPendingRawOcrText(undefined)
+      setPendingAiExtractedJson(tx.aiExtractedJson)
+      setPendingExtractionConfidence(tx.extractionConfidence)
       await loadChildTransactions(String(tx.id), tx.isFundAllocation === true)
 
       if (tx.parentTransaction) {
@@ -769,6 +785,15 @@ export default function AddTransactionPage() {
       formData.append('parentTransaction', form.values.parentTransaction)
     if (receiptImageId) formData.append('existingReceiptImageId', receiptImageId)
     if (pendingRawOcrText) formData.append('rawOcrText', pendingRawOcrText)
+    if (typeof pendingAiExtractedJson !== 'undefined') {
+      formData.append('aiExtractedJson', JSON.stringify(pendingAiExtractedJson))
+    }
+    if (
+      typeof pendingExtractionConfidence === 'number' &&
+      Number.isFinite(pendingExtractionConfidence)
+    ) {
+      formData.append('extractionConfidence', String(pendingExtractionConfidence))
+    }
 
     return { formData, parsedAmount, parsedTransactionFee }
   }
@@ -928,6 +953,8 @@ export default function AddTransactionPage() {
     if (result.rawOcrText) {
       setPendingRawOcrText(result.rawOcrText)
     }
+    setPendingAiExtractedJson(result.aiExtractedJson)
+    setPendingExtractionConfidence(result.confidence)
 
     if (result.success || result.status === 'partial-success') {
       if (result.transactionDate) {

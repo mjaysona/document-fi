@@ -77,6 +77,8 @@ export type TransactionFormInput = {
   transactionStatus?: TransactionStatus | null
   receiptImageId?: string
   rawOcrText?: string
+  aiExtractedJson?: string | number | boolean | null | Record<string, unknown> | unknown[]
+  extractionConfidence?: number
   isFundAllocation?: boolean
   parentTransaction?: string | null
 }
@@ -114,6 +116,7 @@ export type ProcessTransactionReceiptResult = {
   from?: string
   to?: string
   confidence?: number
+  aiExtractedJson?: TransactionFormInput['aiExtractedJson']
   error?: string
   warning?: string
 }
@@ -134,6 +137,7 @@ export type ReceiptAnalysisResult = {
   from?: string
   to?: string
   confidence?: number
+  aiExtractedJson?: TransactionFormInput['aiExtractedJson']
   error?: string
 }
 
@@ -195,6 +199,30 @@ function normalizeNonNegativeAmount(value: unknown): number {
 function normalizeReferenceNumber(value: unknown): string | undefined {
   const normalized = String(value || '').trim()
   return normalized || undefined
+}
+
+function parseAiExtractedJsonValue(
+  value: FormDataEntryValue | null,
+): TransactionFormInput['aiExtractedJson'] {
+  if (typeof value !== 'string') return undefined
+
+  const raw = value.trim()
+  if (!raw) return undefined
+
+  try {
+    return JSON.parse(raw) as TransactionFormInput['aiExtractedJson']
+  } catch {
+    return undefined
+  }
+}
+
+function parseConfidenceValue(value: FormDataEntryValue | null): number | undefined {
+  if (typeof value !== 'string') return undefined
+
+  const parsed = Number(value.trim())
+  if (!Number.isFinite(parsed)) return undefined
+
+  return Math.max(0, Math.min(100, parsed))
 }
 
 async function isReferenceNumberTaken(args: {
@@ -455,6 +483,17 @@ function mapTransactionInput(
       ? {
           rawOcrText: input.rawOcrText || undefined,
           isAiGenerated: Boolean(input.rawOcrText),
+        }
+      : {}),
+    ...(typeof input.aiExtractedJson !== 'undefined'
+      ? {
+          aiExtractedJson: input.aiExtractedJson,
+        }
+      : {}),
+    ...(typeof input.extractionConfidence === 'number' &&
+    Number.isFinite(input.extractionConfidence)
+      ? {
+          extractionConfidence: Math.max(0, Math.min(100, input.extractionConfidence)),
         }
       : {}),
   }
@@ -985,6 +1024,12 @@ export async function createTransactionWithReceipt(formData: FormData): Promise<
       }
     }
 
+    const rawOcrText =
+      String(formData.get('rawOcrText') || '').trim() || receiptResult?.rawOcrText || undefined
+    const financialAccount = String(formData.get('financialAccount') || '').trim() || undefined
+    const aiExtractedJson = parseAiExtractedJsonValue(formData.get('aiExtractedJson'))
+    const extractionConfidence = parseConfidenceValue(formData.get('extractionConfidence'))
+
     const createResult = await createTransaction({
       transactionDate: String(formData.get('transactionDate') || '').trim() || undefined,
       description,
@@ -992,7 +1037,7 @@ export async function createTransactionWithReceipt(formData: FormData): Promise<
       transactionType: normalizeTransactionType(formData.get('transactionType')),
       sourceAccount: String(formData.get('sourceAccount') || '').trim() || undefined,
       destinationAccount: String(formData.get('destinationAccount') || '').trim() || undefined,
-      financialAccount: String(formData.get('financialAccount') || '').trim() || undefined,
+      financialAccount,
       from: String(formData.get('from') || '').trim() || undefined,
       to: String(formData.get('to') || '').trim() || undefined,
       referenceNumber: String(formData.get('referenceNumber') || '').trim() || undefined,
@@ -1001,7 +1046,9 @@ export async function createTransactionWithReceipt(formData: FormData): Promise<
       currentBalance: normalizeNonNegativeAmount(formData.get('currentBalance')),
       transactionStatus: normalizeTransactionStatus(formData.get('transactionStatus')),
       receiptImageId: receiptResult?.id,
-      rawOcrText: String(formData.get('rawOcrText') || '').trim() || receiptResult?.rawOcrText,
+      rawOcrText,
+      aiExtractedJson,
+      extractionConfidence,
       isFundAllocation: String(formData.get('isFundAllocation') || '').trim() === 'true',
       parentTransaction: String(formData.get('parentTransaction') || '').trim() || undefined,
     })
@@ -1256,6 +1303,10 @@ export async function updateTransactionWithReceipt(
       await deleteTransactionReceiptById(existingReceiptImageId)
     }
 
+    const financialAccount = String(formData.get('financialAccount') || '').trim() || undefined
+    const aiExtractedJson = parseAiExtractedJsonValue(formData.get('aiExtractedJson'))
+    const extractionConfidence = parseConfidenceValue(formData.get('extractionConfidence'))
+
     return await updateTransaction(id, {
       transactionDate: String(formData.get('transactionDate') || '').trim() || undefined,
       description: String(formData.get('description') || '').trim(),
@@ -1263,7 +1314,7 @@ export async function updateTransactionWithReceipt(
       transactionType: normalizeTransactionType(formData.get('transactionType')),
       sourceAccount: String(formData.get('sourceAccount') || '').trim() || undefined,
       destinationAccount: String(formData.get('destinationAccount') || '').trim() || undefined,
-      financialAccount: String(formData.get('financialAccount') || '').trim() || undefined,
+      financialAccount,
       from: String(formData.get('from') || '').trim() || undefined,
       to: String(formData.get('to') || '').trim() || undefined,
       referenceNumber: String(formData.get('referenceNumber') || '').trim() || undefined,
@@ -1273,6 +1324,8 @@ export async function updateTransactionWithReceipt(
       transactionStatus: normalizeTransactionStatus(formData.get('transactionStatus')),
       receiptImageId,
       rawOcrText,
+      aiExtractedJson,
+      extractionConfidence,
       isFundAllocation: String(formData.get('isFundAllocation') || '').trim() === 'true',
       parentTransaction: String(formData.get('parentTransaction') || '').trim() || undefined,
     })
@@ -1356,6 +1409,7 @@ export async function analyzeReceiptFile(formData: FormData): Promise<ReceiptAna
         from: extraction.extracted.from,
         to: extraction.extracted.to,
         confidence: extraction.confidence,
+        aiExtractedJson: extraction.rawJson as TransactionFormInput['aiExtractedJson'],
       }
     } catch (groqError) {
       const errMsg = groqError instanceof Error ? groqError.message : String(groqError)
@@ -1512,6 +1566,7 @@ export async function processTransactionReceipt(
         from: extraction.extracted.from,
         to: extraction.extracted.to,
         confidence: extraction.confidence,
+        aiExtractedJson: extraction.rawJson as TransactionFormInput['aiExtractedJson'],
       }
     } catch (error) {
       const errMsg = error instanceof Error ? error.message : String(error)

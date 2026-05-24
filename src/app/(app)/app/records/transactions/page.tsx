@@ -449,6 +449,7 @@ export default function TransactionsPage() {
 
       return (
         item.description.toLowerCase().includes(query) ||
+        (item.referenceNumber ?? '').toLowerCase().includes(query) ||
         (item.financialAccountName ?? '').toLowerCase().includes(query) ||
         (item.sourceAccountName ?? '').toLowerCase().includes(query) ||
         (item.destinationAccountName ?? '').toLowerCase().includes(query) ||
