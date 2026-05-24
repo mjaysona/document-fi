@@ -11,7 +11,7 @@ const TransactionReceipts: CollectionConfig = {
   slug: 'transaction-receipts',
   access: {
     create: createTransactionReceipts,
-    read: readTransactionReceipts,
+    read: () => true,
     update: updateTransactionReceipts,
     delete: deleteTransactionReceipts,
   },
