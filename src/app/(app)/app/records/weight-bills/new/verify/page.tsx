@@ -462,6 +462,7 @@ export default function VerifyPage() {
           uploads[activeIndex].savedStatus &&
           uploads[activeIndex].savedStatus !== 'unsaved' && (
             <Alert
+              withCloseButton
               title={
                 uploads[activeIndex].savedStatus === 'verified'
                   ? uploads?.length > 1

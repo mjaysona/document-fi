@@ -126,12 +126,12 @@ export default function UserProfileClient() {
           <form onSubmit={form.onSubmit(handleSave)}>
             <Stack gap="xs">
               {saveSuccess && (
-                <Alert color="green" icon={<CircleCheck size={16} />} p="xs">
+                <Alert withCloseButton color="green" icon={<CircleCheck size={16} />} p="xs">
                   Profile updated successfully.
                 </Alert>
               )}
               {saveError && (
-                <Alert color="red" icon={<CircleAlert size={16} />} p="xs">
+                <Alert withCloseButton color="red" icon={<CircleAlert size={16} />} p="xs">
                   {saveError}
                 </Alert>
               )}
@@ -196,12 +196,12 @@ export default function UserProfileClient() {
             </Text>
           </Group>
           {resetSuccess && (
-            <Alert color="green" icon={<CircleCheck size={16} />} p="xs">
+            <Alert withCloseButton color="green" icon={<CircleCheck size={16} />} p="xs">
               Password reset link sent to {user?.email}. Check your inbox.
             </Alert>
           )}
           {resetError && (
-            <Alert color="red" icon={<CircleAlert size={16} />} p="xs">
+            <Alert withCloseButton color="red" icon={<CircleAlert size={16} />} p="xs">
               {resetError}
             </Alert>
           )}

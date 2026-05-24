@@ -198,7 +198,7 @@ export default function FinancialAccountCreatePage() {
       </Group>
 
       {feedback && (
-        <Alert color={feedback.type === 'success' ? 'green' : 'red'} title="Notice">
+        <Alert withCloseButton color={feedback.type === 'success' ? 'green' : 'red'} title="Notice">
           {feedback.message}
         </Alert>
       )}

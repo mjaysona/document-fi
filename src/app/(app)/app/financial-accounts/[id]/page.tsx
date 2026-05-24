@@ -316,7 +316,7 @@ export default function FinancialAccountDetailPage() {
       </Group>
 
       {feedback && (
-        <Alert color="red" title="Notice">
+        <Alert withCloseButton color="red" title="Notice">
           {feedback}
         </Alert>
       )}

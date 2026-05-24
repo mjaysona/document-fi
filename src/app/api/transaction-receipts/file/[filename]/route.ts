@@ -42,6 +42,7 @@ export async function GET(
     }
 
     console.log('No S3 public URL or receipt URL found')
+    return new NextResponse('Receipt URL not available', { status: 404 })
   } catch (error) {
     console.error('Failed to serve transaction receipt file:', error)
     return new NextResponse('Internal server error', { status: 500 })

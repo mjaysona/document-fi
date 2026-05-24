@@ -172,6 +172,7 @@ export default function NewQuotePage() {
 
         {feedback && (
           <Alert
+            withCloseButton
             color={feedback.type === 'success' ? 'green' : 'red'}
             title={feedback.type === 'success' ? 'Success' : 'Error'}
           >

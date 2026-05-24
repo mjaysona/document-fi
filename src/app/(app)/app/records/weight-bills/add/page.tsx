@@ -858,6 +858,7 @@ export default function VerifyPage() {
         )}
         {shouldShowActionFeedback && actionFeedback && (
           <Alert
+            withCloseButton
             color={actionFeedback.type === 'success' ? 'green' : 'red'}
             title={actionFeedback.type === 'success' ? 'Success' : 'Error'}
             mb="md"

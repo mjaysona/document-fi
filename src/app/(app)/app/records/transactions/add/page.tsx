@@ -73,6 +73,12 @@ type TransactionFormValues = {
 
 type NumericInputValue = number | string
 
+const SUPPORTED_RECEIPT_MIME_TYPES: Set<string> = new Set([
+  MIME_TYPES.png,
+  MIME_TYPES.jpeg,
+  MIME_TYPES.webp,
+])
+
 function parseNumericInputValue(
   value: NumericInputValue | '' | null | undefined,
 ): number | undefined {
@@ -188,9 +194,39 @@ export default function AddTransactionPage() {
   const [receiptImageUrl, setReceiptImageUrl] = useState<string | undefined>()
   const [receiptImageFileName, setReceiptImageFileName] = useState('')
   const [receiptPreviewAttempt, setReceiptPreviewAttempt] = useState(0)
+  const [receiptPreviewError, setReceiptPreviewError] = useState<string | null>(null)
   const [pendingReceiptFile, setPendingReceiptFile] = useState<File | null>(null)
   const [pendingRawOcrText, setPendingRawOcrText] = useState<string | undefined>()
   const receiptInputRef = useRef<() => void>(() => {})
+
+  const resolveReceiptPreviewError = async (failedUrl: string): Promise<string> => {
+    const normalized = String(failedUrl || '').trim()
+    if (!normalized) return 'Receipt preview failed.'
+
+    // Blob/data URLs fail client-side and cannot provide a server response body.
+    if (normalized.startsWith('blob:') || normalized.startsWith('data:')) {
+      return 'Receipt preview failed. Please re-upload the image.'
+    }
+
+    try {
+      const response = await fetch(normalized, {
+        method: 'GET',
+        credentials: 'same-origin',
+        cache: 'no-store',
+      })
+
+      if (!response.ok) {
+        const bodyText = (await response.text()).trim()
+        if (bodyText) return bodyText
+        return `Failed to load receipt preview (${response.status} ${response.statusText}).`
+      }
+
+      return 'Receipt image could not be rendered by the browser.'
+    } catch (error) {
+      const message = error instanceof Error ? error.message.trim() : ''
+      return message || 'Failed to load receipt preview.'
+    }
+  }
 
   const receiptPreviewCandidates = useMemo(() => {
     const candidates: string[] = []
@@ -226,6 +262,11 @@ export default function AddTransactionPage() {
       }
     }
 
+    const normalizedReceiptId = String(receiptImageId || '').trim()
+    if (normalizedReceiptId) {
+      pushCandidate(`/api/transaction-receipts/${encodeURIComponent(normalizedReceiptId)}`)
+    }
+
     const normalizedFilename = String(receiptImageFileName || '').trim()
     if (normalizedFilename) {
       pushCandidate(`/api/transaction-receipts/file/${encodeURIComponent(normalizedFilename)}`)
@@ -241,6 +282,7 @@ export default function AddTransactionPage() {
 
   useEffect(() => {
     setReceiptPreviewAttempt(0)
+    setReceiptPreviewError(null)
   }, [receiptImageUrl, receiptImageFileName, receiptImageId])
 
   const loadChildTransactions = async (parentId: string, isFundAllocation: boolean) => {
@@ -356,6 +398,14 @@ export default function AddTransactionPage() {
   }
 
   const handleFileAnalysis = async (file: File): Promise<boolean> => {
+    if (!SUPPORTED_RECEIPT_MIME_TYPES.has(file.type)) {
+      setFeedback({
+        type: 'error',
+        message: 'Unsupported image format. Please upload PNG, JPEG, or WEBP.',
+      })
+      return false
+    }
+
     setReceiptImageUrl(URL.createObjectURL(file))
     setReceiptImageFileName(file.name)
     setPendingReceiptFile(file)
@@ -992,7 +1042,12 @@ export default function AddTransactionPage() {
         </Group>
 
         {feedback && (
-          <Alert color={feedback.type === 'success' ? 'green' : 'red'} title="Notice" mb="md">
+          <Alert
+            withCloseButton
+            color={feedback.type === 'success' ? 'green' : 'red'}
+            title="Notice"
+            mb="md"
+          >
             {feedback.message}
           </Alert>
         )}
@@ -1286,7 +1341,7 @@ export default function AddTransactionPage() {
               <input
                 hidden
                 type="file"
-                accept="image/*"
+                accept="image/png,image/jpeg,image/webp"
                 onChange={(event) => {
                   const file = event.currentTarget.files?.[0]
                   if (!file) return
@@ -1431,22 +1486,38 @@ export default function AddTransactionPage() {
                         overflow: 'auto',
                       }}
                     >
-                      <img
-                        src={activeReceiptImageUrl}
-                        alt="Receipt preview"
-                        onError={() => {
-                          setReceiptPreviewAttempt((current) => {
-                            const next = current + 1
-                            return next < receiptPreviewCandidates.length ? next : current
-                          })
-                        }}
-                        style={{
-                          width: '100%',
-                          height: 'auto',
-                          objectFit: 'contain',
-                          borderRadius: 4,
-                        }}
-                      />
+                      {receiptPreviewError ? (
+                        <Alert withCloseButton color="red" title="Receipt preview failed">
+                          {receiptPreviewError}
+                        </Alert>
+                      ) : (
+                        <img
+                          src={activeReceiptImageUrl}
+                          alt="Receipt preview"
+                          onError={() => {
+                            setReceiptPreviewAttempt((current) => {
+                              const next = current + 1
+                              if (next < receiptPreviewCandidates.length) {
+                                return next
+                              }
+
+                              void resolveReceiptPreviewError(
+                                activeReceiptImageUrl || receiptPreviewCandidates[current] || '',
+                              ).then((message) => {
+                                setReceiptPreviewError(message)
+                              })
+
+                              return current
+                            })
+                          }}
+                          style={{
+                            width: '100%',
+                            height: 'auto',
+                            objectFit: 'contain',
+                            borderRadius: 4,
+                          }}
+                        />
+                      )}
                     </div>
                   </Stack>
                 </Card>
