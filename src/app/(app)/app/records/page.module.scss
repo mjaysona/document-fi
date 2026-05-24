@@ -7,7 +7,7 @@
   flex-direction: column;
 }
 
-.uploadCard {
+.upload-card {
   border: 2px dashed light-dark(var(--mantine-color-gray-4), var(--mantine-color-dark-3));
   background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-6));
   transition:
@@ -83,51 +83,51 @@
   }
 }
 
-.expandedContent {
+.expanded-content {
   container-type: inline-size;
   container-name: expanded-row;
 }
 
-.detailGrid {
+.detail-grid {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: var(--mantine-spacing-sm);
 }
 
-.detailItemWide {
+.detail-item--wide {
   grid-column: 1 / -1;
 }
 
-.transactionFormLayout {
+.transaction-form-layout {
   width: 100%;
   align-items: flex-start;
 }
 
-.transactionDetailsPane {
+.transaction-details-pane {
   flex: 1 1 auto;
   min-width: 0;
 }
 
 @container expanded-row (max-width: 1300px) {
-  .detailGrid {
+  .detail-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
 @container expanded-row (max-width: 900px) {
-  .detailGrid {
+  .detail-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
 @container expanded-row (max-width: 680px) {
-  .detailGrid {
+  .detail-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @container expanded-row (max-width: 440px) {
-  .detailGrid {
+  .detail-grid {
     grid-template-columns: 1fr;
   }
 }

@@ -24,7 +24,7 @@ export const Input: React.FC<Props> = ({
   validate,
 }) => {
   return (
-    <div className={classes.inputWrap}>
+    <div className={classes['input-wrap']}>
       <label className={classes.label} htmlFor="name">
         {`${label} ${required ? '*' : ''}`}
       </label>
@@ -46,7 +46,7 @@ export const Input: React.FC<Props> = ({
         })}
       />
       {error && (
-        <div className={classes.errorMessage}>
+        <div className={classes['error-message']}>
           {!error?.message && error?.type === 'required'
             ? 'This field is required'
             : error?.message}

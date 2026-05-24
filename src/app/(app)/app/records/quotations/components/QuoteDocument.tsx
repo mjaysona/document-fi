@@ -69,7 +69,7 @@ export function QuoteDocument({ quote, currency = 'PHP' }: QuoteDocumentProps) {
   return (
     <article className={styles.document} aria-label="Quotation document">
       <header className={styles.header}>
-        <div className={styles.headerLeft}>
+        <div className={styles['header__left']}>
           {quote.logoUrl && <img src={quote.logoUrl} alt="Logo" className={styles.logo} />}
           <h1 className={styles.title}>{quote.name || 'Untitled Quote'}</h1>
           <p className={styles.meta}>Quote ID: {quote.id || '-'}</p>
@@ -77,10 +77,10 @@ export function QuoteDocument({ quote, currency = 'PHP' }: QuoteDocumentProps) {
         <p className={styles.meta}>Date: {formatDate(quote.createdAt)}</p>
       </header>
 
-      <section className={styles.clientBlock} aria-label="Client details">
-        <p className={styles.clientLabel}>Client</p>
-        <p className={styles.clientValue}>{quote.clientName || '-'}</p>
-        <p className={styles.clientValue}>{quote.clientEmail || '-'}</p>
+      <section className={styles['client__block']} aria-label="Client details">
+        <p className={styles['client__label']}>Client</p>
+        <p className={styles['client__value']}>{quote.clientName || '-'}</p>
+        <p className={styles['client__value']}>{quote.clientEmail || '-'}</p>
       </section>
 
       <section aria-label="Quote items">
@@ -88,13 +88,13 @@ export function QuoteDocument({ quote, currency = 'PHP' }: QuoteDocumentProps) {
           <thead>
             <tr>
               <th style={{ width: '48%' }}>Item</th>
-              <th className={styles.cellRight} style={{ width: '16%' }}>
+              <th className={styles['cell--right']} style={{ width: '16%' }}>
                 Unit Price
               </th>
-              <th className={styles.cellRight} style={{ width: '12%' }}>
+              <th className={styles['cell--right']} style={{ width: '12%' }}>
                 Qty
               </th>
-              <th className={styles.cellRight} style={{ width: '24%' }}>
+              <th className={styles['cell--right']} style={{ width: '24%' }}>
                 Line Total
               </th>
             </tr>
@@ -110,9 +110,9 @@ export function QuoteDocument({ quote, currency = 'PHP' }: QuoteDocumentProps) {
               return (
                 <tr key={`${item.name}-${idx}`}>
                   <td>
-                    <p className={styles.itemName}>{item.name}</p>
+                    <p className={styles['item__name']}>{item.name}</p>
                     {item.description && (
-                      <p className={styles.itemDescription}>{item.description}</p>
+                      <p className={styles['item__description']}>{item.description}</p>
                     )}
                     {images.length > 0 && (
                       <div className={styles.thumbs}>
@@ -131,9 +131,11 @@ export function QuoteDocument({ quote, currency = 'PHP' }: QuoteDocumentProps) {
                       </div>
                     )}
                   </td>
-                  <td className={styles.cellRight}>{formatMoney(item.unitPrice || 0, currency)}</td>
-                  <td className={styles.cellRight}>{item.quantity || 0}</td>
-                  <td className={styles.cellRight}>{formatMoney(lineTotal, currency)}</td>
+                  <td className={styles['cell--right']}>
+                    {formatMoney(item.unitPrice || 0, currency)}
+                  </td>
+                  <td className={styles['cell--right']}>{item.quantity || 0}</td>
+                  <td className={styles['cell--right']}>{formatMoney(lineTotal, currency)}</td>
                 </tr>
               )
             })}
@@ -142,11 +144,11 @@ export function QuoteDocument({ quote, currency = 'PHP' }: QuoteDocumentProps) {
       </section>
 
       <section className={styles.summary} aria-label="Totals">
-        <div className={styles.summaryRow}>
+        <div className={styles['summary__row']}>
           <span>Subtotal</span>
           <strong>{formatMoney(summary.subtotal, currency)}</strong>
         </div>
-        <div className={`${styles.summaryRow} ${styles.summaryTotal}`}>
+        <div className={`${styles['summary__row']} ${styles['summary__total']}`}>
           <span>Total</span>
           <strong>{formatMoney(summary.total, currency)}</strong>
         </div>

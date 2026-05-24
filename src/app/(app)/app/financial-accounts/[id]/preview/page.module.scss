@@ -10,20 +10,20 @@
   background: var(--mantine-color-body);
 }
 
-.toolbarRight {
+.toolbar__right {
   display: flex;
   gap: 8px;
   align-items: center;
 }
 
-.printAreaWrapper {
+.print-area__wrapper {
   overflow-x: auto;
   padding: 32px 64px 64px;
   display: flex;
   justify-content: center;
 }
 
-.printArea {
+.print-area {
   width: 100%;
   max-width: 100%;
   min-width: 0;
@@ -48,18 +48,18 @@
     visibility: hidden !important;
   }
 
-  .printArea,
-  .printArea * {
+  .print-area,
+  .print-area * {
     visibility: visible !important;
   }
 
-  .printAreaWrapper {
+  .print-area__wrapper {
     overflow: visible !important;
     padding: 0 !important;
     display: block !important;
   }
 
-  .printArea {
+  .print-area {
     position: absolute;
     top: 0;
     left: 0;

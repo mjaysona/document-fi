@@ -283,7 +283,7 @@ export function TransactionReportDocument({
           return (
             <td
               key={`${displayRow.key}-${column.value}`}
-              className={isRightAlignedColumn(column.value) ? styles.cellRight : undefined}
+              className={isRightAlignedColumn(column.value) ? styles['cell--right'] : undefined}
               style={shouldIndent ? { paddingLeft: '32px' } : undefined}
             >
               {renderCellValue(displayRow.row, column.value)}
@@ -297,15 +297,15 @@ export function TransactionReportDocument({
   const renderTable = (pageRows: DisplayRow[], isContinued: boolean) => {
     return (
       <section
-        className={`${styles.tableSection} ${isContinued ? styles.tableSectionContinued : ''}`.trim()}
+        className={`${styles.table__section} ${isContinued ? styles['table__section--continued'] : ''}`.trim()}
         aria-label="Transactions table preview section"
       >
-        <h2 className={styles.sectionTitle}>
+        <h2 className={styles.section__title}>
           {isContinued ? 'Transactions (continued)' : 'Transactions'}
         </h2>
 
         {rows.length === 0 ? (
-          <p className={styles.placeholderText}>No transactions available for this report.</p>
+          <p className={styles.placeholder__text}>No transactions available for this report.</p>
         ) : (
           <table className={styles.table}>
             <thead>
@@ -313,7 +313,9 @@ export function TransactionReportDocument({
                 {columnHeaders.map((column) => (
                   <th
                     key={column.value}
-                    className={isRightAlignedColumn(column.value) ? styles.cellRight : undefined}
+                    className={
+                      isRightAlignedColumn(column.value) ? styles['cell--right'] : undefined
+                    }
                   >
                     {column.label}
                   </th>
@@ -332,30 +334,32 @@ export function TransactionReportDocument({
   return (
     <>
       <div className={styles.pages}>
-        <div className={styles.pageScaleWrap}>
+        <div className={styles['page-scale-wrap']}>
           <article className={styles.document} aria-label="Transaction report document page 1">
             <h3 className={styles.header}>{header.title}</h3>
-            <div className={styles.documentTitle}>
+            <div className={styles.document__title}>
               <span>TRANSACTIONS REPORT</span>
             </div>
-            <div className={styles.transactionDetails}>
-              <div className={styles.transactionDetail}>
-                <p className={styles.transactionDetailLabel}>Date</p>
-                <p className={styles.transactionDetailValue}>
+            <div className={styles.transaction__details}>
+              <div className={styles.transaction__detail}>
+                <p className={styles['transaction__detail-label']}>Date</p>
+                <p className={styles['transaction__detail-value']}>
                   {formatDate(header.fromDate)} - {formatDate(header.toDate)}
                 </p>
               </div>
-              <div className={styles.transactionDetail}>
-                <p className={styles.transactionDetailLabel}>Starting balance</p>
-                <p className={styles.transactionDetailValue}>{formatMoney(startingBalance)}</p>
+              <div className={styles.transaction__detail}>
+                <p className={styles['transaction__detail-label']}>Starting balance</p>
+                <p className={styles['transaction__detail-value']}>
+                  {formatMoney(startingBalance)}
+                </p>
               </div>
             </div>
-            <section className={styles.chartSection} aria-label="Charts preview section">
-              <div className={styles.chartGrid}>
-                <div className={styles.chartCard}>
-                  <p className={styles.chartTitle}>Running Balance Trend (Line)</p>
+            <section className={styles.chart__section} aria-label="Charts preview section">
+              <div className={styles.chart__grid}>
+                <div className={styles.chart__card}>
+                  <p className={styles.chart__title}>Running Balance Trend (Line)</p>
                   {hasLineData ? (
-                    <div className={styles.chartViewport}>
+                    <div className={styles.chart__viewport}>
                       <LineChart
                         h={300}
                         data={lineChartSeries}
@@ -392,14 +396,14 @@ export function TransactionReportDocument({
                       />
                     </div>
                   ) : (
-                    <p className={styles.placeholderText}>No running balance data available.</p>
+                    <p className={styles.placeholder__text}>No running balance data available.</p>
                   )}
                 </div>
 
-                <div className={styles.chartCard}>
-                  <p className={styles.chartTitle}>Money In vs Money Out (Bar)</p>
+                <div className={styles.chart__card}>
+                  <p className={styles.chart__title}>Money In vs Money Out (Bar)</p>
                   {hasBarData ? (
-                    <div className={styles.chartViewport}>
+                    <div className={styles.chart__viewport}>
                       <BarChart
                         h={300}
                         data={barChartSeries}
@@ -432,7 +436,9 @@ export function TransactionReportDocument({
                       />
                     </div>
                   ) : (
-                    <p className={styles.placeholderText}>No transaction amount data available.</p>
+                    <p className={styles.placeholder__text}>
+                      No transaction amount data available.
+                    </p>
                   )}
                 </div>
               </div>
@@ -441,7 +447,7 @@ export function TransactionReportDocument({
         </div>
 
         {transactionPages.map((pageRows, pageIndex) => (
-          <div className={styles.pageScaleWrap} key={`transaction-page-wrap-${pageIndex}`}>
+          <div className={styles['page-scale-wrap']} key={`transaction-page-wrap-${pageIndex}`}>
             <article
               className={styles.document}
               aria-label={`Transaction report document page ${pageIndex + 2}`}
@@ -453,11 +459,11 @@ export function TransactionReportDocument({
         ))}
       </div>
 
-      <div className={styles.measureLayer} aria-hidden="true">
+      <div className={styles['measure-layer']} aria-hidden="true">
         <article className={styles.document}>
           <div ref={nextPageBaseRef}>
-            <section className={`${styles.tableSection} ${styles.tableSectionContinued}`}>
-              <h2 className={styles.sectionTitle}>Transactions</h2>
+            <section className={`${styles.table__section} ${styles['table__section--continued']}`}>
+              <h2 className={styles.section__title}>Transactions</h2>
               <table className={styles.table}>
                 <thead>
                   <tr>
@@ -472,7 +478,7 @@ export function TransactionReportDocument({
         </article>
 
         <article className={styles.document}>
-          <section className={styles.tableSection}>
+          <section className={styles.table__section}>
             <table className={styles.table}>
               <tbody>
                 {displayRows.map((displayRow) => (
@@ -489,7 +495,7 @@ export function TransactionReportDocument({
                         <td
                           key={`measure-cell-${displayRow.key}-${column.value}`}
                           className={
-                            isRightAlignedColumn(column.value) ? styles.cellRight : undefined
+                            isRightAlignedColumn(column.value) ? styles['cell--right'] : undefined
                           }
                           style={shouldIndent ? { paddingLeft: '32px' } : undefined}
                         >

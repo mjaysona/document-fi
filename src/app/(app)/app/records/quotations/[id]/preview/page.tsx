@@ -47,7 +47,7 @@ export default async function PreviewPage({ params }: Props) {
           </Button>
         </Link>
 
-        <div className={styles.toolbarRight}>
+        <div className={styles['toolbar__right']}>
           <Link href={`/app/records/quotations/${id}/edit`}>
             <Button variant="default" leftSection={<Pencil size={16} />}>
               Edit
@@ -63,8 +63,8 @@ export default async function PreviewPage({ params }: Props) {
         </div>
       </div>
 
-      <div className={styles.printAreaWrapper}>
-        <div className={styles.printArea}>
+      <div className={styles['print-area__wrapper']}>
+        <div className={styles['print-area']}>
           <QuoteDocument quote={documentData} />
         </div>
       </div>

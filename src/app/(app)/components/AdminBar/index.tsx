@@ -31,7 +31,7 @@ export const AdminBar: React.FC<{
   const onAuthChange = React.useCallback((user: PayloadMeUser) => setShow(Boolean(user?.id)), [])
 
   return (
-    <div className={[classes.adminBar, show && classes.show].filter(Boolean).join(' ')}>
+    <div className={[classes['admin-bar'], show && classes.show].filter(Boolean).join(' ')}>
       <Gutter className={classes.container}>
         <PayloadAdminBar
           {...adminBarProps}

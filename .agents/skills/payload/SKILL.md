@@ -5,6 +5,13 @@ description: Use when working with Payload projects (payload.config.ts, collecti
 
 # Payload Application Development
 
+## Workspace Style Convention
+
+- For project-owned CSS/SCSS classes, use BEM naming.
+- Avoid camelCase classes; use `block`, `block__element`, and `block--modifier`.
+- In CSS modules, use bracket access for hyphenated/modifier names (for example `styles['cell--right']`).
+- Keep third-party/admin hook selectors unchanged when renaming would break integration.
+
 Payload is a Next.js native CMS with TypeScript-first architecture, providing admin panel, database management, REST/GraphQL APIs, authentication, and file storage.
 
 ## Quick Reference

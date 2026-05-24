@@ -85,7 +85,7 @@ export default function FinancialAccountsPage() {
   if (!accounts.length) {
     return (
       <div>
-        <Paper withBorder p="xl" radius="md" className={classes.emptyState}>
+        <Paper withBorder p="xl" radius="md" className={classes['empty-state']}>
           <Stack gap="md" align="center">
             <Text fw={700}>No financial accounts yet</Text>
             <Text size="sm" c="dimmed">
@@ -115,7 +115,7 @@ export default function FinancialAccountsPage() {
               <Group justify="space-between">
                 <Text
                   size="xs"
-                  className={`${classes.title} ${classes.titleLink}`}
+                  className={`${classes.title} ${classes['title-link']}`}
                   onClick={() => router.push(`/app/financial-accounts/${stat.id}`)}
                 >
                   {stat.title}
@@ -144,7 +144,7 @@ export default function FinancialAccountsPage() {
                   <Badge
                     color="gray"
                     size="sm"
-                    className={classes.actionBadge}
+                    className={classes['action-badge']}
                     onClick={async () => {
                       const result = await setFinancialAccountDefault(stat.id, true)
                       if (!result.success) return

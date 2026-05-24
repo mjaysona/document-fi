@@ -8,7 +8,7 @@
   container-type: inline-size;
 }
 
-.pageScaleWrap {
+.page-scale-wrap {
   --doc-scale: 1;
   width: calc(794px * var(--doc-scale));
   height: calc(1123px * var(--doc-scale));
@@ -30,61 +30,61 @@
   line-height: 1.5;
 }
 
-.pageScaleWrap .document {
+.page-scale-wrap .document {
   transform: scale(var(--doc-scale));
   transform-origin: top left;
   transition: transform 160ms ease;
 }
 
 @container (max-width: 953px) {
-  .pageScaleWrap {
+  .page-scale-wrap {
     --doc-scale: 1;
   }
 }
 
 @container (max-width: 880px) {
-  .pageScaleWrap {
+  .page-scale-wrap {
     --doc-scale: 0.94;
   }
 }
 
 @container (max-width: 820px) {
-  .pageScaleWrap {
+  .page-scale-wrap {
     --doc-scale: 0.88;
   }
 }
 
 @container (max-width: 760px) {
-  .pageScaleWrap {
+  .page-scale-wrap {
     --doc-scale: 0.82;
   }
 }
 
 @container (max-width: 700px) {
-  .pageScaleWrap {
+  .page-scale-wrap {
     --doc-scale: 0.76;
   }
 }
 
 @container (max-width: 640px) {
-  .pageScaleWrap {
+  .page-scale-wrap {
     --doc-scale: 0.7;
   }
 }
 
 @container (max-width: 580px) {
-  .pageScaleWrap {
+  .page-scale-wrap {
     --doc-scale: 0.64;
   }
 }
 
 @container (max-width: 520px) {
-  .pageScaleWrap {
+  .page-scale-wrap {
     --doc-scale: 0.58;
   }
 }
 
-.measureLayer {
+.measure-layer {
   position: absolute;
   left: -10000px;
   top: 0;
@@ -99,7 +99,7 @@
   margin: 0 0 12px 0;
 }
 
-.headerLeft {
+.header__left {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -129,11 +129,11 @@
   font-size: 13px;
 }
 
-.chartSection {
+.chart__section {
   margin-top: 16px;
 }
 
-.chartGrid {
+.chart__grid {
   display: grid;
   grid-template-columns: repeat(1, minmax(0, 1fr));
   gap: 24px;
@@ -141,7 +141,7 @@
 }
 
 
-.chartCard {
+.chart__card {
   border: 1px solid #e5e7eb;
   border-radius: 6px;
   padding: 16px;
@@ -150,28 +150,28 @@
   overflow: hidden;
 }
 
-.chartViewport :global(.recharts-responsive-container),
-.chartViewport :global(svg) {
+.chart__viewport :global(.recharts-responsive-container),
+.chart__viewport :global(svg) {
   max-width: 100% !important;
 }
 
-.chartViewport :global(.recharts-text) {
+.chart__viewport :global(.recharts-text) {
   font-size: 6px !important;
 }
 
-.chartViewport :global(.recharts-cartesian-axis-tick text) {
+.chart__viewport :global(.recharts-cartesian-axis-tick text) {
   font-size: 6px !important;
 }
 
-.chartViewport :global(.recharts-legend-wrapper text) {
+.chart__viewport :global(.recharts-legend-wrapper text) {
   font-size: 6px !important;
 }
 
-.chartViewport :global(.recharts-yAxis .recharts-text) {
+.chart__viewport :global(.recharts-yAxis .recharts-text) {
   font-size: 6px !important;
 }
 
-.chartTitle {
+.chart__title {
   margin: 0 0 8px;
   font-size: 11px;
   font-weight: 700;
@@ -180,11 +180,11 @@
   color: #374151;
 }
 
-.tableSection {
+.table__section {
   margin-top: 16px;
 }
 
-.tableSectionContinued {
+.table__section--continued {
   margin-top: 24px;
 }
 
@@ -219,20 +219,20 @@
   word-break: break-word;
 }
 
-.cellRight {
+.cell--right {
   text-align: right;
   white-space: normal;
 }
 
-.placeholderSection {
+.placeholder__section {
   border: 1px dashed #d1d5db;
   border-radius: 6px;
   padding: 16px 18px;
   margin-top: 16px;
 }
 
-.documentTitle,
-.sectionTitle {
+.document__title,
+.section__title {
   margin: 0;
   font-size: 12px;
   font-weight: 700;
@@ -241,13 +241,13 @@
   text-transform: uppercase;
 }
 
-.placeholderText {
+.placeholder__text {
   margin: 8px 0 0;
   font-size: 14px;
   color: #6b7280;
 }
 
-.documentTitle {
+.document__title {
   text-align: center;
   padding: 2px 0;
   border-bottom: 1px solid #e2e2e2;
@@ -261,14 +261,14 @@
     width: 100% !important;
   }
 
-  .pageScaleWrap {
+  .page-scale-wrap {
     width: 100% !important;
     height: auto !important;
     break-after: page;
     page-break-after: always;
   }
 
-  .pageScaleWrap:last-child {
+  .page-scale-wrap:last-child {
     break-after: auto;
     page-break-after: auto;
   }
@@ -289,26 +289,26 @@
     overflow: visible !important;
   }
 
-  .pageScaleWrap .document {
+  .page-scale-wrap .document {
     transform: none !important;
   }
 
 
-  .chartSection,
-  .chartCard,
-  .tableSection,
-  .placeholderSection {
+  .chart__section,
+  .chart__card,
+  .table__section,
+  .placeholder__section {
     break-inside: avoid;
     page-break-inside: avoid;
   }
 
-  .chartCard {
+  .chart__card {
     border-color: #e5e7eb;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
 
-  .tableSection {
+  .table__section {
     border-color: #d1d5db;
   }
 
@@ -335,19 +335,19 @@
   }
 }
 
-.transactionDetails {
+.transaction__details {
   display: flex;
   gap: 32px;
   margin: 24px 0 24px;
 }
 
-.transactionDetail {
+.transaction__detail {
   display: flex;
   justify-content: space-between;
   flex-direction: column; 
 }
 
-.transactionDetailLabel {
+.transaction__detail-label {
   text-transform: uppercase;
   font-weight: 700;
   font-size: 10px;
@@ -355,7 +355,7 @@
   margin: 0;
 }
 
-.transactionDetailValue {
+.transaction__detail-value {
   font-size: 20px;
   font-weight: 700;
   color: #1a1a1a;

@@ -1102,14 +1102,14 @@ export default function AddTransactionPage() {
             type="container"
             breakpoints={CONTAINER_BREAKPOINTS}
             gap="lg"
-            className={classes.transactionFormLayout}
+            className={classes['transaction-form-layout']}
           >
             <Grid.Col span={{ base: 12, md: 6, lg: 8 }} order={{ base: 2, md: 1 }}>
               <Card
                 withBorder
                 radius="md"
                 style={{ position: 'relative' }}
-                className={classes.transactionDetailsPane}
+                className={classes['transaction-details-pane']}
               >
                 <LoadingOverlay
                   visible={overlayVisible}
@@ -1418,7 +1418,7 @@ export default function AddTransactionPage() {
                   <Card
                     withBorder
                     radius="md"
-                    className={classes.uploadCard}
+                    className={classes['upload-card']}
                     style={{ position: 'relative' }}
                   >
                     <LoadingOverlay

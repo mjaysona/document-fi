@@ -17,8 +17,8 @@ export const Gutter: React.FC<Props & { ref?: React.Ref<HTMLDivElement> }> = (pr
     <div
       className={[
         classes.gutter,
-        left && classes.gutterLeft,
-        right && classes.gutterRight,
+        left && classes['gutter-left'],
+        right && classes['gutter-right'],
         className,
       ]
         .filter(Boolean)

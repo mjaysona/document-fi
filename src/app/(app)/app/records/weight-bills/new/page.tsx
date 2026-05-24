@@ -72,7 +72,7 @@ export default function DropzoneButton() {
   return (
     <Stack gap="md">
       <Title order={4}>Add Weight Bill/s</Title>
-      <Card withBorder radius="md" className={`${classes.card} ${classes.uploadCard}`}>
+      <Card withBorder radius="md" className={`${classes.card} ${classes['upload-card']}`}>
         <Dropzone
           openRef={openRef}
           onDrop={handleDrop}

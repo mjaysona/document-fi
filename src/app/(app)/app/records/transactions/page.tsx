@@ -1140,7 +1140,7 @@ export default function TransactionsPage() {
                   : 'orange'
 
             return (
-              <Stack gap="md" p="sm" className={classes.expandedContent}>
+              <Stack gap="md" p="sm" className={classes['expanded-content']}>
                 <Group gap="md" justify="space-between">
                   <Group>
                     <Text size="xs">Created: {formatDate(row.parent.createdAt)}</Text>
@@ -1153,7 +1153,7 @@ export default function TransactionsPage() {
                     </Text>
                   )}
                 </Group>
-                <div className={classes.detailGrid}>
+                <div className={classes['detail-grid']}>
                   <Flex direction="column" className={classes.detailItem}>
                     <Text size="xs" c="dimmed">
                       Reference #
@@ -1266,7 +1266,7 @@ export default function TransactionsPage() {
                   </Flex>
                   <Flex
                     direction="column"
-                    className={`${classes.detailItem} ${classes.detailItemWide}`}
+                    className={`${classes.detailItem} ${classes['detail-item--wide']}`}
                   >
                     <Text size="xs" c="dimmed">
                       Description
@@ -1276,7 +1276,7 @@ export default function TransactionsPage() {
                   {row.parent.particulars ? (
                     <Flex
                       direction="column"
-                      className={`${classes.detailItem} ${classes.detailItemWide}`}
+                      className={`${classes.detailItem} ${classes['detail-item--wide']}`}
                     >
                       <Text size="xs" c="dimmed">
                         Particulars

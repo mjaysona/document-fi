@@ -23,25 +23,25 @@
   text-transform: uppercase;
 }
 
-.titleLink {
+.title-link {
   color: var(--mantine-color-blue-4);
   cursor: pointer;
   transition: color 0.15s ease;
 }
 
-.titleLink:hover {
+.title-link:hover {
   color: var(--mantine-color-blue-6);
 }
 
-.actionBadge {
+.action-badge {
   cursor: pointer;
 }
 
-.actionBadge:hover {
+.action-badge:hover {
   background-color: var(--mantine-color-gray-7);
 }
 
-.emptyState {
+.empty-state {
   max-width: 520px;
   margin: 0 auto;
   text-align: center;

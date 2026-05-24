@@ -160,14 +160,14 @@ export default async function FinancialAccountPreviewPage({ params, searchParams
           <Title order={5}>Transaction Report for {account.name}</Title>
         </Group>
 
-        <Group className={styles.toolbarRight}>
+        <Group className={styles['toolbar__right']}>
           <DateRangeFilter logoUrl={logoUrl} initialFrom={from} initialTo={to} />
           <PrintButton />
         </Group>
       </Group>
       <ReportColumnsFilter initialColumns={visibleColumns} />
-      <div className={styles.printAreaWrapper}>
-        <div className={styles.printArea}>
+      <div className={styles['print-area__wrapper']}>
+        <div className={styles['print-area']}>
           <TransactionReportDocument report={report} visibleColumns={visibleColumns} />
         </div>
       </div>

@@ -18,7 +18,7 @@
   border-bottom: 2px solid #1a1a1a;
 }
 
-.headerLeft {
+.header__left {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -47,14 +47,14 @@
   font-size: 13px;
 }
 
-.clientBlock {
+.client__block {
   margin-bottom: 16px;
   background: #f8f9fa;
   border-radius: 6px;
   padding: 16px 20px;
 }
 
-.clientLabel {
+.client__label {
   margin: 0 0 6px;
   font-size: 11px;
   font-weight: 600;
@@ -63,7 +63,7 @@
   text-transform: uppercase;
 }
 
-.clientValue {
+.client__value {
   margin: 0;
   font-size: 14px;
   font-weight: 500;
@@ -100,19 +100,19 @@
   word-break: break-word;
 }
 
-.cellRight {
+.cell--right {
   text-align: right;
   white-space: nowrap;
 }
 
-.itemName {
+.item__name {
   margin: 0;
   font-weight: 600;
   font-size: 14px;
   color: #1a1a1a;
 }
 
-.itemDescription {
+.item__description {
   margin: 4px 0 0;
   color: #6b7280;
   font-size: 13px;
@@ -144,7 +144,7 @@
   padding: 16px 20px;
 }
 
-.summaryRow {
+.summary__row {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -154,7 +154,7 @@
   color: #374151;
 }
 
-.summaryTotal {
+.summary__total {
   font-weight: 700;
   font-size: 15px;
   color: #1a1a1a;
@@ -171,7 +171,7 @@
     color: #000;
   }
 
-  .clientBlock,
+  .client__block,
   .summary {
     background: #f5f5f5;
     -webkit-print-color-adjust: exact;

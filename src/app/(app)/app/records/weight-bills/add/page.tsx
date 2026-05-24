@@ -1021,7 +1021,7 @@ export default function VerifyPage() {
                 <Card
                   withBorder
                   radius="md"
-                  className={classes.uploadCard}
+                  className={classes['upload-card']}
                   style={{ position: 'relative' }}
                 >
                   <LoadingOverlay

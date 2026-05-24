@@ -1,4 +1,4 @@
-.adminBar {
+.admin-bar {
   z-index: 10;
   width: 100%;
   background-color: rgba(var(--foreground-rgb), 0.075);
@@ -9,7 +9,7 @@
   transition: opacity 150ms linear;
 }
 
-.payloadAdminBar {
+.payload-admin-bar {
   color: rgb(var(--foreground-rgb)) !important;
 }
 
@@ -33,7 +33,7 @@
   margin-right: calc(var(--base) * 0.5) !important;
 }
 
-.innerLogo {
+.inner-logo {
   width: 100%;
 }
 
