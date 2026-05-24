@@ -1415,7 +1415,7 @@ export async function analyzeReceiptFile(formData: FormData): Promise<ReceiptAna
       const errMsg = groqError instanceof Error ? groqError.message : String(groqError)
       console.error('Groq extraction failed during file analysis:', errMsg)
       return {
-        success: true,
+        success: false,
         rawOcrText: rawText,
         error: `AI extraction failed: ${errMsg}`,
       }

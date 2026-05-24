@@ -73,6 +73,16 @@ function asOptionalBoolean(value: unknown): boolean | undefined {
   return undefined
 }
 
+function sanitizeTransactionDateTime(value: unknown): string | undefined {
+  const raw = String(value || '').trim()
+  if (!raw) return undefined
+
+  const parsed = new Date(raw)
+  if (Number.isNaN(parsed.getTime())) return undefined
+
+  return parsed.toISOString()
+}
+
 function sanitizeCounterpartyName(value: unknown): string | undefined {
   const raw = String(value || '')
     .replace(/&amp;/gi, '&')
@@ -153,6 +163,8 @@ Rules:
 - particulars should contain the detailed narration, merchant/payment context, or notes from the receipt text
 - description must be a readable sentence derived from particulars when particulars exists (example: "Send Money via instaPay ... Notes Tennis coaching" -> "Sent money via Instapay to 099... from Maria Angelica Pascua for tennis coaching.")
 - transactionType must be debit or credit only
+- transactionDate should include time when the receipt provides it; return a valid ISO 8601 datetime string when possible (example: "2026-05-25T14:30:00+08:00").
+- If only date is available, return date-only ISO format (example: "2026-05-25").
 - If the sender (from) or receiver (to) details match the default financial account's bank code and name, infer the transactionType as follows: if sender matches, set transactionType to debit; if receiver matches, set transactionType to credit. Otherwise, use the best available information from the OCR text.
 - amount must be a positive number excluding transaction fee
 - transactionFee must be a non-negative number (use 0 when none)
@@ -239,7 +251,7 @@ ${params.rawOcrText}`
   }
 
   const extracted: GroqExtractedTransaction = {
-    transactionDate: parsed.transactionDate || undefined,
+    transactionDate: sanitizeTransactionDateTime(parsed.transactionDate),
     description: parsed.description || undefined,
     particulars: parsed.particulars || undefined,
     transactionType: sanitizeTransactionType(parsed.transactionType),

@@ -26,6 +26,7 @@ import {
   Switch,
 } from '@mantine/core'
 import { Dropzone, MIME_TYPES } from '@mantine/dropzone'
+import { DateTimePicker } from '@mantine/dates'
 import { ArrowLeft, Ban, CheckCircle, CircleHelp, Pencil, Upload } from 'lucide-react'
 import {
   analyzeReceiptFile,
@@ -131,6 +132,14 @@ function formatDate(value?: string): string {
 function formatCurrency(value?: number): string {
   if (typeof value !== 'number') return '-'
   return `PHP ${value.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
+function parseDateTimeValue(value?: string | null): Date | null {
+  const raw = String(value || '').trim()
+  if (!raw) return null
+
+  const parsed = new Date(raw)
+  return Number.isNaN(parsed.getTime()) ? null : parsed
 }
 
 export default function AddTransactionPage() {
@@ -330,7 +339,7 @@ export default function AddTransactionPage() {
 
     const tx = refreshed.data
     form.setValues({
-      transactionDate: tx.transactionDate?.slice(0, 10) ?? '',
+      transactionDate: tx.transactionDate ?? '',
       description: tx.description,
       particulars: tx.particulars ?? '',
       transactionType: tx.transactionType ?? null,
@@ -443,7 +452,7 @@ export default function AddTransactionPage() {
       if (result.transactionDate) {
         const parsed = new Date(result.transactionDate)
         if (!Number.isNaN(parsed.getTime())) {
-          form.setFieldValue('transactionDate', parsed.toISOString().split('T')[0])
+          form.setFieldValue('transactionDate', parsed.toISOString())
         }
       }
       if (result.description) form.setFieldValue('description', result.description)
@@ -524,11 +533,7 @@ export default function AddTransactionPage() {
 
         // Set transaction date to today
         const today = new Date()
-        const year = today.getFullYear()
-        const month = String(today.getMonth() + 1).padStart(2, '0')
-        const day = String(today.getDate()).padStart(2, '0')
-        const todayFormatted = `${year}-${month}-${day}`
-        form.setFieldValue('transactionDate', todayFormatted)
+        form.setFieldValue('transactionDate', today.toISOString())
 
         setIsLoading(false)
         return
@@ -559,7 +564,7 @@ export default function AddTransactionPage() {
 
       const tx = transactionResult.data
       form.setValues({
-        transactionDate: tx.transactionDate?.slice(0, 10) ?? '',
+        transactionDate: tx.transactionDate ?? '',
         description: tx.description,
         particulars: tx.particulars ?? '',
         transactionType: tx.transactionType ?? null,
@@ -693,12 +698,7 @@ export default function AddTransactionPage() {
     if (isEditMode || isAllocationContext || form.values.transactionDate) return
 
     const today = new Date()
-    const year = today.getFullYear()
-    const month = String(today.getMonth() + 1).padStart(2, '0')
-    const day = String(today.getDate()).padStart(2, '0')
-    const todayFormatted = `${year}-${month}-${day}`
-
-    form.setFieldValue('transactionDate', todayFormatted)
+    form.setFieldValue('transactionDate', today.toISOString())
   }, [isEditMode, isAllocationContext, form.values.transactionDate])
 
   const selectedAccountCurrentBalance = useMemo<number | ''>(() => {
@@ -973,7 +973,7 @@ export default function AddTransactionPage() {
       if (result.transactionDate) {
         const parsed = new Date(result.transactionDate)
         if (!Number.isNaN(parsed.getTime())) {
-          form.setFieldValue('transactionDate', parsed.toISOString().split('T')[0])
+          form.setFieldValue('transactionDate', parsed.toISOString())
         }
       }
       if (result.description) form.setFieldValue('description', result.description)
@@ -1171,11 +1171,23 @@ export default function AddTransactionPage() {
                     </>
                   )}
                   <Grid.Col span={{ base: 12, sm: 6 }}>
-                    <TextInput
+                    <DateTimePicker
                       label="Transaction Date"
-                      type="date"
-                      value={form.values.transactionDate}
-                      onChange={(e) => form.setFieldValue('transactionDate', e.currentTarget.value)}
+                      value={parseDateTimeValue(form.values.transactionDate)}
+                      onChange={(value) => {
+                        if (!value) {
+                          form.setFieldValue('transactionDate', '')
+                          return
+                        }
+
+                        const parsed = new Date(String(value || '').trim())
+                        form.setFieldValue(
+                          'transactionDate',
+                          Number.isNaN(parsed.getTime()) ? '' : parsed.toISOString(),
+                        )
+                      }}
+                      valueFormat="MMM DD, YYYY hh:mm A"
+                      clearable={false}
                       error={form.errors.transactionDate}
                       required
                       disabled={!form.values.financialAccount && !isAllocationContext}

@@ -188,8 +188,8 @@ const Transactions: CollectionConfig = {
       type: 'date',
       admin: {
         date: {
-          pickerAppearance: 'dayOnly',
-          displayFormat: 'MMM d, yyyy',
+          pickerAppearance: 'dayAndTime',
+          displayFormat: 'MMM d, yyyy h:mm a',
         },
       },
     },
