@@ -1085,21 +1085,52 @@ export async function getTransactionById(id: string): Promise<{
     let receiptImageUrl: string | undefined
     let receiptImageFileName: string | undefined
 
+    console.log('[LOG 1] Checking if transaction has receiptImage...')
+    console.log('[LOG 2] receiptImage value:', (doc as any).receiptImage)
+    console.log('[LOG 3] receiptImage type:', typeof (doc as any).receiptImage)
+
     if ((doc as any).receiptImage) {
+      console.log('[LOG 4] receiptImage exists, processing...')
+
       if (typeof (doc as any).receiptImage === 'string') {
+        console.log('[LOG 5] receiptImage is string ID')
         receiptImageId = String((doc as any).receiptImage)
+        console.log('[LOG 6] Set receiptImageId:', receiptImageId)
       } else {
+        console.log('[LOG 7] receiptImage is object')
+        console.log('[LOG 8] receiptImage.id:', (doc as any).receiptImage.id)
+        console.log('[LOG 9] receiptImage.filename:', (doc as any).receiptImage.filename)
+        console.log('[LOG 10] receiptImage.url:', (doc as any).receiptImage.url)
+
         receiptImageId = String((doc as any).receiptImage.id)
+        console.log('[LOG 11] Set receiptImageId:', receiptImageId)
+
         receiptImageFileName = (doc as any).receiptImage.filename
           ? String((doc as any).receiptImage.filename)
           : undefined
+        console.log('[LOG 12] Set receiptImageFileName:', receiptImageFileName)
+
         receiptImageUrl = (doc as any).receiptImage.url
           ? String((doc as any).receiptImage.url)
           : undefined
+        console.log('[LOG 13] Set receiptImageUrl:', receiptImageUrl)
       }
 
+      console.log(
+        '[LOG 14] After initial extract - receiptImageId:',
+        receiptImageId,
+        'receiptImageUrl:',
+        receiptImageUrl,
+        'receiptImageFileName:',
+        receiptImageFileName,
+      )
+
       if (receiptImageId && (!receiptImageUrl || !receiptImageFileName)) {
+        console.log(
+          '[LOG 15] Need to hydrate missing metadata from transaction-receipts collection',
+        )
         try {
+          console.log('[LOG 16] Fetching transaction-receipts document with id:', receiptImageId)
           const receiptDoc = await payload.findByID({
             collection: 'transaction-receipts',
             id: receiptImageId,
@@ -1107,21 +1138,48 @@ export async function getTransactionById(id: string): Promise<{
             overrideAccess: true,
           })
 
+          console.log('[LOG 17] Receipt document found')
+          console.log('[LOG 18] Receipt doc.filename:', (receiptDoc as any).filename)
+          console.log('[LOG 19] Receipt doc.url:', (receiptDoc as any).url)
+
           if (!receiptImageFileName && (receiptDoc as any).filename) {
             receiptImageFileName = String((receiptDoc as any).filename)
+            console.log('[LOG 20] Hydrated receiptImageFileName:', receiptImageFileName)
           }
           if (!receiptImageUrl && (receiptDoc as any).url) {
             receiptImageUrl = String((receiptDoc as any).url)
+            console.log('[LOG 21] Hydrated receiptImageUrl:', receiptImageUrl)
           }
         } catch (error) {
-          console.error('Failed to hydrate receipt image metadata:', error)
+          console.error('[LOG 22] ERROR - Failed to hydrate receipt image metadata:', error)
         }
       }
 
+      console.log(
+        '[LOG 23] After hydration - receiptImageId:',
+        receiptImageId,
+        'receiptImageUrl:',
+        receiptImageUrl,
+        'receiptImageFileName:',
+        receiptImageFileName,
+      )
+
       if (!receiptImageUrl && receiptImageId) {
         receiptImageUrl = `/api/transaction-receipts/${encodeURIComponent(receiptImageId)}`
+        console.log('[LOG 24] Generated fallback URL:', receiptImageUrl)
       }
+    } else {
+      console.log('[LOG 25] No receiptImage on transaction')
     }
+
+    console.log(
+      '[LOG 26] FINAL receipt data - receiptImageId:',
+      receiptImageId,
+      'receiptImageUrl:',
+      receiptImageUrl,
+      'receiptImageFileName:',
+      receiptImageFileName,
+    )
 
     return {
       success: true,
