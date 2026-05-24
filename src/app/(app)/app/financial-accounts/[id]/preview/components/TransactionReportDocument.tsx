@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { BarChart, LineChart } from '@mantine/charts'
 import '@mantine/charts/styles.css'
 import styles from './TransactionReportDocument.module.scss'
@@ -14,6 +14,51 @@ import type { TransactionReportData, TransactionReportTableRow } from '../report
 type TransactionReportDocumentProps = {
   report: TransactionReportData
   visibleColumns?: TransactionReportColumnKey[]
+}
+
+type DisplayRow = {
+  key: string
+  row: TransactionReportTableRow
+  indent: boolean
+  shaded: boolean
+}
+
+const A4_PAGE_HEIGHT_PX = 1123
+const FALLBACK_ROW_HEIGHT = 32
+const FALLBACK_NEXT_PAGE_BASE_HEIGHT = 240
+const PAGE_BOTTOM_BUFFER_PX = 24
+
+const getValidMeasuredHeight = (height: number | undefined, fallback: number): number => {
+  if (typeof height !== 'number') return fallback
+  if (!Number.isFinite(height)) return fallback
+  return height > 0 ? height : fallback
+}
+
+const flattenRowsForDisplay = (rows: TransactionReportTableRow[]): DisplayRow[] => {
+  const flattened: DisplayRow[] = []
+
+  rows.forEach((row, index) => {
+    const parentKey = `${row.referenceNumber}-${row.transactionDate}-${row.createdAt}-${index}`
+    flattened.push({
+      key: parentKey,
+      row,
+      indent: false,
+      shaded: false,
+    })
+
+    if (row.isFundAllocation && row.children && row.children.length > 0) {
+      row.children.forEach((child, childIndex) => {
+        flattened.push({
+          key: `${parentKey}-child-${child.referenceNumber}-${childIndex}`,
+          row: child,
+          indent: true,
+          shaded: true,
+        })
+      })
+    }
+  })
+
+  return flattened
 }
 
 const formatDate = (value?: string | null): string => {
@@ -157,6 +202,12 @@ export function TransactionReportDocument({
     dateLabel: formatDate(point.date),
   }))
 
+  const displayRows = useMemo(() => flattenRowsForDisplay(rows), [rows])
+  const [pagedRows, setPagedRows] = useState<DisplayRow[][]>([])
+
+  const nextPageBaseRef = useRef<HTMLDivElement | null>(null)
+  const rowRefs = useRef<Record<string, HTMLTableRowElement | null>>({})
+
   // Determine starting balance: balance of the first day in the selected date range
   let startingBalance: number | null = null
   if (lineChartData.length > 0 && typeof lineChartData[0].runningBalance === 'number') {
@@ -165,114 +216,95 @@ export function TransactionReportDocument({
     startingBalance = rows[0].runningBalance
   }
 
-  return (
-    <article className={styles.document} aria-label="Transaction report document">
-      <h3 className={styles.header}>{header.title}</h3>
-      <div className={styles.documentTitle}>
-        <span>
-          TRANSACTIONS REPORT
-          {header.fromDate || header.toDate ? (
-            <>
-              {' '}
-              ({formatDate(header.fromDate)} - {formatDate(header.toDate)})
-            </>
-          ) : null}
-        </span>
-      </div>
-      <div className={styles.transactionDetails}>
-        <div className={styles.transactionDetail}>
-          <p className={styles.transactionDetailLabel}>Starting balance</p>
-          <p className={styles.transactionDetailValue}>{formatMoney(startingBalance)}</p>
-        </div>
-        <div className={styles.transactionDetail}>
-          <p className={styles.transactionDetailLabel}>Transactions</p>
-          <p className={styles.transactionDetailValue}>{rows.length}</p>
-        </div>
-      </div>
-      <section className={styles.chartSection} aria-label="Charts preview section">
-        <div className={styles.chartGrid}>
-          <div className={styles.chartCard}>
-            <p className={styles.chartTitle}>Running Balance Trend (Line)</p>
-            {hasLineData ? (
-              <div className={styles.chartViewport}>
-                <LineChart
-                  h={300}
-                  data={lineChartSeries}
-                  dataKey="dateLabel"
-                  series={[{ name: 'runningBalance', label: 'Running Balance', color: 'teal.6' }]}
-                  curveType="linear"
-                  withLegend={false}
-                  withTooltip={false}
-                  tickLine="none"
-                  yAxisProps={{
-                    width: 72,
-                    tickFormatter: (value) =>
-                      new Intl.NumberFormat('en-PH', {
-                        style: 'currency',
-                        currency: 'PHP',
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 0,
-                      }).format(Number(value || 0)),
-                  }}
-                  valueFormatter={(value) =>
-                    new Intl.NumberFormat('en-PH', {
-                      style: 'currency',
-                      currency: 'PHP',
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    }).format(Number(value || 0))
-                  }
-                />
-              </div>
-            ) : (
-              <p className={styles.placeholderText}>No running balance data available.</p>
-            )}
-          </div>
+  useLayoutEffect(() => {
+    const paginateRows = () => {
+      if (displayRows.length === 0) {
+        setPagedRows([[]])
+        return
+      }
 
-          <div className={styles.chartCard}>
-            <p className={styles.chartTitle}>Money In vs Money Out (Bar)</p>
-            {hasBarData ? (
-              <div className={styles.chartViewport}>
-                <BarChart
-                  h={300}
-                  data={barChartSeries}
-                  dataKey="dateLabel"
-                  series={[
-                    { name: 'credit', label: 'Credit', color: 'green.6' },
-                    { name: 'debit', label: 'Debit', color: 'red.6' },
-                  ]}
-                  withLegend
-                  withTooltip={false}
-                  tickLine="none"
-                  yAxisProps={{
-                    width: 72,
-                    tickFormatter: (value) =>
-                      new Intl.NumberFormat('en-PH', {
-                        style: 'currency',
-                        currency: 'PHP',
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 0,
-                      }).format(Number(value || 0)),
-                  }}
-                  valueFormatter={(value) =>
-                    new Intl.NumberFormat('en-PH', {
-                      style: 'currency',
-                      currency: 'PHP',
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    }).format(Number(value || 0))
-                  }
-                />
-              </div>
-            ) : (
-              <p className={styles.placeholderText}>No transaction amount data available.</p>
-            )}
-          </div>
-        </div>
-      </section>
+      const nextPageBaseHeight = getValidMeasuredHeight(
+        nextPageBaseRef.current?.getBoundingClientRect().height,
+        FALLBACK_NEXT_PAGE_BASE_HEIGHT,
+      )
 
-      <section className={styles.tableSection} aria-label="Transactions table preview section">
-        <h2 className={styles.sectionTitle}>Transactions</h2>
+      const nextPageCapacity = Math.max(
+        24,
+        A4_PAGE_HEIGHT_PX - nextPageBaseHeight - PAGE_BOTTOM_BUFFER_PX,
+      )
+
+      const chunks: DisplayRow[][] = []
+      let currentChunk: DisplayRow[] = []
+      let usedHeight = 0
+      let currentCapacity = nextPageCapacity
+
+      displayRows.forEach((displayRow) => {
+        const rowHeight = getValidMeasuredHeight(
+          rowRefs.current[displayRow.key]?.getBoundingClientRect().height,
+          FALLBACK_ROW_HEIGHT,
+        )
+
+        const shouldStartNewPage =
+          currentChunk.length > 0 && usedHeight + rowHeight > currentCapacity
+
+        if (shouldStartNewPage) {
+          chunks.push(currentChunk)
+          currentChunk = []
+          usedHeight = 0
+          currentCapacity = nextPageCapacity
+        }
+
+        currentChunk.push(displayRow)
+        usedHeight += rowHeight
+      })
+
+      if (currentChunk.length > 0) {
+        chunks.push(currentChunk)
+      }
+
+      setPagedRows(chunks)
+    }
+
+    const rafId = window.requestAnimationFrame(paginateRows)
+    window.addEventListener('resize', paginateRows)
+
+    return () => {
+      window.cancelAnimationFrame(rafId)
+      window.removeEventListener('resize', paginateRows)
+    }
+  }, [displayRows, selectedColumns])
+
+  const renderTableRow = (displayRow: DisplayRow) => {
+    return (
+      <tr
+        key={displayRow.key}
+        style={displayRow.shaded ? { backgroundColor: '#f9fafb' } : undefined}
+      >
+        {columnHeaders.map((column) => {
+          const shouldIndent = displayRow.indent && column.value === 'referenceNumber'
+          return (
+            <td
+              key={`${displayRow.key}-${column.value}`}
+              className={isRightAlignedColumn(column.value) ? styles.cellRight : undefined}
+              style={shouldIndent ? { paddingLeft: '32px' } : undefined}
+            >
+              {renderCellValue(displayRow.row, column.value)}
+            </td>
+          )
+        })}
+      </tr>
+    )
+  }
+
+  const renderTable = (pageRows: DisplayRow[], isContinued: boolean) => {
+    return (
+      <section
+        className={`${styles.tableSection} ${isContinued ? styles.tableSectionContinued : ''}`.trim()}
+        aria-label="Transactions table preview section"
+      >
+        <h2 className={styles.sectionTitle}>
+          {isContinued ? 'Transactions (continued)' : 'Transactions'}
+        </h2>
 
         {rows.length === 0 ? (
           <p className={styles.placeholderText}>No transactions available for this report.</p>
@@ -290,54 +322,190 @@ export function TransactionReportDocument({
                 ))}
               </tr>
             </thead>
-            <tbody>
-              {rows.map((row, index) => (
-                <React.Fragment
-                  key={`${row.referenceNumber}-${row.transactionDate}-${row.createdAt}-${index}`}
-                >
-                  <tr>
-                    {columnHeaders.map((column) => (
-                      <td
-                        key={`${row.referenceNumber}-${column.value}`}
-                        className={
-                          isRightAlignedColumn(column.value) ? styles.cellRight : undefined
-                        }
-                      >
-                        {renderCellValue(row, column.value)}
-                      </td>
-                    ))}
-                  </tr>
-                  {row.isFundAllocation && row.children && row.children.length > 0 && (
-                    <>
-                      {row.children.map((child, childIndex) => (
-                        <tr
-                          key={`${row.referenceNumber}-${child.referenceNumber}-child-${childIndex}`}
-                          style={{ backgroundColor: '#f9fafb' }}
-                        >
-                          {columnHeaders.map((column) => {
-                            const shouldIndent = column.value === 'referenceNumber'
-                            return (
-                              <td
-                                key={`${row.referenceNumber}-child-${childIndex}-${column.value}`}
-                                className={
-                                  isRightAlignedColumn(column.value) ? styles.cellRight : undefined
-                                }
-                                style={shouldIndent ? { paddingLeft: '32px' } : undefined}
-                              >
-                                {renderCellValue(child, column.value)}
-                              </td>
-                            )
-                          })}
-                        </tr>
-                      ))}
-                    </>
-                  )}
-                </React.Fragment>
-              ))}
-            </tbody>
+            <tbody>{pageRows.map((displayRow) => renderTableRow(displayRow))}</tbody>
           </table>
         )}
       </section>
-    </article>
+    )
+  }
+
+  const transactionPages = pagedRows
+
+  return (
+    <>
+      <div className={styles.pages}>
+        <div className={styles.pageScaleWrap}>
+          <article className={styles.document} aria-label="Transaction report document page 1">
+            <h3 className={styles.header}>{header.title}</h3>
+            <div className={styles.documentTitle}>
+              <span>TRANSACTIONS REPORT</span>
+            </div>
+            <div className={styles.transactionDetails}>
+              <div className={styles.transactionDetail}>
+                <p className={styles.transactionDetailLabel}>Date</p>
+                <p className={styles.transactionDetailValue}>
+                  {formatDate(header.fromDate)} - {formatDate(header.toDate)}
+                </p>
+              </div>
+              <div className={styles.transactionDetail}>
+                <p className={styles.transactionDetailLabel}>Starting balance</p>
+                <p className={styles.transactionDetailValue}>{formatMoney(startingBalance)}</p>
+              </div>
+            </div>
+            <section className={styles.chartSection} aria-label="Charts preview section">
+              <div className={styles.chartGrid}>
+                <div className={styles.chartCard}>
+                  <p className={styles.chartTitle}>Running Balance Trend (Line)</p>
+                  {hasLineData ? (
+                    <div className={styles.chartViewport}>
+                      <LineChart
+                        h={300}
+                        data={lineChartSeries}
+                        dataKey="dateLabel"
+                        series={[
+                          {
+                            name: 'runningBalance',
+                            label: 'Running Balance',
+                            color: 'teal.6',
+                          },
+                        ]}
+                        curveType="linear"
+                        withLegend={false}
+                        withTooltip={false}
+                        tickLine="none"
+                        yAxisProps={{
+                          width: 72,
+                          tickFormatter: (value) =>
+                            new Intl.NumberFormat('en-PH', {
+                              style: 'currency',
+                              currency: 'PHP',
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 0,
+                            }).format(Number(value || 0)),
+                        }}
+                        valueFormatter={(value) =>
+                          new Intl.NumberFormat('en-PH', {
+                            style: 'currency',
+                            currency: 'PHP',
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          }).format(Number(value || 0))
+                        }
+                      />
+                    </div>
+                  ) : (
+                    <p className={styles.placeholderText}>No running balance data available.</p>
+                  )}
+                </div>
+
+                <div className={styles.chartCard}>
+                  <p className={styles.chartTitle}>Money In vs Money Out (Bar)</p>
+                  {hasBarData ? (
+                    <div className={styles.chartViewport}>
+                      <BarChart
+                        h={300}
+                        data={barChartSeries}
+                        dataKey="dateLabel"
+                        series={[
+                          { name: 'credit', label: 'Credit', color: 'green.6' },
+                          { name: 'debit', label: 'Debit', color: 'red.6' },
+                        ]}
+                        withLegend
+                        withTooltip={false}
+                        tickLine="none"
+                        yAxisProps={{
+                          width: 72,
+                          tickFormatter: (value) =>
+                            new Intl.NumberFormat('en-PH', {
+                              style: 'currency',
+                              currency: 'PHP',
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 0,
+                            }).format(Number(value || 0)),
+                        }}
+                        valueFormatter={(value) =>
+                          new Intl.NumberFormat('en-PH', {
+                            style: 'currency',
+                            currency: 'PHP',
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          }).format(Number(value || 0))
+                        }
+                      />
+                    </div>
+                  ) : (
+                    <p className={styles.placeholderText}>No transaction amount data available.</p>
+                  )}
+                </div>
+              </div>
+            </section>
+          </article>
+        </div>
+
+        {transactionPages.map((pageRows, pageIndex) => (
+          <div className={styles.pageScaleWrap} key={`transaction-page-wrap-${pageIndex}`}>
+            <article
+              className={styles.document}
+              aria-label={`Transaction report document page ${pageIndex + 2}`}
+              key={`transaction-page-${pageIndex}`}
+            >
+              {renderTable(pageRows, pageIndex > 0)}
+            </article>
+          </div>
+        ))}
+      </div>
+
+      <div className={styles.measureLayer} aria-hidden="true">
+        <article className={styles.document}>
+          <div ref={nextPageBaseRef}>
+            <section className={`${styles.tableSection} ${styles.tableSectionContinued}`}>
+              <h2 className={styles.sectionTitle}>Transactions</h2>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    {columnHeaders.map((column) => (
+                      <th key={`measure-next-${column.value}`}>{column.label}</th>
+                    ))}
+                  </tr>
+                </thead>
+              </table>
+            </section>
+          </div>
+        </article>
+
+        <article className={styles.document}>
+          <section className={styles.tableSection}>
+            <table className={styles.table}>
+              <tbody>
+                {displayRows.map((displayRow) => (
+                  <tr
+                    key={`measure-row-${displayRow.key}`}
+                    ref={(element) => {
+                      rowRefs.current[displayRow.key] = element
+                    }}
+                    style={displayRow.shaded ? { backgroundColor: '#f9fafb' } : undefined}
+                  >
+                    {columnHeaders.map((column) => {
+                      const shouldIndent = displayRow.indent && column.value === 'referenceNumber'
+                      return (
+                        <td
+                          key={`measure-cell-${displayRow.key}-${column.value}`}
+                          className={
+                            isRightAlignedColumn(column.value) ? styles.cellRight : undefined
+                          }
+                          style={shouldIndent ? { paddingLeft: '32px' } : undefined}
+                        >
+                          {renderCellValue(displayRow.row, column.value)}
+                        </td>
+                      )
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+        </article>
+      </div>
+    </>
   )
 }

@@ -32,7 +32,7 @@ export default function Layout({ children, userPreferences }: LayoutProps) {
   const [isExpanded, setIsExpanded] = useState<boolean>(
     userPreferences?.sidenavState !== 'collapsed',
   )
-  const [opened, { toggle: handleToggleColorScheme }] = useDisclosure()
+  const [opened, { toggle: handleToggleColorScheme, close: closeMobileNavbar }] = useDisclosure()
   const router = useRouter()
   const { setColorScheme } = useMantineColorScheme()
   const colorScheme = useComputedColorScheme('light')
@@ -145,6 +145,7 @@ export default function Layout({ children, userPreferences }: LayoutProps) {
         isExpanded={isExpanded}
         toggleExpandCollapse={handleToggleExpandCollapse}
         mobileBreakpoint={mobileBreakpoint}
+        onNavigate={closeMobileNavbar}
       />
       <AppShell.Main style={{ display: 'flex', flexDirection: 'column' }}>
         {!isValidSession ? (

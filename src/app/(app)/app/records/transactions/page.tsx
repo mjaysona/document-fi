@@ -9,6 +9,7 @@ import {
   Button,
   Collapse,
   Flex,
+  Grid,
   Group,
   MultiSelect,
   Select,
@@ -19,7 +20,7 @@ import {
   Title,
 } from '@mantine/core'
 import { DatePickerInput } from '@mantine/dates'
-import { CircleCheck, Filter, Plus, Search } from 'lucide-react'
+import { CircleCheck, Filter, Plus, Search, Settings } from 'lucide-react'
 import { DataTable, type DataTableColumn } from '@/app/(app)/components/ui/DataTable'
 import {
   getFinancialAccounts,
@@ -31,6 +32,7 @@ import {
   TRANSACTION_REPORT_COLUMN_OPTIONS,
   type TransactionReportColumnKey,
 } from '../../financial-accounts/[id]/preview/columns'
+import { CONTAINER_BREAKPOINTS } from '@/constants/breakpoints'
 import classes from '../page.module.scss'
 import { useAuth } from '@/app/providers/Auth'
 import { hasAppRoleReadAccess } from '@/app/(app)/utils/roleAccess'
@@ -179,11 +181,13 @@ export default function TransactionsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [filterOpen, setFilterOpen] = useState(false)
+  const [tableConfigOpen, setTableConfigOpen] = useState(false)
   const [filterFinancialAccount, setFilterFinancialAccount] = useState<string | null>(null)
   const [filterTypes, setFilterTypes] = useState<string[]>([])
   const [filterStatuses, setFilterStatuses] = useState<string[]>([])
   const [filterSourceAccounts, setFilterSourceAccounts] = useState<string[]>([])
   const [filterDestinationAccounts, setFilterDestinationAccounts] = useState<string[]>([])
+  const [openMultiSelect, setOpenMultiSelect] = useState<string | null>(null)
   const [filterDateRange, setFilterDateRange] = useState<[string | null, string | null]>([
     null,
     null,
@@ -270,6 +274,23 @@ export default function TransactionsPage() {
     const parsed = parseTableColumnKeys(nextColumns.join(','))
     setSelectedTableColumns(parsed)
     pushTableColumnsToUrl(parsed)
+    setOpenMultiSelect(null)
+  }
+
+  const toggleFilterCollapse = () => {
+    setFilterOpen((open) => {
+      const next = !open
+      if (next) setTableConfigOpen(false)
+      return next
+    })
+  }
+
+  const toggleTableConfigCollapse = () => {
+    setTableConfigOpen((open) => {
+      const next = !open
+      if (next) setFilterOpen(false)
+      return next
+    })
   }
 
   const selectedTableColumnOptions = useMemo(() => {
@@ -336,7 +357,6 @@ export default function TransactionsPage() {
   }, [filterFinancialAccount, financialAccounts])
 
   const activeFilterCount =
-    (filterFinancialAccount ? 1 : 0) +
     filterTypes.length +
     filterStatuses.length +
     filterSourceAccounts.length +
@@ -828,108 +848,173 @@ export default function TransactionsPage() {
             onChange={(e) => setSearch(e.currentTarget.value)}
             style={{ flex: 1 }}
           />
-          <ActionIcon
-            variant={filterOpen || activeFilterCount > 0 ? 'filled' : 'default'}
-            size={36}
-            aria-label="Toggle filters"
-            onClick={() => setFilterOpen((open) => !open)}
-          >
-            <Filter size={16} />
-          </ActionIcon>
+        </Group>
+        <Group justify="space-between">
+          <Group>
+            <Select
+              placeholder="Select financial account"
+              data={financialAccountOptions}
+              value={filterFinancialAccount}
+              onChange={setFilterFinancialAccount}
+              clearable
+              searchable
+              style={{ minWidth: 260 }}
+            />
+            <Button
+              variant={sortBy === 'date' ? 'light' : 'default'}
+              size="sm"
+              onClick={() => toggleSort('date')}
+            >
+              Date {sortBy === 'date' && (sortOrder === 'asc' ? '↑' : '↓')}
+            </Button>
+            <Button
+              variant={sortBy === 'amount' ? 'light' : 'default'}
+              size="sm"
+              onClick={() => toggleSort('amount')}
+            >
+              Amount {sortBy === 'amount' && (sortOrder === 'asc' ? '↑' : '↓')}
+            </Button>
+          </Group>
           <Button
-            variant={sortBy === 'date' ? 'light' : 'default'}
+            variant="filled"
             size="sm"
-            onClick={() => toggleSort('date')}
+            leftSection={<Plus size={14} />}
+            onClick={() => router.push('/app/records/transactions/add')}
           >
-            Date {sortBy === 'date' && (sortOrder === 'asc' ? '↑' : '↓')}
-          </Button>
-          <Button
-            variant={sortBy === 'amount' ? 'light' : 'default'}
-            size="sm"
-            onClick={() => toggleSort('amount')}
-          >
-            Amount {sortBy === 'amount' && (sortOrder === 'asc' ? '↑' : '↓')}
+            New transaction
           </Button>
         </Group>
-        <Collapse expanded={filterOpen}>
+        <Group justify="space-between" align="center">
+          {selectedFinancialAccountCurrentBalance && (
+            <Stack gap={0} align="flex-start">
+              <Text size="xs">Current balance</Text>
+              <Title order={3}>{selectedFinancialAccountCurrentBalance || '-'}</Title>
+            </Stack>
+          )}
+          <Group>
+            <ActionIcon
+              variant={filterOpen || activeFilterCount > 0 ? 'filled' : 'default'}
+              size={36}
+              aria-label="Toggle filters"
+              onClick={toggleFilterCollapse}
+            >
+              <Filter size={16} />
+            </ActionIcon>
+            <ActionIcon
+              variant={tableConfigOpen ? 'filled' : 'default'}
+              size={36}
+              aria-label="Table configuration"
+              onClick={toggleTableConfigCollapse}
+            >
+              <Settings size={16} />
+            </ActionIcon>
+          </Group>
+        </Group>
+        <Collapse expanded={filterOpen} transitionDuration={0}>
           <Stack
-            gap="sm"
-            mb="md"
+            gap="xs"
             p="sm"
             style={{
               border: '1px solid var(--mantine-color-default-border)',
               borderRadius: 'var(--mantine-radius-sm)',
             }}
           >
-            <Group grow gap="sm" align="flex-end">
-              <MultiSelect
-                label="Type"
-                placeholder="All types"
-                data={[
-                  { value: 'debit', label: 'Debit' },
-                  { value: 'credit', label: 'Credit' },
-                ]}
-                value={filterTypes}
-                onChange={setFilterTypes}
-                clearable
-              />
-              <MultiSelect
-                label="Status"
-                placeholder="All statuses"
-                data={[
-                  { value: 'completed', label: 'Completed' },
-                  { value: 'failed', label: 'Failed' },
-                ]}
-                value={filterStatuses}
-                onChange={setFilterStatuses}
-                clearable
-              />
-              <MultiSelect
-                label="Source Account"
-                placeholder="All source accounts"
-                data={sourceAccountOptions}
-                value={filterSourceAccounts}
-                onChange={setFilterSourceAccounts}
-                clearable
-                searchable
-              />
-              <MultiSelect
-                label="Destination Account"
-                placeholder="All destination accounts"
-                data={destinationAccountOptions}
-                value={filterDestinationAccounts}
-                onChange={setFilterDestinationAccounts}
-                clearable
-                searchable
-              />
-              <DatePickerInput
-                type="range"
-                label="Date Range"
-                placeholder="Pick date range"
-                value={filterDateRange}
-                onChange={setFilterDateRange}
-                clearable
-              />
-            </Group>
-            <MultiSelect
-              label="Table Columns"
-              placeholder="Shown table columns"
-              data={TRANSACTION_REPORT_COLUMN_OPTIONS.map((column) => ({
-                value: column.value,
-                label: column.label,
-              }))}
-              value={selectedTableColumns}
-              onChange={handleTableColumnsChange}
-              hidePickedOptions
-              searchable
-              clearable={false}
-              withPillsReorder
-              size="sm"
-              styles={{
-                root: { minWidth: 280 },
-                input: { minHeight: 36 },
-              }}
-            />
+            <Grid
+              type="container"
+              breakpoints={CONTAINER_BREAKPOINTS}
+              grow
+              gap="sm"
+              justify="space-between"
+            >
+              <Grid.Col span={{ base: 12, sm: 6, lg: 4 }}>
+                <MultiSelect
+                  label="Type"
+                  placeholder="All types"
+                  data={[
+                    { value: 'debit', label: 'Debit' },
+                    { value: 'credit', label: 'Credit' },
+                  ]}
+                  value={filterTypes}
+                  onChange={(nextValues) => {
+                    setFilterTypes(nextValues)
+                    setOpenMultiSelect(null)
+                  }}
+                  dropdownOpened={openMultiSelect === 'type'}
+                  onDropdownOpen={() => setOpenMultiSelect('type')}
+                  onDropdownClose={() => setOpenMultiSelect(null)}
+                  clearable
+                />
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, sm: 6, lg: 4 }}>
+                <MultiSelect
+                  label="Status"
+                  placeholder="All statuses"
+                  data={[
+                    { value: 'completed', label: 'Completed' },
+                    { value: 'failed', label: 'Failed' },
+                  ]}
+                  value={filterStatuses}
+                  onChange={(nextValues) => {
+                    setFilterStatuses(nextValues)
+                    setOpenMultiSelect(null)
+                  }}
+                  dropdownOpened={openMultiSelect === 'status'}
+                  onDropdownOpen={() => setOpenMultiSelect('status')}
+                  onDropdownClose={() => setOpenMultiSelect(null)}
+                  clearable
+                />
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, sm: 6, lg: 4 }}>
+                <DatePickerInput
+                  type="range"
+                  label="Date Range"
+                  placeholder="Pick date range"
+                  value={filterDateRange}
+                  onChange={setFilterDateRange}
+                  clearable
+                />
+              </Grid.Col>
+              <Grid.Col span={6}>
+                <MultiSelect
+                  label="Source Account"
+                  placeholder="All source accounts"
+                  data={sourceAccountOptions}
+                  value={filterSourceAccounts}
+                  onChange={(nextValues) => {
+                    setFilterSourceAccounts(nextValues)
+                    setOpenMultiSelect(null)
+                  }}
+                  dropdownOpened={openMultiSelect === 'sourceAccount'}
+                  onDropdownOpen={() => setOpenMultiSelect('sourceAccount')}
+                  onDropdownClose={() => setOpenMultiSelect(null)}
+                  clearable
+                  searchable
+                />
+              </Grid.Col>
+              <Grid.Col span={6}>
+                <MultiSelect
+                  label="Destination Account"
+                  placeholder="All destination accounts"
+                  data={destinationAccountOptions}
+                  value={filterDestinationAccounts}
+                  onChange={(nextValues) => {
+                    setFilterDestinationAccounts(nextValues)
+                    setOpenMultiSelect(null)
+                  }}
+                  dropdownOpened={openMultiSelect === 'destinationAccount'}
+                  onDropdownOpen={() => setOpenMultiSelect('destinationAccount')}
+                  onDropdownClose={() => setOpenMultiSelect(null)}
+                  clearable
+                  searchable
+                  styles={{
+                    pillsList: {
+                      flexWrap: 'nowrap',
+                      overflowX: 'auto',
+                    },
+                  }}
+                />
+              </Grid.Col>
+            </Grid>
 
             {activeFilterCount > 0 && (
               <Group justify="flex-end">
@@ -937,7 +1022,6 @@ export default function TransactionsPage() {
                   variant="subtle"
                   size="xs"
                   onClick={() => {
-                    setFilterFinancialAccount(null)
                     setFilterTypes([])
                     setFilterStatuses([])
                     setFilterSourceAccounts([])
@@ -951,34 +1035,44 @@ export default function TransactionsPage() {
             )}
           </Stack>
         </Collapse>
-        <Group justify="space-between" align="center">
-          {selectedFinancialAccountCurrentBalance && (
-            <Stack gap={0} align="flex-start">
-              <Text size="xs">Current balance</Text>
-              <Title order={3}>{selectedFinancialAccountCurrentBalance || '-'}</Title>
-            </Stack>
-          )}
-          <Group>
-            <Select
-              placeholder="Select financial account"
-              data={financialAccountOptions}
-              value={filterFinancialAccount}
-              onChange={setFilterFinancialAccount}
-              clearable
+        <Collapse expanded={tableConfigOpen} transitionDuration={0}>
+          <Stack
+            gap="xs"
+            p="sm"
+            style={{
+              border: '1px solid var(--mantine-color-default-border)',
+              borderRadius: 'var(--mantine-radius-sm)',
+            }}
+          >
+            <MultiSelect
+              label="Table Columns"
+              placeholder="Shown table columns"
+              data={TRANSACTION_REPORT_COLUMN_OPTIONS.map((column) => ({
+                value: column.value,
+                label: column.label,
+              }))}
+              value={selectedTableColumns}
+              onChange={handleTableColumnsChange}
+              dropdownOpened={openMultiSelect === 'tableColumns'}
+              onDropdownOpen={() => setOpenMultiSelect('tableColumns')}
+              onDropdownClose={() => setOpenMultiSelect(null)}
+              hidePickedOptions
               searchable
-              style={{ minWidth: 260 }}
-            />
-
-            <Button
-              variant="filled"
+              clearable={false}
+              withPillsReorder
               size="sm"
-              leftSection={<Plus size={14} />}
-              onClick={() => router.push('/app/records/transactions/add')}
-            >
-              New transaction
-            </Button>
-          </Group>
-        </Group>
+              styles={{
+                root: { minWidth: 280 },
+                input: { minHeight: 36 },
+              }}
+            />
+            <Group justify="flex-end">
+              <Button disabled variant="default" size="xs">
+                Save
+              </Button>
+            </Group>
+          </Stack>
+        </Collapse>
         {feedback && (
           <Alert
             mt="sm"

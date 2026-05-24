@@ -105,6 +105,7 @@ export default function WeightBillsPage() {
   const [filterVehicles, setFilterVehicles] = useState<string[]>([])
   const [filterPaymentStatus, setFilterPaymentStatus] = useState<string[]>([])
   const [filterVerificationStatus, setFilterVerificationStatus] = useState<string[]>([])
+  const [openMultiSelect, setOpenMultiSelect] = useState<string | null>(null)
   const [vehicleOptions, setVehicleOptions] = useState<{ value: string; label: string }[]>([])
   const [feedback, setFeedback] = useState<FeedbackState | null>(null)
   const [importMode, setImportMode] = useState(false)
@@ -889,7 +890,11 @@ export default function WeightBillsPage() {
                 onChange={(val) => {
                   setFilterVehicles(val)
                   setPage(1)
+                  setOpenMultiSelect(null)
                 }}
+                dropdownOpened={openMultiSelect === 'vehicle'}
+                onDropdownOpen={() => setOpenMultiSelect('vehicle')}
+                onDropdownClose={() => setOpenMultiSelect(null)}
                 clearable
                 searchable
               />
@@ -904,7 +909,11 @@ export default function WeightBillsPage() {
                 onChange={(val) => {
                   setFilterPaymentStatus(val)
                   setPage(1)
+                  setOpenMultiSelect(null)
                 }}
+                dropdownOpened={openMultiSelect === 'paymentStatus'}
+                onDropdownOpen={() => setOpenMultiSelect('paymentStatus')}
+                onDropdownClose={() => setOpenMultiSelect(null)}
                 clearable
               />
               <MultiSelect
@@ -918,7 +927,11 @@ export default function WeightBillsPage() {
                 onChange={(val) => {
                   setFilterVerificationStatus(val)
                   setPage(1)
+                  setOpenMultiSelect(null)
                 }}
+                dropdownOpened={openMultiSelect === 'verificationStatus'}
+                onDropdownOpen={() => setOpenMultiSelect('verificationStatus')}
+                onDropdownClose={() => setOpenMultiSelect(null)}
                 clearable
               />
             </Group>

@@ -52,6 +52,7 @@ export function ReportColumnsFilter({ initialColumns }: ReportColumnsFilterProps
 
   const [selectedColumns, setSelectedColumns] =
     useState<TransactionReportColumnKey[]>(normalizedInitialColumns)
+  const [dropdownOpened, setDropdownOpened] = useState(false)
 
   useEffect(() => {
     setSelectedColumns(normalizedInitialColumns)
@@ -70,6 +71,7 @@ export function ReportColumnsFilter({ initialColumns }: ReportColumnsFilterProps
     const nextColumnKeys = nextColumns as TransactionReportColumnKey[]
     setSelectedColumns(nextColumnKeys)
     pushColumnsToUrl(nextColumnKeys)
+    setDropdownOpened(false)
   }
 
   return (
@@ -82,6 +84,9 @@ export function ReportColumnsFilter({ initialColumns }: ReportColumnsFilterProps
         }))}
         value={selectedColumns}
         onChange={handleColumnsChange}
+        dropdownOpened={dropdownOpened}
+        onDropdownOpen={() => setDropdownOpened(true)}
+        onDropdownClose={() => setDropdownOpened(false)}
         hidePickedOptions
         searchable
         clearable={false}

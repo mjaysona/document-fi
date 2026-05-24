@@ -23,9 +23,15 @@ type NavbarProps = {
   isExpanded: boolean
   toggleExpandCollapse: () => void
   mobileBreakpoint?: string
+  onNavigate?: () => void
 }
 
-export const Navbar = ({ isExpanded, toggleExpandCollapse, mobileBreakpoint }: NavbarProps) => {
+export const Navbar = ({
+  isExpanded,
+  toggleExpandCollapse,
+  mobileBreakpoint,
+  onNavigate,
+}: NavbarProps) => {
   const [isSigningOut, setIsSigningOut] = useState<Boolean>(false)
   const [recordsOpened, setRecordsOpened] = useState(true)
   const router = useRouter()
@@ -100,6 +106,12 @@ export const Navbar = ({ isExpanded, toggleExpandCollapse, mobileBreakpoint }: N
       },
     })
   }
+
+  const navigateTo = (path: string) => {
+    onNavigate?.()
+    router.push(path)
+  }
+
   return (
     <AppShell.Navbar p="xs">
       <Stack
@@ -137,19 +149,19 @@ export const Navbar = ({ isExpanded, toggleExpandCollapse, mobileBreakpoint }: N
                 <Menu.Dropdown>
                   <Menu.Item
                     leftSection={<LayoutDashboard size={16} />}
-                    onClick={() => router.push('/app/records/weight-bills/new')}
+                    onClick={() => navigateTo('/app/records/weight-bills/new')}
                   >
                     Weight Bill
                   </Menu.Item>
                   <Menu.Item
                     leftSection={<FileText size={16} />}
-                    onClick={() => router.push('/app/records/quotations/add')}
+                    onClick={() => navigateTo('/app/records/quotations/add')}
                   >
                     Quotation
                   </Menu.Item>
                   <Menu.Item
                     leftSection={<FileText size={16} />}
-                    onClick={() => router.push('/app/records/transactions/add')}
+                    onClick={() => navigateTo('/app/records/transactions/add')}
                   >
                     Transaction
                   </Menu.Item>
@@ -195,7 +207,7 @@ export const Navbar = ({ isExpanded, toggleExpandCollapse, mobileBreakpoint }: N
                     opened={isExpanded ? opened : undefined}
                     onClick={() => {
                       if (!isExpanded) {
-                        router.push(path)
+                        navigateTo(path)
                         return
                       }
 
@@ -204,7 +216,7 @@ export const Navbar = ({ isExpanded, toggleExpandCollapse, mobileBreakpoint }: N
                         return
                       }
 
-                      router.push(path)
+                      navigateTo(path)
                     }}
                   >
                     {children
@@ -216,7 +228,7 @@ export const Navbar = ({ isExpanded, toggleExpandCollapse, mobileBreakpoint }: N
                           leftSection={child.icon ? <child.icon size={14} /> : undefined}
                           active={child.active}
                           variant="subtle"
-                          onClick={() => router.push(child.path)}
+                          onClick={() => navigateTo(child.path)}
                         />
                       ))}
                   </NavLink>
@@ -240,7 +252,7 @@ export const Navbar = ({ isExpanded, toggleExpandCollapse, mobileBreakpoint }: N
               }}
               label={isExpanded ? 'Settings' : undefined}
               leftSection={<Settings size={16} />}
-              onClick={() => router.push('/app/settings')}
+              onClick={() => navigateTo('/app/settings')}
               variant="subtle"
               h={40}
             />
