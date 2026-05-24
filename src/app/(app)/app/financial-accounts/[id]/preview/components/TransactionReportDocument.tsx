@@ -319,7 +319,9 @@ export function TransactionReportDocument({
         aria-label="Transactions table preview section"
       >
         <h2 className={styles.section__title}>
-          {isContinued ? 'Transactions (continued)' : 'Transactions'}
+          {isContinued
+            ? `Transactions (continued) (${formatDate(header.fromDate)} - ${formatDate(header.toDate)})`
+            : `Transactions (${formatDate(header.fromDate)} - ${formatDate(header.toDate)})`}
         </h2>
 
         {rows.length === 0 ? (
@@ -481,7 +483,9 @@ export function TransactionReportDocument({
         <article className={styles.document}>
           <div ref={nextPageBaseRef}>
             <section className={`${styles.table__section} ${styles['table__section--continued']}`}>
-              <h2 className={styles.section__title}>Transactions</h2>
+              <h2 className={styles.section__title}>
+                Transactions ({formatDate(header.fromDate)} - {formatDate(header.toDate)})
+              </h2>
               <table className={styles.table}>
                 <thead>
                   <tr>
