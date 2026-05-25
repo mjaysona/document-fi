@@ -1312,7 +1312,7 @@ export default function TransactionsPage() {
                         Allocate funds
                       </Button>
                     </Group>
-                    <Table withTableBorder withColumnBorders striped highlightOnHover>
+                    <Table w="100%" withTableBorder withColumnBorders striped highlightOnHover>
                       <Table.Thead>
                         <Table.Tr>
                           {childTableColumns.map((column) => (

@@ -87,7 +87,7 @@ export function DataTable<T>({
   return (
     <ScrollArea>
       <Table striped={striped} highlightOnHover withTableBorder>
-        <Table.Thead>
+        <Table.Thead style={{ verticalAlign: 'top' }}>
           <Table.Tr>
             {hasSelection && (
               <Table.Th style={{ width: 40 }}>
@@ -106,7 +106,7 @@ export function DataTable<T>({
             ))}
           </Table.Tr>
         </Table.Thead>
-        <Table.Tbody>
+        <Table.Tbody style={{ verticalAlign: 'top' }}>
           {data.map((row) => {
             const rowKey = getRowKey(row)
             const customBg = getRowBg?.(row)
