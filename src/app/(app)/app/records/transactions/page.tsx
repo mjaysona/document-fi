@@ -6,6 +6,7 @@ import {
   ActionIcon,
   Alert,
   Badge,
+  Box,
   Button,
   Collapse,
   Flex,
@@ -859,6 +860,7 @@ export default function TransactionsPage() {
               clearable
               searchable
               style={{ minWidth: 260 }}
+              disabled={isLoading}
             />
             <Flex
               w={{ base: '100%', md: 'auto' }}
@@ -870,6 +872,7 @@ export default function TransactionsPage() {
                 variant={sortBy === 'date' ? 'light' : 'default'}
                 size="sm"
                 onClick={() => toggleSort('date')}
+                disabled={isLoading}
               >
                 Date {sortBy === 'date' && (sortOrder === 'asc' ? '↑' : '↓')}
               </Button>
@@ -878,6 +881,7 @@ export default function TransactionsPage() {
                 variant={sortBy === 'amount' ? 'light' : 'default'}
                 size="sm"
                 onClick={() => toggleSort('amount')}
+                disabled={isLoading}
               >
                 Amount {sortBy === 'amount' && (sortOrder === 'asc' ? '↑' : '↓')}
               </Button>
@@ -907,206 +911,211 @@ export default function TransactionsPage() {
             {feedback.message}
           </Alert>
         )}
-        <Group justify="space-between" align="center">
-          {selectedFinancialAccountCurrentBalance && (
-            <Stack gap={0} align="flex-start">
-              <Text size="xs">Current balance</Text>
-              <Title order={3}>{selectedFinancialAccountCurrentBalance || '-'}</Title>
-            </Stack>
-          )}
-          <Group>
-            <ActionIcon
-              variant={filterOpen || activeFilterCount > 0 ? 'filled' : 'default'}
-              size={36}
-              aria-label="Toggle filters"
-              onClick={toggleFilterCollapse}
-            >
-              <Filter size={16} />
-            </ActionIcon>
-            <ActionIcon
-              variant={tableConfigOpen ? 'filled' : 'default'}
-              size={36}
-              aria-label="Table configuration"
-              onClick={toggleTableConfigCollapse}
-            >
-              <Settings size={16} />
-            </ActionIcon>
-          </Group>
-        </Group>
-        <Collapse expanded={filterOpen} transitionDuration={0}>
-          <Stack
-            gap="xs"
-            p="sm"
-            style={{
-              border: '1px solid var(--mantine-color-default-border)',
-              borderRadius: 'var(--mantine-radius-sm)',
-            }}
-          >
-            <Grid
-              type="container"
-              breakpoints={CONTAINER_BREAKPOINTS}
-              grow
-              gap="sm"
-              justify="space-between"
-            >
-              <Grid.Col span={{ base: 12, sm: 6, lg: 4 }}>
-                <MultiSelect
-                  label="Type"
-                  placeholder="All types"
-                  data={[
-                    { value: 'debit', label: 'Debit' },
-                    { value: 'credit', label: 'Credit' },
-                  ]}
-                  value={filterTypes}
-                  onChange={(nextValues) => {
-                    setFilterTypes(nextValues)
-                    setOpenMultiSelect(null)
-                  }}
-                  dropdownOpened={openMultiSelect === 'type'}
-                  onDropdownOpen={() => setOpenMultiSelect('type')}
-                  onDropdownClose={() => setOpenMultiSelect(null)}
-                  clearable
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 12, sm: 6, lg: 4 }}>
-                <MultiSelect
-                  label="Status"
-                  placeholder="All statuses"
-                  data={[
-                    { value: 'completed', label: 'Completed' },
-                    { value: 'failed', label: 'Failed' },
-                  ]}
-                  value={filterStatuses}
-                  onChange={(nextValues) => {
-                    setFilterStatuses(nextValues)
-                    setOpenMultiSelect(null)
-                  }}
-                  dropdownOpened={openMultiSelect === 'status'}
-                  onDropdownOpen={() => setOpenMultiSelect('status')}
-                  onDropdownClose={() => setOpenMultiSelect(null)}
-                  clearable
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 12, sm: 6, lg: 4 }}>
-                <DatePickerInput
-                  type="range"
-                  label="Date Range"
-                  placeholder="Pick date range"
-                  value={filterDateRange}
-                  onChange={setFilterDateRange}
-                  clearable
-                />
-              </Grid.Col>
-              <Grid.Col span={6}>
-                <MultiSelect
-                  label="Source Account"
-                  placeholder="All source accounts"
-                  data={sourceAccountOptions}
-                  value={filterSourceAccounts}
-                  onChange={(nextValues) => {
-                    setFilterSourceAccounts(nextValues)
-                    setOpenMultiSelect(null)
-                  }}
-                  dropdownOpened={openMultiSelect === 'sourceAccount'}
-                  onDropdownOpen={() => setOpenMultiSelect('sourceAccount')}
-                  onDropdownClose={() => setOpenMultiSelect(null)}
-                  clearable
-                  searchable
-                  styles={{
-                    pillsList: {
-                      flexWrap: 'nowrap',
-                      overflowX: 'auto',
-                    },
-                  }}
-                />
-              </Grid.Col>
-              <Grid.Col span={6}>
-                <MultiSelect
-                  label="Destination Account"
-                  placeholder="All destination accounts"
-                  data={destinationAccountOptions}
-                  value={filterDestinationAccounts}
-                  onChange={(nextValues) => {
-                    setFilterDestinationAccounts(nextValues)
-                    setOpenMultiSelect(null)
-                  }}
-                  dropdownOpened={openMultiSelect === 'destinationAccount'}
-                  onDropdownOpen={() => setOpenMultiSelect('destinationAccount')}
-                  onDropdownClose={() => setOpenMultiSelect(null)}
-                  clearable
-                  searchable
-                  styles={{
-                    pillsList: {
-                      flexWrap: 'nowrap',
-                      overflowX: 'auto',
-                    },
-                  }}
-                />
-              </Grid.Col>
-            </Grid>
-
-            {activeFilterCount > 0 && (
-              <Group justify="flex-end">
-                <Button
-                  variant="subtle"
-                  size="xs"
-                  onClick={() => {
-                    setFilterTypes([])
-                    setFilterStatuses([])
-                    setFilterSourceAccounts([])
-                    setFilterDestinationAccounts([])
-                    setFilterDateRange([null, null])
-                  }}
+        {!isLoading && (
+          <Box>
+            <Group justify="space-between" align="center">
+              {selectedFinancialAccountCurrentBalance && (
+                <Stack gap={0} align="flex-start">
+                  <Text size="xs">Current balance</Text>
+                  <Title order={3}>{selectedFinancialAccountCurrentBalance || '-'}</Title>
+                </Stack>
+              )}
+              <Group>
+                <ActionIcon
+                  variant={filterOpen || activeFilterCount > 0 ? 'filled' : 'default'}
+                  size={36}
+                  aria-label="Toggle filters"
+                  onClick={toggleFilterCollapse}
                 >
-                  Clear filters ({activeFilterCount})
-                </Button>
+                  <Filter size={16} />
+                </ActionIcon>
+                <ActionIcon
+                  variant={tableConfigOpen ? 'filled' : 'default'}
+                  size={36}
+                  aria-label="Table configuration"
+                  onClick={toggleTableConfigCollapse}
+                >
+                  <Settings size={16} />
+                </ActionIcon>
               </Group>
-            )}
-          </Stack>
-        </Collapse>
-        <Collapse expanded={tableConfigOpen} transitionDuration={0}>
-          <Stack
-            gap="xs"
-            p="sm"
-            style={{
-              border: '1px solid var(--mantine-color-default-border)',
-              borderRadius: 'var(--mantine-radius-sm)',
-            }}
-          >
-            <MultiSelect
-              label="Table Columns"
-              placeholder="Shown table columns"
-              data={TRANSACTION_REPORT_COLUMN_OPTIONS.map((column) => ({
-                value: column.value,
-                label: column.label,
-              }))}
-              value={selectedTableColumns}
-              onChange={handleTableColumnsChange}
-              dropdownOpened={openMultiSelect === 'tableColumns'}
-              onDropdownOpen={() => setOpenMultiSelect('tableColumns')}
-              onDropdownClose={() => setOpenMultiSelect(null)}
-              hidePickedOptions
-              searchable
-              clearable={false}
-              withPillsReorder
-              size="sm"
-              styles={{
-                root: { minWidth: 280 },
-                input: { minHeight: 36 },
-              }}
-            />
-            <Group justify="flex-end">
-              <Button
-                variant="default"
-                size="xs"
-                onClick={handleSaveTableColumns}
-                loading={isSavingTableColumns}
-              >
-                Save
-              </Button>
             </Group>
-          </Stack>
-        </Collapse>
+            <Collapse expanded={filterOpen} transitionDuration={0}>
+              <Stack
+                gap="xs"
+                p="sm"
+                style={{
+                  border: '1px solid var(--mantine-color-default-border)',
+                  borderRadius: 'var(--mantine-radius-sm)',
+                }}
+              >
+                <Grid
+                  type="container"
+                  breakpoints={CONTAINER_BREAKPOINTS}
+                  grow
+                  gap="sm"
+                  justify="space-between"
+                >
+                  <Grid.Col span={{ base: 12, sm: 6, lg: 4 }}>
+                    <MultiSelect
+                      label="Type"
+                      placeholder="All types"
+                      data={[
+                        { value: 'debit', label: 'Debit' },
+                        { value: 'credit', label: 'Credit' },
+                      ]}
+                      value={filterTypes}
+                      onChange={(nextValues) => {
+                        setFilterTypes(nextValues)
+                        setOpenMultiSelect(null)
+                      }}
+                      dropdownOpened={openMultiSelect === 'type'}
+                      onDropdownOpen={() => setOpenMultiSelect('type')}
+                      onDropdownClose={() => setOpenMultiSelect(null)}
+                      clearable
+                    />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 6, lg: 4 }}>
+                    <MultiSelect
+                      label="Status"
+                      placeholder="All statuses"
+                      data={[
+                        { value: 'completed', label: 'Completed' },
+                        { value: 'failed', label: 'Failed' },
+                      ]}
+                      value={filterStatuses}
+                      onChange={(nextValues) => {
+                        setFilterStatuses(nextValues)
+                        setOpenMultiSelect(null)
+                      }}
+                      dropdownOpened={openMultiSelect === 'status'}
+                      onDropdownOpen={() => setOpenMultiSelect('status')}
+                      onDropdownClose={() => setOpenMultiSelect(null)}
+                      clearable
+                    />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 6, lg: 4 }}>
+                    <DatePickerInput
+                      type="range"
+                      label="Date Range"
+                      placeholder="Pick date range"
+                      value={filterDateRange}
+                      onChange={setFilterDateRange}
+                      clearable
+                    />
+                  </Grid.Col>
+                  <Grid.Col span={6}>
+                    <MultiSelect
+                      label="Source Account"
+                      placeholder="All source accounts"
+                      data={sourceAccountOptions}
+                      value={filterSourceAccounts}
+                      onChange={(nextValues) => {
+                        setFilterSourceAccounts(nextValues)
+                        setOpenMultiSelect(null)
+                      }}
+                      dropdownOpened={openMultiSelect === 'sourceAccount'}
+                      onDropdownOpen={() => setOpenMultiSelect('sourceAccount')}
+                      onDropdownClose={() => setOpenMultiSelect(null)}
+                      clearable
+                      searchable
+                      styles={{
+                        pillsList: {
+                          flexWrap: 'nowrap',
+                          overflowX: 'auto',
+                        },
+                      }}
+                    />
+                  </Grid.Col>
+                  <Grid.Col span={6}>
+                    <MultiSelect
+                      label="Destination Account"
+                      placeholder="All destination accounts"
+                      data={destinationAccountOptions}
+                      value={filterDestinationAccounts}
+                      onChange={(nextValues) => {
+                        setFilterDestinationAccounts(nextValues)
+                        setOpenMultiSelect(null)
+                      }}
+                      dropdownOpened={openMultiSelect === 'destinationAccount'}
+                      onDropdownOpen={() => setOpenMultiSelect('destinationAccount')}
+                      onDropdownClose={() => setOpenMultiSelect(null)}
+                      clearable
+                      searchable
+                      styles={{
+                        pillsList: {
+                          flexWrap: 'nowrap',
+                          overflowX: 'auto',
+                        },
+                      }}
+                    />
+                  </Grid.Col>
+                </Grid>
+
+                {activeFilterCount > 0 && (
+                  <Group justify="flex-end">
+                    <Button
+                      variant="subtle"
+                      size="xs"
+                      onClick={() => {
+                        setFilterTypes([])
+                        setFilterStatuses([])
+                        setFilterSourceAccounts([])
+                        setFilterDestinationAccounts([])
+                        setFilterDateRange([null, null])
+                      }}
+                    >
+                      Clear filters ({activeFilterCount})
+                    </Button>
+                  </Group>
+                )}
+              </Stack>
+            </Collapse>
+            <Collapse expanded={tableConfigOpen} transitionDuration={0}>
+              <Stack
+                gap="xs"
+                p="sm"
+                style={{
+                  border: '1px solid var(--mantine-color-default-border)',
+                  borderRadius: 'var(--mantine-radius-sm)',
+                }}
+              >
+                <MultiSelect
+                  label="Table Columns"
+                  placeholder="Shown table columns"
+                  data={TRANSACTION_REPORT_COLUMN_OPTIONS.map((column) => ({
+                    value: column.value,
+                    label: column.label,
+                  }))}
+                  value={selectedTableColumns}
+                  onChange={handleTableColumnsChange}
+                  dropdownOpened={openMultiSelect === 'tableColumns'}
+                  onDropdownOpen={() => setOpenMultiSelect('tableColumns')}
+                  onDropdownClose={() => setOpenMultiSelect(null)}
+                  hidePickedOptions
+                  searchable
+                  clearable={false}
+                  withPillsReorder
+                  size="sm"
+                  styles={{
+                    root: { minWidth: 280 },
+                    input: { minHeight: 36 },
+                  }}
+                />
+                <Group justify="flex-end">
+                  <Button
+                    variant="default"
+                    size="xs"
+                    onClick={handleSaveTableColumns}
+                    loading={isSavingTableColumns}
+                  >
+                    Save
+                  </Button>
+                </Group>
+              </Stack>
+            </Collapse>
+          </Box>
+        )}
+
         <DataTable
           columns={columns}
           data={parentRows}

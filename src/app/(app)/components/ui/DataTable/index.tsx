@@ -1,6 +1,6 @@
 'use client'
 
-import { Checkbox, Flex, Pagination, Table, Text } from '@mantine/core'
+import { Checkbox, Flex, Pagination, Table, Text, ScrollArea } from '@mantine/core'
 import type { ReactNode } from 'react'
 import { Fragment } from 'react'
 
@@ -85,73 +85,71 @@ export function DataTable<T>({
   }
 
   return (
-    <>
-      <div style={{ overflowX: 'auto' }}>
-        <Table striped={striped} highlightOnHover withTableBorder>
-          <Table.Thead>
-            <Table.Tr>
-              {hasSelection && (
-                <Table.Th style={{ width: 40 }}>
-                  <Checkbox
-                    aria-label="Select all rows"
-                    checked={allVisibleSelected}
-                    indeterminate={!allVisibleSelected && someVisibleSelected}
-                    onChange={(e) => onToggleSelectAll?.(e.currentTarget.checked)}
-                  />
-                </Table.Th>
-              )}
-              {columns.map((col) => (
-                <Table.Th key={col.key} style={col.width ? { width: col.width } : undefined}>
-                  {col.label}
-                </Table.Th>
-              ))}
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {data.map((row) => {
-              const rowKey = getRowKey(row)
-              const customBg = getRowBg?.(row)
-              const selectionBg =
-                hasSelection && selectedIds!.includes(rowKey)
-                  ? 'var(--mantine-color-blue-light)'
-                  : undefined
-              return (
-                <Fragment key={rowKey}>
-                  <Table.Tr
-                    bg={customBg ?? selectionBg}
-                    onClick={() => onRowClick?.(row)}
-                    style={onRowClick ? { cursor: 'pointer' } : undefined}
-                  >
-                    {hasSelection && (
-                      <Table.Td>
-                        <Checkbox
-                          aria-label={`Select row ${rowKey}`}
-                          checked={selectedIds!.includes(rowKey)}
-                          onChange={(e) => onToggleSelectRow?.(rowKey, e.currentTarget.checked)}
-                        />
-                      </Table.Td>
-                    )}
-                    {columns.map((col) => (
-                      <Table.Td key={col.key}>
-                        {col.render
-                          ? col.render(row)
-                          : String((row as Record<string, unknown>)[col.key] ?? '-')}
-                      </Table.Td>
-                    ))}
-                  </Table.Tr>
-                  {renderExpandedRow && isRowExpanded?.(row) && (
-                    <Table.Tr>
-                      <Table.Td colSpan={columns.length + (hasSelection ? 1 : 0)}>
-                        {renderExpandedRow(row)}
-                      </Table.Td>
-                    </Table.Tr>
+    <ScrollArea>
+      <Table striped={striped} highlightOnHover withTableBorder>
+        <Table.Thead>
+          <Table.Tr>
+            {hasSelection && (
+              <Table.Th style={{ width: 40 }}>
+                <Checkbox
+                  aria-label="Select all rows"
+                  checked={allVisibleSelected}
+                  indeterminate={!allVisibleSelected && someVisibleSelected}
+                  onChange={(e) => onToggleSelectAll?.(e.currentTarget.checked)}
+                />
+              </Table.Th>
+            )}
+            {columns.map((col) => (
+              <Table.Th key={col.key} style={col.width ? { width: col.width } : undefined}>
+                {col.label}
+              </Table.Th>
+            ))}
+          </Table.Tr>
+        </Table.Thead>
+        <Table.Tbody>
+          {data.map((row) => {
+            const rowKey = getRowKey(row)
+            const customBg = getRowBg?.(row)
+            const selectionBg =
+              hasSelection && selectedIds!.includes(rowKey)
+                ? 'var(--mantine-color-blue-light)'
+                : undefined
+            return (
+              <Fragment key={rowKey}>
+                <Table.Tr
+                  bg={customBg ?? selectionBg}
+                  onClick={() => onRowClick?.(row)}
+                  style={onRowClick ? { cursor: 'pointer' } : undefined}
+                >
+                  {hasSelection && (
+                    <Table.Td>
+                      <Checkbox
+                        aria-label={`Select row ${rowKey}`}
+                        checked={selectedIds!.includes(rowKey)}
+                        onChange={(e) => onToggleSelectRow?.(rowKey, e.currentTarget.checked)}
+                      />
+                    </Table.Td>
                   )}
-                </Fragment>
-              )
-            })}
-          </Table.Tbody>
-        </Table>
-      </div>
+                  {columns.map((col) => (
+                    <Table.Td key={col.key}>
+                      {col.render
+                        ? col.render(row)
+                        : String((row as Record<string, unknown>)[col.key] ?? '-')}
+                    </Table.Td>
+                  ))}
+                </Table.Tr>
+                {renderExpandedRow && isRowExpanded?.(row) && (
+                  <Table.Tr>
+                    <Table.Td colSpan={columns.length + (hasSelection ? 1 : 0)}>
+                      {renderExpandedRow(row)}
+                    </Table.Td>
+                  </Table.Tr>
+                )}
+              </Fragment>
+            )
+          })}
+        </Table.Tbody>
+      </Table>
 
       {pagination && pagination.totalPages > 1 && onPageChange && (
         <Flex justify="space-between" align="center" mt="lg">
@@ -168,6 +166,6 @@ export function DataTable<T>({
           />
         </Flex>
       )}
-    </>
+    </ScrollArea>
   )
 }

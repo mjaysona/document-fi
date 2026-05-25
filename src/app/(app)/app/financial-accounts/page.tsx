@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Badge, Button, Group, Paper, SimpleGrid, Stack, Text } from '@mantine/core'
+import { Badge, Button, Group, Paper, Grid, Stack, Text, Title } from '@mantine/core'
 import { ArrowDownRight, ArrowUpRight, Landmark } from 'lucide-react'
 import {
   getFinancialAccountsList,
@@ -10,6 +10,7 @@ import {
   type FinancialAccountDetail,
 } from './actions'
 import classes from './page.module.css'
+import { CONTAINER_BREAKPOINTS } from '@/constants/breakpoints'
 
 type AccountStat = {
   id: string
@@ -84,32 +85,29 @@ export default function FinancialAccountsPage() {
 
   if (!accounts.length) {
     return (
-      <div>
-        <Paper withBorder p="xl" radius="md" className={classes['empty-state']}>
-          <Stack gap="md" align="center">
-            <Text fw={700}>No financial accounts yet</Text>
-            <Text size="sm" c="dimmed">
-              Create your first financial account to start tracking balances and transactions.
-            </Text>
-            <Button onClick={goToCreate}>Create Financial Account</Button>
-          </Stack>
-        </Paper>
-      </div>
+      <Paper withBorder p="xl" radius="md" className={classes['empty-state']}>
+        <Stack gap="md" align="center">
+          <Title order={5}>No financial accounts yet</Title>
+          <Text size="sm" c="dimmed">
+            Create your first financial account to start tracking balances and transactions.
+          </Text>
+          <Button onClick={goToCreate}>Create financial account</Button>
+        </Stack>
+      </Paper>
     )
   }
 
   return (
     <div>
       <Group justify="space-between" mb="md">
-        <Text fw={700}>Financial Accounts</Text>
-        <Button variant="primary" onClick={goToCreate}>
-          New Financial Account
+        <Title order={5}>Financial accounts</Title>
+        <Button variant="outline" onClick={goToCreate}>
+          New financial account
         </Button>
       </Group>
-      <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }}>
+      <Grid type="container" breakpoints={CONTAINER_BREAKPOINTS} gap="lg">
         {stats.map((stat) => {
           const DiffIcon = stat.diff > 0 ? ArrowUpRight : ArrowDownRight
-
           return (
             <Paper withBorder p="md" radius="md" key={stat.id}>
               <Group justify="space-between">
@@ -164,7 +162,7 @@ export default function FinancialAccountsPage() {
             </Paper>
           )
         })}
-      </SimpleGrid>
+      </Grid>
     </div>
   )
 }

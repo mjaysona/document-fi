@@ -32,9 +32,9 @@ const theme = createTheme({
     },
   },
   spacing: {
-    lg: '2rem',
-    xl: '3rem',
-    xxl: '4.5rem',
+    xxs: 'calc(.525rem * var(--mantine-scale))',
+    '2xl': 'calc(3rem * var(--mantine-scale))',
+    '3xl': 'calc(4.5rem * var(--mantine-scale))',
   },
 })
 

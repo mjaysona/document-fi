@@ -19,11 +19,13 @@ import {
   Text,
   Stack,
   TextInput,
+  ScrollArea,
   Textarea,
   Tooltip,
   Title,
   Checkbox,
   Switch,
+  Box,
 } from '@mantine/core'
 import { Dropzone, MIME_TYPES } from '@mantine/dropzone'
 import { DateTimePicker } from '@mantine/dates'
@@ -1145,31 +1147,8 @@ export default function AddTransactionPage() {
             </Title>
           </Group>
           <Group>
-            {!isAllocationContext && isEditMode && transactionId && (
-              <Button
-                size="xs"
-                variant="light"
-                color="red"
-                onClick={handleDelete}
-                loading={isDeleting}
-                disabled={isSaving || overlayVisible || isLoading}
-              >
-                Delete
-              </Button>
-            )}
-            {!isAllocationContext && form.values.isFundAllocation && (
-              <Button
-                size="xs"
-                variant="light"
-                onClick={handleSaveAndAllocate}
-                loading={isSaving || isDeleting || overlayVisible || isLoading}
-                disabled={isDeleting}
-              >
-                Allocate funds
-              </Button>
-            )}
             {!isAllocationContext && (
-              <>
+              <Group gap="xxs">
                 <Switch
                   label="Fund allocation"
                   checked={form.values.isFundAllocation}
@@ -1180,7 +1159,30 @@ export default function AddTransactionPage() {
                     <CircleHelp size={14} />
                   </span>
                 </Tooltip>
-              </>
+              </Group>
+            )}
+            {!isAllocationContext && form.values.isFundAllocation && (
+              <Button
+                size="xs"
+                variant="outline"
+                onClick={handleSaveAndAllocate}
+                loading={isSaving || isDeleting || overlayVisible || isLoading}
+                disabled={isDeleting}
+              >
+                Allocate funds
+              </Button>
+            )}
+            {!isAllocationContext && isEditMode && transactionId && (
+              <Button
+                size="xs"
+                variant="default"
+                color="red"
+                onClick={handleDelete}
+                loading={isDeleting}
+                disabled={isSaving || overlayVisible || isLoading}
+              >
+                Delete
+              </Button>
             )}
           </Group>
         </Group>
@@ -1498,35 +1500,6 @@ export default function AddTransactionPage() {
             </Grid.Col>
             <Grid.Col span={{ base: 12, md: 6, lg: 4 }} order={{ base: 1, md: 2 }}>
               <div className={classes.transactionReceiptPane}>
-                {isEditMode ? (
-                  <Button
-                    fullWidth
-                    mb="md"
-                    onClick={handleProcessReceipt}
-                    loading={isProcessingReceipt}
-                    disabled={
-                      isSaving || isUploadingReceipt || (!receiptImageId && !pendingReceiptFile)
-                    }
-                  >
-                    Process Receipt
-                  </Button>
-                ) : null}
-
-                <input
-                  hidden
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  onChange={(event) => {
-                    const file = event.currentTarget.files?.[0]
-                    if (!file) return
-                    void handleFileAnalysis(file)
-                    event.currentTarget.value = ''
-                  }}
-                  ref={(node) => {
-                    receiptInputRef.current = () => node?.click()
-                  }}
-                />
-
                 {!activeReceiptImageUrl ? (
                   <Card
                     withBorder
@@ -1606,6 +1579,34 @@ export default function AddTransactionPage() {
                       zIndex={100}
                       overlayProps={{ radius: 'md', blur: 2 }}
                     />
+                    {isEditMode ? (
+                      <Button
+                        fullWidth
+                        variant="outline"
+                        mb="md"
+                        onClick={handleProcessReceipt}
+                        loading={isProcessingReceipt}
+                        disabled={
+                          isSaving || isUploadingReceipt || (!receiptImageId && !pendingReceiptFile)
+                        }
+                      >
+                        Process Receipt
+                      </Button>
+                    ) : null}
+                    <input
+                      hidden
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      onChange={(event) => {
+                        const file = event.currentTarget.files?.[0]
+                        if (!file) return
+                        void handleFileAnalysis(file)
+                        event.currentTarget.value = ''
+                      }}
+                      ref={(node) => {
+                        receiptInputRef.current = () => node?.click()
+                      }}
+                    />
                     {overlayVisible && (
                       <Text
                         size="sm"
@@ -1624,14 +1625,14 @@ export default function AddTransactionPage() {
                       </Text>
                     )}
                     <Stack gap="sm">
-                      <Group justify="space-between" align="center">
-                        <Text fw={700}>
+                      <Flex gap="sm" justify="space-between" align="start" wrap="nowrap">
+                        <Text size="xs" fw={700}>
                           Image preview (
                           {pendingReceiptFile?.name || receiptImageFileName || 'Receipt'})
                         </Text>
-                        <Group gap="xs">
+                        <Group gap="xxs" style={{ flexShrink: 0 }}>
                           <ActionIcon
-                            variant="subtle"
+                            variant="default"
                             color="blue"
                             size="sm"
                             onClick={() => receiptInputRef.current()}
@@ -1641,7 +1642,7 @@ export default function AddTransactionPage() {
                             <Pencil size={14} />
                           </ActionIcon>
                           <ActionIcon
-                            variant="subtle"
+                            variant="default"
                             color="red"
                             size="sm"
                             onClick={handleRemoveAttachedImage}
@@ -1651,15 +1652,8 @@ export default function AddTransactionPage() {
                             <Ban size={14} />
                           </ActionIcon>
                         </Group>
-                      </Group>
-                      <div
-                        style={{
-                          position: 'relative',
-                          width: '100%',
-                          maxHeight: '400px',
-                          overflow: 'auto',
-                        }}
-                      >
+                      </Flex>
+                      <ScrollArea h={{ base: 300, sm: 400 }}>
                         {receiptPreviewError ? (
                           <Alert withCloseButton color="red" title="Receipt preview failed">
                             {receiptPreviewError}
@@ -1727,7 +1721,7 @@ export default function AddTransactionPage() {
                             }}
                           />
                         )}
-                      </div>
+                      </ScrollArea>
                     </Stack>
                   </Card>
                 )}
@@ -1763,58 +1757,60 @@ export default function AddTransactionPage() {
                     Allocated funds: {formatCurrency(allocatedFunds)}/{formatCurrency(parentAmount)}
                   </Text>
                 </Group>
-                <Table withTableBorder withColumnBorders striped highlightOnHover>
-                  <Table.Thead>
-                    <Table.Tr>
-                      <Table.Th>Reference #</Table.Th>
-                      <Table.Th>Date</Table.Th>
-                      <Table.Th>Source to Destination</Table.Th>
-                      <Table.Th>Amount</Table.Th>
-                      <Table.Th>Fee</Table.Th>
-                      <Table.Th>Status</Table.Th>
-                    </Table.Tr>
-                  </Table.Thead>
-                  <Table.Tbody>
-                    {childTransactions.map((child) => (
-                      <Table.Tr key={child.id}>
-                        <Table.Td>
-                          <span
-                            style={{
-                              cursor: 'pointer',
-                              textDecoration: 'underline',
-                            }}
-                            onClick={(event) => {
-                              event.stopPropagation()
-                              router.push(`/app/records/transactions/${child.id}/edit`)
-                            }}
-                          >
-                            {child.referenceNumber || '-'}
-                          </span>
-                        </Table.Td>
-                        <Table.Td>{formatDate(child.transactionDate)}</Table.Td>
-                        <Table.Td>
-                          {(() => {
-                            const source = child.sourceAccountName || '-'
-                            const destination = child.destinationAccountName || '-'
-                            if (source === '-' && destination === '-') return '-'
-                            return `${source} to ${destination}`
-                          })()}
-                        </Table.Td>
-                        <Table.Td>{formatCurrency(child.amount)}</Table.Td>
-                        <Table.Td>{formatCurrency(child.transactionFee)}</Table.Td>
-                        <Table.Td>
-                          <Badge
-                            color={child.transactionStatus === 'failed' ? 'red' : 'teal'}
-                            variant="light"
-                            tt="capitalize"
-                          >
-                            {child.transactionStatus || '-'}
-                          </Badge>
-                        </Table.Td>
+                <ScrollArea>
+                  <Table withTableBorder withColumnBorders striped highlightOnHover>
+                    <Table.Thead>
+                      <Table.Tr>
+                        <Table.Th>Reference #</Table.Th>
+                        <Table.Th>Date</Table.Th>
+                        <Table.Th>Source to Destination</Table.Th>
+                        <Table.Th>Amount</Table.Th>
+                        <Table.Th>Fee</Table.Th>
+                        <Table.Th>Status</Table.Th>
                       </Table.Tr>
-                    ))}
-                  </Table.Tbody>
-                </Table>
+                    </Table.Thead>
+                    <Table.Tbody>
+                      {childTransactions.map((child) => (
+                        <Table.Tr key={child.id}>
+                          <Table.Td>
+                            <span
+                              style={{
+                                cursor: 'pointer',
+                                textDecoration: 'underline',
+                              }}
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                router.push(`/app/records/transactions/${child.id}/edit`)
+                              }}
+                            >
+                              {child.referenceNumber || '-'}
+                            </span>
+                          </Table.Td>
+                          <Table.Td>{formatDate(child.transactionDate)}</Table.Td>
+                          <Table.Td>
+                            {(() => {
+                              const source = child.sourceAccountName || '-'
+                              const destination = child.destinationAccountName || '-'
+                              if (source === '-' && destination === '-') return '-'
+                              return `${source} to ${destination}`
+                            })()}
+                          </Table.Td>
+                          <Table.Td>{formatCurrency(child.amount)}</Table.Td>
+                          <Table.Td>{formatCurrency(child.transactionFee)}</Table.Td>
+                          <Table.Td>
+                            <Badge
+                              color={child.transactionStatus === 'failed' ? 'red' : 'teal'}
+                              variant="light"
+                              tt="capitalize"
+                            >
+                              {child.transactionStatus || '-'}
+                            </Badge>
+                          </Table.Td>
+                        </Table.Tr>
+                      ))}
+                    </Table.Tbody>
+                  </Table>
+                </ScrollArea>
               </Stack>
             )
           })()}

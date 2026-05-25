@@ -235,7 +235,7 @@ export default function FinancialAccountDetailPage() {
           )}
           <Button
             color="red"
-            variant="light"
+            variant="default"
             size="xs"
             loading={isDeleting}
             disabled={isUpdatingDefault}
@@ -262,7 +262,7 @@ export default function FinancialAccountDetailPage() {
           </Button>
         </Group>
       </Group>
-      <Group>
+      <Group gap="xxs">
         <Button
           size="xs"
           variant="default"
