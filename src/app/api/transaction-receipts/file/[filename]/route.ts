@@ -2,6 +2,34 @@ import { getPayload } from 'payload'
 import { NextResponse } from 'next/server'
 import config from '~/payload.config'
 
+async function proxyRemoteImage(url: string): Promise<NextResponse> {
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      cache: 'no-store',
+    })
+
+    if (!response.ok) {
+      return new NextResponse('Receipt not found', { status: response.status })
+    }
+
+    const body = await response.arrayBuffer()
+    const contentType = response.headers.get('content-type') || 'application/octet-stream'
+    const cacheControl = response.headers.get('cache-control') || 'public, max-age=300'
+
+    return new NextResponse(body, {
+      status: 200,
+      headers: {
+        'content-type': contentType,
+        'cache-control': cacheControl,
+      },
+    })
+  } catch (error) {
+    console.error('Failed to proxy receipt image:', error)
+    return new NextResponse('Failed to fetch receipt image', { status: 502 })
+  }
+}
+
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ filename: string }> },
@@ -31,14 +59,19 @@ export async function GET(
     if (process.env.S3_PUBLIC_URL && process.env.S3_BUCKET) {
       // The file is stored in S3 with prefix 'app/transactions/' based on Payload config
       const s3PublicUrl = `${process.env.S3_PUBLIC_URL}/${process.env.S3_BUCKET}/app/transactions/${encodeURIComponent(receipt.filename)}`
-      console.log('Redirecting to S3 public URL:', s3PublicUrl)
-      return NextResponse.redirect(s3PublicUrl, { status: 307 })
+      console.log('Proxying from S3 public URL:', s3PublicUrl)
+      return await proxyRemoteImage(s3PublicUrl)
     }
 
     // If S3_PUBLIC_URL is not configured but receipt has a URL, try to use it
     if (receipt.url) {
       console.log('Using receipt URL:', receipt.url)
-      return NextResponse.redirect(receipt.url, { status: 307 })
+      const receiptUrl = String(receipt.url)
+      if (receiptUrl.startsWith('http://') || receiptUrl.startsWith('https://')) {
+        return await proxyRemoteImage(receiptUrl)
+      }
+
+      return NextResponse.redirect(receiptUrl, { status: 307 })
     }
 
     console.log('No S3 public URL or receipt URL found')
