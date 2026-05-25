@@ -93,7 +93,7 @@ export default function Layout({ children, userPreferences }: LayoutProps) {
         breakpoint: mobileBreakpoint,
         collapsed: { mobile: !opened },
       }}
-      padding="lg"
+      padding={{ base: 'md', md: 'md', lg: 'lg' }}
       transitionDuration={0}
     >
       <AppShell.Header className={classes.header}>

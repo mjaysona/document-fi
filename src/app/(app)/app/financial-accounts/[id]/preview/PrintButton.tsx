@@ -5,7 +5,12 @@ import { Printer } from 'lucide-react'
 
 export function PrintButton() {
   return (
-    <Button variant="default" leftSection={<Printer size={16} />} onClick={() => window.print()}>
+    <Button
+      w={{ base: '100%', md: 'auto' }}
+      variant="default"
+      leftSection={<Printer size={16} />}
+      onClick={() => window.print()}
+    >
       Print
     </Button>
   )

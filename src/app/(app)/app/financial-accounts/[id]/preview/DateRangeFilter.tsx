@@ -129,17 +129,16 @@ export function DateRangeFilter({ logoUrl, initialFrom, initialTo }: DateRangeFi
   }
 
   return (
-    <Group align="end" gap="xs" wrap="nowrap">
-      <DatePickerInput
-        leftSection={<CalendarSearch size={16} />}
-        type="range"
-        placeholder="Transactions date range"
-        value={range}
-        onChange={handleRangeChange}
-        presets={getDefaultRangePresets()}
-        clearable
-        size="sm"
-      />
-    </Group>
+    <DatePickerInput
+      w={{ base: '100%', md: 'auto' }}
+      leftSection={<CalendarSearch size={16} />}
+      type="range"
+      placeholder="Transactions date range"
+      value={range}
+      onChange={handleRangeChange}
+      presets={getDefaultRangePresets()}
+      clearable
+      size="sm"
+    />
   )
 }

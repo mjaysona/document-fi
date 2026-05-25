@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Stack, Group, ActionIcon, Title } from '@mantine/core'
+import { Stack, Group, ActionIcon, Title, Flex } from '@mantine/core'
 import { ArrowLeft } from 'lucide-react'
 import { getFinancialAccountById } from '../../actions'
 import {
@@ -144,8 +144,8 @@ export default async function FinancialAccountPreviewPage({ params, searchParams
 
   return (
     <Stack>
-      <Group className={styles.toolbar}>
-        <Group gap="sm" align="center">
+      <Flex gap="sm" justify="space-between" wrap={{ base: 'wrap', md: 'nowrap' }} align="start">
+        <Flex gap="sm" align="start" wrap="nowrap">
           <Link href={`/app/financial-accounts/${account.id}`}>
             <ActionIcon
               variant="default"
@@ -157,14 +157,20 @@ export default async function FinancialAccountPreviewPage({ params, searchParams
               <ArrowLeft size={16} />
             </ActionIcon>
           </Link>
-          <Title order={5}>Transaction Report for {account.name}</Title>
-        </Group>
-
-        <Group className={styles['toolbar__right']}>
+          <Flex mih={32} align="center" gap="xs" wrap="nowrap">
+            <Title order={5}>Transaction Report for {account.name}</Title>
+          </Flex>
+        </Flex>
+        <Flex
+          w={{ base: '100%', md: 'auto' }}
+          gap="sm"
+          justify="flex-end"
+          style={{ flexShrink: 0 }}
+        >
           <DateRangeFilter logoUrl={logoUrl} initialFrom={from} initialTo={to} />
           <PrintButton />
-        </Group>
-      </Group>
+        </Flex>
+      </Flex>
       <ReportColumnsFilter initialColumns={visibleColumns} />
       <div className={styles['print-area__wrapper']}>
         <div className={styles['print-area']}>
