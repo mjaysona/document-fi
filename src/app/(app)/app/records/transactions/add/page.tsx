@@ -1263,7 +1263,7 @@ export default function AddTransactionPage() {
                     />
                   </Grid.Col>
                   <Grid.Col span={{ base: 12, sm: 6 }}>
-                    <Fieldset legend="From" p="xs">
+                    <Fieldset legend="From" p="sm" m="0" radius="md">
                       <Grid>
                         <Grid.Col>
                           <Select
@@ -1305,7 +1305,7 @@ export default function AddTransactionPage() {
                     </Fieldset>
                   </Grid.Col>
                   <Grid.Col span={{ base: 12, sm: 6 }}>
-                    <Fieldset legend="To" p="xs">
+                    <Fieldset legend="To" p="sm" m="0" radius="md">
                       <Grid>
                         <Grid.Col>
                           <Select
