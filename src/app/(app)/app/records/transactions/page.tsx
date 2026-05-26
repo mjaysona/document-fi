@@ -396,9 +396,22 @@ export default function TransactionsPage() {
 
   const displayed = useMemo(() => {
     const query = search.toLowerCase().trim()
+    const allItemsById = new Map(items.map((item) => [item.id, item]))
+
     const filtered = items.filter((item) => {
-      if (filterFinancialAccount && item.financialAccountName !== filterFinancialAccount) {
-        return false
+      if (filterFinancialAccount) {
+        let effectiveFinancialAccountName = item.financialAccountName
+
+        // During text search, allow child rows without a direct financial account
+        // to inherit the parent account for filtering and parent lifting.
+        if (!effectiveFinancialAccountName && query && item.parentTransaction) {
+          const parent = allItemsById.get(item.parentTransaction)
+          effectiveFinancialAccountName = parent?.financialAccountName
+        }
+
+        if (effectiveFinancialAccountName !== filterFinancialAccount) {
+          return false
+        }
       }
 
       if (filterTypes.length > 0) {
