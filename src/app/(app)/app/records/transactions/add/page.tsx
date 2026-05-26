@@ -1085,31 +1085,6 @@ export default function AddTransactionPage() {
             </Title>
           </Group>
           <Group>
-            {!isAllocationContext && (
-              <Group gap="xxs">
-                <Switch
-                  label="Fund allocation"
-                  checked={form.values.isFundAllocation}
-                  onChange={(e) => form.setFieldValue('isFundAllocation', e.currentTarget.checked)}
-                />
-                <Tooltip label="Fund allocation - receiving account allocates across multiple transactions">
-                  <span style={{ display: 'inline-flex', cursor: 'help' }}>
-                    <CircleHelp size={14} />
-                  </span>
-                </Tooltip>
-              </Group>
-            )}
-            {!isAllocationContext && form.values.isFundAllocation && (
-              <Button
-                size="xs"
-                variant="outline"
-                onClick={handleSaveAndAllocate}
-                loading={isSaving || isDeleting || overlayVisible || isLoading}
-                disabled={isDeleting}
-              >
-                Allocate funds
-              </Button>
-            )}
             {!isAllocationContext && isEditMode && transactionId && (
               <Button
                 size="xs"
@@ -1174,10 +1149,39 @@ export default function AddTransactionPage() {
                     {isProcessingReceipt ? 'Processing receipt' : 'Analyzing receipt'}
                   </Text>
                 )}
-                <Text fw={700} mb="md">
-                  Transaction Details
-                </Text>
+                <Group mb="md" justify="space-between" align="center">
+                  <Text fw={700}>Transaction Details</Text>
+                  {!isAllocationContext && (
+                    <Group gap="xxs">
+                      <Switch
+                        label="Fund allocation"
+                        checked={form.values.isFundAllocation}
+                        onChange={(e) =>
+                          form.setFieldValue('isFundAllocation', e.currentTarget.checked)
+                        }
+                      />
+                      <Tooltip label="Fund allocation - receiving account allocates across multiple transactions">
+                        <span style={{ display: 'inline-flex', cursor: 'help' }}>
+                          <CircleHelp size={14} />
+                        </span>
+                      </Tooltip>
+                    </Group>
+                  )}
+                </Group>
                 <Grid gap="sm">
+                  {!isAllocationContext && form.values.isFundAllocation && (
+                    <Grid.Col span={12}>
+                      <Button
+                        size="xs"
+                        variant="outline"
+                        onClick={handleSaveAndAllocate}
+                        loading={isSaving || isDeleting || overlayVisible || isLoading}
+                        disabled={isDeleting}
+                      >
+                        Allocate funds
+                      </Button>
+                    </Grid.Col>
+                  )}
                   {!isAllocationContext && (
                     <>
                       <Grid.Col span={{ base: 12, sm: 6 }}>
@@ -1262,7 +1266,7 @@ export default function AddTransactionPage() {
                       disabled={!form.values.financialAccount || isAllocationContext}
                     />
                   </Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 6 }}>
+                  <Grid.Col span={{ base: 12, md: 6 }}>
                     <Fieldset legend="From" p="sm" m="0" radius="md">
                       <Grid>
                         <Grid.Col>
@@ -1304,7 +1308,7 @@ export default function AddTransactionPage() {
                       </Grid>
                     </Fieldset>
                   </Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 6 }}>
+                  <Grid.Col span={{ base: 12, md: 6 }}>
                     <Fieldset legend="To" p="sm" m="0" radius="md">
                       <Grid>
                         <Grid.Col>
@@ -1446,15 +1450,15 @@ export default function AddTransactionPage() {
                       />
                     </Grid.Col>
                   )}
-                  <Grid.Col span={12}>
-                    <TextInput
+                  <Grid.Col span={{ base: 12, md: 6 }}>
+                    <Textarea
                       label="Description"
                       value={form.values.description}
                       onChange={(e) => form.setFieldValue('description', e.currentTarget.value)}
                       error={form.errors.description}
                     />
                   </Grid.Col>
-                  <Grid.Col span={12}>
+                  <Grid.Col span={{ base: 12, md: 6 }}>
                     <Textarea
                       label="Particulars"
                       value={form.values.particulars}
@@ -1693,7 +1697,7 @@ export default function AddTransactionPage() {
                 </Group>
                 <ScrollArea>
                   <Table withTableBorder withColumnBorders striped highlightOnHover>
-                    <Table.Thead>
+                    <Table.Thead style={{ verticalAlign: 'top' }}>
                       <Table.Tr>
                         <Table.Th>Reference #</Table.Th>
                         <Table.Th>Date</Table.Th>
@@ -1703,7 +1707,7 @@ export default function AddTransactionPage() {
                         <Table.Th>Status</Table.Th>
                       </Table.Tr>
                     </Table.Thead>
-                    <Table.Tbody>
+                    <Table.Tbody style={{ verticalAlign: 'top' }}>
                       {childTransactions.map((child) => (
                         <Table.Tr key={child.id}>
                           <Table.Td>
