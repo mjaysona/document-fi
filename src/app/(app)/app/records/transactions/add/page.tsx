@@ -1669,9 +1669,7 @@ export default function AddTransactionPage() {
         )}
 
         {!isLoading &&
-          isEditMode &&
           form.values.isFundAllocation &&
-          childTransactions.length > 0 &&
           (() => {
             const parentAmount = parseNumericInputValue(form.values.amount) ?? 0
             const allocationStatus =
@@ -1695,60 +1693,62 @@ export default function AddTransactionPage() {
                     Allocated funds: {formatCurrency(allocatedFunds)}/{formatCurrency(parentAmount)}
                   </Text>
                 </Group>
-                <ScrollArea>
-                  <Table withTableBorder withColumnBorders striped highlightOnHover>
-                    <Table.Thead style={{ verticalAlign: 'top' }}>
-                      <Table.Tr>
-                        <Table.Th>Reference #</Table.Th>
-                        <Table.Th>Date</Table.Th>
-                        <Table.Th>Source to Destination</Table.Th>
-                        <Table.Th>Amount</Table.Th>
-                        <Table.Th>Fee</Table.Th>
-                        <Table.Th>Status</Table.Th>
-                      </Table.Tr>
-                    </Table.Thead>
-                    <Table.Tbody style={{ verticalAlign: 'top' }}>
-                      {childTransactions.map((child) => (
-                        <Table.Tr key={child.id}>
-                          <Table.Td>
-                            <span
-                              style={{
-                                cursor: 'pointer',
-                                textDecoration: 'underline',
-                              }}
-                              onClick={(event) => {
-                                event.stopPropagation()
-                                router.push(`/app/records/transactions/${child.id}/edit`)
-                              }}
-                            >
-                              {child.referenceNumber || '-'}
-                            </span>
-                          </Table.Td>
-                          <Table.Td>{formatDate(child.transactionDate)}</Table.Td>
-                          <Table.Td>
-                            {(() => {
-                              const source = child.sourceAccountName || '-'
-                              const destination = child.destinationAccountName || '-'
-                              if (source === '-' && destination === '-') return '-'
-                              return `${source} to ${destination}`
-                            })()}
-                          </Table.Td>
-                          <Table.Td>{formatCurrency(child.amount)}</Table.Td>
-                          <Table.Td>{formatCurrency(child.transactionFee)}</Table.Td>
-                          <Table.Td>
-                            <Badge
-                              color={child.transactionStatus === 'failed' ? 'red' : 'teal'}
-                              variant="light"
-                              tt="capitalize"
-                            >
-                              {child.transactionStatus || '-'}
-                            </Badge>
-                          </Table.Td>
+                {(childTransactions.length > 0 && (
+                  <ScrollArea>
+                    <Table withTableBorder withColumnBorders striped highlightOnHover>
+                      <Table.Thead style={{ verticalAlign: 'top' }}>
+                        <Table.Tr>
+                          <Table.Th>Reference #</Table.Th>
+                          <Table.Th>Date</Table.Th>
+                          <Table.Th>Source to Destination</Table.Th>
+                          <Table.Th>Amount</Table.Th>
+                          <Table.Th>Fee</Table.Th>
+                          <Table.Th>Status</Table.Th>
                         </Table.Tr>
-                      ))}
-                    </Table.Tbody>
-                  </Table>
-                </ScrollArea>
+                      </Table.Thead>
+                      <Table.Tbody style={{ verticalAlign: 'top' }}>
+                        {childTransactions.map((child) => (
+                          <Table.Tr key={child.id}>
+                            <Table.Td>
+                              <span
+                                style={{
+                                  cursor: 'pointer',
+                                  textDecoration: 'underline',
+                                }}
+                                onClick={(event) => {
+                                  event.stopPropagation()
+                                  router.push(`/app/records/transactions/${child.id}/edit`)
+                                }}
+                              >
+                                {child.referenceNumber || '-'}
+                              </span>
+                            </Table.Td>
+                            <Table.Td>{formatDate(child.transactionDate)}</Table.Td>
+                            <Table.Td>
+                              {(() => {
+                                const source = child.sourceAccountName || '-'
+                                const destination = child.destinationAccountName || '-'
+                                if (source === '-' && destination === '-') return '-'
+                                return `${source} to ${destination}`
+                              })()}
+                            </Table.Td>
+                            <Table.Td>{formatCurrency(child.amount)}</Table.Td>
+                            <Table.Td>{formatCurrency(child.transactionFee)}</Table.Td>
+                            <Table.Td>
+                              <Badge
+                                color={child.transactionStatus === 'failed' ? 'red' : 'teal'}
+                                variant="light"
+                                tt="capitalize"
+                              >
+                                {child.transactionStatus || '-'}
+                              </Badge>
+                            </Table.Td>
+                          </Table.Tr>
+                        ))}
+                      </Table.Tbody>
+                    </Table>
+                  </ScrollArea>
+                )) || <Text c="dimmed">No child transactions found.</Text>}
               </Stack>
             )
           })()}
