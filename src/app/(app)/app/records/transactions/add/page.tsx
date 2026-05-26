@@ -1262,10 +1262,10 @@ export default function AddTransactionPage() {
                       disabled={!form.values.financialAccount || isAllocationContext}
                     />
                   </Grid.Col>
-                  <Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 6 }}>
                     <Fieldset legend="From" p="xs">
                       <Grid>
-                        <Grid.Col span={{ base: 12, sm: 6 }}>
+                        <Grid.Col>
                           <Select
                             label="Bank"
                             searchable
@@ -1287,7 +1287,7 @@ export default function AddTransactionPage() {
                             }
                           />
                         </Grid.Col>
-                        <Grid.Col span={{ base: 12, sm: 6 }}>
+                        <Grid.Col>
                           <TextInput
                             label="Account name"
                             value={form.values.from}
@@ -1304,10 +1304,10 @@ export default function AddTransactionPage() {
                       </Grid>
                     </Fieldset>
                   </Grid.Col>
-                  <Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 6 }}>
                     <Fieldset legend="To" p="xs">
                       <Grid>
-                        <Grid.Col span={{ base: 12, sm: 6 }}>
+                        <Grid.Col>
                           <Select
                             label="Bank"
                             searchable
@@ -1329,7 +1329,7 @@ export default function AddTransactionPage() {
                             }
                           />
                         </Grid.Col>
-                        <Grid.Col span={{ base: 12, sm: 6 }}>
+                        <Grid.Col>
                           <TextInput
                             label="Account name"
                             value={form.values.to}
