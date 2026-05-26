@@ -27,6 +27,7 @@ import {
   Checkbox,
   Switch,
   Box,
+  Fieldset,
 } from '@mantine/core'
 import { Dropzone, MIME_TYPES } from '@mantine/dropzone'
 import { DateTimePicker } from '@mantine/dates'
@@ -1261,73 +1262,89 @@ export default function AddTransactionPage() {
                       disabled={!form.values.financialAccount || isAllocationContext}
                     />
                   </Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 6 }}>
-                    <Select
-                      label="Source Bank"
-                      searchable
-                      data={banks.map((bank) => ({
-                        value: bank.id,
-                        label:
-                          bank.name && bank.shortName
-                            ? `${bank.name} (${bank.shortName})`
-                            : bank.name || bank.shortName || bank.code || bank.id,
-                      }))}
-                      value={form.values.sourceAccount}
-                      onChange={(value) => form.setFieldValue('sourceAccount', value)}
-                      error={form.errors.sourceAccount}
-                      required
-                      disabled={
-                        !isAllocationContext &&
-                        (!form.values.financialAccount || form.values.transactionType === 'debit')
-                      }
-                    />
+                  <Grid.Col>
+                    <Fieldset legend="From" p="xs">
+                      <Grid>
+                        <Grid.Col span={{ base: 12, sm: 6 }}>
+                          <Select
+                            label="Bank"
+                            searchable
+                            data={banks.map((bank) => ({
+                              value: bank.id,
+                              label:
+                                bank.name && bank.shortName
+                                  ? `${bank.name} (${bank.shortName})`
+                                  : bank.name || bank.shortName || bank.code || bank.id,
+                            }))}
+                            value={form.values.sourceAccount}
+                            onChange={(value) => form.setFieldValue('sourceAccount', value)}
+                            error={form.errors.sourceAccount}
+                            required
+                            disabled={
+                              !isAllocationContext &&
+                              (!form.values.financialAccount ||
+                                form.values.transactionType === 'debit')
+                            }
+                          />
+                        </Grid.Col>
+                        <Grid.Col span={{ base: 12, sm: 6 }}>
+                          <TextInput
+                            label="Account name"
+                            value={form.values.from}
+                            onChange={(e) => form.setFieldValue('from', e.currentTarget.value)}
+                            error={form.errors.from}
+                            required
+                            disabled={
+                              !isAllocationContext &&
+                              (!form.values.financialAccount ||
+                                form.values.transactionType === 'debit')
+                            }
+                          />
+                        </Grid.Col>
+                      </Grid>
+                    </Fieldset>
                   </Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 6 }}>
-                    <Select
-                      label="Destination Bank"
-                      searchable
-                      data={banks.map((bank) => ({
-                        value: bank.id,
-                        label:
-                          bank.name && bank.shortName
-                            ? `${bank.name} (${bank.shortName})`
-                            : bank.name || bank.shortName || bank.code || bank.id,
-                      }))}
-                      value={form.values.destinationAccount}
-                      onChange={(value) => form.setFieldValue('destinationAccount', value)}
-                      error={form.errors.destinationAccount}
-                      required
-                      disabled={
-                        !isAllocationContext &&
-                        (!form.values.financialAccount || form.values.transactionType === 'credit')
-                      }
-                    />
-                  </Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 6 }}>
-                    <TextInput
-                      label="From"
-                      value={form.values.from}
-                      onChange={(e) => form.setFieldValue('from', e.currentTarget.value)}
-                      error={form.errors.from}
-                      required
-                      disabled={
-                        !isAllocationContext &&
-                        (!form.values.financialAccount || form.values.transactionType === 'debit')
-                      }
-                    />
-                  </Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 6 }}>
-                    <TextInput
-                      label="To"
-                      value={form.values.to}
-                      onChange={(e) => form.setFieldValue('to', e.currentTarget.value)}
-                      error={form.errors.to}
-                      required
-                      disabled={
-                        !isAllocationContext &&
-                        (!form.values.financialAccount || form.values.transactionType === 'credit')
-                      }
-                    />
+                  <Grid.Col>
+                    <Fieldset legend="To" p="xs">
+                      <Grid>
+                        <Grid.Col span={{ base: 12, sm: 6 }}>
+                          <Select
+                            label="Bank"
+                            searchable
+                            data={banks.map((bank) => ({
+                              value: bank.id,
+                              label:
+                                bank.name && bank.shortName
+                                  ? `${bank.name} (${bank.shortName})`
+                                  : bank.name || bank.shortName || bank.code || bank.id,
+                            }))}
+                            value={form.values.destinationAccount}
+                            onChange={(value) => form.setFieldValue('destinationAccount', value)}
+                            error={form.errors.destinationAccount}
+                            required
+                            disabled={
+                              !isAllocationContext &&
+                              (!form.values.financialAccount ||
+                                form.values.transactionType === 'credit')
+                            }
+                          />
+                        </Grid.Col>
+                        <Grid.Col span={{ base: 12, sm: 6 }}>
+                          <TextInput
+                            label="Account name"
+                            value={form.values.to}
+                            onChange={(e) => form.setFieldValue('to', e.currentTarget.value)}
+                            error={form.errors.to}
+                            required
+                            disabled={
+                              !isAllocationContext &&
+                              (!form.values.financialAccount ||
+                                form.values.transactionType === 'credit')
+                            }
+                          />
+                        </Grid.Col>
+                      </Grid>
+                    </Fieldset>
                   </Grid.Col>
                   <Grid.Col span={{ base: 12, sm: 6 }}>
                     <TextInput
