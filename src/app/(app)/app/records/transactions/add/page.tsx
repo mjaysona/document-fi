@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, usePathname, useRouter } from 'next/navigation'
 import {
   ActionIcon,
+  Anchor,
   Alert,
   Badge,
   Button,
@@ -219,90 +220,67 @@ export default function AddTransactionPage() {
   const [pendingExtractionConfidence, setPendingExtractionConfidence] = useState<
     number | undefined
   >()
+  const [duplicateReferenceTransactionId, setDuplicateReferenceTransactionId] = useState<
+    string | null
+  >(null)
+  const duplicateTransactionEditHref = duplicateReferenceTransactionId
+    ? `/app/records/transactions/${duplicateReferenceTransactionId}/edit`
+    : null
   const receiptInputRef = useRef<() => void>(() => {})
 
   const resolveReceiptPreviewError = async (failedUrl: string): Promise<string> => {
-    console.log('[FE-ERROR-LOG 1] resolveReceiptPreviewError called with:', failedUrl)
-
     const normalized = String(failedUrl || '').trim()
-    console.log('[FE-ERROR-LOG 2] Normalized URL:', normalized)
 
     if (!normalized) {
-      console.log('[FE-ERROR-LOG 3] URL is empty, returning generic error')
       return 'Receipt preview failed.'
     }
 
     // Blob/data URLs fail client-side and cannot provide a server response body.
     if (normalized.startsWith('blob:') || normalized.startsWith('data:')) {
-      console.log('[FE-ERROR-LOG 4] URL is blob/data URL, cannot fetch')
       return 'Receipt preview failed. Please re-upload the image.'
     }
 
     try {
-      console.log('[FE-ERROR-LOG 5] Attempting to fetch:', normalized)
       const response = await fetch(normalized, {
         method: 'GET',
         credentials: 'same-origin',
         cache: 'no-store',
       })
 
-      console.log('[FE-ERROR-LOG 6] Fetch completed')
-      console.log('[FE-ERROR-LOG 7] Response status:', response.status)
-      console.log('[FE-ERROR-LOG 8] Response statusText:', response.statusText)
-      console.log('[FE-ERROR-LOG 9] Response ok:', response.ok)
-
       if (!response.ok) {
-        console.log('[FE-ERROR-LOG 10] Response not OK, attempting to read body')
         const bodyText = (await response.text()).trim()
-        console.log('[FE-ERROR-LOG 11] Response body:', bodyText)
 
         if (bodyText) {
-          console.log('[FE-ERROR-LOG 12] Returning body text as error')
           return bodyText
         }
 
         const errorMsg = `Failed to load receipt preview (${response.status} ${response.statusText}).`
-        console.log('[FE-ERROR-LOG 13] Returning status error:', errorMsg)
         return errorMsg
       }
 
-      console.log('[FE-ERROR-LOG 14] Response OK but image cannot be rendered')
       return 'Receipt image could not be rendered by the browser.'
     } catch (error) {
-      console.error('[FE-ERROR-LOG 15] Fetch threw exception:', error)
       const message = error instanceof Error ? error.message.trim() : ''
-      console.log('[FE-ERROR-LOG 16] Exception message:', message)
       return message || 'Failed to load receipt preview.'
     }
   }
 
   const receiptPreviewCandidates = useMemo(() => {
-    console.log('[FE-LOG 1] Building receipt preview candidates...')
-    console.log('[FE-LOG 2] Input - receiptImageId:', receiptImageId)
-    console.log('[FE-LOG 3] Input - receiptImageUrl:', receiptImageUrl)
-    console.log('[FE-LOG 4] Input - receiptImageFileName:', receiptImageFileName)
-
     const candidates: string[] = []
 
     const pushCandidate = (value?: string) => {
       const normalized = String(value || '').trim()
       if (!normalized) {
-        console.log('[FE-LOG] pushCandidate skipped - empty value')
         return
       }
       if (!candidates.includes(normalized)) {
-        console.log('[FE-LOG] pushCandidate added:', normalized)
         candidates.push(normalized)
-      } else {
-        console.log('[FE-LOG] pushCandidate skipped - duplicate:', normalized)
       }
     }
 
     const normalizedUrl = String(receiptImageUrl || '').trim()
-    console.log('[FE-LOG 5] Normalized URL:', normalizedUrl, 'is empty?', !normalizedUrl)
 
     if (normalizedUrl) {
-      console.log('[FE-LOG 6] URL is not empty, checking format...')
       if (
         normalizedUrl.startsWith('http://') ||
         normalizedUrl.startsWith('https://') ||
@@ -310,53 +288,31 @@ export default function AddTransactionPage() {
         normalizedUrl.startsWith('blob:') ||
         normalizedUrl.startsWith('data:')
       ) {
-        console.log('[FE-LOG 7] URL is absolute/special format')
         pushCandidate(normalizedUrl)
         if (normalizedUrl.startsWith('http://') || normalizedUrl.startsWith('https://')) {
-          console.log('[FE-LOG 8] URL is HTTP(S), extracting pathname...')
           try {
             const parsed = new URL(normalizedUrl)
             pushCandidate(`${parsed.pathname}${parsed.search}`)
           } catch (e) {
-            console.log('[FE-LOG 9] Failed to parse URL:', e)
+            // URL parsing failed, skip
           }
         }
       } else {
-        console.log('[FE-LOG 10] URL is relative filename, constructing file API URL')
         pushCandidate(`/api/transaction-receipts/file/${encodeURIComponent(normalizedUrl)}`)
       }
-    } else {
-      console.log('[FE-LOG 11] receiptImageUrl is empty')
     }
 
     const normalizedReceiptId = String(receiptImageId || '').trim()
-    console.log(
-      '[FE-LOG 12] Normalized receipt ID:',
-      normalizedReceiptId,
-      'is empty?',
-      !normalizedReceiptId,
-    )
 
     if (normalizedReceiptId) {
-      console.log('[FE-LOG 13] Receipt ID is not empty, adding ID-based route')
       pushCandidate(`/api/transaction-receipts/${encodeURIComponent(normalizedReceiptId)}`)
     }
 
     const normalizedFilename = String(receiptImageFileName || '').trim()
-    console.log(
-      '[FE-LOG 14] Normalized filename:',
-      normalizedFilename,
-      'is empty?',
-      !normalizedFilename,
-    )
 
     if (normalizedFilename) {
-      console.log('[FE-LOG 15] Filename is not empty, adding filename-based route')
       pushCandidate(`/api/transaction-receipts/file/${encodeURIComponent(normalizedFilename)}`)
     }
-
-    console.log('[FE-LOG 16] FINAL candidates array:', candidates)
-    console.log('[FE-LOG 17] Total candidates:', candidates.length)
 
     return candidates
   }, [receiptImageFileName, receiptImageId, receiptImageUrl])
@@ -446,34 +402,20 @@ export default function AddTransactionPage() {
           }
         : null,
     )
-    console.log('[FE-HYDRATE-LOG 1] Transaction received from server')
-    console.log('[FE-HYDRATE-LOG 2] tx.receiptImageId:', tx.receiptImageId)
-    console.log('[FE-HYDRATE-LOG 3] tx.receiptImageFileName:', tx.receiptImageFileName)
-    console.log('[FE-HYDRATE-LOG 4] tx.receiptImageUrl:', tx.receiptImageUrl)
-
     const hydratedReceiptId = tx.receiptImageId ?? ''
-    console.log('[FE-HYDRATE-LOG 5] hydratedReceiptId:', hydratedReceiptId)
 
     const hydratedReceiptFileName =
       tx.receiptImageFileName ?? extractFileNameFromReceiptUrl(tx.receiptImageUrl)
-    console.log('[FE-HYDRATE-LOG 6] hydratedReceiptFileName:', hydratedReceiptFileName)
 
     const hydratedReceiptUrl =
       tx.receiptImageUrl ??
       (hydratedReceiptFileName
         ? `/api/transaction-receipts/file/${encodeURIComponent(hydratedReceiptFileName)}`
         : undefined)
-    console.log('[FE-HYDRATE-LOG 7] hydratedReceiptUrl:', hydratedReceiptUrl)
 
-    console.log('[FE-HYDRATE-LOG 8] Setting receipt state...')
     setReceiptImageId(hydratedReceiptId)
-    console.log('[FE-HYDRATE-LOG 9] Called setReceiptImageId:', hydratedReceiptId)
-
     setReceiptImageUrl(hydratedReceiptUrl)
-    console.log('[FE-HYDRATE-LOG 10] Called setReceiptImageUrl:', hydratedReceiptUrl)
-
     setReceiptImageFileName(hydratedReceiptFileName)
-    console.log('[FE-HYDRATE-LOG 11] Called setReceiptImageFileName:', hydratedReceiptFileName)
 
     setPendingReceiptFile(null)
     setPendingRawOcrText(tx.rawOcrText ?? undefined)
@@ -697,37 +639,20 @@ export default function AddTransactionPage() {
             }
           : null,
       )
-      console.log('[FE-HYDRATE-MAIN-LOG 1] Transaction loaded in main useEffect')
-      console.log('[FE-HYDRATE-MAIN-LOG 2] tx.receiptImageId:', tx.receiptImageId)
-      console.log('[FE-HYDRATE-MAIN-LOG 3] tx.receiptImageFileName:', tx.receiptImageFileName)
-      console.log('[FE-HYDRATE-MAIN-LOG 4] tx.receiptImageUrl:', tx.receiptImageUrl)
-
       const hydratedReceiptId = tx.receiptImageId ?? ''
-      console.log('[FE-HYDRATE-MAIN-LOG 5] hydratedReceiptId:', hydratedReceiptId)
 
       const hydratedReceiptFileName =
         tx.receiptImageFileName ?? extractFileNameFromReceiptUrl(tx.receiptImageUrl)
-      console.log('[FE-HYDRATE-MAIN-LOG 6] hydratedReceiptFileName:', hydratedReceiptFileName)
 
       const hydratedReceiptUrl =
         tx.receiptImageUrl ??
         (hydratedReceiptFileName
           ? `/api/transaction-receipts/file/${encodeURIComponent(hydratedReceiptFileName)}`
           : undefined)
-      console.log('[FE-HYDRATE-MAIN-LOG 7] hydratedReceiptUrl:', hydratedReceiptUrl)
 
-      console.log('[FE-HYDRATE-MAIN-LOG 8] Setting receipt state...')
       setReceiptImageId(hydratedReceiptId)
-      console.log('[FE-HYDRATE-MAIN-LOG 9] Called setReceiptImageId:', hydratedReceiptId)
-
       setReceiptImageUrl(hydratedReceiptUrl)
-      console.log('[FE-HYDRATE-MAIN-LOG 10] Called setReceiptImageUrl:', hydratedReceiptUrl)
-
       setReceiptImageFileName(hydratedReceiptFileName)
-      console.log(
-        '[FE-HYDRATE-MAIN-LOG 11] Called setReceiptImageFileName:',
-        hydratedReceiptFileName,
-      )
 
       setPendingReceiptFile(null)
       setPendingRawOcrText(undefined)
@@ -906,6 +831,7 @@ export default function AddTransactionPage() {
   const handleSave = async () => {
     setFeedback(null)
     form.clearFieldError('referenceNumber')
+    setDuplicateReferenceTransactionId(null)
 
     const validation = form.validate()
 
@@ -921,7 +847,6 @@ export default function AddTransactionPage() {
 
     const { formData, parsedAmount } = createFormData()
     if (typeof parsedAmount !== 'number') {
-      setFeedback({ type: 'error', message: 'Amount is required.' })
       return
     }
 
@@ -937,8 +862,11 @@ export default function AddTransactionPage() {
       } else {
         if (result.error === 'Reference number already exists.') {
           form.setFieldError('referenceNumber', result.error)
+          setDuplicateReferenceTransactionId(result.existingTransactionId ?? null)
+        } else {
+          setDuplicateReferenceTransactionId(null)
+          setFeedback({ type: 'error', message: result.error ?? 'Failed to update transaction.' })
         }
-        setFeedback({ type: 'error', message: result.error ?? 'Failed to update transaction.' })
       }
     } else {
       const result = await createTransactionWithReceipt(formData)
@@ -961,8 +889,11 @@ export default function AddTransactionPage() {
       } else {
         if (result.error === 'Reference number already exists.') {
           form.setFieldError('referenceNumber', result.error)
+          setDuplicateReferenceTransactionId(result.existingTransactionId ?? null)
+        } else {
+          setDuplicateReferenceTransactionId(null)
+          setFeedback({ type: 'error', message: result.error ?? 'Failed to create transaction.' })
         }
-        setFeedback({ type: 'error', message: result.error ?? 'Failed to create transaction.' })
       }
     }
 
@@ -972,6 +903,7 @@ export default function AddTransactionPage() {
   const handleSaveAndAllocate = async () => {
     setFeedback(null)
     form.clearFieldError('referenceNumber')
+    setDuplicateReferenceTransactionId(null)
 
     const validation = form.validate()
     if (validation.hasErrors) {
@@ -980,7 +912,6 @@ export default function AddTransactionPage() {
 
     const { formData, parsedAmount } = createFormData()
     if (typeof parsedAmount !== 'number') {
-      setFeedback({ type: 'error', message: 'Amount is required.' })
       return
     }
 
@@ -997,8 +928,11 @@ export default function AddTransactionPage() {
       } else {
         if (result.error === 'Reference number already exists.') {
           form.setFieldError('referenceNumber', result.error)
+          setDuplicateReferenceTransactionId(result.existingTransactionId ?? null)
+        } else {
+          setDuplicateReferenceTransactionId(null)
+          setFeedback({ type: 'error', message: result.error ?? 'Failed to update transaction.' })
         }
-        setFeedback({ type: 'error', message: result.error ?? 'Failed to update transaction.' })
       }
     } else {
       // In create mode, save first then redirect
@@ -1012,8 +946,11 @@ export default function AddTransactionPage() {
       } else {
         if (result.error === 'Reference number already exists.') {
           form.setFieldError('referenceNumber', result.error)
+          setDuplicateReferenceTransactionId(result.existingTransactionId ?? null)
+        } else {
+          setDuplicateReferenceTransactionId(null)
+          setFeedback({ type: 'error', message: result.error ?? 'Failed to create transaction.' })
         }
-        setFeedback({ type: 'error', message: result.error ?? 'Failed to create transaction.' })
       }
     }
 
@@ -1399,11 +1336,24 @@ export default function AddTransactionPage() {
                       onChange={(e) => {
                         form.setFieldValue('referenceNumber', e.currentTarget.value)
                         form.clearFieldError('referenceNumber')
+                        setDuplicateReferenceTransactionId(null)
                       }}
                       error={form.errors.referenceNumber}
                       required
                       disabled={!isAllocationContext && !form.values.financialAccount}
                     />
+                    {form.errors.referenceNumber === 'Reference number already exists.' &&
+                    duplicateTransactionEditHref ? (
+                      <Button
+                        component="a"
+                        href={duplicateTransactionEditHref}
+                        size="xs"
+                        variant="outline"
+                        mt={6}
+                      >
+                        Open existing transaction
+                      </Button>
+                    ) : null}
                   </Grid.Col>
                   <Grid.Col span={{ base: 12, sm: 6 }}>
                     <Select
@@ -1663,50 +1613,17 @@ export default function AddTransactionPage() {
                             src={activeReceiptImageUrl}
                             alt="Receipt preview"
                             onError={() => {
-                              console.log('[FE-IMG-LOG 1] Image onError fired')
-                              console.log('[FE-IMG-LOG 2] Current attempt:', receiptPreviewAttempt)
-                              console.log('[FE-IMG-LOG 3] Failed URL:', activeReceiptImageUrl)
-                              console.log(
-                                '[FE-IMG-LOG 4] Total candidates:',
-                                receiptPreviewCandidates.length,
-                              )
-                              console.log(
-                                '[FE-IMG-LOG 5] All candidates:',
-                                receiptPreviewCandidates,
-                              )
-
                               setReceiptPreviewAttempt((current) => {
-                                console.log(
-                                  '[FE-IMG-LOG 6] In setReceiptPreviewAttempt, current:',
-                                  current,
-                                )
                                 const next = current + 1
-                                console.log('[FE-IMG-LOG 7] Next attempt:', next)
-                                console.log(
-                                  '[FE-IMG-LOG 8] Has more candidates?',
-                                  next < receiptPreviewCandidates.length,
-                                )
 
                                 if (next < receiptPreviewCandidates.length) {
-                                  console.log(
-                                    '[FE-IMG-LOG 9] Trying next candidate:',
-                                    receiptPreviewCandidates[next],
-                                  )
                                   return next
                                 }
 
-                                console.log(
-                                  '[FE-IMG-LOG 10] All candidates exhausted, resolving error',
-                                )
                                 const urlToCheck =
                                   activeReceiptImageUrl || receiptPreviewCandidates[current] || ''
-                                console.log('[FE-IMG-LOG 11] URL to check for error:', urlToCheck)
 
                                 void resolveReceiptPreviewError(urlToCheck).then((message) => {
-                                  console.log(
-                                    '[FE-IMG-LOG 12] Error resolved, setting error message:',
-                                    message,
-                                  )
                                   setReceiptPreviewError(message)
                                 })
 

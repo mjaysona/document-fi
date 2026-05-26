@@ -229,9 +229,9 @@ async function isReferenceNumberTaken(args: {
   payload: Awaited<ReturnType<typeof getPayload>>
   referenceNumber?: string
   excludeTransactionId?: string
-}): Promise<boolean> {
+}): Promise<string | undefined> {
   const referenceNumber = normalizeReferenceNumber(args.referenceNumber)
-  if (!referenceNumber) return false
+  if (!referenceNumber) return undefined
 
   const where: Record<string, unknown> = {
     referenceNumber: {
@@ -253,7 +253,10 @@ async function isReferenceNumberTaken(args: {
     overrideAccess: true,
   })
 
-  return existing.totalDocs > 0
+  if (existing.totalDocs < 1 || existing.docs.length < 1) return undefined
+
+  const first = existing.docs[0] as { id?: string | number }
+  return first.id != null ? String(first.id) : undefined
 }
 
 function createReadableDescriptionFromParticulars(particulars?: string): string | undefined {
@@ -926,6 +929,7 @@ export async function createTransaction(input: TransactionFormInput): Promise<{
   success: boolean
   id?: string
   error?: string
+  existingTransactionId?: string
 }> {
   try {
     const session = await auth.api.getSession({ headers: await headers() })
@@ -962,13 +966,17 @@ export async function createTransaction(input: TransactionFormInput): Promise<{
     }
 
     const payload = await getPayload({ config })
-    const duplicateReferenceNumber = await isReferenceNumberTaken({
+    const existingTransactionId = await isReferenceNumberTaken({
       payload,
       referenceNumber: input.referenceNumber,
     })
 
-    if (duplicateReferenceNumber) {
-      return { success: false, error: 'Reference number already exists.' }
+    if (existingTransactionId) {
+      return {
+        success: false,
+        error: 'Reference number already exists.',
+        existingTransactionId,
+      }
     }
 
     const doc = await payload.create({
@@ -997,6 +1005,7 @@ export async function createTransactionWithReceipt(formData: FormData): Promise<
   success: boolean
   id?: string
   error?: string
+  existingTransactionId?: string
 }> {
   try {
     const session = await auth.api.getSession({ headers: await headers() })
@@ -1252,7 +1261,7 @@ export async function getTransactionById(id: string): Promise<{
 export async function updateTransaction(
   id: string,
   input: TransactionFormInput,
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; existingTransactionId?: string }> {
   try {
     const session = await auth.api.getSession({ headers: await headers() })
     if (!session?.user?.id) return { success: false, error: 'Unauthorized' }
@@ -1288,14 +1297,18 @@ export async function updateTransaction(
     }
 
     const payload = await getPayload({ config })
-    const duplicateReferenceNumber = await isReferenceNumberTaken({
+    const existingTransactionId = await isReferenceNumberTaken({
       payload,
       referenceNumber: input.referenceNumber,
       excludeTransactionId: id,
     })
 
-    if (duplicateReferenceNumber) {
-      return { success: false, error: 'Reference number already exists.' }
+    if (existingTransactionId) {
+      return {
+        success: false,
+        error: 'Reference number already exists.',
+        existingTransactionId,
+      }
     }
 
     await payload.update({
@@ -1323,7 +1336,7 @@ export async function updateTransaction(
 export async function updateTransactionWithReceipt(
   id: string,
   formData: FormData,
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; existingTransactionId?: string }> {
   try {
     const session = await auth.api.getSession({ headers: await headers() })
     if (!session?.user?.id) return { success: false, error: 'Unauthorized' }
