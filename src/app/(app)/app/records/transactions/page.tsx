@@ -598,8 +598,7 @@ export default function TransactionsPage() {
         label: 'Status',
         render: (row) => {
           const { totalAllocatedWithFees, parentAmount } = getAllocation(row)
-          const isForAllocation =
-            row.parent.isAllocatedFund && totalAllocatedWithFees !== parentAmount
+          const isForAllocation = row.children.length > 0 && totalAllocatedWithFees !== parentAmount
 
           if (isForAllocation) {
             return (
@@ -682,7 +681,7 @@ export default function TransactionsPage() {
       },
       isAllocatedFund: {
         key: 'isAllocatedFund',
-        label: 'Fund Allocation',
+        label: 'Allocated Fund',
         render: (row) => (row.parent.isAllocatedFund ? 'Yes' : 'No'),
       },
       allocatedFunds: {
@@ -828,7 +827,7 @@ export default function TransactionsPage() {
       },
       isAllocatedFund: {
         key: 'isAllocatedFund',
-        label: 'Fund Allocation',
+        label: 'Allocated Fund',
         render: (child) => (child.isAllocatedFund ? 'Yes' : 'No'),
       },
       allocatedFunds: {
@@ -1177,7 +1176,7 @@ export default function TransactionsPage() {
                     <Text size="xs">Created: {formatDate(row.parent.createdAt)}</Text>
                     <Text size="xs">Last Updated: {formatDate(row.parent.updatedAt)}</Text>
                   </Group>
-                  {row.parent.isAllocatedFund && (
+                  {row.children.length > 0 && (
                     <Text size="xs" fw={500} c={allocationColor}>
                       Allocated funds: {formatCurrency(totalAllocated)}/
                       {formatCurrency(parentAmount)}
@@ -1289,12 +1288,14 @@ export default function TransactionsPage() {
                     <Text size="sm">{formatCurrency(row.parent.runningBalance)}</Text>
                   </Flex>
 
-                  <Flex direction="column" className={classes.detailItem}>
-                    <Text size="xs" c="dimmed">
-                      Fund Allocation
-                    </Text>
-                    <Text size="sm">{row.parent.isAllocatedFund ? 'Yes' : 'No'}</Text>
-                  </Flex>
+                  {row.children.length > 0 && (
+                    <Flex direction="column" className={classes.detailItem}>
+                      <Text size="xs" c="dimmed">
+                        Allocated Fund
+                      </Text>
+                      <Text size="sm">{row.parent.isAllocatedFund ? 'Yes' : 'No'}</Text>
+                    </Flex>
+                  )}
                   <Flex
                     direction="column"
                     className={`${classes.detailItem} ${classes['detail-item--wide']}`}
