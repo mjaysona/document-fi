@@ -15,6 +15,7 @@ type TransactionRecord = {
   runningBalance?: number | null
   transactionDate?: string | null
   createdAt?: string | null
+  isAllocatedFund?: boolean | null
 }
 
 type RecomputeHint = {
@@ -262,6 +263,29 @@ export async function syncAccountBalances(args: {
 
     for (let index = recomputeStartIndex; index < sortedTransactions.length; index += 1) {
       const transaction = sortedTransactions[index]
+
+      // Skip balance sync for allocated fund transactions - they should not have running or current balance
+      if (transaction.isAllocatedFund) {
+        if (
+          (transaction.runningBalance ?? null) !== null ||
+          (transaction.currentBalance ?? null) !== null
+        ) {
+          await req.payload.update({
+            collection: 'transactions',
+            id: String(transaction.id),
+            data: {
+              currentBalance: null,
+              runningBalance: null,
+            },
+            depth: 0,
+            overrideAccess: true,
+            req,
+            context: req.context,
+          })
+        }
+        continue
+      }
+
       const currentBalanceBeforeTransaction = runningBalance
 
       const nextRunningBalance =

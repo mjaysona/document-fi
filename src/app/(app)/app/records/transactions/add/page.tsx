@@ -455,7 +455,11 @@ export default function AddTransactionPage() {
       form.setFieldValue('sourceAccount', tx.sourceAccount ?? null)
     }
     form.clearFieldError('referenceNumber')
-    setRunningBalance(typeof tx.runningBalance === 'number' ? tx.runningBalance : '')
+    if (!tx.isAllocatedFund) {
+      setRunningBalance(typeof tx.runningBalance === 'number' ? tx.runningBalance : '')
+    } else {
+      setRunningBalance('')
+    }
     setAllocatedFunds(typeof tx.allocatedFunds === 'number' ? tx.allocatedFunds : 0)
     setOriginalTransactionSnapshot(
       tx.financialAccount &&
@@ -719,7 +723,11 @@ export default function AddTransactionPage() {
         form.setFieldValue('sourceAccount', selectedAccount?.bankId ?? tx.sourceAccount ?? null)
       }
       form.clearFieldError('referenceNumber')
-      setRunningBalance(typeof tx.runningBalance === 'number' ? tx.runningBalance : '')
+      if (!tx.isAllocatedFund) {
+        setRunningBalance(typeof tx.runningBalance === 'number' ? tx.runningBalance : '')
+      } else {
+        setRunningBalance('')
+      }
       setAllocatedFunds(typeof tx.allocatedFunds === 'number' ? tx.allocatedFunds : 0)
       setOriginalTransactionSnapshot(
         tx.financialAccount &&
@@ -887,15 +895,17 @@ export default function AddTransactionPage() {
   }, [isEditMode, isAllocationContext, form.values.transactionDate])
 
   const selectedAccountCurrentBalance = useMemo<number | ''>(() => {
+    if (form.values.isAllocatedFund) return ''
     if (!form.values.financialAccount) return ''
 
     const selectedAccount = financialAccounts.find(
       (account) => account.id === form.values.financialAccount,
     )
     return typeof selectedAccount?.currentBalance === 'number' ? selectedAccount.currentBalance : ''
-  }, [financialAccounts, form.values.financialAccount])
+  }, [financialAccounts, form.values.financialAccount, form.values.isAllocatedFund])
 
   const projectedRunningBalance = useMemo<number | ''>(() => {
+    if (form.values.isAllocatedFund) return ''
     if (
       !form.values.financialAccount ||
       form.values.amount === '' ||
@@ -936,6 +946,7 @@ export default function AddTransactionPage() {
     form.values.financialAccount,
     form.values.transactionFee,
     form.values.transactionType,
+    form.values.isAllocatedFund,
     isEditMode,
     originalTransactionSnapshot,
     runningBalance,
@@ -970,7 +981,10 @@ export default function AddTransactionPage() {
       formData.append('referenceNumber', form.values.referenceNumber.trim())
     formData.append('amount', String(parsedAmount))
     formData.append('transactionFee', String(parsedTransactionFee))
-    if (typeof selectedAccountCurrentBalance === 'number') {
+    if (form.values.isAllocatedFund) {
+      formData.append('currentBalance', '')
+      formData.append('runningBalance', '')
+    } else if (typeof selectedAccountCurrentBalance === 'number') {
       formData.append('currentBalance', String(selectedAccountCurrentBalance))
     }
     formData.append('transactionStatus', form.values.transactionStatus || 'completed')
