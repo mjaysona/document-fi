@@ -113,6 +113,17 @@ const formatTotalAmount = (amount?: number, fee?: number): string => {
   return formatCurrency(total)
 }
 
+const computeAllocatedFundsFromChildren = (children: TransactionListItem[]): number =>
+  children.reduce((sum, child) => {
+    const amount =
+      typeof child.amount === 'number' && Number.isFinite(child.amount) ? child.amount : 0
+    const fee =
+      typeof child.transactionFee === 'number' && Number.isFinite(child.transactionFee)
+        ? child.transactionFee
+        : 0
+    return sum + amount + fee
+  }, 0)
+
 const toTimestamp = (value?: string): number | null => {
   if (!value) return null
   const timestamp = new Date(value).getTime()
@@ -540,8 +551,7 @@ export default function TransactionsPage() {
 
   const columns = useMemo<DataTableColumn<TransactionParentRow>[]>(() => {
     const getAllocation = (row: TransactionParentRow) => {
-      const totalAllocatedWithFees =
-        typeof row.parent.allocatedFunds === 'number' ? row.parent.allocatedFunds : 0
+      const totalAllocatedWithFees = computeAllocatedFundsFromChildren(row.children)
       const parentAmount = row.parent.amount || 0
       return { totalAllocatedWithFees, parentAmount }
     }
@@ -589,7 +599,7 @@ export default function TransactionsPage() {
         render: (row) => {
           const { totalAllocatedWithFees, parentAmount } = getAllocation(row)
           const isForAllocation =
-            row.parent.isFundAllocation && totalAllocatedWithFees !== parentAmount
+            row.parent.isAllocatedFund && totalAllocatedWithFees !== parentAmount
 
           if (isForAllocation) {
             return (
@@ -670,17 +680,17 @@ export default function TransactionsPage() {
         label: 'Running Balance',
         render: (row) => formatCurrency(row.parent.runningBalance),
       },
-      isFundAllocation: {
-        key: 'isFundAllocation',
+      isAllocatedFund: {
+        key: 'isAllocatedFund',
         label: 'Fund Allocation',
-        render: (row) => (row.parent.isFundAllocation ? 'Yes' : 'No'),
+        render: (row) => (row.parent.isAllocatedFund ? 'Yes' : 'No'),
       },
       allocatedFunds: {
         key: 'allocatedFunds',
         label: 'Allocated Funds',
         render: (row) => {
           const { totalAllocatedWithFees, parentAmount } = getAllocation(row)
-          if (!row.parent.isFundAllocation) return '-'
+          if (!row.parent.isAllocatedFund) return '-'
           return `${formatCurrency(totalAllocatedWithFees)} / ${formatCurrency(parentAmount)}`
         },
       },
@@ -816,10 +826,10 @@ export default function TransactionsPage() {
         label: 'Running Balance',
         render: (child) => formatCurrency(child.runningBalance),
       },
-      isFundAllocation: {
-        key: 'isFundAllocation',
+      isAllocatedFund: {
+        key: 'isAllocatedFund',
         label: 'Fund Allocation',
-        render: (child) => (child.isFundAllocation ? 'Yes' : 'No'),
+        render: (child) => (child.isAllocatedFund ? 'Yes' : 'No'),
       },
       allocatedFunds: {
         key: 'allocatedFunds',
@@ -1145,8 +1155,7 @@ export default function TransactionsPage() {
           }}
           isRowExpanded={(row) => expandedRows.includes(row.parent.id)}
           renderExpandedRow={(row: TransactionParentRow): React.ReactNode => {
-            const totalAllocated =
-              typeof row.parent.allocatedFunds === 'number' ? row.parent.allocatedFunds : 0
+            const totalAllocated = computeAllocatedFundsFromChildren(row.children)
             const parentAmount = row.parent.amount || 0
             const allocationStatus =
               totalAllocated === parentAmount
@@ -1168,7 +1177,7 @@ export default function TransactionsPage() {
                     <Text size="xs">Created: {formatDate(row.parent.createdAt)}</Text>
                     <Text size="xs">Last Updated: {formatDate(row.parent.updatedAt)}</Text>
                   </Group>
-                  {row.parent.isFundAllocation && (
+                  {row.parent.isAllocatedFund && (
                     <Text size="xs" fw={500} c={allocationColor}>
                       Allocated funds: {formatCurrency(totalAllocated)}/
                       {formatCurrency(parentAmount)}
@@ -1284,7 +1293,7 @@ export default function TransactionsPage() {
                     <Text size="xs" c="dimmed">
                       Fund Allocation
                     </Text>
-                    <Text size="sm">{row.parent.isFundAllocation ? 'Yes' : 'No'}</Text>
+                    <Text size="sm">{row.parent.isAllocatedFund ? 'Yes' : 'No'}</Text>
                   </Flex>
                   <Flex
                     direction="column"
@@ -1314,16 +1323,6 @@ export default function TransactionsPage() {
                       <Text fw={600} size="sm" mt="xs">
                         Child transactions
                       </Text>
-                      <Button
-                        size="xs"
-                        variant="light"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          router.push(`/app/records/transactions/${row.parent.id}/allocate`)
-                        }}
-                      >
-                        Allocate funds
-                      </Button>
                     </Group>
                     <Table w="100%" withTableBorder withColumnBorders striped highlightOnHover>
                       <Table.Thead>

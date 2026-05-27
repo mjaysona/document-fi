@@ -47,6 +47,7 @@ export type TransactionListItem = {
   sender?: string
   receiver?: string
   referenceNumber?: string
+  isAllocatedFund?: boolean
   isFundAllocation?: boolean
   allocatedFunds?: number
   parentTransaction?: string | null
@@ -79,6 +80,7 @@ export type TransactionFormInput = {
   rawOcrText?: string
   aiExtractedJson?: string | number | boolean | null | Record<string, unknown> | unknown[]
   extractionConfidence?: number
+  isAllocatedFund?: boolean
   isFundAllocation?: boolean
   parentTransaction?: string | null
 }
@@ -94,6 +96,7 @@ export type TransactionDetail = TransactionFormInput & {
   isAiGenerated?: boolean
   isUserEdited?: boolean
   runningBalance?: number
+  isAllocatedFund?: boolean
   isFundAllocation?: boolean
   allocatedFunds?: number
   parentTransaction?: string | null
@@ -461,6 +464,9 @@ function mapTransactionInput(
     financialAccount?: string
   },
 ) {
+  const resolvedParentTransaction =
+    input.isAllocatedFund === true ? String(input.parentTransaction || '').trim() || null : null
+
   return {
     transactionDate: normalizeTransactionDate(input.transactionDate),
     description: input.description.trim(),
@@ -479,8 +485,9 @@ function mapTransactionInput(
         ? input.currentBalance
         : undefined,
     transactionStatus: normalizeTransactionStatus(input.transactionStatus) ?? 'completed',
+    isAllocatedFund: input.isAllocatedFund ?? false,
     isFundAllocation: input.isFundAllocation ?? false,
-    ...(input.parentTransaction ? { parentTransaction: input.parentTransaction } : {}),
+    parentTransaction: resolvedParentTransaction,
     ...(input.receiptImageId ? { receiptImage: input.receiptImageId } : {}),
     ...(typeof input.rawOcrText !== 'undefined'
       ? {
@@ -575,7 +582,7 @@ export async function getFinancialAccounts(): Promise<{
   }
 }
 
-export async function getTransactions(): Promise<{
+export async function getTransactions(where?: Record<string, unknown>): Promise<{
   success: boolean
   data: TransactionListItem[]
   error?: string
@@ -586,6 +593,128 @@ export async function getTransactions(): Promise<{
       collection: 'transactions',
       sort: '-createdAt',
       limit: 1000,
+      depth: 1,
+      ...(where && { where: where as any }),
+    })
+
+    return {
+      success: true,
+      data: (result.docs as any[]).map((doc) => ({
+        id: String(doc.id),
+        description: String(doc.description || ''),
+        particulars: doc.particulars ? String(doc.particulars) : undefined,
+        transactionType: normalizeTransactionType(doc.transactionType),
+        financialAccountId:
+          doc.financialAccount && typeof doc.financialAccount === 'object'
+            ? String(doc.financialAccount.id)
+            : doc.financialAccount
+              ? String(doc.financialAccount)
+              : undefined,
+        financialAccountName:
+          doc.financialAccount &&
+          typeof doc.financialAccount === 'object' &&
+          doc.financialAccount.name
+            ? String(doc.financialAccount.name)
+            : undefined,
+        sourceAccountName:
+          doc.sourceAccount && typeof doc.sourceAccount === 'object' && doc.sourceAccount.name
+            ? String(doc.sourceAccount.name)
+            : undefined,
+        sourceAccountCode:
+          doc.sourceAccount && typeof doc.sourceAccount === 'object' && doc.sourceAccount.code
+            ? String(doc.sourceAccount.code)
+            : undefined,
+        destinationAccountName:
+          doc.destinationAccount &&
+          typeof doc.destinationAccount === 'object' &&
+          doc.destinationAccount.name
+            ? String(doc.destinationAccount.name)
+            : undefined,
+        destinationAccountCode:
+          doc.destinationAccount &&
+          typeof doc.destinationAccount === 'object' &&
+          doc.destinationAccount.code
+            ? String(doc.destinationAccount.code)
+            : undefined,
+        from: doc.from ? String(doc.from) : undefined,
+        to: doc.to ? String(doc.to) : undefined,
+        sender: doc.sender ? String(doc.sender) : undefined,
+        receiver: doc.receiver ? String(doc.receiver) : undefined,
+        referenceNumber: doc.referenceNumber ? String(doc.referenceNumber) : undefined,
+        isAllocatedFund: doc.isAllocatedFund === true,
+        isFundAllocation: doc.isFundAllocation === true,
+        allocatedFunds: typeof doc.allocatedFunds === 'number' ? doc.allocatedFunds : 0,
+        parentTransaction:
+          doc.parentTransaction && typeof doc.parentTransaction === 'object'
+            ? String(doc.parentTransaction.id)
+            : doc.parentTransaction
+              ? String(doc.parentTransaction)
+              : null,
+        transactionDate: doc.transactionDate ? String(doc.transactionDate) : undefined,
+        amount: typeof doc.amount === 'number' ? doc.amount : undefined,
+        transactionFee: typeof doc.transactionFee === 'number' ? doc.transactionFee : 0,
+        currentBalance: typeof doc.currentBalance === 'number' ? doc.currentBalance : undefined,
+        runningBalance: typeof doc.runningBalance === 'number' ? doc.runningBalance : undefined,
+        transactionStatus: normalizeTransactionStatus(doc.transactionStatus),
+        createdAt: String(doc.createdAt || ''),
+        updatedAt: String(doc.updatedAt || ''),
+      })),
+    }
+  } catch (error) {
+    console.error('Failed to fetch transactions:', error)
+    return { success: false, data: [], error: 'Failed to load transactions.' }
+  }
+}
+
+export async function searchNonChildTransactions(
+  query: string,
+  excludeTransactionId?: string,
+): Promise<{
+  success: boolean
+  data: TransactionListItem[]
+  error?: string
+}> {
+  try {
+    const normalizedQuery = String(query || '').trim()
+    if (normalizedQuery.length < 2) {
+      return { success: true, data: [] }
+    }
+
+    const payload = await getPayload({ config })
+
+    const whereClauses: Record<string, unknown>[] = [
+      {
+        parentTransaction: {
+          exists: false,
+        },
+      },
+      {
+        or: [
+          { referenceNumber: { like: normalizedQuery } },
+          { description: { like: normalizedQuery } },
+          { particulars: { like: normalizedQuery } },
+          { from: { like: normalizedQuery } },
+          { to: { like: normalizedQuery } },
+        ],
+      },
+    ]
+
+    const excludedId = String(excludeTransactionId || '').trim()
+    if (excludedId) {
+      whereClauses.push({
+        id: {
+          not_equals: excludedId,
+        },
+      })
+    }
+
+    const result = await payload.find({
+      collection: 'transactions',
+      where: {
+        and: whereClauses,
+      } as any,
+      sort: '-transactionDate',
+      limit: 20,
       depth: 1,
     })
 
@@ -633,6 +762,7 @@ export async function getTransactions(): Promise<{
         sender: doc.sender ? String(doc.sender) : undefined,
         receiver: doc.receiver ? String(doc.receiver) : undefined,
         referenceNumber: doc.referenceNumber ? String(doc.referenceNumber) : undefined,
+        isAllocatedFund: doc.isAllocatedFund === true,
         isFundAllocation: doc.isFundAllocation === true,
         allocatedFunds: typeof doc.allocatedFunds === 'number' ? doc.allocatedFunds : 0,
         parentTransaction:
@@ -652,8 +782,8 @@ export async function getTransactions(): Promise<{
       })),
     }
   } catch (error) {
-    console.error('Failed to fetch transactions:', error)
-    return { success: false, data: [], error: 'Failed to load transactions.' }
+    console.error('Failed to search non-child transactions:', error)
+    return { success: false, data: [], error: 'Failed to search transactions.' }
   }
 }
 
@@ -1039,6 +1169,11 @@ export async function createTransactionWithReceipt(formData: FormData): Promise<
     const aiExtractedJson = parseAiExtractedJsonValue(formData.get('aiExtractedJson'))
     const extractionConfidence = parseConfidenceValue(formData.get('extractionConfidence'))
 
+    const isAllocatedFund = String(formData.get('isAllocatedFund') || '').trim() === 'true'
+    const parentTransaction = isAllocatedFund
+      ? String(formData.get('parentTransaction') || '').trim() || null
+      : null
+
     const createResult = await createTransaction({
       transactionDate: String(formData.get('transactionDate') || '').trim() || undefined,
       description,
@@ -1058,8 +1193,9 @@ export async function createTransactionWithReceipt(formData: FormData): Promise<
       rawOcrText,
       aiExtractedJson,
       extractionConfidence,
+      isAllocatedFund,
       isFundAllocation: String(formData.get('isFundAllocation') || '').trim() === 'true',
-      parentTransaction: String(formData.get('parentTransaction') || '').trim() || undefined,
+      parentTransaction,
     })
 
     if (!createResult.success && receiptResult?.id) {
@@ -1241,6 +1377,7 @@ export async function getTransactionById(id: string): Promise<{
         isUserEdited: (doc as any).isUserEdited === true,
         runningBalance:
           typeof (doc as any).runningBalance === 'number' ? (doc as any).runningBalance : undefined,
+        isAllocatedFund: (doc as any).isAllocatedFund === true,
         isFundAllocation: (doc as any).isFundAllocation === true,
         allocatedFunds:
           typeof (doc as any).allocatedFunds === 'number' ? (doc as any).allocatedFunds : 0,
@@ -1378,6 +1515,11 @@ export async function updateTransactionWithReceipt(
     const aiExtractedJson = parseAiExtractedJsonValue(formData.get('aiExtractedJson'))
     const extractionConfidence = parseConfidenceValue(formData.get('extractionConfidence'))
 
+    const isAllocatedFund = String(formData.get('isAllocatedFund') || '').trim() === 'true'
+    const parentTransaction = isAllocatedFund
+      ? String(formData.get('parentTransaction') || '').trim() || null
+      : null
+
     return await updateTransaction(id, {
       transactionDate: String(formData.get('transactionDate') || '').trim() || undefined,
       description: String(formData.get('description') || '').trim(),
@@ -1397,8 +1539,9 @@ export async function updateTransactionWithReceipt(
       rawOcrText,
       aiExtractedJson,
       extractionConfidence,
+      isAllocatedFund,
       isFundAllocation: String(formData.get('isFundAllocation') || '').trim() === 'true',
-      parentTransaction: String(formData.get('parentTransaction') || '').trim() || undefined,
+      parentTransaction,
     })
   } catch (error) {
     console.error('Failed to update transaction with receipt:', error)

@@ -15,7 +15,7 @@ export const TRANSACTION_REPORT_COLUMN_OPTIONS = [
   { value: 'totalAmount', label: 'Total Amount' },
   { value: 'currentBalance', label: 'Current Balance' },
   { value: 'runningBalance', label: 'Running Balance' },
-  { value: 'isFundAllocation', label: 'Fund Allocation' },
+  { value: 'isAllocatedFund', label: 'Allocated Fund' },
   { value: 'allocatedFunds', label: 'Allocated Funds' },
   { value: 'description', label: 'Description' },
   { value: 'particulars', label: 'Particulars' },

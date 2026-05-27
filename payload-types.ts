@@ -460,6 +460,10 @@ export interface Transaction {
   isUserEdited?: boolean | null;
   uploadedAt?: string | null;
   /**
+   * Mark this transaction as an allocated fund to indicate it is part of a fund allocation
+   */
+  isAllocatedFund?: boolean | null;
+  /**
    * Mark this transaction as a fund allocation to allocate across multiple accounts
    */
   isFundAllocation?: boolean | null;
@@ -530,6 +534,7 @@ export interface UserConfiguration {
           | 'receiptImage'
           | 'aiExtractedJson'
           | 'extractionConfidence'
+          | 'isAllocatedFund'
           | 'isFundAllocation'
           | 'allocatedFunds'
           | 'parentTransaction'
@@ -561,6 +566,7 @@ export interface UserConfiguration {
           | 'receiptImage'
           | 'aiExtractedJson'
           | 'extractionConfidence'
+          | 'isAllocatedFund'
           | 'isFundAllocation'
           | 'allocatedFunds'
           | 'parentTransaction'
@@ -1054,6 +1060,7 @@ export interface TransactionsSelect<T extends boolean = true> {
   isAiGenerated?: T;
   isUserEdited?: T;
   uploadedAt?: T;
+  isAllocatedFund?: T;
   isFundAllocation?: T;
   allocatedFunds?: T;
   parentTransaction?: T;
