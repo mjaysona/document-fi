@@ -96,7 +96,7 @@ const syncParentAllocatedFunds = async (args: { req: any; parentTransactionIds: 
     }
 
     let nextAllocatedFunds = 0
-    if (parentDoc.isAllocatedFund === true || parentDoc.isFundAllocation === true) {
+    if (parentDoc.isAllocatedFund === true) {
       const childTransactions = await getAllChildTransactions({
         req: args.req,
         parentTransactionId,
@@ -425,17 +425,6 @@ const Transactions: CollectionConfig = {
         position: 'sidebar',
         description:
           'Mark this transaction as an allocated fund to indicate it is part of a fund allocation',
-      },
-    },
-    {
-      name: 'isFundAllocation',
-      label: 'Fund Allocation',
-      type: 'checkbox',
-      defaultValue: false,
-      admin: {
-        position: 'sidebar',
-        description:
-          'Mark this transaction as a fund allocation to allocate across multiple accounts',
       },
     },
     {

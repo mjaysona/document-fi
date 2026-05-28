@@ -374,7 +374,7 @@ export default function AddTransactionPage() {
     setReceiptPreviewError(null)
   }, [receiptImageUrl, receiptImageFileName, receiptImageId])
 
-  const loadChildTransactions = async (parentId: string, isFundAllocation: boolean) => {
+  const loadChildTransactions = async (parentId: string) => {
     const transactionsResult = await getTransactions({
       and: [
         {
@@ -493,7 +493,7 @@ export default function AddTransactionPage() {
     setPendingRawOcrText(tx.rawOcrText ?? undefined)
     setPendingAiExtractedJson(tx.aiExtractedJson)
     setPendingExtractionConfidence(tx.extractionConfidence)
-    await loadChildTransactions(String(tx.id), tx.isFundAllocation === true)
+    await loadChildTransactions(String(tx.id))
 
     const parentId = tx.parentTransaction ?? null
     if (parentId) {
@@ -761,7 +761,7 @@ export default function AddTransactionPage() {
       setPendingRawOcrText(undefined)
       setPendingAiExtractedJson(tx.aiExtractedJson)
       setPendingExtractionConfidence(tx.extractionConfidence)
-      await loadChildTransactions(String(tx.id), tx.isFundAllocation === true)
+      await loadChildTransactions(String(tx.id))
 
       if (tx.parentTransaction) {
         const parentTxResult = await getTransactionById(tx.parentTransaction)
@@ -989,7 +989,6 @@ export default function AddTransactionPage() {
     }
     formData.append('transactionStatus', form.values.transactionStatus || 'completed')
     formData.append('isAllocatedFund', String(form.values.isAllocatedFund))
-    formData.append('isFundAllocation', String(form.values.isAllocatedFund))
     if (resolvedParentTransaction) formData.append('parentTransaction', resolvedParentTransaction)
     if (receiptImageId) formData.append('existingReceiptImageId', receiptImageId)
     if (pendingRawOcrText) formData.append('rawOcrText', pendingRawOcrText)

@@ -464,10 +464,6 @@ export interface Transaction {
    */
   isAllocatedFund?: boolean | null;
   /**
-   * Mark this transaction as a fund allocation to allocate across multiple accounts
-   */
-  isFundAllocation?: boolean | null;
-  /**
    * Auto-computed from child transactions amount + transaction fee.
    */
   allocatedFunds?: number | null;
@@ -535,7 +531,6 @@ export interface UserConfiguration {
           | 'aiExtractedJson'
           | 'extractionConfidence'
           | 'isAllocatedFund'
-          | 'isFundAllocation'
           | 'allocatedFunds'
           | 'parentTransaction'
         )[]
@@ -567,7 +562,6 @@ export interface UserConfiguration {
           | 'aiExtractedJson'
           | 'extractionConfidence'
           | 'isAllocatedFund'
-          | 'isFundAllocation'
           | 'allocatedFunds'
           | 'parentTransaction'
         )[]
@@ -1061,7 +1055,6 @@ export interface TransactionsSelect<T extends boolean = true> {
   isUserEdited?: T;
   uploadedAt?: T;
   isAllocatedFund?: T;
-  isFundAllocation?: T;
   allocatedFunds?: T;
   parentTransaction?: T;
   createdBy?: T;

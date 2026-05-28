@@ -48,7 +48,6 @@ export type TransactionListItem = {
   receiver?: string
   referenceNumber?: string
   isAllocatedFund?: boolean
-  isFundAllocation?: boolean
   allocatedFunds?: number
   parentTransaction?: string | null
   transactionDate?: string
@@ -81,7 +80,6 @@ export type TransactionFormInput = {
   aiExtractedJson?: string | number | boolean | null | Record<string, unknown> | unknown[]
   extractionConfidence?: number
   isAllocatedFund?: boolean
-  isFundAllocation?: boolean
   parentTransaction?: string | null
 }
 
@@ -97,7 +95,6 @@ export type TransactionDetail = TransactionFormInput & {
   isUserEdited?: boolean
   runningBalance?: number
   isAllocatedFund?: boolean
-  isFundAllocation?: boolean
   allocatedFunds?: number
   parentTransaction?: string | null
 }
@@ -486,7 +483,6 @@ function mapTransactionInput(
         : undefined,
     transactionStatus: normalizeTransactionStatus(input.transactionStatus) ?? 'completed',
     isAllocatedFund: input.isAllocatedFund ?? false,
-    isFundAllocation: input.isFundAllocation ?? false,
     parentTransaction: resolvedParentTransaction,
     ...(input.receiptImageId ? { receiptImage: input.receiptImageId } : {}),
     ...(typeof input.rawOcrText !== 'undefined'
@@ -642,7 +638,6 @@ export async function getTransactions(where?: Record<string, unknown>): Promise<
         receiver: doc.receiver ? String(doc.receiver) : undefined,
         referenceNumber: doc.referenceNumber ? String(doc.referenceNumber) : undefined,
         isAllocatedFund: doc.isAllocatedFund === true,
-        isFundAllocation: doc.isFundAllocation === true,
         allocatedFunds: typeof doc.allocatedFunds === 'number' ? doc.allocatedFunds : 0,
         parentTransaction:
           doc.parentTransaction && typeof doc.parentTransaction === 'object'
@@ -763,7 +758,6 @@ export async function searchNonChildTransactions(
         receiver: doc.receiver ? String(doc.receiver) : undefined,
         referenceNumber: doc.referenceNumber ? String(doc.referenceNumber) : undefined,
         isAllocatedFund: doc.isAllocatedFund === true,
-        isFundAllocation: doc.isFundAllocation === true,
         allocatedFunds: typeof doc.allocatedFunds === 'number' ? doc.allocatedFunds : 0,
         parentTransaction:
           doc.parentTransaction && typeof doc.parentTransaction === 'object'
@@ -891,7 +885,7 @@ export async function saveTransactionTableColumns(columns: string[]): Promise<{
       'receiptImage',
       'aiExtractedJson',
       'extractionConfidence',
-      'isFundAllocation',
+      'isAllocatedFund',
       'allocatedFunds',
       'parentTransaction',
     ])
@@ -990,7 +984,7 @@ export async function saveTransactionPreviewTableColumns(columns: string[]): Pro
       'receiptImage',
       'aiExtractedJson',
       'extractionConfidence',
-      'isFundAllocation',
+      'isAllocatedFund',
       'allocatedFunds',
       'parentTransaction',
     ])
@@ -1194,7 +1188,6 @@ export async function createTransactionWithReceipt(formData: FormData): Promise<
       aiExtractedJson,
       extractionConfidence,
       isAllocatedFund,
-      isFundAllocation: String(formData.get('isFundAllocation') || '').trim() === 'true',
       parentTransaction,
     })
 
@@ -1378,7 +1371,6 @@ export async function getTransactionById(id: string): Promise<{
         runningBalance:
           typeof (doc as any).runningBalance === 'number' ? (doc as any).runningBalance : undefined,
         isAllocatedFund: (doc as any).isAllocatedFund === true,
-        isFundAllocation: (doc as any).isFundAllocation === true,
         allocatedFunds:
           typeof (doc as any).allocatedFunds === 'number' ? (doc as any).allocatedFunds : 0,
         parentTransaction:
@@ -1540,7 +1532,6 @@ export async function updateTransactionWithReceipt(
       aiExtractedJson,
       extractionConfidence,
       isAllocatedFund,
-      isFundAllocation: String(formData.get('isFundAllocation') || '').trim() === 'true',
       parentTransaction,
     })
   } catch (error) {

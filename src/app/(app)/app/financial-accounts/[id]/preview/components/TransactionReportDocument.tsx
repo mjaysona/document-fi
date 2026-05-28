@@ -46,7 +46,7 @@ const flattenRowsForDisplay = (rows: TransactionReportTableRow[]): DisplayRow[] 
       shaded: false,
     })
 
-    if (row.isFundAllocation && row.children && row.children.length > 0) {
+    if (row.children && row.children.length > 0) {
       row.children.forEach((child, childIndex) => {
         flattened.push({
           key: `${parentKey}-child-${child.referenceNumber}-${childIndex}`,
@@ -113,7 +113,7 @@ const isRightAlignedColumn = (column: TransactionReportColumnKey): boolean => {
 }
 
 const formatAllocatedFunds = (row: TransactionReportTableRow): string => {
-  if (!row.isFundAllocation) return '-'
+  if (!row.children || row.children.length === 0) return '-'
 
   const allocated = (row.children || []).reduce((sum, child) => {
     return sum + (typeof child.totalAmount === 'number' ? child.totalAmount : 0)
@@ -166,7 +166,7 @@ const renderCellValue = (row: TransactionReportTableRow, column: TransactionRepo
   if (column === 'totalAmount') return formatMoney(row.totalAmount)
   if (column === 'currentBalance') return formatMoney(row.currentBalance)
   if (column === 'runningBalance') return formatMoney(row.runningBalance)
-  if (column === 'isFundAllocation') return row.isFundAllocation ? 'Yes' : 'No'
+  if (column === 'isAllocatedFund') return row.isAllocatedFund ? 'Yes' : 'No'
   if (column === 'allocatedFunds') return formatAllocatedFunds(row)
   if (column === 'description') return row.description
   if (column === 'particulars') return row.particulars

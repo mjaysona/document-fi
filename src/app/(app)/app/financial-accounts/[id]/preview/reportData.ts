@@ -41,7 +41,7 @@ export type TransactionReportTableRow = {
   runningBalance: number | null
   description: string
   particulars: string
-  isFundAllocation?: boolean
+  isAllocatedFund?: boolean
   children?: TransactionReportTableRow[]
 }
 
@@ -234,9 +234,9 @@ export function buildTransactionReportData(args: {
       runningBalance: runningBalanceByParentId.get(item.id) ?? null,
       description: normalizeString(item.description),
       particulars: normalizeString(item.particulars),
-      isFundAllocation: item.isFundAllocation ?? false,
+      isAllocatedFund: item.isAllocatedFund ?? false,
       children:
-        item.isFundAllocation && children.length > 0
+        children.length > 0
           ? children.map((child) => ({
               referenceNumber: normalizeString(child.referenceNumber),
               transactionDate: formatDate(child.transactionDate),
@@ -264,7 +264,7 @@ export function buildTransactionReportData(args: {
                 typeof child.runningBalance === 'number' ? child.runningBalance : null,
               description: normalizeString(child.description),
               particulars: normalizeString(child.particulars),
-              isFundAllocation: child.isFundAllocation ?? false,
+              isAllocatedFund: child.isAllocatedFund ?? false,
             }))
           : undefined,
     }
