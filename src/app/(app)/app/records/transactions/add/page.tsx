@@ -167,6 +167,7 @@ export default function AddTransactionPage() {
   const [isUploadingReceipt, setIsUploadingReceipt] = useState(false)
   const [isProcessingReceipt, setIsProcessingReceipt] = useState(false)
   const [feedback, setFeedback] = useState<Feedback | null>(null)
+  const [runningBalanceError, setRunningBalanceError] = useState<string | null>(null)
   const [parentReferenceNumber, setParentReferenceNumber] = useState('')
   const [childTransactions, setChildTransactions] = useState<TransactionListItem[]>([])
   const [allocatedFunds, setAllocatedFunds] = useState(0)
@@ -1005,6 +1006,23 @@ export default function AddTransactionPage() {
     return { formData, parsedAmount, parsedTransactionFee }
   }
 
+  const validateRunningBalanceNotNegative = () => {
+    if (isAllocationContext) {
+      setRunningBalanceError(null)
+      return true
+    }
+
+    if (typeof projectedRunningBalance === 'number' && projectedRunningBalance < 0) {
+      setRunningBalanceError(
+        'Running balance should not be negative, please double check amount entered.',
+      )
+      return false
+    }
+
+    setRunningBalanceError(null)
+    return true
+  }
+
   const handleSave = async () => {
     setFeedback(null)
     form.clearFieldError('referenceNumber')
@@ -1025,6 +1043,10 @@ export default function AddTransactionPage() {
     const validation = form.validate()
 
     if (validation.hasErrors) {
+      return
+    }
+
+    if (!validateRunningBalanceNotNegative()) {
       return
     }
 
@@ -1097,6 +1119,10 @@ export default function AddTransactionPage() {
     const validation = form.validate()
 
     if (validation.hasErrors) {
+      return
+    }
+
+    if (!validateRunningBalanceNotNegative()) {
       return
     }
 
@@ -1665,6 +1691,7 @@ export default function AddTransactionPage() {
                       </Group>
                       <NumberInput
                         value={projectedRunningBalance}
+                        error={runningBalanceError}
                         min={0}
                         leftSection="₱"
                         decimalScale={2}
