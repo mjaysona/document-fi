@@ -1,4 +1,5 @@
 export const BREAKPOINT_VALUES = {
+  xxs: 280,
   xs: 360,
   sm: 560,
   md: 768,
@@ -7,6 +8,7 @@ export const BREAKPOINT_VALUES = {
 } as const
 
 export const BREAKPOINTS_PX = {
+  xxs: `${BREAKPOINT_VALUES.xxs}px`,
   xs: `${BREAKPOINT_VALUES.xs}px`,
   sm: `${BREAKPOINT_VALUES.sm}px`,
   md: `${BREAKPOINT_VALUES.md}px`,
@@ -15,6 +17,7 @@ export const BREAKPOINTS_PX = {
 } as const
 
 export const CONTAINER_BREAKPOINTS = {
+  xxs: BREAKPOINTS_PX.xxs,
   xs: BREAKPOINTS_PX.xs,
   sm: BREAKPOINTS_PX.sm,
   md: BREAKPOINTS_PX.md,
