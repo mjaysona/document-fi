@@ -1,7 +1,14 @@
 'use client'
 
 import { RingLoader } from '@/app/(app)/components/RingLoader'
-import { CSSVariablesResolver, MantineProvider, createTheme, Loader, NavLink } from '@mantine/core'
+import {
+  CSSVariablesResolver,
+  MantineProvider,
+  createTheme,
+  Loader,
+  NavLink,
+  Input,
+} from '@mantine/core'
 
 export const metadata = {
   title: 'Next.js',
@@ -21,6 +28,11 @@ const theme = createTheme({
         root: {
           borderRadius: 'var(--mantine-radius-sm)',
         },
+      },
+    }),
+    InputWrapper: Input.Wrapper.extend({
+      defaultProps: {
+        inputWrapperOrder: ['label', 'input', 'description', 'error'],
       },
     }),
   },

@@ -172,12 +172,13 @@ const Transactions: CollectionConfig = {
     useAsTitle: 'referenceNumber',
     listSearchableFields: ['description', 'referenceNumber'],
     defaultColumns: [
-      'description',
+      'referenceNumber',
       'transactionDate',
-      'sourceAccount',
+      'description',
       'financialAccount',
-      'amount',
-      'transactionFee',
+      'sourceAccount',
+      'destinationAccount',
+      'totalAmount',
       'transactionStatus',
     ],
   },
@@ -250,7 +251,7 @@ const Transactions: CollectionConfig = {
     },
     {
       name: 'referenceNumber',
-      label: 'Reference Number',
+      label: 'Reference #',
       type: 'text',
     },
     {
