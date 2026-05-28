@@ -53,6 +53,18 @@ const FinancialAccounts: CollectionConfig = {
       },
     },
     {
+      name: 'primaryLogo',
+      label: 'Primary Logo',
+      type: 'upload',
+      relationTo: 'media',
+    },
+    {
+      name: 'brandmarkLogo',
+      label: 'Brandmark Logo',
+      type: 'upload',
+      relationTo: 'media',
+    },
+    {
       name: 'startingBalance',
       label: 'Starting Balance',
       type: 'number',

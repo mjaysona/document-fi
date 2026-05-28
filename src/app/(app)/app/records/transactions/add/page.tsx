@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation'
 import {
   ActionIcon,
-  Anchor,
   Alert,
   Badge,
   Button,
@@ -24,9 +23,7 @@ import {
   Textarea,
   Tooltip,
   Title,
-  Checkbox,
   Switch,
-  Box,
   Fieldset,
 } from '@mantine/core'
 import { Dropzone, MIME_TYPES } from '@mantine/dropzone'

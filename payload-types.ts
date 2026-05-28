@@ -406,10 +406,33 @@ export interface FinancialAccount {
   name: string;
   bank: string | Bank;
   isDefault?: boolean | null;
+  primaryLogo?: (string | null) | Media;
+  brandmarkLogo?: (string | null) | Media;
   startingBalance: number;
   currentBalance: number;
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media".
+ */
+export interface Media {
+  id: string;
+  createdBy?: (string | null) | User;
+  text?: string | null;
+  prefix?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -608,27 +631,6 @@ export interface Quote {
   updatedBy?: (string | null) | User;
   updatedAt: string;
   createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "media".
- */
-export interface Media {
-  id: string;
-  createdBy?: (string | null) | User;
-  text?: string | null;
-  prefix?: string | null;
-  updatedAt: string;
-  createdAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1025,6 +1027,8 @@ export interface FinancialAccountsSelect<T extends boolean = true> {
   name?: T;
   bank?: T;
   isDefault?: T;
+  primaryLogo?: T;
+  brandmarkLogo?: T;
   startingBalance?: T;
   currentBalance?: T;
   updatedAt?: T;

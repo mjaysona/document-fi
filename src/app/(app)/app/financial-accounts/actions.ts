@@ -18,6 +18,12 @@ export type FinancialAccountDetail = {
   bankId: string
   bankName?: string
   bankShortName?: string
+  primaryLogoId?: string
+  primaryLogoUrl?: string
+  primaryLogoFileName?: string
+  brandmarkLogoId?: string
+  brandmarkLogoUrl?: string
+  brandmarkLogoFileName?: string
   isDefault: boolean
   startingBalance: number
   currentBalance: number
@@ -28,6 +34,8 @@ export type FinancialAccountInput = {
   bankId: string
   startingBalance: number
   currentBalance: number
+  primaryLogoId?: string | null
+  brandmarkLogoId?: string | null
 }
 
 export type Transaction = {
@@ -73,12 +81,56 @@ function mapFinancialAccount(doc: any): FinancialAccountDetail {
       ? String(doc.bank.shortName)
       : undefined
 
+  const primaryLogoId =
+    doc.primaryLogo && typeof doc.primaryLogo === 'object'
+      ? String(doc.primaryLogo.id)
+      : doc.primaryLogo
+        ? String(doc.primaryLogo)
+        : undefined
+
+  const primaryLogoFileName =
+    doc.primaryLogo && typeof doc.primaryLogo === 'object' && doc.primaryLogo.filename
+      ? String(doc.primaryLogo.filename)
+      : undefined
+
+  const primaryLogoUrl =
+    doc.primaryLogo && typeof doc.primaryLogo === 'object' && doc.primaryLogo.url
+      ? String(doc.primaryLogo.url)
+      : primaryLogoFileName
+        ? `/api/media/file/${encodeURIComponent(primaryLogoFileName)}`
+        : undefined
+
+  const brandmarkLogoId =
+    doc.brandmarkLogo && typeof doc.brandmarkLogo === 'object'
+      ? String(doc.brandmarkLogo.id)
+      : doc.brandmarkLogo
+        ? String(doc.brandmarkLogo)
+        : undefined
+
+  const brandmarkLogoFileName =
+    doc.brandmarkLogo && typeof doc.brandmarkLogo === 'object' && doc.brandmarkLogo.filename
+      ? String(doc.brandmarkLogo.filename)
+      : undefined
+
+  const brandmarkLogoUrl =
+    doc.brandmarkLogo && typeof doc.brandmarkLogo === 'object' && doc.brandmarkLogo.url
+      ? String(doc.brandmarkLogo.url)
+      : brandmarkLogoFileName
+        ? `/api/media/file/${encodeURIComponent(brandmarkLogoFileName)}`
+        : undefined
+
   return {
     id: String(doc.id),
     name: String(doc.name || ''),
     bankId,
     bankName,
     bankShortName,
+    primaryLogoId,
+    primaryLogoUrl,
+    primaryLogoFileName,
+    brandmarkLogoId,
+    brandmarkLogoUrl,
+    brandmarkLogoFileName,
     isDefault: Boolean(doc.isDefault),
     startingBalance:
       typeof doc.startingBalance === 'number' && Number.isFinite(doc.startingBalance)
@@ -180,6 +232,8 @@ export async function createFinancialAccount(input: FinancialAccountInput): Prom
     const bankId = String(input.bankId || '').trim()
     const startingBalance = normalizeNonNegativeNumber(input.startingBalance)
     const currentBalance = normalizeNonNegativeNumber(input.currentBalance)
+    const primaryLogoId = input.primaryLogoId ? String(input.primaryLogoId).trim() : ''
+    const brandmarkLogoId = input.brandmarkLogoId ? String(input.brandmarkLogoId).trim() : ''
 
     if (!name) return { success: false, error: 'Name is required.' }
     if (!bankId) return { success: false, error: 'Bank is required.' }
@@ -196,6 +250,8 @@ export async function createFinancialAccount(input: FinancialAccountInput): Prom
       data: {
         name,
         bank: bankId,
+        primaryLogo: primaryLogoId || null,
+        brandmarkLogo: brandmarkLogoId || null,
         startingBalance,
         currentBalance,
       },
@@ -221,6 +277,8 @@ export async function updateFinancialAccount(
     const bankId = String(input.bankId || '').trim()
     const startingBalance = normalizeNonNegativeNumber(input.startingBalance)
     const currentBalance = normalizeNonNegativeNumber(input.currentBalance)
+    const primaryLogoId = input.primaryLogoId ? String(input.primaryLogoId).trim() : ''
+    const brandmarkLogoId = input.brandmarkLogoId ? String(input.brandmarkLogoId).trim() : ''
 
     if (!name) return { success: false, error: 'Name is required.' }
     if (!bankId) return { success: false, error: 'Bank is required.' }
@@ -238,6 +296,8 @@ export async function updateFinancialAccount(
       data: {
         name,
         bank: bankId,
+        primaryLogo: primaryLogoId || null,
+        brandmarkLogo: brandmarkLogoId || null,
         startingBalance,
         currentBalance,
       },
