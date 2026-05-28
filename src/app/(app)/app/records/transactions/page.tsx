@@ -17,10 +17,11 @@ import {
   Stack,
   Table,
   Text,
-  TextInput,
   Title,
+  Image,
+  TextInput,
 } from '@mantine/core'
-import { DatePickerInput } from '@mantine/dates'
+import { CollapsibleImage } from './CollapsibleImage'
 import { CircleCheck, Filter, Plus, Search, Settings } from 'lucide-react'
 import { DataTable, type DataTableColumn } from '@/app/(app)/components/ui/DataTable'
 import {
@@ -39,6 +40,7 @@ import { CONTAINER_BREAKPOINTS } from '@/constants/breakpoints'
 import classes from '../page.module.scss'
 import { useAuth } from '@/app/providers/Auth'
 import { hasAppRoleReadAccess } from '@/app/(app)/utils/roleAccess'
+import { DatePickerInput } from '@mantine/dates'
 
 const TABLE_COLUMN_KEY_SET = new Set<TransactionReportColumnKey>(
   TRANSACTION_REPORT_COLUMN_OPTIONS.map((option) => option.value),
@@ -572,6 +574,15 @@ export default function TransactionsPage() {
           </span>
         ),
       },
+      receiptImage: {
+        key: 'receiptImage',
+        label: 'Receipt Image',
+        render: (row) => {
+          const url = row.parent.receiptImage?.url || null
+          if (!url) return '-'
+          return <CollapsibleImage src={url} alt="Receipt" width="100%" maxWidth="200" />
+        },
+      },
       transactionDate: {
         key: 'transactionDate',
         label: 'Transaction Date',
@@ -730,6 +741,15 @@ export default function TransactionsPage() {
             {child.referenceNumber || '-'}
           </span>
         ),
+      },
+      receiptImage: {
+        key: 'receiptImage',
+        label: 'Receipt Image',
+        render: (child) => {
+          const url = child.receiptImage?.url || null
+          if (!url) return '-'
+          return <CollapsibleImage src={url} alt="Receipt" width={200} />
+        },
       },
       transactionDate: {
         key: 'transactionDate',
@@ -1072,7 +1092,6 @@ export default function TransactionsPage() {
                     />
                   </Grid.Col>
                 </Grid>
-
                 {activeFilterCount > 0 && (
                   <Group justify="flex-end">
                     <Button

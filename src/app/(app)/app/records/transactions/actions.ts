@@ -36,6 +36,7 @@ export type FinancialAccountOption = {
 }
 
 export type TransactionListItem = {
+  receiptImage?: { url?: string }
   id: string
   description: string
   particulars?: string
@@ -686,6 +687,10 @@ export async function getTransactions(where?: Record<string, unknown>): Promise<
         transactionStatus: normalizeTransactionStatus(doc.transactionStatus),
         createdAt: String(doc.createdAt || ''),
         updatedAt: String(doc.updatedAt || ''),
+        receiptImage:
+          doc.receiptImage && typeof doc.receiptImage === 'object'
+            ? { url: doc.receiptImage.url || undefined }
+            : undefined,
       })),
     }
   } catch (error) {

@@ -19,6 +19,7 @@ export const TRANSACTION_REPORT_COLUMN_OPTIONS = [
   { value: 'allocatedFunds', label: 'Allocated Funds' },
   { value: 'description', label: 'Description' },
   { value: 'particulars', label: 'Particulars' },
+  { value: 'receiptImage', label: 'Receipt Image' },
 ] as const
 
 export type TransactionReportColumnKey = (typeof TRANSACTION_REPORT_COLUMN_OPTIONS)[number]['value']
