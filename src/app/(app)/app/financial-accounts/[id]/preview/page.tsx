@@ -124,7 +124,7 @@ export default async function FinancialAccountPreviewPage({ params, searchParams
   const report = buildTransactionReportData({
     header: {
       title: account.name,
-      logoUrl: logoUrl ?? null,
+      logoUrl: account.primaryLogoUrl ?? null,
       referenceNumber: account.id,
       date: new Date().toISOString(),
       fromDate: fromDate?.toISOString() ?? null,

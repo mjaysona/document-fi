@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { Image } from '@mantine/core'
 import { BarChart, LineChart } from '@mantine/charts'
 import '@mantine/charts/styles.css'
 import styles from './TransactionReportDocument.module.scss'
@@ -356,7 +357,26 @@ export function TransactionReportDocument({
       <div className={styles.pages}>
         <div className={styles['page-scale-wrap']}>
           <article className={styles.document} aria-label="Transaction report document page 1">
-            <h3 className={styles.header}>{header.title}</h3>
+            <div className={styles.header}>
+              <h3 className={styles.header__title}>{header.title}</h3>
+              {report.header.logoUrl && (
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}
+                >
+                  <Image
+                    src={report.header.logoUrl}
+                    alt="Primary Logo"
+                    h={48}
+                    fit="contain"
+                    radius="sm"
+                  />
+                </div>
+              )}
+            </div>
             <div className={styles.document__title}>
               <span>TRANSACTIONS REPORT</span>
             </div>
