@@ -78,6 +78,7 @@ type TransactionFormValues = {
   transactionStatus: TransactionStatus | null
   isAllocatedFund: boolean
   parentTransaction: string | null
+  allocatedFundType?: 'completed' | 'returned'
 }
 
 type NumericInputValue = number | string
@@ -1392,53 +1393,68 @@ export default function AddTransactionPage() {
                 </Group>
                 <Grid gap="sm">
                   {(isAllocationContext || form.values.isAllocatedFund) && (
-                    <Grid.Col span={12}>
-                      <Select
-                        label="Allocated fund from existing transaction"
-                        searchable
-                        clearable
-                        placeholder="Search for reference number"
-                        onSearchChange={setAllocationParentSearchValue}
-                        filter={({ options }) => options}
-                        data={allocationParentSelectData}
-                        renderOption={({ option }) => {
-                          const detailedOption = allocationParentSelectData.find(
-                            (item) => item.value === option.value,
-                          )
-                          return detailedOption?.fullLabel || option.label
-                        }}
-                        required
-                        value={form.values.parentTransaction}
-                        error={form.errors.parentTransaction}
-                        withCheckIcon={false}
-                        nothingFoundMessage={
-                          allocationParentSearchValue.trim().length < 2
-                            ? 'Type at least 2 characters to search.'
-                            : isSearchingAllocationParents
-                              ? 'Searching...'
-                              : 'No matching transactions found.'
-                        }
-                        onChange={(value) => {
-                          form.setFieldValue('parentTransaction', value || null)
-
-                          if (!value) {
-                            setParentReferenceNumber('')
-                            return
+                    <>
+                      <Grid.Col span={6}>
+                        <Select
+                          label="Allocated fund from existing transaction"
+                          searchable
+                          clearable
+                          placeholder="Search for reference number"
+                          onSearchChange={setAllocationParentSearchValue}
+                          filter={({ options }) => options}
+                          data={allocationParentSelectData}
+                          renderOption={({ option }) => {
+                            const detailedOption = allocationParentSelectData.find(
+                              (item) => item.value === option.value,
+                            )
+                            return detailedOption?.fullLabel || option.label
+                          }}
+                          required
+                          value={form.values.parentTransaction}
+                          error={form.errors.parentTransaction}
+                          withCheckIcon={false}
+                          nothingFoundMessage={
+                            allocationParentSearchValue.trim().length < 2
+                              ? 'Type at least 2 characters to search.'
+                              : isSearchingAllocationParents
+                                ? 'Searching...'
+                                : 'No matching transactions found.'
                           }
+                          onChange={(value) => {
+                            form.setFieldValue('parentTransaction', value || null)
 
-                          form.setFieldValue('transactionType', 'debit')
-
-                          void (async () => {
-                            const parentResult = await getTransactionById(value)
-                            if (parentResult.success && parentResult.data?.referenceNumber) {
-                              setParentReferenceNumber(parentResult.data.referenceNumber)
-                            } else {
+                            if (!value) {
                               setParentReferenceNumber('')
+                              return
                             }
-                          })()
-                        }}
-                      />
-                    </Grid.Col>
+
+                            form.setFieldValue('transactionType', 'debit')
+
+                            void (async () => {
+                              const parentResult = await getTransactionById(value)
+                              if (parentResult.success && parentResult.data?.referenceNumber) {
+                                setParentReferenceNumber(parentResult.data.referenceNumber)
+                              } else {
+                                setParentReferenceNumber('')
+                              }
+                            })()
+                          }}
+                        />
+                      </Grid.Col>
+                      <Grid.Col span={6}>
+                        <Select
+                          label="Allocated Fund Type"
+                          data={[
+                            { label: 'Completed', value: 'completed' },
+                            { label: 'Returned', value: 'returned' },
+                          ]}
+                          value={form.values.allocatedFundType || 'completed'}
+                          onChange={(value) => form.setFieldValue('allocatedFundType', value)}
+                          required
+                          style={{ minWidth: 180 }}
+                        />
+                      </Grid.Col>
+                    </>
                   )}
                   {!isAllocationContext && (
                     <>
@@ -1767,7 +1783,7 @@ export default function AddTransactionPage() {
               </Card>
             </Grid.Col>
             <Grid.Col span={{ base: 12, md: 6, lg: 4 }} order={{ base: 1, md: 2 }}>
-              {!isForAllocation ? (
+              {!isAllocationContext ? (
                 <Button
                   fullWidth
                   variant="default"

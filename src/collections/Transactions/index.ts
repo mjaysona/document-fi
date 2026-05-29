@@ -184,12 +184,17 @@ const Transactions: CollectionConfig = {
   },
   fields: [
     {
-      name: 'isReturnedAllocatedFund',
-      label: 'Returned Allocated Fund',
-      type: 'checkbox',
-      defaultValue: false,
+      name: 'allocatedFundType',
+      label: 'Allocated Fund Type',
+      type: 'select',
+      options: [
+        { label: 'Completed', value: 'completed' },
+        { label: 'Returned', value: 'returned' },
+      ],
+      defaultValue: 'completed',
       admin: {
-        description: 'Indicates if this transaction is a returned allocation fund.',
+        description: 'Type of allocated fund: completed or returned.',
+        position: 'sidebar',
       },
     },
     {
