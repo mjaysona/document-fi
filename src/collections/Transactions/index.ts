@@ -184,6 +184,15 @@ const Transactions: CollectionConfig = {
   },
   fields: [
     {
+      name: 'isReturnedAllocatedFund',
+      label: 'Returned Allocated Fund',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: {
+        description: 'Indicates if this transaction is a returned allocation fund.',
+      },
+    },
+    {
       name: 'transactionDate',
       label: 'Transaction Date',
       type: 'date',

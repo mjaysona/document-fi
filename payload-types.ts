@@ -440,6 +440,10 @@ export interface Media {
  */
 export interface Transaction {
   id: string;
+  /**
+   * Indicates if this transaction is a returned allocation fund.
+   */
+  isReturnedAllocatedFund?: boolean | null;
   transactionDate?: string | null;
   description?: string | null;
   particulars?: string | null;
@@ -536,6 +540,7 @@ export interface UserConfiguration {
      */
     tableColumns?:
       | (
+          | 'isReturnedAllocatedFund'
           | 'transactionDate'
           | 'description'
           | 'particulars'
@@ -568,6 +573,7 @@ export interface UserConfiguration {
      */
     previewTableColumns?:
       | (
+          | 'isReturnedAllocatedFund'
           | 'transactionDate'
           | 'description'
           | 'particulars'
@@ -1039,6 +1045,7 @@ export interface FinancialAccountsSelect<T extends boolean = true> {
  * via the `definition` "transactions_select".
  */
 export interface TransactionsSelect<T extends boolean = true> {
+  isReturnedAllocatedFund?: T;
   transactionDate?: T;
   description?: T;
   particulars?: T;
