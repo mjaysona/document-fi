@@ -372,66 +372,81 @@ export function TransactionReportDocument({
                   <div style={{ maxWidth: 360, marginLeft: 'auto', fontSize: 10 }}>
                     <div
                       style={{
+                        backgroundColor: '#f8f9fa',
+                        color: '#6b7280',
                         display: 'flex',
                         justifyContent: 'space-between',
                         marginTop: 8,
-                        paddingTop: 8,
+                        padding: '8px 12px',
                         borderTop: '1px solid #f1f5f9',
+                        textTransform: 'uppercase',
+                        fontWeight: 700,
+                        fontSize: 8,
                       }}
                     >
                       <span>Breakdown</span>
                     </div>
                     <div
                       style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        color: '#2f9e44',
-                        marginTop: 8,
-                        paddingTop: 8,
+                        padding: '8px 12px',
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          color: '#2f9e44',
+                        }}
+                      >
+                        <span>Total Credits:</span>
+                        <span>{formatMoney(totalCredits)}</span>
+                      </div>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          color: '#e03131',
+                        }}
+                      >
+                        <span>Total Debits:</span>
+                        <span>- {formatMoney(totalDebits)}</span>
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        padding: '8px 12px',
                         borderTop: '1px solid #f1f5f9',
                       }}
                     >
-                      <span>Total Credits:</span>
-                      <span>{formatMoney(totalCredits)}</span>
-                    </div>
-                    <div
-                      style={{ display: 'flex', justifyContent: 'space-between', color: '#e03131' }}
-                    >
-                      <span>Total Debits:</span>
-                      <span>- {formatMoney(totalDebits)}</span>
-                    </div>
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        color: '#1c7ed6',
-                        fontWeight: 500,
-                        marginTop: 8,
-                        paddingTop: 8,
-                        borderTop: '1px solid #f1f5f9',
-                      }}
-                    >
-                      <span>Net Change:</span>
-                      <span>{formatMoney(netChange)}</span>
-                    </div>
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        fontWeight: 500,
-                      }}
-                    >
-                      <span>Starting Balance:</span>
-                      <span>+ {formatMoney(startingBalance)}</span>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          color: '#1c7ed6',
+                          fontWeight: 500,
+                        }}
+                      >
+                        <span>Net Change:</span>
+                        <span>{formatMoney(netChange)}</span>
+                      </div>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          fontWeight: 500,
+                        }}
+                      >
+                        <span>Starting Balance:</span>
+                        <span>+ {formatMoney(startingBalance)}</span>
+                      </div>
                     </div>
                     <div
                       style={{
                         display: 'flex',
                         justifyContent: 'space-between',
                         fontWeight: 500,
-                        marginTop: 8,
                         marginBottom: 8,
-                        paddingTop: 8,
+                        padding: '8px 12px',
                         paddingBottom: 8,
                         borderTop: '1px solid #f1f5f9',
                         borderBottom: '1px solid #f1f5f9',
