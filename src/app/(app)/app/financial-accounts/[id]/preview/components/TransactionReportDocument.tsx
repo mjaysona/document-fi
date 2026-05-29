@@ -313,6 +313,27 @@ export function TransactionReportDocument({
     )
   }
 
+  // Calculate breakdown values
+  const totalCredits = rows.reduce(
+    (sum, row) =>
+      row.status === 'completed' && row.type === 'credit' && typeof row.amount === 'number'
+        ? sum + row.amount + (typeof row.fee === 'number' ? Math.max(row.fee, 0) : 0)
+        : sum,
+    0,
+  )
+  const totalDebits = rows.reduce(
+    (sum, row) =>
+      row.status === 'completed' && row.type === 'debit' && typeof row.amount === 'number'
+        ? sum + row.amount + (typeof row.fee === 'number' ? Math.max(row.fee, 0) : 0)
+        : sum,
+    0,
+  )
+  const netChange = totalCredits - totalDebits
+  const endingBalance =
+    typeof startingBalance === 'number' && Number.isFinite(startingBalance)
+      ? startingBalance + netChange
+      : null
+
   const renderTable = (pageRows: DisplayRow[], isContinued: boolean) => {
     return (
       <section
@@ -344,6 +365,85 @@ export function TransactionReportDocument({
               </tr>
             </thead>
             <tbody>{pageRows.map((displayRow) => renderTableRow(displayRow))}</tbody>
+            {/* Breakdown summary at the end of the table */}
+            <tfoot>
+              <tr>
+                <td colSpan={columnHeaders.length} style={{ paddingTop: 24, border: 'none' }}>
+                  <div style={{ maxWidth: 360, marginLeft: 'auto', fontSize: 10 }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        marginTop: 8,
+                        paddingTop: 8,
+                        borderTop: '1px solid #f1f5f9',
+                      }}
+                    >
+                      <span>Breakdown</span>
+                    </div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        color: '#2f9e44',
+                        marginTop: 8,
+                        paddingTop: 8,
+                        borderTop: '1px solid #f1f5f9',
+                      }}
+                    >
+                      <span>Total Credits:</span>
+                      <span>{formatMoney(totalCredits)}</span>
+                    </div>
+                    <div
+                      style={{ display: 'flex', justifyContent: 'space-between', color: '#e03131' }}
+                    >
+                      <span>Total Debits:</span>
+                      <span>- {formatMoney(totalDebits)}</span>
+                    </div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        color: '#1c7ed6',
+                        fontWeight: 500,
+                        marginTop: 8,
+                        paddingTop: 8,
+                        borderTop: '1px solid #f1f5f9',
+                      }}
+                    >
+                      <span>Net Change:</span>
+                      <span>{formatMoney(netChange)}</span>
+                    </div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        fontWeight: 500,
+                      }}
+                    >
+                      <span>Starting Balance:</span>
+                      <span>+ {formatMoney(startingBalance)}</span>
+                    </div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        fontWeight: 500,
+                        marginTop: 8,
+                        marginBottom: 8,
+                        paddingTop: 8,
+                        paddingBottom: 8,
+                        borderTop: '1px solid #f1f5f9',
+                        borderBottom: '1px solid #f1f5f9',
+                      }}
+                    >
+                      <span>Remaining Balance:</span>
+                      <span>{formatMoney(endingBalance)}</span>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </tfoot>
           </table>
         )}
       </section>
