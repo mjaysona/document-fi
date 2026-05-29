@@ -699,7 +699,7 @@ export async function getTransactions(where?: Record<string, unknown>): Promise<
   }
 }
 
-export async function searchNonChildTransactions(
+export async function searchNonCompletedAllocatedFunds(
   query: string,
   excludeTransactionId?: string,
 ): Promise<{
