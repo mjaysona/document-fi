@@ -157,7 +157,8 @@ export default function AddTransactionPage() {
   const isEditMode = pathname?.includes('/app/records/transactions/') && pathname?.endsWith('/edit')
   const isForAllocation = pathname?.includes('/allocate')
   const allocationSourceTransactionId = String(searchParams.get('allocateFrom') || '').trim()
-
+  const returnedFromTransactionId = String(searchParams.get('returnedFrom') || '').trim()
+  const unusedAllocationAmount = parseNumericInputValue(searchParams.get('unusedAmount') || '')
   const [banks, setBanks] = useState<BankOption[]>([])
   const [financialAccounts, setFinancialAccounts] = useState<FinancialAccountOption[]>([])
   const [isLoading, setIsLoading] = useState(Boolean(isEditMode || isForAllocation))
@@ -640,8 +641,10 @@ export default function AddTransactionPage() {
         return
       }
 
-      if (allocationSourceTransactionId && !isEditMode) {
-        const parentResult = await getTransactionById(allocationSourceTransactionId)
+      if ((allocationSourceTransactionId || returnedFromTransactionId) && !isEditMode) {
+        const parentResult = await getTransactionById(
+          allocationSourceTransactionId || returnedFromTransactionId,
+        )
         if (!isMounted) return
 
         if (!parentResult.success || !parentResult.data) {
@@ -653,9 +656,33 @@ export default function AddTransactionPage() {
           return
         }
 
-        form.setFieldValue('parentTransaction', allocationSourceTransactionId)
+        form.setFieldValue(
+          'parentTransaction',
+          allocationSourceTransactionId || returnedFromTransactionId,
+        )
         form.setFieldValue('transactionType', 'debit')
         form.setFieldValue('isAllocatedFund', true)
+
+        if (returnedFromTransactionId) {
+          form.setFieldValue(
+            'allocatedFundType',
+            returnedFromTransactionId ? 'returned' : 'completed',
+          )
+          form.setFieldValue('amount', unusedAllocationAmount ?? 0)
+          form.setFieldValue('transactionType', 'credit')
+
+          // Get the previous transaction's financialAccount and assign its bankId as sourceAccount
+          const prevFinancialAccountId = parentResult.data?.financialAccount
+
+          console.log('prevFinancialAccountId', prevFinancialAccountId)
+
+          const prevAccount = accountsResult.success
+            ? accountsResult.data.find((account) => account.id === prevFinancialAccountId)
+            : undefined
+
+          console.log('prevAccount', prevAccount)
+          form.setFieldValue('destinationAccount', prevAccount?.bankId ?? null)
+        }
         setParentReferenceNumber(parentResult.data.referenceNumber ?? '')
 
         if (!form.values.transactionDate) {
@@ -786,7 +813,13 @@ export default function AddTransactionPage() {
     return () => {
       isMounted = false
     }
-  }, [allocationSourceTransactionId, isEditMode, isForAllocation, transactionId])
+  }, [
+    allocationSourceTransactionId,
+    returnedFromTransactionId,
+    isEditMode,
+    isForAllocation,
+    transactionId,
+  ])
 
   useEffect(() => {
     // Skip default account selection in allocation mode
@@ -1178,6 +1211,12 @@ export default function AddTransactionPage() {
     }
 
     setIsSaving(false)
+  }
+
+  const handleReturnUnusedFunds = () => {
+    router.push(
+      `/app/records/transactions/add?returnedFrom=${transactionId}&unusedAmount=${form.values.amount}`,
+    )
   }
 
   const handleDelete = async () => {
@@ -1601,7 +1640,8 @@ export default function AddTransactionPage() {
                             error={form.errors.destinationAccount}
                             required
                             disabled={
-                              !isAllocationContext &&
+                              (!isAllocationContext ||
+                                form.values.allocatedFundType === 'returned') &&
                               (!form.values.financialAccount ||
                                 form.values.transactionType === 'credit')
                             }
@@ -1615,7 +1655,8 @@ export default function AddTransactionPage() {
                             error={form.errors.to}
                             required
                             disabled={
-                              !isAllocationContext &&
+                              (!isAllocationContext ||
+                                form.values.allocatedFundType === 'returned') &&
                               (!form.values.financialAccount ||
                                 form.values.transactionType === 'credit')
                             }
@@ -1667,7 +1708,7 @@ export default function AddTransactionPage() {
                             setFeedback(null)
                             form.clearFieldError('referenceNumber')
                             setDuplicateReferenceTransactionId(null)
-                            if (!form.values.financialAccount || isAllocationContext) return
+                            if (!form.values.financialAccount) return
                             const ref = generateAutoReferenceNumberBase(new Date())
                             form.setFieldValue('referenceNumber', ref + 'A')
                             setIsReferenceAutoGenerated(true)
@@ -2028,7 +2069,7 @@ export default function AddTransactionPage() {
                       <Text span> / </Text>
                       <Text span>{formatCurrency(parentAmount)}</Text>
                     </Text>
-                    <Button size="xs" variant="default">
+                    <Button size="xs" variant="default" onClick={handleReturnUnusedFunds}>
                       Return unused funds
                     </Button>
                   </Group>
