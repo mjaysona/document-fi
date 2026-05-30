@@ -67,6 +67,8 @@ export type TransactionListItem = {
 }
 
 export type TransactionFormInput = {
+  allocatedFunds?: string
+  allocatedFundType?: 'completed' | 'returned' | null // <--- fix type
   transactionDate?: string
   description: string
   particulars?: string
@@ -105,6 +107,7 @@ export type TransactionDetail = TransactionFormInput & {
   isAllocatedFund?: boolean
   allocatedFunds?: number
   parentTransaction?: string | null
+  allocatedFundType: 'completed' | 'returned' | null | undefined
 }
 
 export type ProcessTransactionReceiptResult = {
@@ -495,7 +498,11 @@ function mapTransactionInput(
 ) {
   const resolvedParentTransaction =
     input.isAllocatedFund === true ? String(input.parentTransaction || '').trim() || null : null
-
+  // Only allow valid values for allocatedFundType
+  const validAllocatedFundType =
+    input.allocatedFundType === 'completed' || input.allocatedFundType === 'returned'
+      ? input.allocatedFundType
+      : undefined
   return {
     transactionDate: normalizeTransactionDate(input.transactionDate),
     description: input.description.trim(),
@@ -517,6 +524,9 @@ function mapTransactionInput(
     transactionStatus: normalizeTransactionStatus(input.transactionStatus) ?? 'completed',
     isAllocatedFund: input.isAllocatedFund ?? false,
     parentTransaction: resolvedParentTransaction,
+    ...(typeof validAllocatedFundType !== 'undefined'
+      ? { allocatedFundType: validAllocatedFundType }
+      : {}),
     ...(input.receiptImageId ? { receiptImage: input.receiptImageId } : {}),
     ...(typeof input.rawOcrText !== 'undefined'
       ? {
@@ -1166,6 +1176,9 @@ export async function createTransaction(input: TransactionFormInput): Promise<{
         amount,
         transactionFee,
         ...(financialAccount ? { financialAccount } : {}),
+        ...(typeof input.allocatedFundType !== 'undefined'
+          ? { allocatedFundType: input.allocatedFundType }
+          : {}),
       }),
       depth: 0,
     })
@@ -1186,12 +1199,9 @@ export async function createTransactionWithReceipt(formData: FormData): Promise<
   try {
     const session = await auth.api.getSession({ headers: await headers() })
     if (!session?.user?.id) return { success: false, error: 'Unauthorized' }
-
     const description = String(formData.get('description') || '').trim()
-
     const file = formData.get('file')
     const hasFile = file instanceof File && file.size > 0
-
     let receiptResult:
       | {
           success: boolean
@@ -1201,25 +1211,27 @@ export async function createTransactionWithReceipt(formData: FormData): Promise<
           error?: string
         }
       | undefined
-
     if (hasFile) {
       receiptResult = await createTransactionReceiptFromFormData(formData)
       if (!receiptResult.success || !receiptResult.id) {
         return { success: false, error: receiptResult.error ?? 'Failed to save receipt.' }
       }
     }
-
     const rawOcrText =
       String(formData.get('rawOcrText') || '').trim() || receiptResult?.rawOcrText || undefined
     const financialAccount = String(formData.get('financialAccount') || '').trim() || undefined
     const aiExtractedJson = parseAiExtractedJsonValue(formData.get('aiExtractedJson'))
     const extractionConfidence = parseConfidenceValue(formData.get('extractionConfidence'))
-
     const isAllocatedFund = String(formData.get('isAllocatedFund') || '').trim() === 'true'
     const parentTransaction = isAllocatedFund
       ? String(formData.get('parentTransaction') || '').trim() || null
       : null
-
+    // Only allow valid values for allocatedFundType
+    const allocatedFundTypeRaw = String(formData.get('allocatedFundType') || '').trim()
+    const allocatedFundType: 'completed' | 'returned' | null | undefined =
+      allocatedFundTypeRaw === 'completed' || allocatedFundTypeRaw === 'returned'
+        ? allocatedFundTypeRaw
+        : undefined
     const createResult = await createTransaction({
       transactionDate: String(formData.get('transactionDate') || '').trim() || undefined,
       description,
@@ -1242,12 +1254,11 @@ export async function createTransactionWithReceipt(formData: FormData): Promise<
       extractionConfidence,
       isAllocatedFund,
       parentTransaction,
+      allocatedFundType,
     })
-
     if (!createResult.success && receiptResult?.id) {
       await deleteTransactionReceiptById(receiptResult.id)
     }
-
     return createResult
   } catch (error) {
     console.error('Failed to create transaction with receipt:', error)
@@ -1378,6 +1389,11 @@ export async function getTransactionById(id: string): Promise<{
             : (doc as any).parentTransaction
               ? String((doc as any).parentTransaction)
               : null,
+        allocatedFundType:
+          (doc as any).allocatedFundType === 'completed' ||
+          (doc as any).allocatedFundType === 'returned'
+            ? (doc as any).allocatedFundType
+            : undefined,
       },
     }
   } catch (error) {
@@ -1479,6 +1495,9 @@ export async function updateTransaction(
         amount,
         transactionFee,
         ...(financialAccount ? { financialAccount } : {}),
+        ...(typeof input.allocatedFundType !== 'undefined'
+          ? { allocatedFundType: input.allocatedFundType }
+          : {}),
       }),
       depth: 0,
     })
@@ -1534,12 +1553,16 @@ export async function updateTransactionWithReceipt(
     const financialAccount = String(formData.get('financialAccount') || '').trim() || undefined
     const aiExtractedJson = parseAiExtractedJsonValue(formData.get('aiExtractedJson'))
     const extractionConfidence = parseConfidenceValue(formData.get('extractionConfidence'))
-
     const isAllocatedFund = String(formData.get('isAllocatedFund') || '').trim() === 'true'
     const parentTransaction = isAllocatedFund
       ? String(formData.get('parentTransaction') || '').trim() || null
       : null
-
+    // Only allow valid values for allocatedFundType
+    const allocatedFundTypeRaw = String(formData.get('allocatedFundType') || '').trim()
+    const allocatedFundType: 'completed' | 'returned' | null | undefined =
+      allocatedFundTypeRaw === 'completed' || allocatedFundTypeRaw === 'returned'
+        ? allocatedFundTypeRaw
+        : undefined
     return await updateTransaction(id, {
       transactionDate: String(formData.get('transactionDate') || '').trim() || undefined,
       description: String(formData.get('description') || '').trim(),
@@ -1562,6 +1585,7 @@ export async function updateTransactionWithReceipt(
       extractionConfidence,
       isAllocatedFund,
       parentTransaction,
+      allocatedFundType,
     })
   } catch (error) {
     console.error('Failed to update transaction with receipt:', error)
