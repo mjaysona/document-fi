@@ -369,91 +369,121 @@ export function TransactionReportDocument({
             <tfoot>
               <tr>
                 <td colSpan={columnHeaders.length} style={{ paddingTop: 24, border: 'none' }}>
-                  <div style={{ maxWidth: 360, marginLeft: 'auto', fontSize: 10 }}>
-                    <div
-                      style={{
-                        backgroundColor: '#f8f9fa',
-                        color: '#6b7280',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        marginTop: 8,
-                        padding: '8px 12px',
-                        borderTop: '1px solid #f1f5f9',
-                        textTransform: 'uppercase',
-                        fontWeight: 700,
-                        fontSize: 8,
-                      }}
-                    >
-                      <span>Breakdown</span>
-                    </div>
-                    <div
-                      style={{
-                        padding: '8px 12px',
-                      }}
-                    >
+                  <h2 className={styles.section__title}>
+                    Breakdown ({formatDate(header.fromDate)} - {formatDate(header.toDate)})
+                  </h2>
+                  <div
+                    style={{
+                      fontSize: 10,
+                      display: 'flex',
+                      gap: 24,
+                      justifyContent: 'space-between',
+                      marginTop: 12,
+                    }}
+                  >
+                    {/* Left: Credits - Debits breakdown */}
+                    <div style={{ flex: 1, minWidth: 180, border: '1px solid #f1f5f9' }}>
                       <div
                         style={{
+                          backgroundColor: '#f8f9fa',
+                          color: '#6b7280',
                           display: 'flex',
                           justifyContent: 'space-between',
-                          color: '#2f9e44',
+                          padding: '8px 12px',
+                          borderBottom: '1px solid #f1f5f9',
+                          textTransform: 'uppercase',
+                          fontWeight: 700,
+                          fontSize: 8,
                         }}
                       >
-                        <span>Total Credits:</span>
-                        <span>{formatMoney(totalCredits)}</span>
+                        <span>Credits - Debits</span>
                       </div>
-                      <div
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          color: '#e03131',
-                        }}
-                      >
-                        <span>Total Debits:</span>
-                        <span>- {formatMoney(totalDebits)}</span>
+                      <div style={{ padding: '8px 12px' }}>
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                          }}
+                        >
+                          <span>Total credits:</span>
+                          <span style={{ color: '#2f9e44' }}>{formatMoney(totalCredits)}</span>
+                        </div>
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                          }}
+                        >
+                          <span>Total debits:</span>
+                          <span style={{ color: '#e03131' }}>{formatMoney(totalDebits)}</span>
+                        </div>
                       </div>
-                    </div>
-                    <div
-                      style={{
-                        padding: '8px 12px',
-                        borderTop: '1px solid #f1f5f9',
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          color: '#1c7ed6',
-                          fontWeight: 500,
-                        }}
-                      >
-                        <span>Net Change:</span>
-                        <span>{formatMoney(netChange)}</span>
-                      </div>
-                      <div
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          fontWeight: 500,
-                        }}
-                      >
-                        <span>Starting Balance:</span>
-                        <span>+ {formatMoney(startingBalance)}</span>
+                      <div style={{ padding: '8px 12px', borderTop: '1px solid #f1f5f9' }}>
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            fontWeight: 500,
+                          }}
+                        >
+                          <span>Net difference:</span>
+                          <span style={{ color: netChange < 0 ? '#e03131' : '#2f9e44' }}>
+                            {formatMoney(netChange)}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        fontWeight: 500,
-                        marginBottom: 8,
-                        padding: '8px 12px',
-                        paddingBottom: 8,
-                        borderTop: '1px solid #f1f5f9',
-                        borderBottom: '1px solid #f1f5f9',
-                      }}
-                    >
-                      <span>Remaining Balance:</span>
-                      <span>{formatMoney(endingBalance)}</span>
+                    {/* Right: Starting balance - (difference from credits - debits) */}
+                    <div style={{ flex: 1, minWidth: 180, border: '1px solid #f1f5f9' }}>
+                      <div
+                        style={{
+                          backgroundColor: '#f8f9fa',
+                          color: '#6b7280',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          padding: '8px 12px',
+                          borderBottom: '1px solid #f1f5f9',
+                          textTransform: 'uppercase',
+                          fontWeight: 700,
+                          fontSize: 8,
+                        }}
+                      >
+                        <span>Remaining balance</span>
+                      </div>
+                      <div style={{ padding: '8px 12px' }}>
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                          }}
+                        >
+                          <span>Starting balance:</span>
+                          <span style={{ fontWeight: 700 }}>{formatMoney(startingBalance)}</span>
+                        </div>
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                          }}
+                        >
+                          <span>Net difference:</span>
+                          <span style={{ color: netChange < 0 ? '#e03131' : '#2f9e44' }}>
+                            {formatMoney(netChange)}
+                          </span>
+                        </div>
+                      </div>
+                      <div style={{ padding: '8px 12px', borderTop: '1px solid #f1f5f9' }}>
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            fontWeight: 500,
+                          }}
+                        >
+                          <span>Remaining balance:</span>
+                          <span style={{ fontWeight: 700 }}>{formatMoney(endingBalance)}</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </td>
