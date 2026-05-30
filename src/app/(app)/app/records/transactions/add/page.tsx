@@ -1488,7 +1488,14 @@ export default function AddTransactionPage() {
                             { label: 'Returned', value: 'returned' },
                           ]}
                           value={form.values.allocatedFundType || 'completed'}
-                          onChange={(value) => form.setFieldValue('allocatedFundType', value)}
+                          onChange={(value) => {
+                            // Only allow 'completed' or 'returned', never null
+                            if (value === 'completed' || value === 'returned') {
+                              form.setFieldValue('allocatedFundType', value)
+                            } else {
+                              form.setFieldValue('allocatedFundType', 'completed')
+                            }
+                          }}
                           required
                           style={{ minWidth: 180 }}
                         />
