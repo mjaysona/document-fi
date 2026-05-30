@@ -393,8 +393,6 @@ export default function AddTransactionPage() {
       ],
     })
 
-    console.log('transactions::: 2', transactionsResult)
-
     if (!transactionsResult.success) {
       setCompletedAllocatedFunds([])
       setAllocatedFunds(0)
@@ -674,13 +672,10 @@ export default function AddTransactionPage() {
           // Get the previous transaction's financialAccount and assign its bankId as sourceAccount
           const prevFinancialAccountId = parentResult.data?.financialAccount
 
-          console.log('prevFinancialAccountId', prevFinancialAccountId)
-
           const prevAccount = accountsResult.success
             ? accountsResult.data.find((account) => account.id === prevFinancialAccountId)
             : undefined
 
-          console.log('prevAccount', prevAccount)
           form.setFieldValue('destinationAccount', prevAccount?.bankId ?? null)
         }
         setParentReferenceNumber(parentResult.data.referenceNumber ?? '')
