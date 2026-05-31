@@ -96,7 +96,7 @@ const syncParentAllocatedFunds = async (args: { req: any; parentTransactionIds: 
     }
 
     let nextAllocatedFunds = 0
-    if (parentDoc.isAllocatedFund === true) {
+    if (parentDoc.isAllocatedFund === true && parentDoc.allocatedFundType === 'completed') {
       const childTransactions = await getAllChildTransactions({
         req: args.req,
         parentTransactionId,

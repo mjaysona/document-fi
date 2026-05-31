@@ -520,6 +520,10 @@ export default function TransactionsPage() {
       if (parentId) {
         if (allItemsById.has(parentId)) {
           visibleParentIds.add(parentId)
+          // If allocatedFundType is 'returned', also show as standalone parent row
+          if (item.allocatedFundType === 'returned') {
+            visibleParentIds.add(item.id)
+          }
         } else {
           visibleParentIds.add(item.id)
         }

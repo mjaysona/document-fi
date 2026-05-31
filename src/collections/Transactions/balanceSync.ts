@@ -16,6 +16,7 @@ type TransactionRecord = {
   transactionDate?: string | null
   createdAt?: string | null
   isAllocatedFund?: boolean | null
+  allocatedFundType?: string | null
 }
 
 type RecomputeHint = {
@@ -265,7 +266,11 @@ export async function syncAccountBalances(args: {
       const transaction = sortedTransactions[index]
 
       // Skip balance sync for allocated fund transactions - they should not have running or current balance
-      if (transaction.isAllocatedFund) {
+      if (
+        transaction.isAllocatedFund &&
+        transaction.allocatedFundType === 'completed' &&
+        transaction.transactionType === 'debit'
+      ) {
         if (
           (transaction.runningBalance ?? null) !== null ||
           (transaction.currentBalance ?? null) !== null
