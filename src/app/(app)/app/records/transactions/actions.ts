@@ -1123,17 +1123,6 @@ export async function createTransaction(input: TransactionFormInput): Promise<{
     }
 
     let resolvedSourceAccount = providedSourceAccount || undefined
-    if (financialAccount) {
-      const sourceBankResolution = await resolveSourceBankIdFromFinancialAccount(financialAccount)
-      if (!sourceBankResolution.bankId) {
-        return {
-          success: false,
-          error: sourceBankResolution.error ?? 'Selected financial account has no linked bank.',
-        }
-      }
-      resolvedSourceAccount = sourceBankResolution.bankId
-    }
-
     if (!resolvedSourceAccount) {
       return { success: false, error: 'Source bank is required.' }
     }
@@ -1425,17 +1414,6 @@ export async function updateTransaction(
     }
 
     let resolvedSourceAccount = providedSourceAccount || undefined
-    if (financialAccount) {
-      const sourceBankResolution = await resolveSourceBankIdFromFinancialAccount(financialAccount)
-      if (!sourceBankResolution.bankId) {
-        return {
-          success: false,
-          error: sourceBankResolution.error ?? 'Selected financial account has no linked bank.',
-        }
-      }
-      resolvedSourceAccount = sourceBankResolution.bankId
-    }
-
     if (!resolvedSourceAccount) {
       return { success: false, error: 'Source bank is required.' }
     }
