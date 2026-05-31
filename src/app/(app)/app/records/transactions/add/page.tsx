@@ -153,13 +153,12 @@ export default function AddTransactionPage() {
   const params = useParams<{ id?: string }>()
   const transactionId = params?.id
   const isEditMode = pathname?.includes('/app/records/transactions/') && pathname?.endsWith('/edit')
-  const isForAllocation = pathname?.includes('/allocate')
   const allocationSourceTransactionId = String(searchParams.get('allocateFrom') || '').trim()
   const returnedFromTransactionId = String(searchParams.get('returnedFrom') || '').trim()
   const unusedAllocationAmount = parseNumericInputValue(searchParams.get('unusedAmount') || '')
   const [banks, setBanks] = useState<BankOption[]>([])
   const [financialAccounts, setFinancialAccounts] = useState<FinancialAccountOption[]>([])
-  const [isLoading, setIsLoading] = useState(Boolean(isEditMode || isForAllocation))
+  const [isLoading, setIsLoading] = useState(Boolean(isEditMode))
   const [isSaving, setIsSaving] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
@@ -176,6 +175,7 @@ export default function AddTransactionPage() {
   const [allocationParentOptions, setAllocationParentOptions] = useState<
     { value: string; label: string; fullLabel: string }[]
   >([])
+  const [allocationParentData, setAllocationParentData] = useState<TransactionListItem[]>([])
   const [isSearchingAllocationParents, setIsSearchingAllocationParents] = useState(false)
   const allocationParentSearchRequestRef = useRef(0)
 
@@ -229,18 +229,10 @@ export default function AddTransactionPage() {
 
     if (hasSelectedInOptions) return allocationParentOptions
 
-    const selectedReference = parentReferenceNumber.trim() || 'Selected transaction'
-    return [
-      {
-        value: selectedParentId,
-        label: selectedReference,
-        fullLabel: selectedReference,
-      },
-      ...allocationParentOptions,
-    ]
+    return allocationParentOptions
   }, [allocationParentOptions, form.values.parentTransaction, parentReferenceNumber])
 
-  const isAllocationContext = isForAllocation || Boolean(form.values.isAllocatedFund)
+  const isAllocationContext = Boolean(form.values.isAllocatedFund)
 
   const getAllocationParentOptionLabel = useCallback((transaction: TransactionListItem): string => {
     const reference = transaction.referenceNumber?.trim()
@@ -393,8 +385,6 @@ export default function AddTransactionPage() {
       ],
     })
 
-    console.log('transactionsResult', transactionsResult)
-
     const completedAllocatedTransactions = transactionsResult.success
       ? transactionsResult.data.filter(
           (tx) => tx.allocatedFundType === 'completed' && tx.transactionStatus === 'completed',
@@ -404,11 +394,6 @@ export default function AddTransactionPage() {
     const returnedAllocatedTransactions = transactionsResult.success
       ? transactionsResult.data.filter((tx) => tx.allocatedFundType === 'returned')
       : []
-
-    console.log('Loaded allocated funds', {
-      completedAllocatedTransactions,
-      returnedAllocatedTransactions,
-    })
 
     if (!transactionsResult.success) {
       setCompletedAllocatedFunds([])
@@ -527,9 +512,11 @@ export default function AddTransactionPage() {
         setParentReferenceNumber(parentResult.data.referenceNumber)
       } else {
         setParentReferenceNumber('')
+        form.setFieldValue('parentTransaction', null)
       }
     } else {
       setParentReferenceNumber('')
+      form.setFieldValue('parentTransaction', null)
     }
   }
 
@@ -620,47 +607,13 @@ export default function AddTransactionPage() {
     let isMounted = true
 
     const load = async () => {
-      setIsLoading(Boolean(isEditMode || isForAllocation))
+      setIsLoading(Boolean(isEditMode))
 
       const [banksResult, accountsResult] = await Promise.all([getBanks(), getFinancialAccounts()])
 
       if (!isMounted) return
       if (banksResult.success) setBanks(banksResult.data)
       if (accountsResult.success) setFinancialAccounts(accountsResult.data)
-
-      if (isForAllocation) {
-        // Load parent transaction for allocation
-        if (!transactionId) {
-          setFeedback({ type: 'error', message: 'Missing parent transaction ID.' })
-          setIsLoading(false)
-          return
-        }
-
-        const parentResult = await getTransactionById(transactionId)
-        if (!isMounted) return
-
-        if (!parentResult.success || !parentResult.data) {
-          setFeedback({
-            type: 'error',
-            message: parentResult.error ?? 'Failed to load parent transaction.',
-          })
-          setIsLoading(false)
-          return
-        }
-
-        // Set parent transaction ID and transaction type to debit
-        form.setFieldValue('parentTransaction', transactionId)
-        form.setFieldValue('transactionType', 'debit')
-        form.setFieldValue('isAllocatedFund', true)
-        setParentReferenceNumber(parentResult.data.referenceNumber ?? '')
-
-        // Set transaction date to today
-        const today = new Date()
-        form.setFieldValue('transactionDate', today.toISOString())
-
-        setIsLoading(false)
-        return
-      }
 
       if ((allocationSourceTransactionId || returnedFromTransactionId) && !isEditMode) {
         const parentResult = await getTransactionById(
@@ -838,13 +791,7 @@ export default function AddTransactionPage() {
     return () => {
       isMounted = false
     }
-  }, [
-    allocationSourceTransactionId,
-    returnedFromTransactionId,
-    isEditMode,
-    isForAllocation,
-    transactionId,
-  ])
+  }, [allocationSourceTransactionId, returnedFromTransactionId, isEditMode, transactionId])
 
   useEffect(() => {
     // Skip default account selection in allocation mode
@@ -925,6 +872,7 @@ export default function AddTransactionPage() {
           return
         }
 
+        setAllocationParentData(result.data)
         setAllocationParentOptions(
           result.data.map((transaction) => ({
             fullLabel: getAllocationParentOptionLabel(transaction),
@@ -1019,9 +967,7 @@ export default function AddTransactionPage() {
     const parsedAmount = parseNumericInputValue(form.values.amount)
     const parsedTransactionFee = parseNumericInputValue(form.values.transactionFee) ?? 0
     const fallbackParentTransaction =
-      form.values.isAllocatedFund && isForAllocation && transactionId
-        ? String(transactionId).trim()
-        : ''
+      form.values.isAllocatedFund && transactionId ? String(transactionId).trim() : ''
     const resolvedParentTransaction = form.values.isAllocatedFund
       ? form.values.parentTransaction || fallbackParentTransaction
       : ''
@@ -1089,6 +1035,38 @@ export default function AddTransactionPage() {
     return true
   }
 
+  const handleAllocatedFundChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const isAllocated = e.currentTarget.checked
+
+    form.setFieldValue('isAllocatedFund', isAllocated)
+    form.setFieldValue('allocatedFundType', 'completed')
+
+    const selectedParentTransaction = allocationParentData.find(
+      (account) => account.id === form.values.parentTransaction,
+    )
+
+    if (isAllocated) {
+      form.setFieldValue('transactionType', 'debit')
+      form.setFieldValue('allocatedFundType', 'completed')
+      form.setFieldValue('destinationAccount', null)
+      form.setFieldValue('to', '')
+      form.setFieldValue('sourceAccount', selectedParentTransaction?.destinationAccountId || null)
+      form.setFieldValue('from', selectedParentTransaction?.to || '')
+    } else {
+      form.setFieldValue('transactionType', 'debit')
+      form.setFieldValue('allocatedFundType', undefined)
+      form.setFieldValue('destinationAccount', null)
+      form.setFieldValue('to', '')
+
+      const parentFinancialAccount = financialAccounts.find(
+        (account) => account.id === selectedParentTransaction?.financialAccountId,
+      )
+
+      form.setFieldValue('sourceAccount', parentFinancialAccount?.bankId || null)
+      form.setFieldValue('from', parentFinancialAccount?.name || '')
+    }
+  }
+
   const handleSave = async () => {
     setFeedback(null)
     form.clearFieldError('referenceNumber')
@@ -1124,7 +1102,10 @@ export default function AddTransactionPage() {
     setIsSaving(true)
 
     if (isEditMode && transactionId) {
+      console.log('formData entries:::', Array.from(formData.entries()))
+
       const result = await updateTransactionWithReceipt(transactionId, formData)
+      console.log('result:::', result)
 
       if (result.success) {
         setPendingReceiptFile(null)
@@ -1439,17 +1420,7 @@ export default function AddTransactionPage() {
                     <Switch
                       label="Allocated fund"
                       checked={form.values.isAllocatedFund}
-                      onChange={(e) => {
-                        const isAllocated = e.currentTarget.checked
-                        form.setFieldValue('isAllocatedFund', isAllocated)
-
-                        if (!isAllocated) {
-                          form.setFieldValue('parentTransaction', null)
-                          form.clearFieldError('parentTransaction')
-                          setParentReferenceNumber('')
-                          setAllocationParentSearchValue('')
-                        }
-                      }}
+                      onChange={handleAllocatedFundChange}
                     />
                     <Tooltip label="Allocated fund - mark this as an allocated fund">
                       <span style={{ display: 'inline-flex', cursor: 'help' }}>
@@ -1463,7 +1434,8 @@ export default function AddTransactionPage() {
                     <>
                       <Grid.Col span={6}>
                         <Select
-                          label="Allocated fund from existing transaction/s"
+                          allowDeselect={false}
+                          label="Allocated from"
                           searchable
                           clearable
                           placeholder="Search for reference number"
@@ -1488,6 +1460,7 @@ export default function AddTransactionPage() {
                                 : 'No matching transactions found.'
                           }
                           onChange={(value) => {
+                            console.log('value::: 1', value)
                             form.setFieldValue('parentTransaction', value || null)
 
                             if (!value) {
@@ -1495,10 +1468,11 @@ export default function AddTransactionPage() {
                               return
                             }
 
-                            form.setFieldValue('transactionType', 'debit')
+                            console.log('value:::', value)
 
                             void (async () => {
                               const parentResult = await getTransactionById(value)
+
                               if (parentResult.success && parentResult.data?.referenceNumber) {
                                 setParentReferenceNumber(parentResult.data.referenceNumber)
                               } else {
@@ -1662,6 +1636,7 @@ export default function AddTransactionPage() {
                             required
                             disabled={
                               (!isAllocationContext ||
+                                !form.values.isAllocatedFund ||
                                 form.values.allocatedFundType === 'completed') &&
                               (!form.values.financialAccount ||
                                 form.values.transactionType === 'debit')
@@ -1705,7 +1680,9 @@ export default function AddTransactionPage() {
                             error={form.errors.to}
                             required
                             disabled={
-                              (!isAllocationContext ||
+                              (form.values.isAllocatedFund ||
+                                !isAllocationContext ||
+                                !form.values.isAllocatedFund ||
                                 form.values.allocatedFundType === 'returned') &&
                               (!form.values.financialAccount ||
                                 form.values.transactionType === 'credit')

@@ -21,6 +21,7 @@ const FinancialAccounts: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'name',
+    listSearchableFields: ['name', 'bank', 'id'],
     defaultColumns: ['name', 'bank', 'isDefault', 'startingBalance', 'currentBalance'],
   },
   fields: [

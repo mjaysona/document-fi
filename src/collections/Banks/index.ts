@@ -15,6 +15,7 @@ const Banks: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'name',
+    listSearchableFields: ['name', 'code', 'id'],
     defaultColumns: ['name', 'code'],
   },
   fields: [

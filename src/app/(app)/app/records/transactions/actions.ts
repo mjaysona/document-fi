@@ -43,8 +43,10 @@ export type TransactionListItem = {
   transactionType?: TransactionType
   financialAccountId?: string
   financialAccountName?: string
+  sourceAccountId?: string
   sourceAccountCode?: string
   sourceAccountName?: string
+  destinationAccountId?: string
   destinationAccountCode?: string
   destinationAccountName?: string
   from?: string
@@ -787,6 +789,10 @@ export async function searchNonCompletedAllocatedFunds(
           doc.financialAccount.name
             ? String(doc.financialAccount.name)
             : undefined,
+        sourceAccountId:
+          doc.sourceAccount && typeof doc.sourceAccount === 'object' && doc.sourceAccount.id
+            ? String(doc.sourceAccount.id)
+            : undefined,
         sourceAccountName:
           doc.sourceAccount && typeof doc.sourceAccount === 'object' && doc.sourceAccount.name
             ? String(doc.sourceAccount.name)
@@ -800,6 +806,12 @@ export async function searchNonCompletedAllocatedFunds(
           typeof doc.destinationAccount === 'object' &&
           doc.destinationAccount.name
             ? String(doc.destinationAccount.name)
+            : undefined,
+        destinationAccountId:
+          doc.destinationAccount &&
+          typeof doc.destinationAccount === 'object' &&
+          doc.destinationAccount.id
+            ? String(doc.destinationAccount.id)
             : undefined,
         destinationAccountCode:
           doc.destinationAccount &&
