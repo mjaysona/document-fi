@@ -37,6 +37,38 @@ const getParentTransactionIds = (args: {
   return [...new Set(parentIds.filter((value): value is string => Boolean(value)))]
 }
 
+const getErrorStatusCode = (error: unknown): number | undefined => {
+  if (!error || typeof error !== 'object') return undefined
+
+  if ('status' in error) {
+    const status = Number((error as { status?: unknown }).status)
+    if (Number.isFinite(status)) return status
+  }
+
+  if ('statusCode' in error) {
+    const statusCode = Number((error as { statusCode?: unknown }).statusCode)
+    if (Number.isFinite(statusCode)) return statusCode
+  }
+
+  return undefined
+}
+
+const hasValidationErrorForPath = (error: unknown, pathSegment: string): boolean => {
+  if (!error || typeof error !== 'object') return false
+
+  const data = 'data' in error ? (error as { data?: unknown }).data : undefined
+  if (!data || typeof data !== 'object') return false
+
+  const errors = 'errors' in data ? (data as { errors?: unknown }).errors : undefined
+  if (!Array.isArray(errors)) return false
+
+  return errors.some((entry) => {
+    if (!entry || typeof entry !== 'object') return false
+    const path = 'path' in entry ? (entry as { path?: unknown }).path : undefined
+    return typeof path === 'string' && path.includes(pathSegment)
+  })
+}
+
 const getAllChildTransactions = async (args: {
   req: any
   parentTransactionId: string
@@ -76,22 +108,26 @@ const syncParentAllocatedFunds = async (args: { req: any; parentTransactionIds: 
   if (uniqueParentIds.length === 0) return
 
   for (const parentTransactionId of uniqueParentIds) {
-    let parentDoc: Record<string, unknown>
+    let parentDoc: Record<string, unknown> | undefined
     try {
-      parentDoc = (await args.req.payload.findByID({
+      const parentResult = await args.req.payload.find({
         collection: 'transactions',
-        id: parentTransactionId,
+        where: {
+          id: {
+            equals: parentTransactionId,
+          },
+        },
         depth: 0,
+        limit: 1,
         overrideAccess: true,
         req: args.req,
-      })) as Record<string, unknown>
-    } catch (error) {
-      const status =
-        typeof error === 'object' && error && 'status' in error
-          ? Number((error as { status?: unknown }).status)
-          : undefined
+      })
 
-      if (status === 404) continue
+      parentDoc = parentResult.docs[0] as Record<string, unknown> | undefined
+      if (!parentDoc) continue
+    } catch (error) {
+      const status = getErrorStatusCode(error)
+      if (status === 404 || status === 400) continue
       throw error
     }
 
@@ -115,20 +151,49 @@ const syncParentAllocatedFunds = async (args: { req: any; parentTransactionIds: 
         : 0
 
     if (currentAllocatedFunds !== nextAllocatedFunds) {
-      await args.req.payload.update({
-        collection: 'transactions',
-        id: parentTransactionId,
-        data: {
-          allocatedFunds: nextAllocatedFunds,
-        },
-        depth: 0,
-        overrideAccess: true,
-        req: args.req,
-        context: {
-          ...(args.req.context || {}),
-          skipTransactionBalanceSync: true,
-        },
-      })
+      const context = {
+        ...(args.req.context || {}),
+        skipTransactionBalanceSync: true,
+      }
+
+      try {
+        await args.req.payload.update({
+          collection: 'transactions',
+          id: parentTransactionId,
+          data: {
+            allocatedFunds: nextAllocatedFunds,
+          },
+          depth: 0,
+          overrideAccess: true,
+          req: args.req,
+          context,
+        })
+      } catch (error) {
+        const status = getErrorStatusCode(error)
+        if (status === 404) continue
+
+        const needsRelationshipRetry =
+          hasValidationErrorForPath(error, 'financialAccount') ||
+          hasValidationErrorForPath(error, 'parentTransaction')
+
+        if (!needsRelationshipRetry) {
+          throw error
+        }
+
+        await args.req.payload.update({
+          collection: 'transactions',
+          id: parentTransactionId,
+          data: {
+            allocatedFunds: nextAllocatedFunds,
+            financialAccount: getRelationshipId(parentDoc.financialAccount as MaybeRelationship),
+            parentTransaction: getRelationshipId(parentDoc.parentTransaction as MaybeRelationship),
+          },
+          depth: 0,
+          overrideAccess: true,
+          req: args.req,
+          context,
+        })
+      }
     }
   }
 }

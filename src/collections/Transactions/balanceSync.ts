@@ -110,6 +110,22 @@ function compareSortKeys(
   return a.id.localeCompare(b.id)
 }
 
+function getErrorStatusCode(error: unknown): number | undefined {
+  if (!error || typeof error !== 'object') return undefined
+
+  if ('status' in error) {
+    const status = Number((error as { status?: unknown }).status)
+    if (Number.isFinite(status)) return status
+  }
+
+  if ('statusCode' in error) {
+    const statusCode = Number((error as { statusCode?: unknown }).statusCode)
+    if (Number.isFinite(statusCode)) return statusCode
+  }
+
+  return undefined
+}
+
 async function getAllAccountTransactions(args: {
   req: PayloadRequest
   accountId: string
@@ -221,10 +237,7 @@ export async function syncAccountBalances(args: {
         req,
       })) as AccountRecord
     } catch (error) {
-      const status =
-        typeof error === 'object' && error && 'status' in error
-          ? Number((error as { status?: unknown }).status)
-          : undefined
+      const status = getErrorStatusCode(error)
 
       // If an account no longer exists, skip it so transaction updates don't fail.
       if (status === 404) {
