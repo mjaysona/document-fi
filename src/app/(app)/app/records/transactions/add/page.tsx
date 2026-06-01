@@ -1086,7 +1086,9 @@ export default function AddTransactionPage() {
     }
   }
 
-  const handleAllocatedFundTypeChange = (value: 'completed' | 'returned') => {
+  const handleAllocatedFundTypeChange = (value: 'completed' | 'returned' | null) => {
+    if (!value) return
+
     form.setFieldValue('allocatedFundType', value)
 
     const selectedParentTransaction = allocationParentData.find(
@@ -1515,7 +1517,7 @@ export default function AddTransactionPage() {
                             { label: 'Returned', value: 'returned' },
                           ]}
                           value={form.values.allocatedFundType || 'completed'}
-                          onChange={(value) => handleAllocatedFundTypeChange(value)}
+                          onChange={handleAllocatedFundTypeChange}
                           required
                           style={{ minWidth: 180 }}
                         />
