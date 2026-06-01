@@ -306,10 +306,14 @@
 
   .chart__section,
   .chart__card,
-  .table__section,
   .placeholder__section {
     break-inside: avoid;
     page-break-inside: avoid;
+  }
+
+  .table__section {
+    break-inside: auto;
+    page-break-inside: auto;
   }
 
   .chart__card {

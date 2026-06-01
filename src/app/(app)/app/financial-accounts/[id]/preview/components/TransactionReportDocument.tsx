@@ -27,6 +27,7 @@ type DisplayRow = {
 const A4_PAGE_HEIGHT_PX = 1123
 const FALLBACK_ROW_HEIGHT = 32
 const FALLBACK_NEXT_PAGE_BASE_HEIGHT = 240
+const FALLBACK_BREAKDOWN_HEIGHT = 220
 const PAGE_BOTTOM_BUFFER_PX = 24
 
 const getValidMeasuredHeight = (height: number | undefined, fallback: number): number => {
@@ -216,7 +217,9 @@ export function TransactionReportDocument({
   const displayRows = useMemo(() => flattenRowsForDisplay(rows), [rows])
   const [pagedRows, setPagedRows] = useState<DisplayRow[][]>([])
 
+  const measureDocumentRef = useRef<HTMLElement | null>(null)
   const nextPageBaseRef = useRef<HTMLDivElement | null>(null)
+  const breakdownMeasureRef = useRef<HTMLDivElement | null>(null)
   const rowRefs = useRef<Record<string, HTMLTableRowElement | null>>({})
 
   // Starting balance is the account value before the first transaction in range.
@@ -244,10 +247,29 @@ export function TransactionReportDocument({
         nextPageBaseRef.current?.getBoundingClientRect().height,
         FALLBACK_NEXT_PAGE_BASE_HEIGHT,
       )
+      const breakdownHeight = getValidMeasuredHeight(
+        breakdownMeasureRef.current?.getBoundingClientRect().height,
+        FALLBACK_BREAKDOWN_HEIGHT,
+      )
+
+      const measuredDocumentHeight = getValidMeasuredHeight(
+        measureDocumentRef.current?.getBoundingClientRect().height,
+        A4_PAGE_HEIGHT_PX,
+      )
+
+      const measuredDocumentStyles = measureDocumentRef.current
+        ? window.getComputedStyle(measureDocumentRef.current)
+        : null
+      const verticalPadding = measuredDocumentStyles
+        ? Number.parseFloat(measuredDocumentStyles.paddingTop || '0') +
+          Number.parseFloat(measuredDocumentStyles.paddingBottom || '0')
+        : 0
+
+      const contentHeight = Math.max(0, measuredDocumentHeight - verticalPadding)
 
       const nextPageCapacity = Math.max(
         24,
-        A4_PAGE_HEIGHT_PX - nextPageBaseHeight - PAGE_BOTTOM_BUFFER_PX,
+        contentHeight - nextPageBaseHeight - PAGE_BOTTOM_BUFFER_PX,
       )
 
       const chunks: DisplayRow[][] = []
@@ -277,6 +299,42 @@ export function TransactionReportDocument({
 
       if (currentChunk.length > 0) {
         chunks.push(currentChunk)
+      }
+
+      // Reserve room for the breakdown block on the final page.
+      if (chunks.length > 0) {
+        const finalPageCapacity = Math.max(24, nextPageCapacity - breakdownHeight)
+        const lastChunk = [...chunks[chunks.length - 1]]
+        let lastChunkHeight = lastChunk.reduce((sum, row) => {
+          const rowHeight = getValidMeasuredHeight(
+            rowRefs.current[row.key]?.getBoundingClientRect().height,
+            FALLBACK_ROW_HEIGHT,
+          )
+          return sum + rowHeight
+        }, 0)
+
+        if (lastChunkHeight > finalPageCapacity && lastChunk.length > 1) {
+          const movedRows: DisplayRow[] = []
+
+          // Move only the minimum number of trailing rows so the final page can fit breakdown.
+          while (lastChunk.length > 1 && lastChunkHeight > finalPageCapacity) {
+            const movedRow = lastChunk.pop()
+            if (!movedRow) break
+
+            const movedRowHeight = getValidMeasuredHeight(
+              rowRefs.current[movedRow.key]?.getBoundingClientRect().height,
+              FALLBACK_ROW_HEIGHT,
+            )
+
+            movedRows.unshift(movedRow)
+            lastChunkHeight -= movedRowHeight
+          }
+
+          if (movedRows.length > 0) {
+            chunks[chunks.length - 1] = lastChunk
+            chunks.push(movedRows)
+          }
+        }
       }
 
       setPagedRows(chunks)
@@ -313,7 +371,7 @@ export function TransactionReportDocument({
     )
   }
 
-  // Calculate breakdown values
+  // Calculate breakdown values.
   const totalCredits = rows.reduce(
     (sum, row) =>
       row.status === 'completed' && row.type === 'credit' && typeof row.amount === 'number'
@@ -334,7 +392,7 @@ export function TransactionReportDocument({
       ? startingBalance + netChange
       : null
 
-  const renderTable = (pageRows: DisplayRow[], isContinued: boolean) => {
+  const renderTable = (pageRows: DisplayRow[], isContinued: boolean, showBreakdown: boolean) => {
     return (
       <section
         className={`${styles.table__section} ${isContinued ? styles['table__section--continued'] : ''}`.trim()}
@@ -349,147 +407,147 @@ export function TransactionReportDocument({
         {rows.length === 0 ? (
           <p className={styles.placeholder__text}>No transactions available for this report.</p>
         ) : (
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                {columnHeaders.map((column) => (
-                  <th
-                    key={column.value}
-                    className={
-                      isRightAlignedColumn(column.value) ? styles['cell--right'] : undefined
-                    }
-                  >
-                    {column.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>{pageRows.map((displayRow) => renderTableRow(displayRow))}</tbody>
-            {/* Breakdown summary at the end of the table */}
-            <tfoot>
-              <tr>
-                <td colSpan={columnHeaders.length} style={{ paddingTop: 24, border: 'none' }}>
-                  <h2 className={styles.section__title}>
-                    Breakdown ({formatDate(header.fromDate)} - {formatDate(header.toDate)})
-                  </h2>
-                  <div
-                    style={{
-                      fontSize: 10,
-                      display: 'flex',
-                      gap: 24,
-                      justifyContent: 'space-between',
-                      marginTop: 12,
-                    }}
-                  >
-                    {/* Left: Credits - Debits breakdown */}
-                    <div style={{ flex: 1, minWidth: 180, border: '1px solid #f1f5f9' }}>
+          <>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  {columnHeaders.map((column) => (
+                    <th
+                      key={column.value}
+                      className={
+                        isRightAlignedColumn(column.value) ? styles['cell--right'] : undefined
+                      }
+                    >
+                      {column.label}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>{pageRows.map((displayRow) => renderTableRow(displayRow))}</tbody>
+            </table>
+
+            {showBreakdown ? (
+              <div style={{ marginTop: 24 }}>
+                <h2 className={styles.section__title}>
+                  Breakdown ({formatDate(header.fromDate)} - {formatDate(header.toDate)})
+                </h2>
+                <div
+                  style={{
+                    fontSize: 10,
+                    display: 'flex',
+                    gap: 24,
+                    justifyContent: 'space-between',
+                    marginTop: 12,
+                  }}
+                >
+                  {/* Left: Credits - Debits breakdown */}
+                  <div style={{ flex: 1, minWidth: 180, border: '1px solid #f1f5f9' }}>
+                    <div
+                      style={{
+                        backgroundColor: '#f8f9fa',
+                        color: '#6b7280',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        padding: '8px 12px',
+                        borderBottom: '1px solid #f1f5f9',
+                        textTransform: 'uppercase',
+                        fontWeight: 700,
+                        fontSize: 8,
+                      }}
+                    >
+                      <span>Credits - Debits</span>
+                    </div>
+                    <div style={{ padding: '8px 12px' }}>
                       <div
                         style={{
-                          backgroundColor: '#f8f9fa',
-                          color: '#6b7280',
                           display: 'flex',
                           justifyContent: 'space-between',
-                          padding: '8px 12px',
-                          borderBottom: '1px solid #f1f5f9',
-                          textTransform: 'uppercase',
-                          fontWeight: 700,
-                          fontSize: 8,
                         }}
                       >
-                        <span>Credits - Debits</span>
+                        <span>Total credits:</span>
+                        <span style={{ color: '#2f9e44' }}>{formatMoney(totalCredits)}</span>
                       </div>
-                      <div style={{ padding: '8px 12px' }}>
-                        <div
-                          style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                          }}
-                        >
-                          <span>Total credits:</span>
-                          <span style={{ color: '#2f9e44' }}>{formatMoney(totalCredits)}</span>
-                        </div>
-                        <div
-                          style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                          }}
-                        >
-                          <span>Total debits:</span>
-                          <span style={{ color: '#e03131' }}>{formatMoney(totalDebits)}</span>
-                        </div>
-                      </div>
-                      <div style={{ padding: '8px 12px', borderTop: '1px solid #f1f5f9' }}>
-                        <div
-                          style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            fontWeight: 500,
-                          }}
-                        >
-                          <span>Net difference:</span>
-                          <span style={{ color: netChange < 0 ? '#e03131' : '#2f9e44' }}>
-                            {formatMoney(netChange)}
-                          </span>
-                        </div>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                        }}
+                      >
+                        <span>Total debits:</span>
+                        <span style={{ color: '#e03131' }}>{formatMoney(totalDebits)}</span>
                       </div>
                     </div>
-                    {/* Right: Starting balance - (difference from credits - debits) */}
-                    <div style={{ flex: 1, minWidth: 180, border: '1px solid #f1f5f9' }}>
+                    <div style={{ padding: '8px 12px', borderTop: '1px solid #f1f5f9' }}>
                       <div
                         style={{
-                          backgroundColor: '#f8f9fa',
-                          color: '#6b7280',
                           display: 'flex',
                           justifyContent: 'space-between',
-                          padding: '8px 12px',
-                          borderBottom: '1px solid #f1f5f9',
-                          textTransform: 'uppercase',
-                          fontWeight: 700,
-                          fontSize: 8,
+                          fontWeight: 500,
                         }}
                       >
-                        <span>Remaining balance</span>
-                      </div>
-                      <div style={{ padding: '8px 12px' }}>
-                        <div
-                          style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                          }}
-                        >
-                          <span>Starting balance:</span>
-                          <span style={{ fontWeight: 700 }}>{formatMoney(startingBalance)}</span>
-                        </div>
-                        <div
-                          style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                          }}
-                        >
-                          <span>Net difference:</span>
-                          <span style={{ color: netChange < 0 ? '#e03131' : '#2f9e44' }}>
-                            {formatMoney(netChange)}
-                          </span>
-                        </div>
-                      </div>
-                      <div style={{ padding: '8px 12px', borderTop: '1px solid #f1f5f9' }}>
-                        <div
-                          style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            fontWeight: 500,
-                          }}
-                        >
-                          <span>Remaining balance:</span>
-                          <span style={{ fontWeight: 700 }}>{formatMoney(endingBalance)}</span>
-                        </div>
+                        <span>Net difference:</span>
+                        <span style={{ color: netChange < 0 ? '#e03131' : '#2f9e44' }}>
+                          {formatMoney(netChange)}
+                        </span>
                       </div>
                     </div>
                   </div>
-                </td>
-              </tr>
-            </tfoot>
-          </table>
+                  {/* Right: Starting balance - (difference from credits - debits) */}
+                  <div style={{ flex: 1, minWidth: 180, border: '1px solid #f1f5f9' }}>
+                    <div
+                      style={{
+                        backgroundColor: '#f8f9fa',
+                        color: '#6b7280',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        padding: '8px 12px',
+                        borderBottom: '1px solid #f1f5f9',
+                        textTransform: 'uppercase',
+                        fontWeight: 700,
+                        fontSize: 8,
+                      }}
+                    >
+                      <span>Remaining balance</span>
+                    </div>
+                    <div style={{ padding: '8px 12px' }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                        }}
+                      >
+                        <span>Starting balance:</span>
+                        <span style={{ fontWeight: 700 }}>{formatMoney(startingBalance)}</span>
+                      </div>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                        }}
+                      >
+                        <span>Net difference:</span>
+                        <span style={{ color: netChange < 0 ? '#e03131' : '#2f9e44' }}>
+                          {formatMoney(netChange)}
+                        </span>
+                      </div>
+                    </div>
+                    <div style={{ padding: '8px 12px', borderTop: '1px solid #f1f5f9' }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          fontWeight: 500,
+                        }}
+                      >
+                        <span>Remaining balance:</span>
+                        <span style={{ fontWeight: 700 }}>{formatMoney(endingBalance)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+          </>
         )}
       </section>
     )
@@ -638,14 +696,14 @@ export function TransactionReportDocument({
               aria-label={`Transaction report document page ${pageIndex + 2}`}
               key={`transaction-page-${pageIndex}`}
             >
-              {renderTable(pageRows, pageIndex > 0)}
+              {renderTable(pageRows, pageIndex > 0, pageIndex === transactionPages.length - 1)}
             </article>
           </div>
         ))}
       </div>
 
       <div className={styles['measure-layer']} aria-hidden="true">
-        <article className={styles.document}>
+        <article className={styles.document} ref={measureDocumentRef}>
           <div ref={nextPageBaseRef}>
             <section className={`${styles.table__section} ${styles['table__section--continued']}`}>
               <h2 className={styles.section__title}>
@@ -666,7 +724,143 @@ export function TransactionReportDocument({
 
         <article className={styles.document}>
           <section className={styles.table__section}>
+            <div ref={breakdownMeasureRef} style={{ marginTop: 24 }}>
+              <h2 className={styles.section__title}>
+                Breakdown ({formatDate(header.fromDate)} - {formatDate(header.toDate)})
+              </h2>
+              <div
+                style={{
+                  fontSize: 10,
+                  display: 'flex',
+                  gap: 24,
+                  justifyContent: 'space-between',
+                  marginTop: 12,
+                }}
+              >
+                <div style={{ flex: 1, minWidth: 180, border: '1px solid #f1f5f9' }}>
+                  <div
+                    style={{
+                      backgroundColor: '#f8f9fa',
+                      color: '#6b7280',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      padding: '8px 12px',
+                      borderBottom: '1px solid #f1f5f9',
+                      textTransform: 'uppercase',
+                      fontWeight: 700,
+                      fontSize: 8,
+                    }}
+                  >
+                    <span>Credits - Debits</span>
+                  </div>
+                  <div style={{ padding: '8px 12px' }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <span>Total credits:</span>
+                      <span style={{ color: '#2f9e44' }}>{formatMoney(totalCredits)}</span>
+                    </div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <span>Total debits:</span>
+                      <span style={{ color: '#e03131' }}>{formatMoney(totalDebits)}</span>
+                    </div>
+                  </div>
+                  <div style={{ padding: '8px 12px', borderTop: '1px solid #f1f5f9' }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        fontWeight: 500,
+                      }}
+                    >
+                      <span>Net difference:</span>
+                      <span style={{ color: netChange < 0 ? '#e03131' : '#2f9e44' }}>
+                        {formatMoney(netChange)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div style={{ flex: 1, minWidth: 180, border: '1px solid #f1f5f9' }}>
+                  <div
+                    style={{
+                      backgroundColor: '#f8f9fa',
+                      color: '#6b7280',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      padding: '8px 12px',
+                      borderBottom: '1px solid #f1f5f9',
+                      textTransform: 'uppercase',
+                      fontWeight: 700,
+                      fontSize: 8,
+                    }}
+                  >
+                    <span>Remaining balance</span>
+                  </div>
+                  <div style={{ padding: '8px 12px' }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <span>Starting balance:</span>
+                      <span style={{ fontWeight: 700 }}>{formatMoney(startingBalance)}</span>
+                    </div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <span>Net difference:</span>
+                      <span style={{ color: netChange < 0 ? '#e03131' : '#2f9e44' }}>
+                        {formatMoney(netChange)}
+                      </span>
+                    </div>
+                  </div>
+                  <div style={{ padding: '8px 12px', borderTop: '1px solid #f1f5f9' }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        fontWeight: 500,
+                      }}
+                    >
+                      <span>Remaining balance:</span>
+                      <span style={{ fontWeight: 700 }}>{formatMoney(endingBalance)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </article>
+
+        <article className={styles.document}>
+          <section className={styles.table__section}>
             <table className={styles.table}>
+              <thead>
+                <tr>
+                  {columnHeaders.map((column) => (
+                    <th
+                      key={`measure-rows-header-${column.value}`}
+                      className={
+                        isRightAlignedColumn(column.value) ? styles['cell--right'] : undefined
+                      }
+                    >
+                      {column.label}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
               <tbody>
                 {displayRows.map((displayRow) => (
                   <tr
