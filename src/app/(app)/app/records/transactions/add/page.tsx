@@ -1067,6 +1067,51 @@ export default function AddTransactionPage() {
     }
   }
 
+  const handleParentTransactionChange = (selectedId: string | null) => {
+    if (!selectedId) {
+      form.setFieldValue('parentTransaction', null)
+      form.setFieldValue('sourceAccount', null)
+      form.setFieldValue('from', '')
+    } else {
+      form.setFieldValue('parentTransaction', selectedId)
+      const selectedParentTransaction = allocationParentData.find(
+        (account) => account.id === selectedId,
+      )
+      form.setFieldValue('transactionType', 'debit')
+      form.setFieldValue('allocatedFundType', 'completed')
+      form.setFieldValue('destinationAccount', null)
+      form.setFieldValue('to', '')
+      form.setFieldValue('sourceAccount', selectedParentTransaction?.destinationAccountId || null)
+      form.setFieldValue('from', selectedParentTransaction?.to || '')
+    }
+  }
+
+  const handleAllocatedFundTypeChange = (value: 'completed' | 'returned') => {
+    form.setFieldValue('allocatedFundType', value)
+
+    const selectedParentTransaction = allocationParentData.find(
+      (account) => account.id === form.values.parentTransaction,
+    )
+
+    if (value === 'returned') {
+      const parentFinancialAccount = financialAccounts.find(
+        (account) => account.id === selectedParentTransaction?.financialAccountId,
+      )
+
+      form.setFieldValue('destinationAccount', parentFinancialAccount?.bankId || null)
+      form.setFieldValue('to', parentFinancialAccount?.name || '')
+    } else {
+      form.setFieldValue('transactionType', 'debit')
+      const selectedParentTransaction = allocationParentData.find(
+        (account) => account.id === form.values.parentTransaction,
+      )
+      form.setFieldValue('sourceAccount', selectedParentTransaction?.destinationAccountId || null)
+      form.setFieldValue('from', selectedParentTransaction?.to || '')
+      form.setFieldValue('destinationAccount', null)
+      form.setFieldValue('to', '')
+    }
+  }
+
   const handleSave = async () => {
     setFeedback(null)
     form.clearFieldError('referenceNumber')
@@ -1459,27 +1504,7 @@ export default function AddTransactionPage() {
                                 ? 'Searching...'
                                 : 'No matching transactions found.'
                           }
-                          onChange={(value) => {
-                            console.log('value::: 1', value)
-                            form.setFieldValue('parentTransaction', value || null)
-
-                            if (!value) {
-                              setParentReferenceNumber('')
-                              return
-                            }
-
-                            console.log('value:::', value)
-
-                            void (async () => {
-                              const parentResult = await getTransactionById(value)
-
-                              if (parentResult.success && parentResult.data?.referenceNumber) {
-                                setParentReferenceNumber(parentResult.data.referenceNumber)
-                              } else {
-                                setParentReferenceNumber('')
-                              }
-                            })()
-                          }}
+                          onChange={handleParentTransactionChange}
                         />
                       </Grid.Col>
                       <Grid.Col span={6}>
@@ -1490,28 +1515,7 @@ export default function AddTransactionPage() {
                             { label: 'Returned', value: 'returned' },
                           ]}
                           value={form.values.allocatedFundType || 'completed'}
-                          onChange={(value) => {
-                            if (value) {
-                              if (value === 'completed' || value === 'returned') {
-                                form.setFieldValue('allocatedFundType', value)
-                              } else {
-                                form.setFieldValue('allocatedFundType', 'completed')
-                              }
-                              const sourceBank = form.values.sourceAccount
-                              const destinationBank = form.values.destinationAccount
-                              const fromValue = form.values.from
-                              const toValue = form.values.to
-                              form.setFieldValue('transactionType', value as TransactionType)
-                              form.setFieldValue('sourceAccount', destinationBank)
-                              form.setFieldValue('destinationAccount', sourceBank)
-                              form.setFieldValue('from', toValue)
-                              form.setFieldValue('to', fromValue)
-                              form.setFieldValue(
-                                'transactionType',
-                                value === 'completed' ? 'debit' : 'credit',
-                              )
-                            }
-                          }}
+                          onChange={(value) => handleAllocatedFundTypeChange(value)}
                           required
                           style={{ minWidth: 180 }}
                         />
@@ -1582,7 +1586,6 @@ export default function AddTransactionPage() {
                       ]}
                       value={form.values.transactionType}
                       onChange={(value) => {
-                        if (isAllocationContext) return
                         if (value) {
                           const sourceBank = form.values.sourceAccount
                           const destinationBank = form.values.destinationAccount
@@ -1598,7 +1601,6 @@ export default function AddTransactionPage() {
                       clearable={false}
                       error={form.errors.transactionType}
                       required
-                      disabled={!form.values.financialAccount || isAllocationContext}
                     />
                   </Grid.Col>
                   <Grid.Col span={{ base: 12, md: 6 }}>
@@ -1619,12 +1621,6 @@ export default function AddTransactionPage() {
                             onChange={(value) => form.setFieldValue('sourceAccount', value)}
                             error={form.errors.sourceAccount}
                             required
-                            disabled={
-                              (!isAllocationContext ||
-                                form.values.allocatedFundType === 'completed') &&
-                              (!form.values.financialAccount ||
-                                form.values.transactionType === 'debit')
-                            }
                           />
                         </Grid.Col>
                         <Grid.Col>
@@ -1634,13 +1630,6 @@ export default function AddTransactionPage() {
                             onChange={(e) => form.setFieldValue('from', e.currentTarget.value)}
                             error={form.errors.from}
                             required
-                            disabled={
-                              (!isAllocationContext ||
-                                !form.values.isAllocatedFund ||
-                                form.values.allocatedFundType === 'completed') &&
-                              (!form.values.financialAccount ||
-                                form.values.transactionType === 'debit')
-                            }
                           />
                         </Grid.Col>
                       </Grid>
@@ -1664,12 +1653,6 @@ export default function AddTransactionPage() {
                             onChange={(value) => form.setFieldValue('destinationAccount', value)}
                             error={form.errors.destinationAccount}
                             required
-                            disabled={
-                              (!isAllocationContext ||
-                                form.values.allocatedFundType === 'returned') &&
-                              (!form.values.financialAccount ||
-                                form.values.transactionType === 'credit')
-                            }
                           />
                         </Grid.Col>
                         <Grid.Col>
@@ -1679,14 +1662,6 @@ export default function AddTransactionPage() {
                             onChange={(e) => form.setFieldValue('to', e.currentTarget.value)}
                             error={form.errors.to}
                             required
-                            disabled={
-                              (form.values.isAllocatedFund ||
-                                !isAllocationContext ||
-                                !form.values.isAllocatedFund ||
-                                form.values.allocatedFundType === 'returned') &&
-                              (!form.values.financialAccount ||
-                                form.values.transactionType === 'credit')
-                            }
                           />
                         </Grid.Col>
                       </Grid>
@@ -1772,9 +1747,6 @@ export default function AddTransactionPage() {
                       }
                       error={form.errors.transactionStatus}
                       required
-                      disabled={
-                        (!isAllocationContext && !form.values.financialAccount) || isEditMode
-                      }
                     />
                   </Grid.Col>
                   <Grid.Col span={{ base: 12, sm: 6 }}>
