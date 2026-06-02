@@ -255,6 +255,8 @@ export default function QuotationsPage() {
         isLoading={isLoading}
         loadingText="Loading quotations…"
         emptyText="No quotations found."
+        enableClientPagination
+        clientPageSize={10}
         selectedIds={selectedIds}
         onToggleSelectAll={handleToggleSelectAll}
         onToggleSelectRow={handleToggleSelectRow}

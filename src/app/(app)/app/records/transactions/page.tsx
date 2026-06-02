@@ -1167,6 +1167,8 @@ export default function TransactionsPage() {
           isLoading={isLoading}
           loadingText="Loading transactions..."
           emptyText="No transactions found."
+          enableClientPagination
+          clientPageSize={10}
           getRowKey={(row) => row.parent.id}
           onRowClick={(row) => {
             setExpandedRows((current) =>

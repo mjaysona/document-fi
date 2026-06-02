@@ -2,7 +2,7 @@
 
 import { Checkbox, Flex, Pagination, Table, Text, ScrollArea } from '@mantine/core'
 import type { ReactNode } from 'react'
-import { Fragment } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 
 export type DataTableColumn<T> = {
   key: string
@@ -34,6 +34,10 @@ type Props<T> = {
   /** Optional pagination state. When provided, pagination controls are rendered. */
   pagination?: DataTablePaginationState
   onPageChange?: (page: number) => void
+  /** Enable client-side pagination when server pagination is not provided. */
+  enableClientPagination?: boolean
+  /** Page size for client-side pagination. Defaults to 10. */
+  clientPageSize?: number
   /** When provided, a leading checkbox column is rendered for row selection. */
   selectedIds?: string[]
   onToggleSelectAll?: (checked: boolean) => void
@@ -54,6 +58,8 @@ export function DataTable<T>({
   getRowBg,
   pagination,
   onPageChange,
+  enableClientPagination = false,
+  clientPageSize = 10,
   selectedIds,
   onToggleSelectAll,
   onToggleSelectRow,
@@ -61,12 +67,44 @@ export function DataTable<T>({
   isRowExpanded,
   renderExpandedRow,
 }: Props<T>) {
+  const [clientPage, setClientPage] = useState(1)
   const hasSelection = selectedIds !== undefined
 
+  const effectiveClientPageSize = Math.max(1, clientPageSize)
+  const clientTotalPages = Math.max(1, Math.ceil(data.length / effectiveClientPageSize))
+  const shouldUseClientPagination = !pagination && enableClientPagination
+
+  useEffect(() => {
+    if (!shouldUseClientPagination) {
+      return
+    }
+    if (clientPage > clientTotalPages) {
+      setClientPage(clientTotalPages)
+    }
+  }, [clientPage, clientTotalPages, shouldUseClientPagination])
+
+  useEffect(() => {
+    if (!shouldUseClientPagination) {
+      return
+    }
+    setClientPage(1)
+  }, [effectiveClientPageSize, shouldUseClientPagination])
+
+  const visibleData = useMemo(() => {
+    if (!shouldUseClientPagination) {
+      return data
+    }
+
+    const start = (clientPage - 1) * effectiveClientPageSize
+    return data.slice(start, start + effectiveClientPageSize)
+  }, [clientPage, data, effectiveClientPageSize, shouldUseClientPagination])
+
   const allVisibleSelected =
-    hasSelection && data.length > 0 && data.every((row) => selectedIds!.includes(getRowKey(row)))
+    hasSelection &&
+    visibleData.length > 0 &&
+    visibleData.every((row) => selectedIds!.includes(getRowKey(row)))
   const someVisibleSelected =
-    hasSelection && data.some((row) => selectedIds!.includes(getRowKey(row)))
+    hasSelection && visibleData.some((row) => selectedIds!.includes(getRowKey(row)))
 
   if (isLoading) {
     return (
@@ -107,7 +145,7 @@ export function DataTable<T>({
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody style={{ verticalAlign: 'top' }}>
-          {data.map((row) => {
+          {visibleData.map((row) => {
             const rowKey = getRowKey(row)
             const customBg = getRowBg?.(row)
             const selectionBg =
@@ -162,6 +200,21 @@ export function DataTable<T>({
             value={pagination.page}
             onChange={onPageChange}
             total={pagination.totalPages}
+            withEdges
+          />
+        </Flex>
+      )}
+
+      {!pagination && shouldUseClientPagination && clientTotalPages > 1 && (
+        <Flex justify="space-between" align="center" mt="lg">
+          <Text size="sm" c="dimmed">
+            Showing {(clientPage - 1) * effectiveClientPageSize + 1}–
+            {Math.min(clientPage * effectiveClientPageSize, data.length)} of {data.length} records
+          </Text>
+          <Pagination
+            value={clientPage}
+            onChange={setClientPage}
+            total={clientTotalPages}
             withEdges
           />
         </Flex>
