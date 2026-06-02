@@ -22,7 +22,7 @@ import {
   TextInput,
 } from '@mantine/core'
 import { CollapsibleImage } from './CollapsibleImage'
-import { CircleCheck, Filter, Plus, Search, Settings } from 'lucide-react'
+import { CircleCheck, CircleX, Filter, Plus, Search, Settings } from 'lucide-react'
 import { DataTable, type DataTableColumn } from '@/app/(app)/components/ui/DataTable'
 import {
   getFinancialAccounts,
@@ -74,7 +74,7 @@ type FeedbackState = {
   message: string
 }
 
-type SortBy = 'date' | 'amount'
+type SortBy = 'date' | 'amount' | 'updated'
 type SortOrder = 'asc' | 'desc'
 type TransactionParentRow = { parent: TransactionListItem; children: TransactionListItem[] }
 type ChildTableColumn = {
@@ -99,6 +99,20 @@ const formatDate = (value?: string): string => {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return '-'
   return date.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
+}
+
+const formatDateTime = (value?: string): string => {
+  if (!value) return '-'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '-'
+  return date.toLocaleDateString('en-PH', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  })
 }
 
 const formatCurrency = (value?: number): string => {
@@ -161,6 +175,9 @@ const compareTransactions = (
     // Keep amount ties deterministic by newest transaction date, then creation metadata.
     const dateCmp = compareNumeric(txDateA, txDateB)
     if (dateCmp !== 0) return dateCmp * direction
+  } else if (sortBy === 'updated') {
+    const updatedCmp = compareNumeric(updatedA, updatedB)
+    if (updatedCmp !== 0) return updatedCmp * direction
   } else {
     const dateCmp = compareNumeric(txDateA, txDateB)
     if (dateCmp !== 0) return dateCmp * direction
@@ -659,17 +676,6 @@ export default function TransactionsPage() {
         key: 'transactionStatus',
         label: 'Status',
         render: (row) => {
-          const { totalAllocatedWithFees, parentAmount } = getAllocation(row)
-          const isForAllocation = row.children.length > 0 && totalAllocatedWithFees !== parentAmount
-
-          if (isForAllocation) {
-            return (
-              <Badge color="yellow" variant="light" tt="capitalize">
-                For allocation
-              </Badge>
-            )
-          }
-
           return (
             <Badge
               color={row.parent.transactionStatus === 'failed' ? 'red' : 'teal'}
@@ -744,7 +750,22 @@ export default function TransactionsPage() {
       isAllocatedFund: {
         key: 'isAllocatedFund',
         label: 'Allocated Fund',
-        render: (row) => (row.parent.isAllocatedFund ? 'Yes' : 'No'),
+        render: (row) =>
+          row.parent.isAllocatedFund ? (
+            <CircleCheck size={16} color="green" />
+          ) : (
+            <CircleX size={16} color="gray" />
+          ),
+      },
+      isForAllocation: {
+        key: 'isForAllocation',
+        label: 'For Allocation',
+        render: (row) =>
+          row.parent.isForAllocation ? (
+            <CircleCheck size={16} color="green" />
+          ) : (
+            <CircleX size={16} color="gray" />
+          ),
       },
       allocatedFunds: {
         key: 'allocatedFunds',
@@ -764,6 +785,11 @@ export default function TransactionsPage() {
         key: 'particulars',
         label: 'Particulars',
         render: (row) => row.parent.particulars || '-',
+      },
+      updatedAt: {
+        key: 'updatedAt',
+        label: 'Last Updated',
+        render: (row) => formatDateTime(row.parent.updatedAt),
       },
     }
 
@@ -899,7 +925,22 @@ export default function TransactionsPage() {
       isAllocatedFund: {
         key: 'isAllocatedFund',
         label: 'Allocated Fund',
-        render: (child) => (child.isAllocatedFund ? 'Yes' : 'No'),
+        render: (child) =>
+          child.isAllocatedFund ? (
+            <CircleCheck size={16} color="green" />
+          ) : (
+            <CircleX size={16} color="gray" />
+          ),
+      },
+      isForAllocation: {
+        key: 'isForAllocation',
+        label: 'For Allocation',
+        render: (child) =>
+          child.isForAllocation ? (
+            <CircleCheck size={16} color="green" />
+          ) : (
+            <CircleX size={16} color="gray" />
+          ),
       },
       allocatedFunds: {
         key: 'allocatedFunds',
@@ -915,6 +956,11 @@ export default function TransactionsPage() {
         key: 'particulars',
         label: 'Particulars',
         render: (child) => child.particulars || '-',
+      },
+      updatedAt: {
+        key: 'updatedAt',
+        label: 'Last Updated',
+        render: (child) => formatDateTime(child.updatedAt),
       },
     }
 
@@ -977,6 +1023,15 @@ export default function TransactionsPage() {
                 disabled={isLoading}
               >
                 Amount {sortBy === 'amount' && (sortOrder === 'asc' ? '↑' : '↓')}
+              </Button>
+              <Button
+                w={{ base: '100%', md: 'auto' }}
+                variant={sortBy === 'updated' ? 'light' : 'default'}
+                size="sm"
+                onClick={() => toggleSort('updated')}
+                disabled={isLoading}
+              >
+                Last updated {sortBy === 'updated' && (sortOrder === 'asc' ? '↑' : '↓')}
               </Button>
             </Flex>
           </Flex>
@@ -1182,7 +1237,7 @@ export default function TransactionsPage() {
                 }}
               >
                 <MultiSelect
-                  label="Table Columns"
+                  label="Table columns"
                   placeholder="Shown table columns"
                   data={TRANSACTION_REPORT_COLUMN_OPTIONS.map((column) => ({
                     value: column.value,

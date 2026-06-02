@@ -16,10 +16,12 @@ export const TRANSACTION_REPORT_COLUMN_OPTIONS = [
   { value: 'currentBalance', label: 'Current Balance' },
   { value: 'runningBalance', label: 'Running Balance' },
   { value: 'isAllocatedFund', label: 'Allocated Fund' },
+  { value: 'isForAllocation', label: 'For Allocation' },
   { value: 'allocatedFunds', label: 'Allocated Funds' },
   { value: 'description', label: 'Description' },
   { value: 'particulars', label: 'Particulars' },
   { value: 'receiptImage', label: 'Receipt Image' },
+  { value: 'updatedAt', label: 'Last Updated' },
 ] as const
 
 export type TransactionReportColumnKey = (typeof TRANSACTION_REPORT_COLUMN_OPTIONS)[number]['value']

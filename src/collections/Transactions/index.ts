@@ -221,183 +221,133 @@ const getBankShortName = async (bankValue: unknown, req: any): Promise<string> =
   return ''
 }
 
+const getAllFlaggedTransactions = async (args: {
+  req: any
+  accountId: string
+  flag: 'isForAllocation' | 'isAllocatedFund'
+}): Promise<Array<Record<string, unknown>>> => {
+  const docs: Array<Record<string, unknown>> = []
+  let page = 1
+
+  while (true) {
+    const result = await args.req.payload.find({
+      collection: 'transactions',
+      where: {
+        financialAccount: {
+          equals: args.accountId,
+        },
+        [args.flag]: {
+          equals: true,
+        },
+      },
+      depth: 0,
+      limit: 200,
+      page,
+      overrideAccess: true,
+      req: args.req,
+    })
+
+    docs.push(...(result.docs as Array<Record<string, unknown>>))
+
+    const currentPage = Number(result.page || 1)
+    const totalPages = Number(result.totalPages || 1)
+    if (currentPage >= totalPages) {
+      break
+    }
+
+    page = currentPage + 1
+  }
+
+  return docs
+}
+
 const syncAllocationFunds = async (args: {
   req: any
-  doc: Record<string, unknown>
-  previousDoc?: Record<string, unknown>
+  accountIds: Array<string | null | undefined>
 }) => {
-  const isForAllocationNow = args.doc.isForAllocation === true
-  const isForAllocationPreviously = args.previousDoc?.isForAllocation === true
-  const isAllocatedFundNow = args.doc.isAllocatedFund === true
-  const isAllocatedFundPreviously = args.previousDoc?.isAllocatedFund === true
+  const uniqueIds = [...new Set(args.accountIds.filter((value): value is string => Boolean(value)))]
+  if (uniqueIds.length === 0) return
 
-  const financialAccountNow = getRelationshipId(args.doc.financialAccount as MaybeRelationship)
-  const financialAccountPreviously = getRelationshipId(
-    args.previousDoc?.financialAccount as MaybeRelationship,
-  )
-
-  // Get the transaction amounts
-  const amountNow = toSafeNonNegativeNumber(args.doc.amount)
-  const feeNow = toSafeNonNegativeNumber(args.doc.transactionFee)
-  const totalNow = amountNow + feeNow
-
-  const amountPreviously = toSafeNonNegativeNumber(args.previousDoc?.amount)
-  const feePreviously = toSafeNonNegativeNumber(args.previousDoc?.transactionFee)
-  const totalPreviously = amountPreviously + feePreviously
-
-  // If nothing relevant has changed, nothing to do
-  if (
-    isForAllocationNow === isForAllocationPreviously &&
-    isAllocatedFundNow === isAllocatedFundPreviously &&
-    financialAccountNow === financialAccountPreviously &&
-    totalNow === totalPreviously
-  ) {
-    return
+  const req = args.req
+  req.context = {
+    ...(req.context || {}),
+    skipTransactionBalanceSync: true,
   }
 
-  // HANDLE isForAllocation (adds to allocationFunds pool)
-  // Remove from previous financial account if needed
-  if (isForAllocationPreviously && financialAccountPreviously && totalPreviously > 0) {
+  for (const accountId of uniqueIds) {
+    let account: Record<string, unknown>
     try {
-      const previousAccount = await args.req.payload.findByID({
+      account = (await req.payload.findByID({
         collection: 'financial-accounts',
-        id: financialAccountPreviously,
+        id: accountId,
         depth: 0,
         overrideAccess: true,
-      })
-
-      if (previousAccount) {
-        const currentAllocationFunds =
-          typeof previousAccount.allocationFunds === 'number' && previousAccount.allocationFunds > 0
-            ? previousAccount.allocationFunds
-            : 0
-        const newAllocationFunds = Math.max(0, currentAllocationFunds - totalPreviously)
-
-        await args.req.payload.update({
-          collection: 'financial-accounts',
-          id: financialAccountPreviously,
-          data: {
-            allocationFunds: newAllocationFunds,
-          },
-          depth: 0,
-          overrideAccess: true,
-          req: args.req,
-        })
-      }
+        req,
+      })) as Record<string, unknown>
     } catch (error) {
       const status = getErrorStatusCode(error)
-      if (status !== 404) throw error
+      // If an account no longer exists, skip it so transaction updates don't fail.
+      if (status === 404) {
+        continue
+      }
+      throw error
     }
-  }
 
-  // Add to new financial account if needed
-  if (isForAllocationNow && financialAccountNow && totalNow > 0) {
-    try {
-      const currentAccount = await args.req.payload.findByID({
+    // Compute allocationFunds from all isForAllocation=true transactions
+    const forAllocationTransactions = await getAllFlaggedTransactions({
+      req,
+      accountId,
+      flag: 'isForAllocation',
+    })
+
+    const nextAllocationFunds = forAllocationTransactions.reduce((sum, transaction) => {
+      const amount = toSafeNonNegativeNumber(transaction.amount)
+      const fee = toSafeNonNegativeNumber(transaction.transactionFee)
+      return sum + amount + fee
+    }, 0)
+
+    // Compute allocatedFunds from all isAllocatedFund=true transactions
+    const allocatedTransactions = await getAllFlaggedTransactions({
+      req,
+      accountId,
+      flag: 'isAllocatedFund',
+    })
+
+    const nextAllocatedFunds = allocatedTransactions.reduce((sum, transaction) => {
+      const amount = toSafeNonNegativeNumber(transaction.amount)
+      const fee = toSafeNonNegativeNumber(transaction.transactionFee)
+      return sum + amount + fee
+    }, 0)
+
+    // Update if changed
+    const currentAllocationFunds =
+      typeof account.allocationFunds === 'number' &&
+      Number.isFinite(account.allocationFunds as number)
+        ? (account.allocationFunds as number)
+        : 0
+
+    const currentAllocatedFunds =
+      typeof account.allocatedFunds === 'number' &&
+      Number.isFinite(account.allocatedFunds as number)
+        ? (account.allocatedFunds as number)
+        : 0
+
+    if (
+      currentAllocationFunds !== nextAllocationFunds ||
+      currentAllocatedFunds !== nextAllocatedFunds
+    ) {
+      await req.payload.update({
         collection: 'financial-accounts',
-        id: financialAccountNow,
+        id: accountId,
+        data: {
+          allocationFunds: nextAllocationFunds,
+          allocatedFunds: nextAllocatedFunds,
+        },
         depth: 0,
         overrideAccess: true,
+        req,
+        context: req.context,
       })
-
-      if (currentAccount) {
-        const currentAllocationFunds =
-          typeof currentAccount.allocationFunds === 'number' && currentAccount.allocationFunds > 0
-            ? currentAccount.allocationFunds
-            : 0
-        const addAmount =
-          isForAllocationPreviously && financialAccountNow === financialAccountPreviously
-            ? totalNow - totalPreviously
-            : totalNow
-        const newAllocationFunds = currentAllocationFunds + addAmount
-
-        await args.req.payload.update({
-          collection: 'financial-accounts',
-          id: financialAccountNow,
-          data: {
-            allocationFunds: Math.max(0, newAllocationFunds),
-          },
-          depth: 0,
-          overrideAccess: true,
-          req: args.req,
-        })
-      }
-    } catch (error) {
-      const status = getErrorStatusCode(error)
-      if (status !== 404) throw error
-    }
-  }
-
-  // HANDLE isAllocatedFund (updates allocatedFunds - amount already spent from pool)
-  // Remove from previous financial account if needed
-  if (isAllocatedFundPreviously && financialAccountPreviously && totalPreviously > 0) {
-    try {
-      const previousAccount = await args.req.payload.findByID({
-        collection: 'financial-accounts',
-        id: financialAccountPreviously,
-        depth: 0,
-        overrideAccess: true,
-      })
-
-      if (previousAccount) {
-        const currentAllocatedFunds =
-          typeof previousAccount.allocatedFunds === 'number' && previousAccount.allocatedFunds > 0
-            ? previousAccount.allocatedFunds
-            : 0
-        const newAllocatedFunds = Math.max(0, currentAllocatedFunds - totalPreviously)
-
-        await args.req.payload.update({
-          collection: 'financial-accounts',
-          id: financialAccountPreviously,
-          data: {
-            allocatedFunds: newAllocatedFunds,
-          },
-          depth: 0,
-          overrideAccess: true,
-          req: args.req,
-        })
-      }
-    } catch (error) {
-      const status = getErrorStatusCode(error)
-      if (status !== 404) throw error
-    }
-  }
-
-  // Add to new financial account if needed
-  if (isAllocatedFundNow && financialAccountNow && totalNow > 0) {
-    try {
-      const currentAccount = await args.req.payload.findByID({
-        collection: 'financial-accounts',
-        id: financialAccountNow,
-        depth: 0,
-        overrideAccess: true,
-      })
-
-      if (currentAccount) {
-        const currentAllocatedFunds =
-          typeof currentAccount.allocatedFunds === 'number' && currentAccount.allocatedFunds > 0
-            ? currentAccount.allocatedFunds
-            : 0
-        const addAmount =
-          isAllocatedFundPreviously && financialAccountNow === financialAccountPreviously
-            ? totalNow - totalPreviously
-            : totalNow
-        const newAllocatedFunds = currentAllocatedFunds + addAmount
-
-        await args.req.payload.update({
-          collection: 'financial-accounts',
-          id: financialAccountNow,
-          data: {
-            allocatedFunds: Math.max(0, newAllocatedFunds),
-          },
-          depth: 0,
-          overrideAccess: true,
-          req: args.req,
-        })
-      }
-    } catch (error) {
-      const status = getErrorStatusCode(error)
-      if (status !== 404) throw error
     }
   }
 }
@@ -775,8 +725,10 @@ const Transactions: CollectionConfig = {
 
         await syncAllocationFunds({
           req,
-          doc: doc as Record<string, unknown>,
-          previousDoc: previousDoc as Record<string, unknown>,
+          accountIds: getAffectedAccountIds({
+            doc: doc as Record<string, unknown>,
+            previousDoc: previousDoc as Record<string, unknown>,
+          }),
         })
 
         return doc
@@ -805,8 +757,9 @@ const Transactions: CollectionConfig = {
 
         await syncAllocationFunds({
           req,
-          doc: { ...doc, isForAllocation: false } as Record<string, unknown>,
-          previousDoc: doc as Record<string, unknown>,
+          accountIds: getAffectedAccountIds({
+            previousDoc: doc as Record<string, unknown>,
+          }),
         })
 
         return doc

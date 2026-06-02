@@ -88,7 +88,7 @@ const UserConfigurations: CollectionConfig = {
       fields: [
         {
           name: 'tableColumns',
-          label: 'Table Columns',
+          label: 'Table columns',
           type: 'select',
           hasMany: true,
           options: transactionFieldOptions,
@@ -98,7 +98,7 @@ const UserConfigurations: CollectionConfig = {
         },
         {
           name: 'previewTableColumns',
-          label: 'Preview Table Columns',
+          label: 'Preview Table columns',
           type: 'select',
           hasMany: true,
           options: transactionFieldOptions,
