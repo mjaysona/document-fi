@@ -997,7 +997,7 @@ export default function TransactionsPage() {
                 )}
                 <Stack gap={0} align="flex-start">
                   <Text size="xs">Allocated funds</Text>
-                  <Title order={2}>
+                  <Title order={3}>
                     {selectedFinancialAccountAllocatedFunds || '-'} /{' '}
                     {selectedFinancialAccountAvailableForAllocation || '-'}
                   </Title>
