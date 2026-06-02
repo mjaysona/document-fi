@@ -39,9 +39,11 @@ export type TransactionReportTableRow = {
   totalAmount: number | null
   currentBalance: number | null
   runningBalance: number | null
+  allocatedFunds?: number | null
   description: string
   particulars: string
   isAllocatedFund?: boolean
+  isForAllocation?: boolean
   children?: TransactionReportTableRow[]
 }
 
@@ -147,18 +149,6 @@ export function buildTransactionReportData(args: {
   range?: ReportRange
 }): TransactionReportData {
   const sortedTransactions = sortTransactions(args.transactions)
-  const childrenByParentId = new Map<string, TransactionListItem[]>()
-
-  // Group children by parent ID
-  for (const item of sortedTransactions) {
-    if (item.parentTransaction) {
-      const parentId = item.parentTransaction
-      if (!childrenByParentId.has(parentId)) {
-        childrenByParentId.set(parentId, [])
-      }
-      childrenByParentId.get(parentId)!.push(item)
-    }
-  }
 
   const parentTransactions = sortedTransactions.filter((item) => !item.parentTransaction)
 
@@ -207,68 +197,39 @@ export function buildTransactionReportData(args: {
     }
   }
 
-  const rows: TransactionReportTableRow[] = parentTransactions.map((item) => {
-    const children = childrenByParentId.get(item.id) || []
-    return {
-      referenceNumber: normalizeString(item.referenceNumber),
-      transactionDate: formatDate(item.transactionDate),
-      createdAt: formatDate(item.createdAt),
-      updatedAt: formatDate(item.updatedAt),
-      sourceBank: normalizeString(item.sourceAccountName),
-      destinationBank: normalizeString(item.destinationAccountName),
-      financialAccount: normalizeString(item.financialAccountName),
-      status: normalizeString(item.transactionStatus),
-      from: normalizeString(item.from),
-      to: normalizeString(item.to),
-      sender: normalizeString(item.sender),
-      receiver: normalizeString(item.receiver),
-      amount: typeof item.amount === 'number' ? item.amount : null,
-      fee: typeof item.transactionFee === 'number' ? item.transactionFee : null,
-      type: normalizeType(item.transactionType),
-      totalAmount:
-        typeof item.amount === 'number' || typeof item.transactionFee === 'number'
-          ? (typeof item.amount === 'number' ? item.amount : 0) +
-            (typeof item.transactionFee === 'number' ? item.transactionFee : 0)
-          : null,
-      currentBalance: typeof item.currentBalance === 'number' ? item.currentBalance : null,
-      runningBalance: runningBalanceByParentId.get(item.id) ?? null,
-      description: normalizeString(item.description),
-      particulars: normalizeString(item.particulars),
-      isAllocatedFund: item.isAllocatedFund ?? false,
-      children:
-        children.length > 0
-          ? children.map((child) => ({
-              referenceNumber: normalizeString(child.referenceNumber),
-              transactionDate: formatDate(child.transactionDate),
-              createdAt: formatDate(child.createdAt),
-              updatedAt: formatDate(child.updatedAt),
-              sourceBank: normalizeString(child.sourceAccountName),
-              destinationBank: normalizeString(child.destinationAccountName),
-              financialAccount: normalizeString(child.financialAccountName),
-              status: normalizeString(child.transactionStatus),
-              from: normalizeString(child.from),
-              to: normalizeString(child.to),
-              sender: normalizeString(child.sender),
-              receiver: normalizeString(child.receiver),
-              amount: typeof child.amount === 'number' ? child.amount : null,
-              fee: typeof child.transactionFee === 'number' ? child.transactionFee : null,
-              type: normalizeType(child.transactionType),
-              totalAmount:
-                typeof child.amount === 'number' || typeof child.transactionFee === 'number'
-                  ? (typeof child.amount === 'number' ? child.amount : 0) +
-                    (typeof child.transactionFee === 'number' ? child.transactionFee : 0)
-                  : null,
-              currentBalance:
-                typeof child.currentBalance === 'number' ? child.currentBalance : null,
-              runningBalance:
-                typeof child.runningBalance === 'number' ? child.runningBalance : null,
-              description: normalizeString(child.description),
-              particulars: normalizeString(child.particulars),
-              isAllocatedFund: child.isAllocatedFund ?? false,
-            }))
-          : undefined,
-    }
-  })
+  const rows: TransactionReportTableRow[] = sortedTransactions.map((item) => ({
+    referenceNumber: normalizeString(item.referenceNumber),
+    transactionDate: formatDate(item.transactionDate),
+    createdAt: formatDate(item.createdAt),
+    updatedAt: formatDate(item.updatedAt),
+    sourceBank: normalizeString(item.sourceAccountName),
+    destinationBank: normalizeString(item.destinationAccountName),
+    financialAccount: normalizeString(item.financialAccountName),
+    status: normalizeString(item.transactionStatus),
+    from: normalizeString(item.from),
+    to: normalizeString(item.to),
+    sender: normalizeString(item.sender),
+    receiver: normalizeString(item.receiver),
+    amount: typeof item.amount === 'number' ? item.amount : null,
+    fee: typeof item.transactionFee === 'number' ? item.transactionFee : null,
+    type: normalizeType(item.transactionType),
+    totalAmount:
+      typeof item.amount === 'number' || typeof item.transactionFee === 'number'
+        ? (typeof item.amount === 'number' ? item.amount : 0) +
+          (typeof item.transactionFee === 'number' ? item.transactionFee : 0)
+        : null,
+    currentBalance: typeof item.currentBalance === 'number' ? item.currentBalance : null,
+    runningBalance: item.parentTransaction
+      ? typeof item.runningBalance === 'number'
+        ? item.runningBalance
+        : null
+      : (runningBalanceByParentId.get(item.id) ?? null),
+    allocatedFunds: typeof item.allocatedFunds === 'number' ? item.allocatedFunds : null,
+    description: normalizeString(item.description),
+    particulars: normalizeString(item.particulars),
+    isAllocatedFund: item.isAllocatedFund ?? false,
+    isForAllocation: item.isForAllocation ?? false,
+  }))
 
   const barsByDate = new Map<string, { credit: number; debit: number }>()
   const lineByDate = new Map<string, number | null>()

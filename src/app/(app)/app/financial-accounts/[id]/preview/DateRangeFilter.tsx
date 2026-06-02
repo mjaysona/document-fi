@@ -69,6 +69,10 @@ const getDefaultRangePresets = (): { label: string; value: DateRange }[] => {
       value: toStringRange(lastNDays(30)),
     },
     {
+      label: 'Last 60 days',
+      value: toStringRange(lastNDays(60)),
+    },
+    {
       label: 'This month',
       value: [toDateOnly(startOfMonth), toDateOnly(today)],
     },

@@ -15,10 +15,8 @@ import {
   MultiSelect,
   Select,
   Stack,
-  Table,
   Text,
   Title,
-  Image,
   TextInput,
 } from '@mantine/core'
 import { CollapsibleImage } from './CollapsibleImage'
@@ -76,12 +74,7 @@ type FeedbackState = {
 
 type SortBy = 'date' | 'amount' | 'updated'
 type SortOrder = 'asc' | 'desc'
-type TransactionParentRow = { parent: TransactionListItem; children: TransactionListItem[] }
-type ChildTableColumn = {
-  key: TransactionReportColumnKey
-  label: string
-  render: (child: TransactionListItem) => React.ReactNode
-}
+type TransactionParentRow = { parent: TransactionListItem }
 
 const DEFAULT_TABLE_COLUMNS: TransactionReportColumnKey[] = [
   'referenceNumber',
@@ -128,17 +121,6 @@ const formatTotalAmount = (amount?: number, fee?: number): string => {
   const total = (hasAmount ? amount : 0) + (hasFee ? fee : 0)
   return formatCurrency(total)
 }
-
-const computeAllocatedFundsFromChildren = (children: TransactionListItem[]): number =>
-  children.reduce((sum, child) => {
-    const amount =
-      typeof child.amount === 'number' && Number.isFinite(child.amount) ? child.amount : 0
-    const fee =
-      typeof child.transactionFee === 'number' && Number.isFinite(child.transactionFee)
-        ? child.transactionFee
-        : 0
-    return sum + amount + fee
-  }, 0)
 
 const toTimestamp = (value?: string): number | null => {
   if (!value) return null
@@ -473,20 +455,10 @@ export default function TransactionsPage() {
 
   const displayed = useMemo(() => {
     const query = search.toLowerCase().trim()
-    const allItemsById = new Map(items.map((item) => [item.id, item]))
 
     const filtered = items.filter((item) => {
       if (filterFinancialAccount) {
-        let effectiveFinancialAccountName = item.financialAccountName
-
-        // During text search, allow child rows without a direct financial account
-        // to inherit the parent account for filtering and parent lifting.
-        if (!effectiveFinancialAccountName && query && item.parentTransaction) {
-          const parent = allItemsById.get(item.parentTransaction)
-          effectiveFinancialAccountName = parent?.financialAccountName
-        }
-
-        if (effectiveFinancialAccountName !== filterFinancialAccount) {
+        if (item.financialAccountName !== filterFinancialAccount) {
           return false
         }
       }
@@ -564,50 +536,8 @@ export default function TransactionsPage() {
   ])
 
   const parentRows = useMemo<TransactionParentRow[]>(() => {
-    const allItemsById = new Map(items.map((item) => [item.id, item]))
-    const childrenByParentId = new Map<string, TransactionListItem[]>()
-    const visibleParentIds = new Set<string>()
-
-    // Always build child groupings from the full dataset so expanding a visible
-    // parent can still show its linked children even when child rows are filtered out.
-    for (const item of items) {
-      const parentId = item.parentTransaction || null
-      if (!parentId) continue
-
-      const existing = childrenByParentId.get(parentId) ?? []
-      existing.push(item)
-      childrenByParentId.set(parentId, existing)
-    }
-
-    for (const item of displayed) {
-      const parentId = item.parentTransaction || null
-      if (parentId) {
-        if (allItemsById.has(parentId)) {
-          visibleParentIds.add(parentId)
-          // If allocatedFundType is 'returned', also show as standalone parent row
-          if (item.allocatedFundType === 'returned') {
-            visibleParentIds.add(item.id)
-          }
-        } else {
-          visibleParentIds.add(item.id)
-        }
-      } else {
-        visibleParentIds.add(item.id)
-      }
-    }
-
-    const sortItems = (a: TransactionListItem, b: TransactionListItem) =>
-      compareTransactions(a, b, sortBy, sortOrder)
-
-    return Array.from(visibleParentIds)
-      .map((parentId) => allItemsById.get(parentId))
-      .filter((item): item is TransactionListItem => Boolean(item))
-      .sort(sortItems)
-      .map((parent) => ({
-        parent,
-        children: [...(childrenByParentId.get(parent.id) ?? [])].sort(sortItems),
-      }))
-  }, [displayed, items, sortBy, sortOrder])
+    return displayed.map((parent) => ({ parent }))
+  }, [displayed])
 
   const toggleSort = (field: SortBy) => {
     if (sortBy === field) {
@@ -620,12 +550,6 @@ export default function TransactionsPage() {
   }
 
   const columns = useMemo<DataTableColumn<TransactionParentRow>[]>(() => {
-    const getAllocation = (row: TransactionParentRow) => {
-      const totalAllocatedWithFees = computeAllocatedFundsFromChildren(row.children)
-      const parentAmount = row.parent.amount || 0
-      return { totalAllocatedWithFees, parentAmount }
-    }
-
     const byKey: Record<TransactionReportColumnKey, DataTableColumn<TransactionParentRow>> = {
       referenceNumber: {
         key: 'referenceNumber',
@@ -675,17 +599,15 @@ export default function TransactionsPage() {
       transactionStatus: {
         key: 'transactionStatus',
         label: 'Status',
-        render: (row) => {
-          return (
-            <Badge
-              color={row.parent.transactionStatus === 'failed' ? 'red' : 'teal'}
-              variant="light"
-              tt="capitalize"
-            >
-              {row.parent.transactionStatus || '-'}
-            </Badge>
-          )
-        },
+        render: (row) => (
+          <Badge
+            color={row.parent.transactionStatus === 'failed' ? 'red' : 'teal'}
+            variant="light"
+            tt="capitalize"
+          >
+            {row.parent.transactionStatus || '-'}
+          </Badge>
+        ),
       },
       sourceAccount: {
         key: 'sourceAccount',
@@ -771,9 +693,8 @@ export default function TransactionsPage() {
         key: 'allocatedFunds',
         label: 'Allocated Funds',
         render: (row) => {
-          const { totalAllocatedWithFees, parentAmount } = getAllocation(row)
           if (!row.parent.isAllocatedFund) return '-'
-          return `${formatCurrency(totalAllocatedWithFees)} / ${formatCurrency(parentAmount)}`
+          return formatCurrency(row.parent.allocatedFunds)
         },
       },
       description: {
@@ -797,179 +718,6 @@ export default function TransactionsPage() {
       selectedTableColumns.length > 0 ? selectedTableColumns : DEFAULT_TABLE_COLUMNS
 
     return activeColumns.map((key) => byKey[key]).filter(Boolean)
-  }, [router, selectedTableColumns])
-
-  const childTableColumns = useMemo<ChildTableColumn[]>(() => {
-    const byKey: Partial<Record<TransactionReportColumnKey, ChildTableColumn>> = {
-      referenceNumber: {
-        key: 'referenceNumber',
-        label: 'Reference #',
-        render: (child) => (
-          <span
-            style={{
-              cursor: 'pointer',
-              textDecoration: 'underline',
-            }}
-            onClick={(event) => {
-              event.stopPropagation()
-              router.push(`/app/records/transactions/${child.id}/edit`)
-            }}
-          >
-            {child.referenceNumber || '-'}
-          </span>
-        ),
-      },
-      receiptImage: {
-        key: 'receiptImage',
-        label: 'Receipt Image',
-        render: (child) => {
-          const url = child.receiptImage?.url || null
-          if (!url) return '-'
-          return <CollapsibleImage src={url} alt="Receipt" width={200} />
-        },
-      },
-      transactionDate: {
-        key: 'transactionDate',
-        label: 'Date',
-        render: (child) => formatDate(child.transactionDate),
-      },
-      transactionType: {
-        key: 'transactionType',
-        label: 'Type',
-        render: (child) => {
-          if (!child.transactionType) return '-'
-          return (
-            <Badge
-              color={child.transactionType === 'debit' ? 'blue' : 'grape'}
-              variant="light"
-              tt="capitalize"
-            >
-              {child.transactionType}
-            </Badge>
-          )
-        },
-      },
-      transactionStatus: {
-        key: 'transactionStatus',
-        label: 'Status',
-        render: (child) => (
-          <Badge
-            color={child.transactionStatus === 'failed' ? 'red' : 'teal'}
-            variant="light"
-            tt="capitalize"
-          >
-            {child.transactionStatus || '-'}
-          </Badge>
-        ),
-      },
-      sourceAccount: {
-        key: 'sourceAccount',
-        label: 'Source Bank',
-        render: (child) => child.sourceAccountName || '-',
-      },
-      destinationAccount: {
-        key: 'destinationAccount',
-        label: 'Destination Bank',
-        render: (child) => child.destinationAccountName || '-',
-      },
-      financialAccount: {
-        key: 'financialAccount',
-        label: 'Financial Account',
-        render: (child) => child.financialAccountName || '-',
-      },
-      from: {
-        key: 'from',
-        label: 'From',
-        render: (child) => child.from || '-',
-      },
-      to: {
-        key: 'to',
-        label: 'To',
-        render: (child) => child.to || '-',
-      },
-      sender: {
-        key: 'sender',
-        label: 'Sender',
-        render: (child) => child.sender || '-',
-      },
-      receiver: {
-        key: 'receiver',
-        label: 'Receiver',
-        render: (child) => child.receiver || '-',
-      },
-      amount: {
-        key: 'amount',
-        label: 'Amount',
-        render: (child) => formatCurrency(child.amount),
-      },
-      transactionFee: {
-        key: 'transactionFee',
-        label: 'Fee',
-        render: (child) => formatCurrency(child.transactionFee),
-      },
-      totalAmount: {
-        key: 'totalAmount',
-        label: 'Total Amount',
-        render: (child) => formatTotalAmount(child.amount, child.transactionFee),
-      },
-      currentBalance: {
-        key: 'currentBalance',
-        label: 'Current Balance',
-        render: (child) => formatCurrency(child.currentBalance),
-      },
-      runningBalance: {
-        key: 'runningBalance',
-        label: 'Running Balance',
-        render: (child) => formatCurrency(child.runningBalance),
-      },
-      isAllocatedFund: {
-        key: 'isAllocatedFund',
-        label: 'Allocated Fund',
-        render: (child) =>
-          child.isAllocatedFund ? (
-            <CircleCheck size={16} color="green" />
-          ) : (
-            <CircleX size={16} color="gray" />
-          ),
-      },
-      isForAllocation: {
-        key: 'isForAllocation',
-        label: 'For Allocation',
-        render: (child) =>
-          child.isForAllocation ? (
-            <CircleCheck size={16} color="green" />
-          ) : (
-            <CircleX size={16} color="gray" />
-          ),
-      },
-      allocatedFunds: {
-        key: 'allocatedFunds',
-        label: 'Allocated Funds',
-        render: () => '-',
-      },
-      description: {
-        key: 'description',
-        label: 'Description',
-        render: (child) => child.description || '-',
-      },
-      particulars: {
-        key: 'particulars',
-        label: 'Particulars',
-        render: (child) => child.particulars || '-',
-      },
-      updatedAt: {
-        key: 'updatedAt',
-        label: 'Last Updated',
-        render: (child) => formatDateTime(child.updatedAt),
-      },
-    }
-
-    const activeColumns =
-      selectedTableColumns.length > 0 ? selectedTableColumns : DEFAULT_TABLE_COLUMNS
-
-    return activeColumns
-      .map((key) => byKey[key])
-      .filter((column): column is ChildTableColumn => Boolean(column))
   }, [router, selectedTableColumns])
 
   return (
@@ -1069,14 +817,14 @@ export default function TransactionsPage() {
                     <Title order={3}>{selectedFinancialAccountCurrentBalance || '-'}</Title>
                   </Stack>
                 )}
-                <Stack gap={0} align="flex-start">
+                {/* <Stack gap={0} align="flex-start">
                   <Text size="xs">Unallocated funds</Text>
                   <Title order={3}>{selectedFinancialAccountUnallocatedFunds || '-'}</Title>
                   <Text size="xs" c="dimmed">
                     Allocated {selectedFinancialAccountAllocatedFunds || '-'} | Pool{' '}
                     {selectedFinancialAccountAllocationPool || '-'}
                   </Text>
-                </Stack>
+                </Stack> */}
               </Flex>
               <Group>
                 <ActionIcon
@@ -1291,21 +1039,6 @@ export default function TransactionsPage() {
           }}
           isRowExpanded={(row) => expandedRows.includes(row.parent.id)}
           renderExpandedRow={(row: TransactionParentRow): React.ReactNode => {
-            const totalAllocated = computeAllocatedFundsFromChildren(row.children)
-            const parentAmount = row.parent.amount || 0
-            const allocationStatus =
-              totalAllocated === parentAmount
-                ? 'complete'
-                : totalAllocated > parentAmount
-                  ? 'exceeded'
-                  : 'partial'
-            const allocationColor =
-              allocationStatus === 'complete'
-                ? 'green'
-                : allocationStatus === 'exceeded'
-                  ? 'red'
-                  : 'orange'
-
             return (
               <Stack gap="md" p="sm" className={classes['expanded-content']}>
                 <Group gap="md" justify="space-between">
@@ -1313,12 +1046,6 @@ export default function TransactionsPage() {
                     <Text size="xs">Created: {formatDate(row.parent.createdAt)}</Text>
                     <Text size="xs">Last Updated: {formatDate(row.parent.updatedAt)}</Text>
                   </Group>
-                  {row.children.length > 0 && (
-                    <Text size="xs" fw={500} c={allocationColor}>
-                      Allocated funds: {formatCurrency(totalAllocated)}/
-                      {formatCurrency(parentAmount)}
-                    </Text>
-                  )}
                 </Group>
                 <div className={classes['detail-grid']}>
                   <Flex direction="column" className={classes.detailItem}>
@@ -1425,14 +1152,19 @@ export default function TransactionsPage() {
                     <Text size="sm">{formatCurrency(row.parent.runningBalance)}</Text>
                   </Flex>
 
-                  {row.children.length > 0 && (
-                    <Flex direction="column" className={classes.detailItem}>
-                      <Text size="xs" c="dimmed">
-                        Allocated Fund
-                      </Text>
-                      <Text size="sm">{row.parent.isAllocatedFund ? 'Yes' : 'No'}</Text>
-                    </Flex>
-                  )}
+                  <Flex direction="column" className={classes.detailItem}>
+                    <Text size="xs" c="dimmed">
+                      Allocated Fund
+                    </Text>
+                    <Text size="sm">{row.parent.isAllocatedFund ? 'Yes' : 'No'}</Text>
+                  </Flex>
+
+                  <Flex direction="column" className={classes.detailItem}>
+                    <Text size="xs" c="dimmed">
+                      Allocated Funds
+                    </Text>
+                    <Text size="sm">{formatCurrency(row.parent.allocatedFunds)}</Text>
+                  </Flex>
                   <Flex
                     direction="column"
                     className={`${classes.detailItem} ${classes['detail-item--wide']}`}
@@ -1454,36 +1186,6 @@ export default function TransactionsPage() {
                     </Flex>
                   ) : null}
                 </div>
-
-                {row.children.length > 0 && (
-                  <>
-                    <Group justify="space-between" align="center">
-                      <Text fw={600} size="sm" mt="xs">
-                        Child transactions
-                      </Text>
-                    </Group>
-                    <Table w="100%" withTableBorder withColumnBorders striped highlightOnHover>
-                      <Table.Thead>
-                        <Table.Tr>
-                          {childTableColumns.map((column) => (
-                            <Table.Th key={column.key}>{column.label}</Table.Th>
-                          ))}
-                        </Table.Tr>
-                      </Table.Thead>
-                      <Table.Tbody>
-                        {row.children.map((child: TransactionListItem) => (
-                          <Table.Tr key={child.id}>
-                            {childTableColumns.map((column) => (
-                              <Table.Td key={`${child.id}-${column.key}`}>
-                                {column.render(child)}
-                              </Table.Td>
-                            ))}
-                          </Table.Tr>
-                        ))}
-                      </Table.Tbody>
-                    </Table>
-                  </>
-                )}
               </Stack>
             )
           }}

@@ -16,6 +16,7 @@ type TransactionRecord = {
   transactionDate?: string | null
   createdAt?: string | null
   isAllocatedFund?: boolean | null
+  isForAllocation?: boolean | null
   allocatedFundType?: string | null
 }
 
@@ -278,12 +279,8 @@ export async function syncAccountBalances(args: {
     for (let index = recomputeStartIndex; index < sortedTransactions.length; index += 1) {
       const transaction = sortedTransactions[index]
 
-      // Skip balance sync for allocated fund transactions - they should not have running or current balance
-      if (
-        transaction.isAllocatedFund &&
-        transaction.allocatedFundType === 'completed' &&
-        transaction.transactionType === 'debit'
-      ) {
+      // Skip balance sync for allocation-source transactions - they should not have running or current balance
+      if (transaction.isForAllocation) {
         if (
           (transaction.runningBalance ?? null) !== null ||
           (transaction.currentBalance ?? null) !== null

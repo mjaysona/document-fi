@@ -20,8 +20,6 @@ type TransactionReportDocumentProps = {
 type DisplayRow = {
   key: string
   row: TransactionReportTableRow
-  indent: boolean
-  shaded: boolean
 }
 
 const A4_PAGE_HEIGHT_PX = 1123
@@ -37,30 +35,10 @@ const getValidMeasuredHeight = (height: number | undefined, fallback: number): n
 }
 
 const flattenRowsForDisplay = (rows: TransactionReportTableRow[]): DisplayRow[] => {
-  const flattened: DisplayRow[] = []
-
-  rows.forEach((row, index) => {
-    const parentKey = `${row.referenceNumber}-${row.transactionDate}-${row.createdAt}-${index}`
-    flattened.push({
-      key: parentKey,
-      row,
-      indent: false,
-      shaded: false,
-    })
-
-    if (row.children && row.children.length > 0) {
-      row.children.forEach((child, childIndex) => {
-        flattened.push({
-          key: `${parentKey}-child-${child.referenceNumber}-${childIndex}`,
-          row: child,
-          indent: true,
-          shaded: true,
-        })
-      })
-    }
-  })
-
-  return flattened
+  return rows.map((row, index) => ({
+    key: `${row.referenceNumber}-${row.transactionDate}-${row.createdAt}-${index}`,
+    row,
+  }))
 }
 
 const formatDate = (value?: string | null): string => {
@@ -104,28 +82,7 @@ const getStatusColor = (value: string): string | undefined => {
 }
 
 const isRightAlignedColumn = (column: TransactionReportColumnKey): boolean => {
-  return [
-    'amount',
-    'fee',
-    'totalAmount',
-    'currentBalance',
-    'runningBalance',
-    'allocatedFunds',
-  ].includes(column)
-}
-
-const formatAllocatedFunds = (row: TransactionReportTableRow): string => {
-  if (!row.children || row.children.length === 0) return '-'
-
-  const allocated = (row.children || []).reduce((sum, child) => {
-    return sum + (typeof child.totalAmount === 'number' ? child.totalAmount : 0)
-  }, 0)
-
-  if (typeof row.amount === 'number') {
-    return `${formatMoney(allocated)} / ${formatMoney(row.amount)}`
-  }
-
-  return formatMoney(allocated)
+  return ['amount', 'fee', 'totalAmount', 'currentBalance', 'runningBalance'].includes(column)
 }
 
 const combineNameAndBank = (name: string, bank: string): string => {
@@ -169,7 +126,6 @@ const renderCellValue = (row: TransactionReportTableRow, column: TransactionRepo
   if (column === 'currentBalance') return formatMoney(row.currentBalance)
   if (column === 'runningBalance') return formatMoney(row.runningBalance)
   if (column === 'isAllocatedFund') return row.isAllocatedFund ? 'Yes' : 'No'
-  if (column === 'allocatedFunds') return formatAllocatedFunds(row)
   if (column === 'description') return row.description
   if (column === 'particulars') return row.particulars
 
@@ -214,7 +170,9 @@ export function TransactionReportDocument({
     dateLabel: formatDate(point.date),
   }))
 
-  const displayRows = useMemo(() => flattenRowsForDisplay(rows), [rows])
+  const visibleRows = useMemo(() => rows.filter((row) => !row.isForAllocation), [rows])
+
+  const displayRows = useMemo(() => flattenRowsForDisplay(visibleRows), [visibleRows])
   const [pagedRows, setPagedRows] = useState<DisplayRow[][]>([])
 
   const measureDocumentRef = useRef<HTMLElement | null>(null)
@@ -224,14 +182,14 @@ export function TransactionReportDocument({
 
   // Starting balance is the account value before the first transaction in range.
   let startingBalance: number | null = null
-  if (rows.length > 0 && typeof rows[0].currentBalance === 'number') {
-    startingBalance = rows[0].currentBalance
-  } else if (rows.length > 0 && typeof rows[0].runningBalance === 'number') {
-    const firstImpact = getRowImpact(rows[0])
+  if (visibleRows.length > 0 && typeof visibleRows[0].currentBalance === 'number') {
+    startingBalance = visibleRows[0].currentBalance
+  } else if (visibleRows.length > 0 && typeof visibleRows[0].runningBalance === 'number') {
+    const firstImpact = getRowImpact(visibleRows[0])
     startingBalance =
       typeof firstImpact === 'number'
-        ? rows[0].runningBalance - firstImpact
-        : rows[0].runningBalance
+        ? visibleRows[0].runningBalance - firstImpact
+        : visibleRows[0].runningBalance
   } else if (lineChartData.length > 0 && typeof lineChartData[0].runningBalance === 'number') {
     startingBalance = lineChartData[0].runningBalance
   }
@@ -351,17 +309,12 @@ export function TransactionReportDocument({
 
   const renderTableRow = (displayRow: DisplayRow) => {
     return (
-      <tr
-        key={displayRow.key}
-        style={displayRow.shaded ? { backgroundColor: '#f9fafb' } : undefined}
-      >
+      <tr key={displayRow.key}>
         {columnHeaders.map((column) => {
-          const shouldIndent = displayRow.indent && column.value === 'referenceNumber'
           return (
             <td
               key={`${displayRow.key}-${column.value}`}
               className={isRightAlignedColumn(column.value) ? styles['cell--right'] : undefined}
-              style={shouldIndent ? { paddingLeft: '32px' } : undefined}
             >
               {renderCellValue(displayRow.row, column.value)}
             </td>
@@ -372,14 +325,14 @@ export function TransactionReportDocument({
   }
 
   // Calculate breakdown values.
-  const totalCredits = rows.reduce(
+  const totalCredits = visibleRows.reduce(
     (sum, row) =>
       row.status === 'completed' && row.type === 'credit' && typeof row.amount === 'number'
         ? sum + row.amount + (typeof row.fee === 'number' ? Math.max(row.fee, 0) : 0)
         : sum,
     0,
   )
-  const totalDebits = rows.reduce(
+  const totalDebits = visibleRows.reduce(
     (sum, row) =>
       row.status === 'completed' && row.type === 'debit' && typeof row.amount === 'number'
         ? sum + row.amount + (typeof row.fee === 'number' ? Math.max(row.fee, 0) : 0)
@@ -404,7 +357,7 @@ export function TransactionReportDocument({
             : `Transactions (${formatDate(header.fromDate)} - ${formatDate(header.toDate)})`}
         </h2>
 
-        {rows.length === 0 ? (
+        {visibleRows.length === 0 ? (
           <p className={styles.placeholder__text}>No transactions available for this report.</p>
         ) : (
           <>
@@ -868,17 +821,14 @@ export function TransactionReportDocument({
                     ref={(element) => {
                       rowRefs.current[displayRow.key] = element
                     }}
-                    style={displayRow.shaded ? { backgroundColor: '#f9fafb' } : undefined}
                   >
                     {columnHeaders.map((column) => {
-                      const shouldIndent = displayRow.indent && column.value === 'referenceNumber'
                       return (
                         <td
                           key={`measure-cell-${displayRow.key}-${column.value}`}
                           className={
                             isRightAlignedColumn(column.value) ? styles['cell--right'] : undefined
                           }
-                          style={shouldIndent ? { paddingLeft: '32px' } : undefined}
                         >
                           {renderCellValue(displayRow.row, column.value)}
                         </td>

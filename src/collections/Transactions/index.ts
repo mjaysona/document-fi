@@ -544,17 +544,11 @@ const Transactions: CollectionConfig = {
       name: 'currentBalance',
       label: 'Current Balance',
       type: 'number',
-      admin: {
-        readOnly: true,
-      },
     },
     {
       name: 'runningBalance',
       label: 'Running Balance',
       type: 'number',
-      admin: {
-        readOnly: true,
-      },
     },
     {
       name: 'transactionStatus',

@@ -963,6 +963,7 @@ export async function saveTransactionTableColumns(columns: string[]): Promise<{
       'aiExtractedJson',
       'extractionConfidence',
       'isAllocatedFund',
+      'isForAllocation',
       'allocatedFunds',
       'parentTransaction',
     ])
@@ -1062,6 +1063,7 @@ export async function saveTransactionPreviewTableColumns(columns: string[]): Pro
       'aiExtractedJson',
       'extractionConfidence',
       'isAllocatedFund',
+      'isForAllocation',
       'allocatedFunds',
       'parentTransaction',
     ])
