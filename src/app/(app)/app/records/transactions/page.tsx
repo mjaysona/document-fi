@@ -167,6 +167,10 @@ export default function TransactionsPage() {
   const [filterSourceAccounts, setFilterSourceAccounts] = useState<string[]>([])
   const [filterDestinationAccounts, setFilterDestinationAccounts] = useState<string[]>([])
   const [openMultiSelect, setOpenMultiSelect] = useState<string | null>(null)
+  const [datePickerRange, setDatePickerRange] = useState<[string | null, string | null]>([
+    null,
+    null,
+  ])
   const [filterDateRange, setFilterDateRange] = useState<[string | null, string | null]>([
     null,
     null,
@@ -178,6 +182,7 @@ export default function TransactionsPage() {
   const [pagination, setPagination] = useState<DataTablePaginationState | null>(null)
   const [expandedRows, setExpandedRows] = useState<string[]>([])
   const hasAppliedInitialQueryFilters = useRef(false)
+  const previousResetSignatureRef = useRef<string | null>(null)
   const tableColsParam = searchParams.get('tableCols')
   const pageParam = searchParams.get('page')
   const [selectedTableColumns, setSelectedTableColumns] = useState<TransactionReportColumnKey[]>(
@@ -290,6 +295,48 @@ export default function TransactionsPage() {
     }
   }, [filterFinancialAccount, financialAccounts, initialFinancialAccountFilter])
 
+  const pageResetSignature = useMemo(
+    () =>
+      JSON.stringify({
+        filterDateRange,
+        filterDestinationAccounts: [...filterDestinationAccounts].sort(),
+        filterFinancialAccount,
+        filterSourceAccounts: [...filterSourceAccounts].sort(),
+        filterStatuses: [...filterStatuses].sort(),
+        filterTypes: [...filterTypes].sort(),
+        sortBy,
+        sortOrder,
+      }),
+    [
+      filterDateRange,
+      filterDestinationAccounts,
+      filterFinancialAccount,
+      filterSourceAccounts,
+      filterStatuses,
+      filterTypes,
+      sortBy,
+      sortOrder,
+    ],
+  )
+
+  useEffect(() => {
+    if (previousResetSignatureRef.current === null) {
+      previousResetSignatureRef.current = pageResetSignature
+      return
+    }
+
+    if (previousResetSignatureRef.current === pageResetSignature) {
+      return
+    }
+
+    previousResetSignatureRef.current = pageResetSignature
+
+    if (clientPage === 1) return
+
+    setClientPage(1)
+    pushClientPageToUrl(1)
+  }, [clientPage, pageResetSignature])
+
   const transactionsQueryParams = useMemo(
     () => ({
       page: clientPage,
@@ -393,6 +440,20 @@ export default function TransactionsPage() {
     if (clientPage !== 1) {
       setClientPage(1)
       pushClientPageToUrl(1)
+    }
+  }
+
+  const handleDateRangeChange = (nextRange: [string | null, string | null]) => {
+    setDatePickerRange(nextRange)
+
+    const [startDate, endDate] = nextRange
+    if (!startDate && !endDate) {
+      setFilterDateRange([null, null])
+      return
+    }
+
+    if (startDate && endDate) {
+      setFilterDateRange(nextRange)
     }
   }
 
@@ -923,8 +984,8 @@ export default function TransactionsPage() {
                       type="range"
                       label="Date Range"
                       placeholder="Pick date range"
-                      value={filterDateRange}
-                      onChange={setFilterDateRange}
+                      value={datePickerRange}
+                      onChange={handleDateRangeChange}
                       clearable
                     />
                   </Grid.Col>
@@ -985,6 +1046,7 @@ export default function TransactionsPage() {
                         setFilterStatuses([])
                         setFilterSourceAccounts([])
                         setFilterDestinationAccounts([])
+                        setDatePickerRange([null, null])
                         setFilterDateRange([null, null])
                       }}
                     >

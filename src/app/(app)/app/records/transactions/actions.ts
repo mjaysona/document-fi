@@ -373,12 +373,23 @@ function createReadableDescriptionFromParticulars(particulars?: string): string 
   return raw
 }
 
-function normalizeTransactionDate(value: unknown): string | undefined {
+function normalizeTransactionDate(
+  value: unknown,
+  options?: { boundary?: 'start' | 'end' },
+): string | undefined {
   const raw = String(value || '').trim()
   if (!raw) return undefined
 
   const parsed = new Date(raw)
   if (Number.isNaN(parsed.getTime())) return undefined
+
+  if (options?.boundary === 'start') {
+    parsed.setHours(0, 0, 0, 0)
+  }
+
+  if (options?.boundary === 'end') {
+    parsed.setHours(23, 59, 59, 999)
+  }
 
   return parsed.toISOString()
 }
@@ -933,7 +944,7 @@ export async function getTransactionsPage(
       })
     }
 
-    const normalizedStartDate = normalizeTransactionDate(params.startDate)
+    const normalizedStartDate = normalizeTransactionDate(params.startDate, { boundary: 'start' })
     if (normalizedStartDate) {
       whereAnd.push({
         transactionDate: {
@@ -942,7 +953,7 @@ export async function getTransactionsPage(
       })
     }
 
-    const normalizedEndDate = normalizeTransactionDate(params.endDate)
+    const normalizedEndDate = normalizeTransactionDate(params.endDate, { boundary: 'end' })
     if (normalizedEndDate) {
       whereAnd.push({
         transactionDate: {
