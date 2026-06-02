@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { resolveScopedBackPath } from '@/utilities/resolveScopedBackPath'
 
 const MAX_HISTORY_STACK_SIZE = 10
@@ -26,13 +26,16 @@ const NavigationHistoryContext = createContext<NavigationHistoryContextType>({
 
 export const NavigationHistoryProvider = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const currentSearch = searchParams.toString()
+  const currentLocation = `${String(pathname || '').trim()}${currentSearch ? `?${currentSearch}` : ''}`
   const [previousPath, setPreviousPath] = useState<string | null>(null)
   const [currentPath, setCurrentPath] = useState<string | null>(null)
   const pathStackRef = useRef<string[]>([])
 
   const getBackPath = useCallback(
     (scopePath: string, options?: BackNavigationOptions): string => {
-      const normalizedCurrent = String(pathname || '').trim()
+      const normalizedCurrent = currentLocation
       const nextStack = [...pathStackRef.current]
 
       // Remove the current page so repeated Back clicks keep walking backward.
@@ -60,11 +63,11 @@ export const NavigationHistoryProvider = ({ children }: { children: React.ReactN
 
       return targetPath
     },
-    [pathname],
+    [currentLocation],
   )
 
   useEffect(() => {
-    const normalizedPath = String(pathname || '').trim()
+    const normalizedPath = currentLocation
     if (!normalizedPath) return
 
     // Keep only one entry per route by moving the latest visit to the top.
@@ -78,7 +81,7 @@ export const NavigationHistoryProvider = ({ children }: { children: React.ReactN
 
     setCurrentPath(nextCurrentPath)
     setPreviousPath(nextPreviousPath)
-  }, [pathname])
+  }, [currentLocation])
 
   return (
     <NavigationHistoryContext.Provider value={{ previousPath, currentPath, getBackPath }}>

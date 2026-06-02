@@ -2,7 +2,7 @@
 
 import { Checkbox, Flex, Pagination, Table, Text, ScrollArea } from '@mantine/core'
 import type { ReactNode } from 'react'
-import { Fragment, useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 
 export type DataTableColumn<T> = {
   key: string
@@ -38,6 +38,10 @@ type Props<T> = {
   enableClientPagination?: boolean
   /** Page size for client-side pagination. Defaults to 10. */
   clientPageSize?: number
+  /** Controlled current page for client-side pagination. */
+  clientPage?: number
+  /** Called when client-side page changes in controlled mode. */
+  onClientPageChange?: (page: number) => void
   /** When provided, a leading checkbox column is rendered for row selection. */
   selectedIds?: string[]
   onToggleSelectAll?: (checked: boolean) => void
@@ -60,6 +64,8 @@ export function DataTable<T>({
   onPageChange,
   enableClientPagination = false,
   clientPageSize = 10,
+  clientPage,
+  onClientPageChange,
   selectedIds,
   onToggleSelectAll,
   onToggleSelectRow,
@@ -67,27 +73,51 @@ export function DataTable<T>({
   isRowExpanded,
   renderExpandedRow,
 }: Props<T>) {
-  const [clientPage, setClientPage] = useState(1)
+  const [internalClientPage, setInternalClientPage] = useState(1)
+  const previousClientPageSizeRef = useRef<number | null>(null)
   const hasSelection = selectedIds !== undefined
 
   const effectiveClientPageSize = Math.max(1, clientPageSize)
   const clientTotalPages = Math.max(1, Math.ceil(data.length / effectiveClientPageSize))
   const shouldUseClientPagination = !pagination && enableClientPagination
+  const isClientPageControlled =
+    typeof clientPage === 'number' && Number.isFinite(clientPage) && !!onClientPageChange
+  const rawClientPage = isClientPageControlled ? clientPage : internalClientPage
+  const effectiveClientPage = Math.min(Math.max(1, rawClientPage), clientTotalPages)
+
+  const setEffectiveClientPage = (page: number, source: 'system' | 'user' = 'system') => {
+    const nextPage = Math.min(Math.max(1, page), clientTotalPages)
+    if (isClientPageControlled) {
+      if (source === 'user') {
+        onClientPageChange?.(nextPage)
+      }
+      return
+    }
+    setInternalClientPage(nextPage)
+  }
 
   useEffect(() => {
     if (!shouldUseClientPagination) {
       return
     }
-    if (clientPage > clientTotalPages) {
-      setClientPage(clientTotalPages)
+    if (rawClientPage > clientTotalPages || rawClientPage < 1) {
+      setEffectiveClientPage(rawClientPage > clientTotalPages ? clientTotalPages : 1)
     }
-  }, [clientPage, clientTotalPages, shouldUseClientPagination])
+  }, [rawClientPage, clientTotalPages, shouldUseClientPagination])
 
   useEffect(() => {
     if (!shouldUseClientPagination) {
       return
     }
-    setClientPage(1)
+    if (previousClientPageSizeRef.current === null) {
+      previousClientPageSizeRef.current = effectiveClientPageSize
+      return
+    }
+    if (previousClientPageSizeRef.current === effectiveClientPageSize) {
+      return
+    }
+    previousClientPageSizeRef.current = effectiveClientPageSize
+    setEffectiveClientPage(1)
   }, [effectiveClientPageSize, shouldUseClientPagination])
 
   const visibleData = useMemo(() => {
@@ -95,9 +125,9 @@ export function DataTable<T>({
       return data
     }
 
-    const start = (clientPage - 1) * effectiveClientPageSize
+    const start = (effectiveClientPage - 1) * effectiveClientPageSize
     return data.slice(start, start + effectiveClientPageSize)
-  }, [clientPage, data, effectiveClientPageSize, shouldUseClientPagination])
+  }, [effectiveClientPage, data, effectiveClientPageSize, shouldUseClientPagination])
 
   const allVisibleSelected =
     hasSelection &&
@@ -208,12 +238,13 @@ export function DataTable<T>({
       {!pagination && shouldUseClientPagination && clientTotalPages > 1 && (
         <Flex justify="space-between" align="center" mt="lg">
           <Text size="sm" c="dimmed">
-            Showing {(clientPage - 1) * effectiveClientPageSize + 1}–
-            {Math.min(clientPage * effectiveClientPageSize, data.length)} of {data.length} records
+            Showing {(effectiveClientPage - 1) * effectiveClientPageSize + 1}–
+            {Math.min(effectiveClientPage * effectiveClientPageSize, data.length)} of {data.length}{' '}
+            records
           </Text>
           <Pagination
-            value={clientPage}
-            onChange={setClientPage}
+            value={effectiveClientPage}
+            onChange={(page) => setEffectiveClientPage(page, 'user')}
             total={clientTotalPages}
             withEdges
           />

@@ -437,7 +437,8 @@ export default function AddTransactionPage() {
       if (result.description) form.setFieldValue('description', result.description)
       if (result.particulars) form.setFieldValue('particulars', result.particulars)
       if (result.transactionType) form.setFieldValue('transactionType', result.transactionType)
-      if (result.detectedSourceBankId) form.setFieldValue('sourceAccount', result.detectedSourceBankId)
+      if (result.detectedSourceBankId)
+        form.setFieldValue('sourceAccount', result.detectedSourceBankId)
       if (result.detectedDestinationBankId)
         form.setFieldValue('destinationAccount', result.detectedDestinationBankId)
       if (result.from) form.setFieldValue('from', result.from)
@@ -938,7 +939,8 @@ export default function AddTransactionPage() {
       if (result.description) form.setFieldValue('description', result.description)
       if (result.particulars) form.setFieldValue('particulars', result.particulars)
       if (result.transactionType) form.setFieldValue('transactionType', result.transactionType)
-      if (result.detectedSourceBankId) form.setFieldValue('sourceAccount', result.detectedSourceBankId)
+      if (result.detectedSourceBankId)
+        form.setFieldValue('sourceAccount', result.detectedSourceBankId)
       if (result.detectedDestinationBankId)
         form.setFieldValue('destinationAccount', result.detectedDestinationBankId)
       if (result.from) form.setFieldValue('from', result.from)
@@ -1106,7 +1108,7 @@ export default function AddTransactionPage() {
                       leftSection="₱"
                       decimalScale={2}
                       fixedDecimalScale
-                      thousandSeparator="," 
+                      thousandSeparator=","
                       hideControls
                       disabled
                       placeholder="Select financial account"

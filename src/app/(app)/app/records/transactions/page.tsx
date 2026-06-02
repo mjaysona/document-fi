@@ -67,6 +67,12 @@ const serializeTableColumnKeys = (keys: string[]): string => {
   return Array.from(new Set(valid)).join(',')
 }
 
+const parseClientPageParam = (value?: string | null): number => {
+  const parsed = Number(value)
+  if (!Number.isInteger(parsed) || parsed < 1) return 1
+  return parsed
+}
+
 type FeedbackState = {
   tone: 'success' | 'error'
   message: string
@@ -214,15 +220,16 @@ export default function TransactionsPage() {
   const [expandedRows, setExpandedRows] = useState<string[]>([])
   const hasAppliedInitialQueryFilters = useRef(false)
   const tableColsParam = searchParams.get('tableCols')
+  const pageParam = searchParams.get('page')
   const [selectedTableColumns, setSelectedTableColumns] = useState<TransactionReportColumnKey[]>(
     parseTableColumnKeys(tableColsParam),
   )
+  const [clientPage, setClientPage] = useState<number>(parseClientPageParam(pageParam))
 
   const initialFinancialAccountFilter = useMemo(
     () => searchParams.get('financialAccount')?.trim() || '',
     [searchParams],
   )
-
   const load = async () => {
     setIsLoading(true)
     const [transactionsResult, financialAccountsResult, savedColumnsResult] = await Promise.all([
@@ -272,6 +279,10 @@ export default function TransactionsPage() {
   }, [initialFinancialAccountFilter])
 
   useEffect(() => {
+    setClientPage(parseClientPageParam(searchParams.get('page')))
+  }, [searchParams])
+
+  useEffect(() => {
     if (filterFinancialAccount) return
     if (initialFinancialAccountFilter) return
     if (financialAccounts.length === 0) return
@@ -291,6 +302,23 @@ export default function TransactionsPage() {
 
     const query = params.toString()
     router.push(query ? `/app/records/transactions?${query}` : '/app/records/transactions')
+  }
+
+  const pushClientPageToUrl = (nextPage: number) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (nextPage <= 1) {
+      params.delete('page')
+    } else {
+      params.set('page', String(nextPage))
+    }
+
+    const query = params.toString()
+    router.push(query ? `/app/records/transactions?${query}` : '/app/records/transactions')
+  }
+
+  const handleClientPageChange = (nextPage: number) => {
+    setClientPage(nextPage)
+    pushClientPageToUrl(nextPage)
   }
 
   const handleTableColumnsChange = (nextColumns: string[]) => {
@@ -1029,6 +1057,8 @@ export default function TransactionsPage() {
           emptyText="No transactions found."
           enableClientPagination
           clientPageSize={10}
+          clientPage={clientPage}
+          onClientPageChange={handleClientPageChange}
           getRowKey={(row) => row.parent.id}
           onRowClick={(row) => {
             setExpandedRows((current) =>
