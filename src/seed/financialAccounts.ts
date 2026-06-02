@@ -45,7 +45,10 @@ export const financialAccounts = async (payload: Payload) => {
         ...account,
         bank: bankId,
         currentBalance: account.startingBalance,
+        allocationFunds: 0,
+        allocatedFunds: 0,
       },
+      draft: false,
     })
   }
 }

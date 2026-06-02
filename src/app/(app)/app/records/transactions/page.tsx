@@ -400,6 +400,34 @@ export default function TransactionsPage() {
     return formatCurrency(selectedAccount.currentBalance)
   }, [filterFinancialAccount, financialAccounts])
 
+  const selectedFinancialAccountAvailableForAllocation = useMemo(() => {
+    if (!filterFinancialAccount) return null
+
+    const selectedAccount = financialAccounts.find(
+      (account) => account.name === filterFinancialAccount,
+    )
+
+    if (!selectedAccount || typeof selectedAccount.allocationFunds !== 'number') {
+      return '-'
+    }
+
+    return formatCurrency(selectedAccount.allocationFunds)
+  }, [filterFinancialAccount, financialAccounts])
+
+  const selectedFinancialAccountAllocatedFunds = useMemo(() => {
+    if (!filterFinancialAccount) return null
+
+    const selectedAccount = financialAccounts.find(
+      (account) => account.name === filterFinancialAccount,
+    )
+
+    if (!selectedAccount || typeof selectedAccount.allocatedFunds !== 'number') {
+      return '-'
+    }
+
+    return formatCurrency(selectedAccount.allocatedFunds)
+  }, [filterFinancialAccount, financialAccounts])
+
   const activeFilterCount =
     filterTypes.length +
     filterStatuses.length +
@@ -960,12 +988,21 @@ export default function TransactionsPage() {
         {!isLoading && (
           <Box>
             <Group justify="space-between" align="center">
-              {selectedFinancialAccountCurrentBalance && (
+              <Flex gap={{ base: 'xs', sm: 'xl' }} wrap="wrap">
+                {selectedFinancialAccountCurrentBalance && (
+                  <Stack gap={0} align="flex-start">
+                    <Text size="xs">Current balance</Text>
+                    <Title order={3}>{selectedFinancialAccountCurrentBalance || '-'}</Title>
+                  </Stack>
+                )}
                 <Stack gap={0} align="flex-start">
-                  <Text size="xs">Current balance</Text>
-                  <Title order={3}>{selectedFinancialAccountCurrentBalance || '-'}</Title>
+                  <Text size="xs">Allocated funds</Text>
+                  <Title order={2}>
+                    {selectedFinancialAccountAllocatedFunds || '-'} /{' '}
+                    {selectedFinancialAccountAvailableForAllocation || '-'}
+                  </Title>
                 </Stack>
-              )}
+              </Flex>
               <Group>
                 <ActionIcon
                   variant={filterOpen || activeFilterCount > 0 ? 'filled' : 'default'}

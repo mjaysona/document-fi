@@ -221,6 +221,187 @@ const getBankShortName = async (bankValue: unknown, req: any): Promise<string> =
   return ''
 }
 
+const syncAllocationFunds = async (args: {
+  req: any
+  doc: Record<string, unknown>
+  previousDoc?: Record<string, unknown>
+}) => {
+  const isForAllocationNow = args.doc.isForAllocation === true
+  const isForAllocationPreviously = args.previousDoc?.isForAllocation === true
+  const isAllocatedFundNow = args.doc.isAllocatedFund === true
+  const isAllocatedFundPreviously = args.previousDoc?.isAllocatedFund === true
+
+  const financialAccountNow = getRelationshipId(args.doc.financialAccount as MaybeRelationship)
+  const financialAccountPreviously = getRelationshipId(
+    args.previousDoc?.financialAccount as MaybeRelationship,
+  )
+
+  // Get the transaction amounts
+  const amountNow = toSafeNonNegativeNumber(args.doc.amount)
+  const feeNow = toSafeNonNegativeNumber(args.doc.transactionFee)
+  const totalNow = amountNow + feeNow
+
+  const amountPreviously = toSafeNonNegativeNumber(args.previousDoc?.amount)
+  const feePreviously = toSafeNonNegativeNumber(args.previousDoc?.transactionFee)
+  const totalPreviously = amountPreviously + feePreviously
+
+  // If nothing relevant has changed, nothing to do
+  if (
+    isForAllocationNow === isForAllocationPreviously &&
+    isAllocatedFundNow === isAllocatedFundPreviously &&
+    financialAccountNow === financialAccountPreviously &&
+    totalNow === totalPreviously
+  ) {
+    return
+  }
+
+  // HANDLE isForAllocation (adds to allocationFunds pool)
+  // Remove from previous financial account if needed
+  if (isForAllocationPreviously && financialAccountPreviously && totalPreviously > 0) {
+    try {
+      const previousAccount = await args.req.payload.findByID({
+        collection: 'financial-accounts',
+        id: financialAccountPreviously,
+        depth: 0,
+        overrideAccess: true,
+      })
+
+      if (previousAccount) {
+        const currentAllocationFunds =
+          typeof previousAccount.allocationFunds === 'number' && previousAccount.allocationFunds > 0
+            ? previousAccount.allocationFunds
+            : 0
+        const newAllocationFunds = Math.max(0, currentAllocationFunds - totalPreviously)
+
+        await args.req.payload.update({
+          collection: 'financial-accounts',
+          id: financialAccountPreviously,
+          data: {
+            allocationFunds: newAllocationFunds,
+          },
+          depth: 0,
+          overrideAccess: true,
+          req: args.req,
+        })
+      }
+    } catch (error) {
+      const status = getErrorStatusCode(error)
+      if (status !== 404) throw error
+    }
+  }
+
+  // Add to new financial account if needed
+  if (isForAllocationNow && financialAccountNow && totalNow > 0) {
+    try {
+      const currentAccount = await args.req.payload.findByID({
+        collection: 'financial-accounts',
+        id: financialAccountNow,
+        depth: 0,
+        overrideAccess: true,
+      })
+
+      if (currentAccount) {
+        const currentAllocationFunds =
+          typeof currentAccount.allocationFunds === 'number' && currentAccount.allocationFunds > 0
+            ? currentAccount.allocationFunds
+            : 0
+        const addAmount =
+          isForAllocationPreviously && financialAccountNow === financialAccountPreviously
+            ? totalNow - totalPreviously
+            : totalNow
+        const newAllocationFunds = currentAllocationFunds + addAmount
+
+        await args.req.payload.update({
+          collection: 'financial-accounts',
+          id: financialAccountNow,
+          data: {
+            allocationFunds: Math.max(0, newAllocationFunds),
+          },
+          depth: 0,
+          overrideAccess: true,
+          req: args.req,
+        })
+      }
+    } catch (error) {
+      const status = getErrorStatusCode(error)
+      if (status !== 404) throw error
+    }
+  }
+
+  // HANDLE isAllocatedFund (updates allocatedFunds - amount already spent from pool)
+  // Remove from previous financial account if needed
+  if (isAllocatedFundPreviously && financialAccountPreviously && totalPreviously > 0) {
+    try {
+      const previousAccount = await args.req.payload.findByID({
+        collection: 'financial-accounts',
+        id: financialAccountPreviously,
+        depth: 0,
+        overrideAccess: true,
+      })
+
+      if (previousAccount) {
+        const currentAllocatedFunds =
+          typeof previousAccount.allocatedFunds === 'number' && previousAccount.allocatedFunds > 0
+            ? previousAccount.allocatedFunds
+            : 0
+        const newAllocatedFunds = Math.max(0, currentAllocatedFunds - totalPreviously)
+
+        await args.req.payload.update({
+          collection: 'financial-accounts',
+          id: financialAccountPreviously,
+          data: {
+            allocatedFunds: newAllocatedFunds,
+          },
+          depth: 0,
+          overrideAccess: true,
+          req: args.req,
+        })
+      }
+    } catch (error) {
+      const status = getErrorStatusCode(error)
+      if (status !== 404) throw error
+    }
+  }
+
+  // Add to new financial account if needed
+  if (isAllocatedFundNow && financialAccountNow && totalNow > 0) {
+    try {
+      const currentAccount = await args.req.payload.findByID({
+        collection: 'financial-accounts',
+        id: financialAccountNow,
+        depth: 0,
+        overrideAccess: true,
+      })
+
+      if (currentAccount) {
+        const currentAllocatedFunds =
+          typeof currentAccount.allocatedFunds === 'number' && currentAccount.allocatedFunds > 0
+            ? currentAccount.allocatedFunds
+            : 0
+        const addAmount =
+          isAllocatedFundPreviously && financialAccountNow === financialAccountPreviously
+            ? totalNow - totalPreviously
+            : totalNow
+        const newAllocatedFunds = currentAllocatedFunds + addAmount
+
+        await args.req.payload.update({
+          collection: 'financial-accounts',
+          id: financialAccountNow,
+          data: {
+            allocatedFunds: Math.max(0, newAllocatedFunds),
+          },
+          depth: 0,
+          overrideAccess: true,
+          req: args.req,
+        })
+      }
+    } catch (error) {
+      const status = getErrorStatusCode(error)
+      if (status !== 404) throw error
+    }
+  }
+}
+
 const Transactions: CollectionConfig = {
   slug: 'transactions',
   labels: {
@@ -508,6 +689,17 @@ const Transactions: CollectionConfig = {
       },
     },
     {
+      name: 'isForAllocation',
+      label: 'For Allocation',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: {
+        position: 'sidebar',
+        description:
+          'Mark this transaction as available for allocation to indicate it can be used as a parent for fund allocation',
+      },
+    },
+    {
       name: 'isAutoGenerated',
       label: 'Auto-generated Reference',
       type: 'checkbox',
@@ -581,6 +773,12 @@ const Transactions: CollectionConfig = {
           }),
         })
 
+        await syncAllocationFunds({
+          req,
+          doc: doc as Record<string, unknown>,
+          previousDoc: previousDoc as Record<string, unknown>,
+        })
+
         return doc
       },
     ],
@@ -603,6 +801,12 @@ const Transactions: CollectionConfig = {
           parentTransactionIds: getParentTransactionIds({
             previousDoc: doc as Record<string, unknown>,
           }),
+        })
+
+        await syncAllocationFunds({
+          req,
+          doc: { ...doc, isForAllocation: false } as Record<string, unknown>,
+          previousDoc: doc as Record<string, unknown>,
         })
 
         return doc

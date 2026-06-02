@@ -27,6 +27,8 @@ export type FinancialAccountDetail = {
   isDefault: boolean
   startingBalance: number
   currentBalance: number
+  allocationFunds: number
+  allocatedFunds: number
 }
 
 export type FinancialAccountInput = {
@@ -139,6 +141,14 @@ function mapFinancialAccount(doc: any): FinancialAccountDetail {
     currentBalance:
       typeof doc.currentBalance === 'number' && Number.isFinite(doc.currentBalance)
         ? doc.currentBalance
+        : 0,
+    allocationFunds:
+      typeof doc.allocationFunds === 'number' && Number.isFinite(doc.allocationFunds)
+        ? doc.allocationFunds
+        : 0,
+    allocatedFunds:
+      typeof doc.allocatedFunds === 'number' && Number.isFinite(doc.allocatedFunds)
+        ? doc.allocatedFunds
         : 0,
   }
 }
@@ -254,8 +264,11 @@ export async function createFinancialAccount(input: FinancialAccountInput): Prom
         brandmarkLogo: brandmarkLogoId || null,
         startingBalance,
         currentBalance,
+        allocationFunds: 0,
+        allocatedFunds: 0,
       },
       depth: 0,
+      draft: false,
     })
 
     return { success: true, id: String(created.id) }

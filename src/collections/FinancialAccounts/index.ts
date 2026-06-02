@@ -6,6 +6,7 @@ import {
   updateFinancialAccounts,
 } from './access'
 import { hasSuperAdminRole } from '@/utilities/getRole'
+import { syncAllocationTotalsEndpoint } from './endpoints/syncAllocationTotals'
 
 const FinancialAccounts: CollectionConfig = {
   slug: 'financial-accounts',
@@ -42,6 +43,25 @@ const FinancialAccounts: CollectionConfig = {
         update: ({ data, req }) => {
           return hasSuperAdminRole(req.user?.userRoles) || !data?.bank
         },
+      },
+    },
+    {
+      name: 'syncAllocationTotals',
+      label: 'Sync Allocation Totals',
+      type: 'text',
+      admin: {
+        description:
+          'Reset allocationFunds and allocatedFunds to 0, then recompute based on related transactions.',
+        components: {
+          Field: {
+            path: '@/collections/FinancialAccounts/components/SyncAllocationTotalsField/index',
+          },
+        },
+        position: 'sidebar',
+      },
+      access: {
+        create: () => false,
+        update: () => false,
       },
     },
     {
@@ -91,7 +111,44 @@ const FinancialAccounts: CollectionConfig = {
         },
       },
     },
+    {
+      name: 'allocationFunds',
+      label: 'Allocation Funds',
+      type: 'number',
+      required: true,
+      defaultValue: 0,
+      min: 0,
+      admin: {
+        readOnly: true,
+        description:
+          'Auto-computed total amount available for allocation from transactions marked as isForAllocation',
+      },
+      access: {
+        update: ({ data, req }) => {
+          return hasSuperAdminRole(req.user?.userRoles) || !data?.bank
+        },
+      },
+    },
+    {
+      name: 'allocatedFunds',
+      label: 'Allocated Funds',
+      type: 'number',
+      required: true,
+      defaultValue: 0,
+      min: 0,
+      admin: {
+        readOnly: true,
+        description:
+          'Auto-computed total amount already allocated from transactions marked as isAllocatedFund',
+      },
+      access: {
+        update: ({ data, req }) => {
+          return hasSuperAdminRole(req.user?.userRoles) || !data?.bank
+        },
+      },
+    },
   ],
+  endpoints: [syncAllocationTotalsEndpoint],
   hooks: {
     beforeChange: [
       ({ data, originalDoc, operation }) => {

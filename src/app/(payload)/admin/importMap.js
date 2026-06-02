@@ -12,6 +12,7 @@ import { IndentFeatureClient as IndentFeatureClient_e70f5e05f09f93e00b997edb1ef0
 import { HeadingFeatureClient as HeadingFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { BoldFeatureClient as BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { BlockquoteFeatureClient as BlockquoteFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
+import { default as default_ae081d7dae4cb3d6af190ca83969d0cb } from '@/collections/FinancialAccounts/components/SyncAllocationTotalsField/index'
 import { default as default_8356743afc2593deaf789a209469933f } from '@/collections/APIConnections/components/GoogleOAuthConnectField/index'
 import { default as default_21770b7cd4c377f531de5c3939766e77 } from '@/collections/UserRoles/components/CollectionsSelectField/index'
 import { default as default_60f02a739bc2a48ca70ecdfa10b9ff23 } from '@/app/(payload)/components/SelectWithAllOptionField/index'
@@ -36,6 +37,7 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#HeadingFeatureClient": HeadingFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#BoldFeatureClient": BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#BlockquoteFeatureClient": BlockquoteFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
+  "@/collections/FinancialAccounts/components/SyncAllocationTotalsField/index#default": default_ae081d7dae4cb3d6af190ca83969d0cb,
   "@/collections/APIConnections/components/GoogleOAuthConnectField/index#default": default_8356743afc2593deaf789a209469933f,
   "@/collections/UserRoles/components/CollectionsSelectField/index#default": default_21770b7cd4c377f531de5c3939766e77,
   "@/app/(payload)/components/SelectWithAllOptionField/index#default": default_60f02a739bc2a48ca70ecdfa10b9ff23,
