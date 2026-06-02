@@ -2039,17 +2039,22 @@ export default function AddTransactionPage() {
                           </ActionIcon>
                         </Group>
                       </Flex>
-                      <ScrollArea mah={{ base: 300, sm: 400 }}>
-                        {receiptPreviewError ? (
-                          <Alert
-                            onClose={() => setFeedback(null)}
-                            withCloseButton
-                            color="red"
-                            title="Receipt preview failed"
-                          >
-                            {receiptPreviewError}
-                          </Alert>
-                        ) : (
+
+                      {receiptPreviewError ? (
+                        <Alert
+                          onClose={() => setFeedback(null)}
+                          withCloseButton
+                          color="red"
+                          title="Receipt preview failed"
+                        >
+                          {receiptPreviewError}
+                        </Alert>
+                      ) : (
+                        <ScrollArea
+                          h={{ base: 300, sm: 400 }}
+                          overscrollBehavior="contain"
+                          scrollHideDelay={500}
+                        >
                           <img
                             src={activeReceiptImageUrl}
                             alt="Receipt preview"
@@ -2073,13 +2078,11 @@ export default function AddTransactionPage() {
                             }}
                             style={{
                               width: '100%',
-                              height: 'auto',
-                              objectFit: 'contain',
                               borderRadius: 4,
                             }}
                           />
-                        )}
-                      </ScrollArea>
+                        </ScrollArea>
+                      )}
                     </Stack>
                   </Card>
                 )}
