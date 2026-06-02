@@ -75,6 +75,13 @@ export function DataTable<T>({
 }: Props<T>) {
   const [internalClientPage, setInternalClientPage] = useState(1)
   const previousClientPageSizeRef = useRef<number | null>(null)
+  const pointerDownRef = useRef<{
+    rowKey: string
+    x: number
+    y: number
+    at: number
+  } | null>(null)
+  const didDragRef = useRef(false)
   const hasSelection = selectedIds !== undefined
 
   const effectiveClientPageSize = Math.max(1, clientPageSize)
@@ -186,7 +193,48 @@ export function DataTable<T>({
               <Fragment key={rowKey}>
                 <Table.Tr
                   bg={customBg ?? selectionBg}
-                  onClick={() => onRowClick?.(row)}
+                  onMouseDown={(event) => {
+                    pointerDownRef.current = {
+                      rowKey,
+                      x: event.clientX,
+                      y: event.clientY,
+                      at: Date.now(),
+                    }
+                    didDragRef.current = false
+                  }}
+                  onMouseMove={(event) => {
+                    const pointerDown = pointerDownRef.current
+                    if (!pointerDown || pointerDown.rowKey !== rowKey) return
+
+                    const deltaX = Math.abs(event.clientX - pointerDown.x)
+                    const deltaY = Math.abs(event.clientY - pointerDown.y)
+                    if (deltaX > 4 || deltaY > 4) {
+                      didDragRef.current = true
+                    }
+                  }}
+                  onMouseLeave={() => {
+                    pointerDownRef.current = null
+                  }}
+                  onClick={() => {
+                    if (!onRowClick) return
+
+                    const pointerDown = pointerDownRef.current
+                    const pressedForMs = pointerDown ? Date.now() - pointerDown.at : 0
+
+                    const hasSelectionRange =
+                      typeof window !== 'undefined' &&
+                      Boolean(window.getSelection && window.getSelection()?.toString().trim())
+
+                    if (didDragRef.current || pressedForMs > 250 || hasSelectionRange) {
+                      didDragRef.current = false
+                      pointerDownRef.current = null
+                      return
+                    }
+
+                    didDragRef.current = false
+                    pointerDownRef.current = null
+                    onRowClick(row)
+                  }}
                   style={onRowClick ? { cursor: 'pointer' } : undefined}
                 >
                   {hasSelection && (

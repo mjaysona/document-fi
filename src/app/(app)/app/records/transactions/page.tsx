@@ -388,6 +388,14 @@ export default function TransactionsPage() {
     pushClientPageToUrl(nextPage)
   }
 
+  const handleSearchChange = (value: string) => {
+    setSearch(value)
+    if (clientPage !== 1) {
+      setClientPage(1)
+      pushClientPageToUrl(1)
+    }
+  }
+
   const handleTableColumnsChange = (nextColumns: string[]) => {
     const parsed = parseTableColumnKeys(nextColumns.join(','))
     setSelectedTableColumns(parsed)
@@ -738,7 +746,7 @@ export default function TransactionsPage() {
             placeholder="Search by reference number..."
             leftSection={<Search size={16} />}
             value={search}
-            onChange={(e) => setSearch(e.currentTarget.value)}
+            onChange={(e) => handleSearchChange(e.currentTarget.value)}
             style={{ flex: 1 }}
           />
         </Group>
@@ -836,7 +844,7 @@ export default function TransactionsPage() {
                   </Text>
                 </Stack> */}
               </Flex>
-              <Group>
+              <Group gap="xs" align="center">
                 <ActionIcon
                   variant={filterOpen || activeFilterCount > 0 ? 'filled' : 'default'}
                   size={36}
@@ -996,32 +1004,37 @@ export default function TransactionsPage() {
                   borderRadius: 'var(--mantine-radius-md)',
                 }}
               >
-                <MultiSelect
-                  label="Table columns"
-                  placeholder="Shown table columns"
-                  data={TRANSACTION_REPORT_COLUMN_OPTIONS.map((column) => ({
-                    value: column.value,
-                    label: column.label,
-                  }))}
-                  value={selectedTableColumns}
-                  onChange={handleTableColumnsChange}
-                  dropdownOpened={openMultiSelect === 'tableColumns'}
-                  onDropdownOpen={() => setOpenMultiSelect('tableColumns')}
-                  onDropdownClose={() => setOpenMultiSelect(null)}
-                  hidePickedOptions
-                  searchable
-                  clearable={false}
-                  withPillsReorder
-                  size="sm"
-                  styles={{
-                    root: { minWidth: 280 },
-                    input: { minHeight: 36 },
-                  }}
-                />
-                <Group justify="flex-end">
+                <Group justify="flex-end" align="end">
+                  <MultiSelect
+                    flex={6}
+                    label="Table columns"
+                    placeholder="Shown table columns"
+                    data={TRANSACTION_REPORT_COLUMN_OPTIONS.map((column) => ({
+                      value: column.value,
+                      label: column.label,
+                    }))}
+                    value={selectedTableColumns}
+                    onChange={handleTableColumnsChange}
+                    dropdownOpened={openMultiSelect === 'tableColumns'}
+                    onDropdownOpen={() => setOpenMultiSelect('tableColumns')}
+                    onDropdownClose={() => setOpenMultiSelect(null)}
+                    hidePickedOptions
+                    searchable
+                    clearable={false}
+                    withPillsReorder
+                    size="sm"
+                    styles={{
+                      root: { minWidth: 280 },
+                      input: { minHeight: 36 },
+                      pillsList: {
+                        flexWrap: 'nowrap',
+                        overflowX: 'auto',
+                      },
+                    }}
+                  />
                   <Button
+                    flex={{ base: '1', sm: 'none' }}
                     variant="default"
-                    size="xs"
                     onClick={handleSaveTableColumns}
                     loading={isSavingTableColumns}
                   >
