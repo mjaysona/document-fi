@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { useQuery } from '@tanstack/react-query'
 import {
   ActionIcon,
   Alert,
@@ -21,13 +22,23 @@ import {
 } from '@mantine/core'
 import { CollapsibleImage } from './CollapsibleImage'
 import { CircleCheck, CircleX, Filter, Plus, Search, Settings } from 'lucide-react'
-import { DataTable, type DataTableColumn } from '@/app/(app)/components/ui/DataTable'
 import {
+  DataTable,
+  type DataTableColumn,
+  type DataTablePaginationState,
+} from '@/app/(app)/components/ui/DataTable'
+import {
+  getBanks,
   getFinancialAccounts,
-  getTransactions,
+  getTransactionsPage,
   getUserTransactionTableColumnsConfig,
   saveTransactionTableColumns,
+  type BankOption,
   type FinancialAccountOption,
+  type TransactionStatus,
+  type TransactionType,
+  type TransactionListSortBy,
+  type TransactionListSortOrder,
   type TransactionListItem,
 } from './actions'
 import {
@@ -78,8 +89,8 @@ type FeedbackState = {
   message: string
 }
 
-type SortBy = 'date' | 'amount' | 'updated'
-type SortOrder = 'asc' | 'desc'
+type SortBy = TransactionListSortBy
+type SortOrder = TransactionListSortOrder
 type TransactionParentRow = { parent: TransactionListItem }
 
 const DEFAULT_TABLE_COLUMNS: TransactionReportColumnKey[] = [
@@ -128,61 +139,6 @@ const formatTotalAmount = (amount?: number, fee?: number): string => {
   return formatCurrency(total)
 }
 
-const toTimestamp = (value?: string): number | null => {
-  if (!value) return null
-  const timestamp = new Date(value).getTime()
-  return Number.isNaN(timestamp) ? null : timestamp
-}
-
-const compareNumeric = (a: number, b: number): number => (a < b ? -1 : a > b ? 1 : 0)
-
-const compareText = (a?: string, b?: string): number =>
-  String(a || '').localeCompare(String(b || ''), undefined, { numeric: true, sensitivity: 'base' })
-
-const compareTransactions = (
-  a: TransactionListItem,
-  b: TransactionListItem,
-  sortBy: SortBy,
-  sortOrder: SortOrder,
-): number => {
-  const direction = sortOrder === 'asc' ? 1 : -1
-
-  const amountA = typeof a.amount === 'number' ? a.amount : Number.NEGATIVE_INFINITY
-  const amountB = typeof b.amount === 'number' ? b.amount : Number.NEGATIVE_INFINITY
-  const txDateA = toTimestamp(a.transactionDate) ?? Number.NEGATIVE_INFINITY
-  const txDateB = toTimestamp(b.transactionDate) ?? Number.NEGATIVE_INFINITY
-  const createdA = toTimestamp(a.createdAt) ?? Number.NEGATIVE_INFINITY
-  const createdB = toTimestamp(b.createdAt) ?? Number.NEGATIVE_INFINITY
-  const updatedA = toTimestamp(a.updatedAt) ?? Number.NEGATIVE_INFINITY
-  const updatedB = toTimestamp(b.updatedAt) ?? Number.NEGATIVE_INFINITY
-
-  if (sortBy === 'amount') {
-    const amountCmp = compareNumeric(amountA, amountB)
-    if (amountCmp !== 0) return amountCmp * direction
-
-    // Keep amount ties deterministic by newest transaction date, then creation metadata.
-    const dateCmp = compareNumeric(txDateA, txDateB)
-    if (dateCmp !== 0) return dateCmp * direction
-  } else if (sortBy === 'updated') {
-    const updatedCmp = compareNumeric(updatedA, updatedB)
-    if (updatedCmp !== 0) return updatedCmp * direction
-  } else {
-    const dateCmp = compareNumeric(txDateA, txDateB)
-    if (dateCmp !== 0) return dateCmp * direction
-  }
-
-  const createdCmp = compareNumeric(createdA, createdB)
-  if (createdCmp !== 0) return createdCmp * direction
-
-  const updatedCmp = compareNumeric(updatedA, updatedB)
-  if (updatedCmp !== 0) return updatedCmp * direction
-
-  const referenceCmp = compareText(a.referenceNumber, b.referenceNumber)
-  if (referenceCmp !== 0) return referenceCmp * direction
-
-  return compareText(a.id, b.id) * direction
-}
-
 export default function TransactionsPage() {
   const { user } = useAuth()
   const router = useRouter()
@@ -198,9 +154,11 @@ export default function TransactionsPage() {
   if (!hasReadAccess) return null
   const searchParams = useSearchParams()
   const [items, setItems] = useState<TransactionListItem[]>([])
+  const [banks, setBanks] = useState<BankOption[]>([])
   const [financialAccounts, setFinancialAccounts] = useState<FinancialAccountOption[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [isBootstrapping, setIsBootstrapping] = useState(true)
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [filterOpen, setFilterOpen] = useState(false)
   const [tableConfigOpen, setTableConfigOpen] = useState(false)
   const [filterFinancialAccount, setFilterFinancialAccount] = useState<string | null>(null)
@@ -217,6 +175,7 @@ export default function TransactionsPage() {
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
   const [feedback, setFeedback] = useState<FeedbackState | null>(null)
   const [isSavingTableColumns, setIsSavingTableColumns] = useState(false)
+  const [pagination, setPagination] = useState<DataTablePaginationState | null>(null)
   const [expandedRows, setExpandedRows] = useState<string[]>([])
   const hasAppliedInitialQueryFilters = useRef(false)
   const tableColsParam = searchParams.get('tableCols')
@@ -230,53 +189,90 @@ export default function TransactionsPage() {
     () => searchParams.get('financialAccount')?.trim() || '',
     [searchParams],
   )
-  const load = async () => {
-    setIsLoading(true)
-    const [transactionsResult, financialAccountsResult, savedColumnsResult] = await Promise.all([
-      getTransactions(),
-      getFinancialAccounts(),
-      getUserTransactionTableColumnsConfig(),
-    ])
 
-    if (transactionsResult.success) {
-      setItems(transactionsResult.data)
-    } else {
-      setFeedback({
-        tone: 'error',
-        message: transactionsResult.error ?? 'Failed to load transactions.',
-      })
-    }
-
-    if (financialAccountsResult.success) {
-      setFinancialAccounts(financialAccountsResult.data)
-    } else if (!transactionsResult.success) {
-      setFeedback({
-        tone: 'error',
-        message: financialAccountsResult.error ?? 'Failed to load financial accounts.',
-      })
-    }
-
-    // Initialize table columns: URL params > saved config > defaults
-    if (!tableColsParam && savedColumnsResult.success && savedColumnsResult.columns?.length) {
-      const parsed = parseTableColumnKeys(savedColumnsResult.columns.join(','))
-      setSelectedTableColumns(parsed)
-    }
-
-    setIsLoading(false)
-  }
+  const financialAccountsQuery = useQuery({
+    queryKey: ['financial-accounts-options'],
+    queryFn: () => getFinancialAccounts(),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  })
 
   useEffect(() => {
-    void load()
-  }, [])
+    const timeoutId = setTimeout(() => {
+      setDebouncedSearch(search)
+    }, 250)
+
+    return () => clearTimeout(timeoutId)
+  }, [search])
+
+  useEffect(() => {
+    let isMounted = true
+
+    const loadInitial = async () => {
+      const [banksResult, savedColumnsResult] = await Promise.all([
+        getBanks(),
+        getUserTransactionTableColumnsConfig(),
+      ])
+
+      if (!isMounted) return
+
+      if (banksResult.success) {
+        setBanks(banksResult.data)
+      }
+
+      // Initialize table columns: URL params > saved config > defaults
+      if (!tableColsParam && savedColumnsResult.success && savedColumnsResult.columns?.length) {
+        const parsed = parseTableColumnKeys(savedColumnsResult.columns.join(','))
+        setSelectedTableColumns(parsed)
+      }
+
+      setIsBootstrapping(false)
+    }
+
+    void loadInitial()
+
+    return () => {
+      isMounted = false
+    }
+  }, [tableColsParam])
+
+  useEffect(() => {
+    const result = financialAccountsQuery.data
+    if (!result) return
+
+    if (result.success) {
+      setFinancialAccounts(result.data)
+      return
+    }
+
+    setFinancialAccounts([])
+    setFeedback({
+      tone: 'error',
+      message: result.error ?? 'Failed to load financial accounts.',
+    })
+  }, [financialAccountsQuery.data])
 
   useEffect(() => {
     if (hasAppliedInitialQueryFilters.current) return
+    if (financialAccounts.length === 0) return
+
     hasAppliedInitialQueryFilters.current = true
 
     if (!initialFinancialAccountFilter) return
 
-    setFilterFinancialAccount(initialFinancialAccountFilter)
-  }, [initialFinancialAccountFilter])
+    const matchingAccount = financialAccounts.find(
+      (account) =>
+        account.id === initialFinancialAccountFilter ||
+        account.name === initialFinancialAccountFilter,
+    )
+
+    if (matchingAccount) {
+      setFilterFinancialAccount(matchingAccount.id)
+    }
+  }, [financialAccounts, initialFinancialAccountFilter])
 
   useEffect(() => {
     setClientPage(parseClientPageParam(searchParams.get('page')))
@@ -287,14 +283,85 @@ export default function TransactionsPage() {
     if (initialFinancialAccountFilter) return
     if (financialAccounts.length === 0) return
 
-    const defaultAccount = financialAccounts.find(
-      (account) => account.isDefault && Boolean(account.name),
-    )
+    const defaultAccount = financialAccounts.find((account) => account.isDefault)
 
-    if (defaultAccount?.name) {
-      setFilterFinancialAccount(defaultAccount.name)
+    if (defaultAccount?.id) {
+      setFilterFinancialAccount(defaultAccount.id)
     }
   }, [filterFinancialAccount, financialAccounts, initialFinancialAccountFilter])
+
+  const transactionsQueryParams = useMemo(
+    () => ({
+      page: clientPage,
+      pageSize: 10,
+      search: debouncedSearch,
+      financialAccountId: filterFinancialAccount || null,
+      transactionTypes: [...filterTypes]
+        .filter((value): value is TransactionType => value === 'debit' || value === 'credit')
+        .sort(),
+      transactionStatuses: [...filterStatuses]
+        .filter((value): value is TransactionStatus => value === 'completed' || value === 'failed')
+        .sort(),
+      sourceAccountIds: [...filterSourceAccounts].sort(),
+      destinationAccountIds: [...filterDestinationAccounts].sort(),
+      startDate: filterDateRange[0],
+      endDate: filterDateRange[1],
+      sortBy,
+      sortOrder,
+    }),
+    [
+      clientPage,
+      debouncedSearch,
+      filterDateRange,
+      filterDestinationAccounts,
+      filterFinancialAccount,
+      filterSourceAccounts,
+      filterStatuses,
+      filterTypes,
+      sortBy,
+      sortOrder,
+    ],
+  )
+
+  const transactionsQuery = useQuery({
+    queryKey: ['transactions-page', transactionsQueryParams],
+    queryFn: () => getTransactionsPage(transactionsQueryParams),
+    enabled: !isBootstrapping,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  })
+
+  useEffect(() => {
+    const result = transactionsQuery.data
+    if (!result) return
+
+    if (result.success) {
+      setItems(result.data)
+      setPagination(result.pagination || null)
+      if (result.pagination && result.pagination.page !== clientPage) {
+        setClientPage(result.pagination.page)
+      }
+      return
+    }
+
+    setItems([])
+    setPagination({
+      page: 1,
+      pageSize: 10,
+      totalDocs: 0,
+      totalPages: 1,
+    })
+    setFeedback({
+      tone: 'error',
+      message: result.error ?? 'Failed to load transactions.',
+    })
+  }, [clientPage, transactionsQuery.data])
+
+  const hasQueryData = typeof transactionsQuery.data !== 'undefined'
+  const isLoading = !hasQueryData && (isBootstrapping || transactionsQuery.isLoading)
 
   const pushTableColumnsToUrl = (nextColumns: string[]) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -373,51 +440,48 @@ export default function TransactionsPage() {
 
   const financialAccountOptions = useMemo(
     () =>
-      Array.from(
-        new Set(
-          financialAccounts
-            .map((account) => account.name)
-            .filter((name): name is string => Boolean(name)),
-        ),
-      )
-        .sort((a, b) => a.localeCompare(b))
-        .map((name) => ({ value: name, label: name })),
+      financialAccounts
+        .map((account) => ({
+          value: account.id,
+          label: account.name,
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
     [financialAccounts],
   )
 
   const sourceAccountOptions = useMemo(
     () =>
-      Array.from(
-        new Set(
-          items
-            .map((item) => item.sourceAccountName)
-            .filter((name): name is string => Boolean(name)),
-        ),
-      )
-        .sort((a, b) => a.localeCompare(b))
-        .map((name) => ({ value: name, label: name })),
-    [items],
+      banks
+        .map((bank) => ({
+          value: bank.id,
+          label:
+            bank.name && bank.shortName
+              ? `${bank.name} (${bank.shortName})`
+              : bank.name || bank.shortName || bank.code || bank.id,
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
+    [banks],
   )
 
   const destinationAccountOptions = useMemo(
     () =>
-      Array.from(
-        new Set(
-          items
-            .map((item) => item.destinationAccountName)
-            .filter((name): name is string => Boolean(name)),
-        ),
-      )
-        .sort((a, b) => a.localeCompare(b))
-        .map((name) => ({ value: name, label: name })),
-    [items],
+      banks
+        .map((bank) => ({
+          value: bank.id,
+          label:
+            bank.name && bank.shortName
+              ? `${bank.name} (${bank.shortName})`
+              : bank.name || bank.shortName || bank.code || bank.id,
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
+    [banks],
   )
 
   const selectedFinancialAccountCurrentBalance = useMemo(() => {
     if (!filterFinancialAccount) return null
 
     const selectedAccount = financialAccounts.find(
-      (account) => account.name === filterFinancialAccount,
+      (account) => account.id === filterFinancialAccount,
     )
 
     if (!selectedAccount || typeof selectedAccount.currentBalance !== 'number') {
@@ -431,7 +495,7 @@ export default function TransactionsPage() {
     if (!filterFinancialAccount) return null
 
     const selectedAccount = financialAccounts.find(
-      (account) => account.name === filterFinancialAccount,
+      (account) => account.id === filterFinancialAccount,
     )
 
     if (!selectedAccount || typeof selectedAccount.allocationFunds !== 'number') {
@@ -445,7 +509,7 @@ export default function TransactionsPage() {
     if (!filterFinancialAccount) return null
 
     const selectedAccount = financialAccounts.find(
-      (account) => account.name === filterFinancialAccount,
+      (account) => account.id === filterFinancialAccount,
     )
 
     if (
@@ -464,7 +528,7 @@ export default function TransactionsPage() {
     if (!filterFinancialAccount) return null
 
     const selectedAccount = financialAccounts.find(
-      (account) => account.name === filterFinancialAccount,
+      (account) => account.id === filterFinancialAccount,
     )
 
     if (!selectedAccount || typeof selectedAccount.allocatedFunds !== 'number') {
@@ -481,91 +545,9 @@ export default function TransactionsPage() {
     filterDestinationAccounts.length +
     (filterDateRange[0] || filterDateRange[1] ? 1 : 0)
 
-  const displayed = useMemo(() => {
-    const query = search.toLowerCase().trim()
-
-    const filtered = items.filter((item) => {
-      if (filterFinancialAccount) {
-        if (item.financialAccountName !== filterFinancialAccount) {
-          return false
-        }
-      }
-
-      if (filterTypes.length > 0) {
-        if (!item.transactionType || !filterTypes.includes(item.transactionType)) {
-          return false
-        }
-      }
-
-      if (filterStatuses.length > 0) {
-        if (!item.transactionStatus || !filterStatuses.includes(item.transactionStatus)) {
-          return false
-        }
-      }
-
-      if (filterSourceAccounts.length > 0) {
-        if (!item.sourceAccountName || !filterSourceAccounts.includes(item.sourceAccountName)) {
-          return false
-        }
-      }
-
-      if (filterDestinationAccounts.length > 0) {
-        if (
-          !item.destinationAccountName ||
-          !filterDestinationAccounts.includes(item.destinationAccountName)
-        ) {
-          return false
-        }
-      }
-
-      const [startDateValue, endDateValue] = filterDateRange
-      if (startDateValue || endDateValue) {
-        const itemTs = toTimestamp(item.transactionDate)
-        if (itemTs === null) return false
-
-        if (startDateValue) {
-          const startTs = new Date(startDateValue)
-          startTs.setHours(0, 0, 0, 0)
-          if (itemTs < startTs.getTime()) return false
-        }
-
-        if (endDateValue) {
-          const endTs = new Date(endDateValue)
-          endTs.setHours(23, 59, 59, 999)
-          if (itemTs > endTs.getTime()) return false
-        }
-      }
-
-      if (!query) return true
-
-      return (
-        item.description.toLowerCase().includes(query) ||
-        (item.referenceNumber ?? '').toLowerCase().includes(query) ||
-        (item.financialAccountName ?? '').toLowerCase().includes(query) ||
-        (item.sourceAccountName ?? '').toLowerCase().includes(query) ||
-        (item.destinationAccountName ?? '').toLowerCase().includes(query) ||
-        (item.transactionType ?? '').toLowerCase().includes(query) ||
-        (item.transactionStatus ?? '').toLowerCase().includes(query)
-      )
-    })
-
-    return filtered.sort((a, b) => compareTransactions(a, b, sortBy, sortOrder))
-  }, [
-    filterDateRange,
-    filterDestinationAccounts,
-    filterFinancialAccount,
-    filterSourceAccounts,
-    filterStatuses,
-    filterTypes,
-    items,
-    search,
-    sortBy,
-    sortOrder,
-  ])
-
   const parentRows = useMemo<TransactionParentRow[]>(() => {
-    return displayed.map((parent) => ({ parent }))
-  }, [displayed])
+    return items.map((parent) => ({ parent }))
+  }, [items])
 
   const toggleSort = (field: SortBy) => {
     if (sortBy === field) {
@@ -753,7 +735,7 @@ export default function TransactionsPage() {
       <Flex gap={{ base: 'xs', xs: 'xs', md: 'md' }} direction="column">
         <Group gap="xs" align="center">
           <TextInput
-            placeholder="Search by description, accounts, type, or status..."
+            placeholder="Search by reference number..."
             leftSection={<Search size={16} />}
             value={search}
             onChange={(e) => setSearch(e.currentTarget.value)}
@@ -877,6 +859,7 @@ export default function TransactionsPage() {
               <Stack
                 gap="xs"
                 p="sm"
+                mt="sm"
                 style={{
                   border: '1px solid var(--mantine-color-default-border)',
                   borderRadius: 'var(--mantine-radius-sm)',
@@ -1007,9 +990,10 @@ export default function TransactionsPage() {
               <Stack
                 gap="xs"
                 p="sm"
+                mt="sm"
                 style={{
                   border: '1px solid var(--mantine-color-default-border)',
-                  borderRadius: 'var(--mantine-radius-sm)',
+                  borderRadius: 'var(--mantine-radius-md)',
                 }}
               >
                 <MultiSelect
@@ -1055,10 +1039,8 @@ export default function TransactionsPage() {
           isLoading={isLoading}
           loadingText="Loading transactions..."
           emptyText="No transactions found."
-          enableClientPagination
-          clientPageSize={10}
-          clientPage={clientPage}
-          onClientPageChange={handleClientPageChange}
+          pagination={pagination ?? undefined}
+          onPageChange={handleClientPageChange}
           getRowKey={(row) => row.parent.id}
           onRowClick={(row) => {
             setExpandedRows((current) =>
