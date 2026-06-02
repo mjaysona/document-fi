@@ -104,7 +104,6 @@ const FinancialAccounts: CollectionConfig = {
       type: 'number',
       required: true,
       defaultValue: 0,
-      min: 0,
       access: {
         update: ({ data, req }) => {
           return hasSuperAdminRole(req.user?.userRoles) || !data?.bank
