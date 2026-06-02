@@ -429,10 +429,7 @@ export default function TransactionsPage() {
       return '-'
     }
 
-    const remainingFunds = Math.max(
-      0,
-      selectedAccount.allocationFunds - selectedAccount.allocatedFunds,
-    )
+    const remainingFunds = selectedAccount.allocationFunds - selectedAccount.allocatedFunds
     return formatCurrency(remainingFunds)
   }, [filterFinancialAccount, financialAccounts])
 
