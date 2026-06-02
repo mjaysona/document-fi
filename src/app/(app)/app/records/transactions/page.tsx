@@ -400,7 +400,7 @@ export default function TransactionsPage() {
     return formatCurrency(selectedAccount.currentBalance)
   }, [filterFinancialAccount, financialAccounts])
 
-  const selectedFinancialAccountAvailableForAllocation = useMemo(() => {
+  const selectedFinancialAccountAllocationPool = useMemo(() => {
     if (!filterFinancialAccount) return null
 
     const selectedAccount = financialAccounts.find(
@@ -412,6 +412,28 @@ export default function TransactionsPage() {
     }
 
     return formatCurrency(selectedAccount.allocationFunds)
+  }, [filterFinancialAccount, financialAccounts])
+
+  const selectedFinancialAccountUnallocatedFunds = useMemo(() => {
+    if (!filterFinancialAccount) return null
+
+    const selectedAccount = financialAccounts.find(
+      (account) => account.name === filterFinancialAccount,
+    )
+
+    if (
+      !selectedAccount ||
+      typeof selectedAccount.allocationFunds !== 'number' ||
+      typeof selectedAccount.allocatedFunds !== 'number'
+    ) {
+      return '-'
+    }
+
+    const remainingFunds = Math.max(
+      0,
+      selectedAccount.allocationFunds - selectedAccount.allocatedFunds,
+    )
+    return formatCurrency(remainingFunds)
   }, [filterFinancialAccount, financialAccounts])
 
   const selectedFinancialAccountAllocatedFunds = useMemo(() => {
@@ -996,11 +1018,12 @@ export default function TransactionsPage() {
                   </Stack>
                 )}
                 <Stack gap={0} align="flex-start">
-                  <Text size="xs">Allocated funds</Text>
-                  <Title order={3}>
-                    {selectedFinancialAccountAllocatedFunds || '-'} /{' '}
-                    {selectedFinancialAccountAvailableForAllocation || '-'}
-                  </Title>
+                  <Text size="xs">Unallocated funds</Text>
+                  <Title order={3}>{selectedFinancialAccountUnallocatedFunds || '-'}</Title>
+                  <Text size="xs" c="dimmed">
+                    Allocated {selectedFinancialAccountAllocatedFunds || '-'} | Pool{' '}
+                    {selectedFinancialAccountAllocationPool || '-'}
+                  </Text>
                 </Stack>
               </Flex>
               <Group>
