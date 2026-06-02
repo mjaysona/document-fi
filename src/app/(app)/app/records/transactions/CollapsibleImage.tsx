@@ -18,13 +18,27 @@ export function CollapsibleImage({
 }: CollapsibleImageProps) {
   const [expanded, setExpanded] = useState(false)
 
+  const handleToggle = (event: React.MouseEvent<HTMLParagraphElement>) => {
+    event.preventDefault()
+    event.stopPropagation()
+    setExpanded((prev) => !prev)
+  }
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLParagraphElement>) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return
+    event.preventDefault()
+    event.stopPropagation()
+    setExpanded((prev) => !prev)
+  }
+
   return (
     <Box>
       <Text
         w={maxWidth}
         display="inline-block"
         style={{ cursor: 'pointer', color: '#1971c2', userSelect: 'none', display: 'inline-block' }}
-        onClick={() => setExpanded((prev) => !prev)}
+        onClick={handleToggle}
+        onKeyDown={handleKeyDown}
         role="button"
         tabIndex={0}
         aria-expanded={expanded}
