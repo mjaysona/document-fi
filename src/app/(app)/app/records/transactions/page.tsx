@@ -84,6 +84,13 @@ const parseClientPageParam = (value?: string | null): number => {
   return parsed
 }
 
+const parseCsvParam = (value?: string | null): string[] => {
+  return String(value || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+}
+
 type FeedbackState = {
   tone: 'success' | 'error'
   message: string
@@ -153,30 +160,57 @@ export default function TransactionsPage() {
   }, [hasReadAccess, router])
   if (!hasReadAccess) return null
   const searchParams = useSearchParams()
+  const initialSearch = searchParams.get('search')?.trim() || ''
+  const initialSortBy = searchParams.get('sortBy')
+  const initialSortOrder = searchParams.get('sortOrder')
+  const initialFilterFinancialAccount = searchParams.get('financialAccount')?.trim() || ''
+  const initialFilterTypes = parseCsvParam(searchParams.get('types')).filter(
+    (value): value is TransactionType => value === 'debit' || value === 'credit',
+  )
+  const initialFilterStatuses = parseCsvParam(searchParams.get('statuses')).filter(
+    (value): value is TransactionStatus => value === 'completed' || value === 'failed',
+  )
+  const initialFilterSourceAccounts = parseCsvParam(searchParams.get('sourceAccounts'))
+  const initialFilterDestinationAccounts = parseCsvParam(searchParams.get('destinationAccounts'))
+  const initialStartDate = searchParams.get('startDate')?.trim() || null
+  const initialEndDate = searchParams.get('endDate')?.trim() || null
+
   const [items, setItems] = useState<TransactionListItem[]>([])
   const [banks, setBanks] = useState<BankOption[]>([])
   const [financialAccounts, setFinancialAccounts] = useState<FinancialAccountOption[]>([])
   const [isBootstrapping, setIsBootstrapping] = useState(true)
-  const [search, setSearch] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [search, setSearch] = useState(initialSearch)
+  const [debouncedSearch, setDebouncedSearch] = useState(initialSearch)
   const [filterOpen, setFilterOpen] = useState(false)
   const [tableConfigOpen, setTableConfigOpen] = useState(false)
-  const [filterFinancialAccount, setFilterFinancialAccount] = useState<string | null>(null)
-  const [filterTypes, setFilterTypes] = useState<string[]>([])
-  const [filterStatuses, setFilterStatuses] = useState<string[]>([])
-  const [filterSourceAccounts, setFilterSourceAccounts] = useState<string[]>([])
-  const [filterDestinationAccounts, setFilterDestinationAccounts] = useState<string[]>([])
+  const [filterFinancialAccount, setFilterFinancialAccount] = useState<string | null>(
+    initialFilterFinancialAccount || null,
+  )
+  const [filterTypes, setFilterTypes] = useState<string[]>(initialFilterTypes)
+  const [filterStatuses, setFilterStatuses] = useState<string[]>(initialFilterStatuses)
+  const [filterSourceAccounts, setFilterSourceAccounts] = useState<string[]>(
+    initialFilterSourceAccounts,
+  )
+  const [filterDestinationAccounts, setFilterDestinationAccounts] = useState<string[]>(
+    initialFilterDestinationAccounts,
+  )
   const [openMultiSelect, setOpenMultiSelect] = useState<string | null>(null)
   const [datePickerRange, setDatePickerRange] = useState<[string | null, string | null]>([
-    null,
-    null,
+    initialStartDate,
+    initialEndDate,
   ])
   const [filterDateRange, setFilterDateRange] = useState<[string | null, string | null]>([
-    null,
-    null,
+    initialStartDate,
+    initialEndDate,
   ])
-  const [sortBy, setSortBy] = useState<SortBy>('date')
-  const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
+  const [sortBy, setSortBy] = useState<SortBy>(
+    initialSortBy === 'amount' || initialSortBy === 'updated' || initialSortBy === 'date'
+      ? initialSortBy
+      : 'date',
+  )
+  const [sortOrder, setSortOrder] = useState<SortOrder>(
+    initialSortOrder === 'asc' || initialSortOrder === 'desc' ? initialSortOrder : 'desc',
+  )
   const [feedback, setFeedback] = useState<FeedbackState | null>(null)
   const [isSavingTableColumns, setIsSavingTableColumns] = useState(false)
   const [pagination, setPagination] = useState<DataTablePaginationState | null>(null)
@@ -334,7 +368,6 @@ export default function TransactionsPage() {
     if (clientPage === 1) return
 
     setClientPage(1)
-    pushClientPageToUrl(1)
   }, [clientPage, pageResetSignature])
 
   const transactionsQueryParams = useMemo(
@@ -410,36 +443,84 @@ export default function TransactionsPage() {
   const hasQueryData = typeof transactionsQuery.data !== 'undefined'
   const isLoading = !hasQueryData && (isBootstrapping || transactionsQuery.isLoading)
 
-  const pushTableColumnsToUrl = (nextColumns: string[]) => {
+  useEffect(() => {
     const params = new URLSearchParams(searchParams.toString())
-    params.set('tableCols', serializeTableColumnKeys(nextColumns))
 
-    const query = params.toString()
-    router.push(query ? `/app/records/transactions?${query}` : '/app/records/transactions')
-  }
+    const normalizedSearch = search.trim()
+    if (normalizedSearch) params.set('search', normalizedSearch)
+    else params.delete('search')
 
-  const pushClientPageToUrl = (nextPage: number) => {
-    const params = new URLSearchParams(searchParams.toString())
-    if (nextPage <= 1) {
-      params.delete('page')
-    } else {
-      params.set('page', String(nextPage))
-    }
+    if (clientPage > 1) params.set('page', String(clientPage))
+    else params.delete('page')
 
-    const query = params.toString()
-    router.push(query ? `/app/records/transactions?${query}` : '/app/records/transactions')
-  }
+    const serializedColumns = serializeTableColumnKeys(selectedTableColumns)
+    if (serializedColumns) params.set('tableCols', serializedColumns)
+    else params.delete('tableCols')
+
+    if (filterFinancialAccount) params.set('financialAccount', filterFinancialAccount)
+    else params.delete('financialAccount')
+
+    const typeValues = [...filterTypes]
+      .filter((value): value is TransactionType => value === 'debit' || value === 'credit')
+      .sort()
+    if (typeValues.length > 0) params.set('types', typeValues.join(','))
+    else params.delete('types')
+
+    const statusValues = [...filterStatuses]
+      .filter((value): value is TransactionStatus => value === 'completed' || value === 'failed')
+      .sort()
+    if (statusValues.length > 0) params.set('statuses', statusValues.join(','))
+    else params.delete('statuses')
+
+    const sourceValues = [...filterSourceAccounts].filter(Boolean).sort()
+    if (sourceValues.length > 0) params.set('sourceAccounts', sourceValues.join(','))
+    else params.delete('sourceAccounts')
+
+    const destinationValues = [...filterDestinationAccounts].filter(Boolean).sort()
+    if (destinationValues.length > 0) params.set('destinationAccounts', destinationValues.join(','))
+    else params.delete('destinationAccounts')
+
+    if (filterDateRange[0]) params.set('startDate', filterDateRange[0])
+    else params.delete('startDate')
+
+    if (filterDateRange[1]) params.set('endDate', filterDateRange[1])
+    else params.delete('endDate')
+
+    if (sortBy !== 'date') params.set('sortBy', sortBy)
+    else params.delete('sortBy')
+
+    if (sortOrder !== 'desc') params.set('sortOrder', sortOrder)
+    else params.delete('sortOrder')
+
+    const nextQuery = params.toString()
+    const currentQuery = searchParams.toString()
+    if (nextQuery === currentQuery) return
+
+    router.replace(nextQuery ? `/app/records/transactions?${nextQuery}` : '/app/records/transactions')
+  }, [
+    clientPage,
+    filterDateRange,
+    filterDestinationAccounts,
+    filterFinancialAccount,
+    filterSourceAccounts,
+    filterStatuses,
+    filterTypes,
+    router,
+    search,
+    searchParams,
+    selectedTableColumns,
+    sortBy,
+    sortOrder,
+  ])
 
   const handleClientPageChange = (nextPage: number) => {
     setClientPage(nextPage)
-    pushClientPageToUrl(nextPage)
   }
 
   const handleSearchChange = (value: string) => {
     setSearch(value)
     if (clientPage !== 1) {
       setClientPage(1)
-      pushClientPageToUrl(1)
     }
   }
 
@@ -460,7 +541,6 @@ export default function TransactionsPage() {
   const handleTableColumnsChange = (nextColumns: string[]) => {
     const parsed = parseTableColumnKeys(nextColumns.join(','))
     setSelectedTableColumns(parsed)
-    pushTableColumnsToUrl(parsed)
     setOpenMultiSelect(null)
   }
 
