@@ -50,6 +50,7 @@ import classes from '../page.module.scss'
 import { useAuth } from '@/app/providers/Auth'
 import { hasAppRoleReadAccess } from '@/app/(app)/utils/roleAccess'
 import { DatePickerInput } from '@mantine/dates'
+import { useMediaQuery } from '@mantine/hooks'
 
 const TABLE_COLUMN_KEY_SET = new Set<TransactionReportColumnKey>(
   TRANSACTION_REPORT_COLUMN_OPTIONS.map((option) => option.value),
@@ -174,6 +175,21 @@ export default function TransactionsPage() {
   const initialFilterDestinationAccounts = parseCsvParam(searchParams.get('destinationAccounts'))
   const initialStartDate = searchParams.get('startDate')?.trim() || null
   const initialEndDate = searchParams.get('endDate')?.trim() || null
+  const isDesktop = useMediaQuery('(min-width: 48em)')
+
+  const responsivePillsListStyle = useMemo(
+    () =>
+      isDesktop
+        ? {
+            flexWrap: 'nowrap' as const,
+            overflowX: 'auto' as const,
+          }
+        : {
+            flexWrap: 'wrap' as const,
+            overflowX: 'visible' as const,
+          },
+    [isDesktop],
+  )
 
   const [items, setItems] = useState<TransactionListItem[]>([])
   const [banks, setBanks] = useState<BankOption[]>([])
@@ -496,7 +512,9 @@ export default function TransactionsPage() {
     const currentQuery = searchParams.toString()
     if (nextQuery === currentQuery) return
 
-    router.replace(nextQuery ? `/app/records/transactions?${nextQuery}` : '/app/records/transactions')
+    router.replace(
+      nextQuery ? `/app/records/transactions?${nextQuery}` : '/app/records/transactions',
+    )
   }, [
     clientPage,
     filterDateRange,
@@ -1085,10 +1103,7 @@ export default function TransactionsPage() {
                       clearable
                       searchable
                       styles={{
-                        pillsList: {
-                          flexWrap: 'nowrap',
-                          overflowX: 'auto',
-                        },
+                        pillsList: responsivePillsListStyle,
                       }}
                     />
                   </Grid.Col>
@@ -1108,10 +1123,7 @@ export default function TransactionsPage() {
                       clearable
                       searchable
                       styles={{
-                        pillsList: {
-                          flexWrap: 'nowrap',
-                          overflowX: 'auto',
-                        },
+                        pillsList: responsivePillsListStyle,
                       }}
                     />
                   </Grid.Col>
@@ -1146,7 +1158,12 @@ export default function TransactionsPage() {
                   borderRadius: 'var(--mantine-radius-md)',
                 }}
               >
-                <Group justify="flex-end" align="end">
+                <Flex
+                  justify="flex-end"
+                  align="end"
+                  gap="sm"
+                  direction={{ base: 'column', sm: 'row' }}
+                >
                   <MultiSelect
                     flex={6}
                     label="Table columns"
@@ -1166,23 +1183,22 @@ export default function TransactionsPage() {
                     withPillsReorder
                     size="sm"
                     styles={{
-                      root: { minWidth: 280 },
+                      root: { minWidth: 100 },
                       input: { minHeight: 36 },
-                      pillsList: {
-                        flexWrap: 'nowrap',
-                        overflowX: 'auto',
-                      },
+                      pillsList: responsivePillsListStyle,
                     }}
                   />
-                  <Button
-                    flex={{ base: '1', sm: 'none' }}
-                    variant="default"
-                    onClick={handleSaveTableColumns}
-                    loading={isSavingTableColumns}
-                  >
-                    Save
-                  </Button>
-                </Group>
+                  <Box w={{ base: '100%', sm: 'auto' }}>
+                    <Button
+                      variant="default"
+                      fullWidth
+                      onClick={handleSaveTableColumns}
+                      loading={isSavingTableColumns}
+                    >
+                      Save
+                    </Button>
+                  </Box>
+                </Flex>
               </Stack>
             </Collapse>
           </Box>
@@ -1249,9 +1265,23 @@ export default function TransactionsPage() {
 
                   <Flex direction="column" className={classes.detailItem}>
                     <Text size="xs" c="dimmed">
+                      From
+                    </Text>
+                    <Text size="sm">{row.parent.from || '-'}</Text>
+                  </Flex>
+
+                  <Flex direction="column" className={classes.detailItem}>
+                    <Text size="xs" c="dimmed">
                       Source Bank
                     </Text>
                     <Text size="sm">{row.parent.sourceAccountName || '-'}</Text>
+                  </Flex>
+
+                  <Flex direction="column" className={classes.detailItem}>
+                    <Text size="xs" c="dimmed">
+                      To
+                    </Text>
+                    <Text size="sm">{row.parent.to || '-'}</Text>
                   </Flex>
 
                   <Flex direction="column" className={classes.detailItem}>
@@ -1266,20 +1296,6 @@ export default function TransactionsPage() {
                       Financial Account
                     </Text>
                     <Text size="sm">{row.parent.financialAccountName || '-'}</Text>
-                  </Flex>
-
-                  <Flex direction="column" className={classes.detailItem}>
-                    <Text size="xs" c="dimmed">
-                      From
-                    </Text>
-                    <Text size="sm">{row.parent.from || '-'}</Text>
-                  </Flex>
-
-                  <Flex direction="column" className={classes.detailItem}>
-                    <Text size="xs" c="dimmed">
-                      To
-                    </Text>
-                    <Text size="sm">{row.parent.to || '-'}</Text>
                   </Flex>
 
                   <Flex direction="column" className={classes.detailItem}>
