@@ -617,8 +617,10 @@ const Transactions: CollectionConfig = {
       type: 'date',
       defaultValue: () => new Date().toISOString(),
       admin: {
-        readOnly: true,
-        position: 'sidebar',
+        date: {
+          pickerAppearance: 'dayAndTime',
+          displayFormat: 'MMM d, yyyy h:mm a',
+        },
       },
     },
     {
@@ -676,6 +678,18 @@ const Transactions: CollectionConfig = {
       },
     },
     {
+      name: 'modifiedAt',
+      label: 'Modified At',
+      type: 'date',
+      defaultValue: () => new Date().toISOString(),
+      admin: {
+        date: {
+          pickerAppearance: 'dayAndTime',
+          displayFormat: 'MMM d, yyyy h:mm a',
+        },
+      },
+    },
+    {
       ...createdByField,
       admin: {
         ...createdByField.admin,
@@ -693,6 +707,30 @@ const Transactions: CollectionConfig = {
     } as Field,
   ],
   hooks: {
+    beforeChange: [
+      ({ data, operation, req, originalDoc }) => {
+        const nextData = (data || {}) as Record<string, unknown>
+
+        if (operation === 'create') {
+          nextData.modifiedAt = new Date().toISOString()
+          return nextData
+        }
+
+        if (operation === 'update') {
+          // Keep modifiedAt unchanged for balance-sync/system updates.
+          if (req.context?.skipTransactionBalanceSync) {
+            if (typeof nextData.modifiedAt === 'undefined') {
+              nextData.modifiedAt = (originalDoc as Record<string, unknown> | undefined)?.modifiedAt
+            }
+            return nextData
+          }
+
+          nextData.modifiedAt = new Date().toISOString()
+        }
+
+        return nextData
+      },
+    ],
     afterChange: [
       async ({ doc, previousDoc, req }) => {
         if (req.context?.skipTransactionBalanceSync) return doc

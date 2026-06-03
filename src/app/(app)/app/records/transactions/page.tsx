@@ -886,8 +886,8 @@ export default function TransactionsPage() {
       },
       updatedAt: {
         key: 'updatedAt',
-        label: 'Last Updated',
-        render: (row) => formatDateTime(row.parent.updatedAt),
+        label: 'Last Modified',
+        render: (row) => formatDateTime(row.parent.modifiedAt),
       },
     }
 
@@ -956,7 +956,7 @@ export default function TransactionsPage() {
                 onClick={() => toggleSort('updated')}
                 disabled={isLoading}
               >
-                Last updated {sortBy === 'updated' && (sortOrder === 'asc' ? '↑' : '↓')}
+                Last modified {sortBy === 'updated' && (sortOrder === 'asc' ? '↑' : '↓')}
               </Button>
             </Flex>
           </Flex>
@@ -1227,7 +1227,7 @@ export default function TransactionsPage() {
                 <Group gap="md" justify="space-between">
                   <Group>
                     <Text size="xs">Created: {formatDate(row.parent.createdAt)}</Text>
-                    <Text size="xs">Last Updated: {formatDate(row.parent.updatedAt)}</Text>
+                    <Text size="xs">Last Modified: {formatDate(row.parent.modifiedAt)}</Text>
                   </Group>
                 </Group>
                 <div className={classes['detail-grid']}>
