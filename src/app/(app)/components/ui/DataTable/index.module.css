@@ -1,0 +1,11 @@
+.data-table__pagination {
+  display: flex;
+  justify-content: flex-end;
+}
+
+@media (max-width: $mantine-breakpoint-sm) {
+  .data-table__pagination {
+    justify-content: center;
+  }
+}
+

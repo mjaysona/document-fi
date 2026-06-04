@@ -3,6 +3,7 @@
 import { Box, Checkbox, Flex, Pagination, Table, Text, ScrollArea, Grid } from '@mantine/core'
 import type { ReactNode } from 'react'
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
+import styles from './index.module.css'
 
 export type DataTableColumn<T> = {
   key: string
@@ -269,18 +270,18 @@ export function DataTable<T>({
         </Table>
       </ScrollArea>
       {pagination && pagination.totalPages > 1 && onPageChange && (
-        <Grid justify="space-between" align="center" mt="lg">
-          <Grid.Col span={5}>
+        <Grid justify="space-between" align="start" mt="lg">
+          <Grid.Col span={{ base: 12, sm: 5 }} visibleFrom="sm">
             <Text size="sm" c="dimmed">
               Showing {(pagination.page - 1) * pagination.pageSize + 1}–
               {Math.min(pagination.page * pagination.pageSize, pagination.totalDocs)} of{' '}
               {pagination.totalDocs} records
             </Text>
           </Grid.Col>
-          <Grid.Col span={7}>
+          <Grid.Col span={{ base: 12, sm: 7 }}>
             <Box style={{ overflow: 'auto', minWidth: 200, maxWidth: '100%' }}>
               <Pagination
-                style={{ display: 'flex', justifyContent: 'flex-end' }}
+                className={styles['data-table__pagination']}
                 value={pagination.page}
                 onChange={onPageChange}
                 total={pagination.totalPages}
