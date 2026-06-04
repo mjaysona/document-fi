@@ -772,6 +772,53 @@ export async function getTransactions(where?: Record<string, unknown>): Promise<
   }
 }
 
+export async function getAllTransactionsForFinancialAccount(financialAccountId: string): Promise<{
+  success: boolean
+  data: TransactionListItem[]
+  error?: string
+}> {
+  try {
+    const normalizedId = String(financialAccountId || '').trim()
+    if (!normalizedId) {
+      return { success: false, data: [], error: 'Financial account is required.' }
+    }
+
+    const payload = await getPayload({ config })
+    const docs: any[] = []
+    let page = 1
+
+    while (true) {
+      const result = await payload.find({
+        collection: 'transactions',
+        where: {
+          financialAccount: {
+            equals: normalizedId,
+          },
+        },
+        sort: 'transactionDate',
+        limit: 200,
+        page,
+        depth: 1,
+      })
+
+      docs.push(...(result.docs as any[]))
+
+      const currentPage = Number(result.page || 1)
+      const totalPages = Number(result.totalPages || 1)
+      if (currentPage >= totalPages) break
+      page = currentPage + 1
+    }
+
+    return {
+      success: true,
+      data: docs.map((doc) => mapTransactionDocToListItem(doc)),
+    }
+  } catch (error) {
+    console.error('Failed to fetch financial account transactions:', error)
+    return { success: false, data: [], error: 'Failed to load transactions.' }
+  }
+}
+
 const mapTransactionDocToListItem = (doc: any): TransactionListItem => ({
   id: String(doc.id),
   description: String(doc.description || ''),

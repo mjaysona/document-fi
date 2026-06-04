@@ -145,7 +145,6 @@ export function buildTransactionReportData(args: {
   header: TransactionReportHeaderData
   transactions: TransactionListItem[]
   allAccountTransactions?: TransactionListItem[]
-  allAccountParentTransactions?: TransactionListItem[]
   openingBalance?: number
   range?: ReportRange
 }): TransactionReportData {
@@ -155,15 +154,11 @@ export function buildTransactionReportData(args: {
   const toTimestampBoundary = toBoundaryTimestamp(args.range?.toDate)
   const hasRangeFilter = fromTimestamp !== null || toTimestampBoundary !== null
 
-  const runningBalanceByParentId = new Map<string, number | null>()
+  const runningBalanceByTransactionId = new Map<string, number | null>()
 
   if (hasRangeFilter) {
     const allAccountTransactions = sortTransactions(
-      (
-        args.allAccountTransactions ||
-        args.allAccountParentTransactions ||
-        sortedTransactions
-      ).filter((item) => !item.isForAllocation),
+      (args.allAccountTransactions || sortedTransactions).filter((item) => !item.isForAllocation),
     )
 
     const transactionsForRunningBalance = sortedTransactions.filter((item) => !item.isForAllocation)
@@ -174,26 +169,64 @@ export function buildTransactionReportData(args: {
         : 0
 
     let openingBalance = baseOpeningBalance
+
     if (fromTimestamp !== null) {
-      for (const item of allAccountTransactions) {
+      const lastTransactionBeforeRange =
+        [...allAccountTransactions].reverse().find((item) => {
+          const transactionTime = toBoundaryTimestamp(item.transactionDate)
+          return (
+            transactionTime !== null &&
+            transactionTime < fromTimestamp &&
+            typeof item.runningBalance === 'number'
+          )
+        }) ?? null
+
+      if (
+        lastTransactionBeforeRange &&
+        typeof lastTransactionBeforeRange.runningBalance === 'number'
+      ) {
+        openingBalance = lastTransactionBeforeRange.runningBalance
+      }
+    }
+
+    if (fromTimestamp !== null) {
+      const hasAnchoredOpeningBalance = [...allAccountTransactions].reverse().some((item) => {
         const transactionTime = toBoundaryTimestamp(item.transactionDate)
-        if (transactionTime === null || transactionTime >= fromTimestamp) continue
-        openingBalance += getTransactionImpact(item)
+        return (
+          transactionTime !== null &&
+          transactionTime < fromTimestamp &&
+          typeof item.runningBalance === 'number'
+        )
+      })
+
+      if (!hasAnchoredOpeningBalance) {
+        for (const item of allAccountTransactions) {
+          const transactionTime = toBoundaryTimestamp(item.transactionDate)
+          if (transactionTime === null || transactionTime >= fromTimestamp) continue
+          openingBalance += getTransactionImpact(item)
+        }
       }
     }
 
     let runningBalance = openingBalance
     for (const item of transactionsForRunningBalance) {
-      if (item.transactionStatus === 'completed') {
+      const transactionTime = toBoundaryTimestamp(item.transactionDate)
+      const isInRange =
+        (fromTimestamp === null || transactionTime === null || transactionTime >= fromTimestamp) &&
+        (toTimestampBoundary === null ||
+          transactionTime === null ||
+          transactionTime <= toTimestampBoundary)
+
+      if (isInRange && item.transactionStatus === 'completed') {
         runningBalance += getTransactionImpact(item)
-        runningBalanceByParentId.set(item.id, runningBalance)
-      } else {
-        runningBalanceByParentId.set(item.id, null)
+        runningBalanceByTransactionId.set(item.id, runningBalance)
+      } else if (isInRange) {
+        runningBalanceByTransactionId.set(item.id, null)
       }
     }
   } else {
     for (const item of sortedTransactions) {
-      runningBalanceByParentId.set(
+      runningBalanceByTransactionId.set(
         item.id,
         typeof item.runningBalance === 'number' ? item.runningBalance : null,
       )
@@ -222,7 +255,7 @@ export function buildTransactionReportData(args: {
           (typeof item.transactionFee === 'number' ? item.transactionFee : 0)
         : null,
     currentBalance: typeof item.currentBalance === 'number' ? item.currentBalance : null,
-    runningBalance: runningBalanceByParentId.get(item.id) ?? null,
+    runningBalance: runningBalanceByTransactionId.get(item.id) ?? null,
     allocatedFunds: typeof item.allocatedFunds === 'number' ? item.allocatedFunds : null,
     description: normalizeString(item.description),
     particulars: normalizeString(item.particulars),
@@ -234,6 +267,16 @@ export function buildTransactionReportData(args: {
   const lineByDate = new Map<string, number | null>()
 
   for (const item of sortedTransactions) {
+    if (hasRangeFilter) {
+      const transactionTime = toBoundaryTimestamp(item.transactionDate)
+      const isInRange =
+        (fromTimestamp === null || transactionTime === null || transactionTime >= fromTimestamp) &&
+        (toTimestampBoundary === null ||
+          transactionTime === null ||
+          transactionTime <= toTimestampBoundary)
+      if (!isInRange) continue
+    }
+
     const dateKey = toDateKey(item.transactionDate)
     if (!dateKey) continue
 
@@ -249,7 +292,7 @@ export function buildTransactionReportData(args: {
 
     barsByDate.set(dateKey, bar)
 
-    const computedBalance = runningBalanceByParentId.get(item.id)
+    const computedBalance = runningBalanceByTransactionId.get(item.id)
     if (typeof computedBalance === 'number') {
       lineByDate.set(dateKey, computedBalance)
     } else if (!lineByDate.has(dateKey)) {

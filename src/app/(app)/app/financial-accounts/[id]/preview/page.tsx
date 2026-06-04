@@ -1,10 +1,10 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Stack, Group, ActionIcon, Title, Flex } from '@mantine/core'
+import { Stack, ActionIcon, Title, Flex } from '@mantine/core'
 import { ArrowLeft } from 'lucide-react'
 import { getFinancialAccountById } from '../../actions'
 import {
-  getTransactions,
+  getAllTransactionsForFinancialAccount,
   getUserTransactionPreviewTableColumnsConfig,
 } from '../../../records/transactions/actions'
 import { buildTransactionReportData } from './reportData'
@@ -46,12 +46,12 @@ type Props = {
 const parseDateInput = (value?: string, mode: 'start' | 'end' = 'start'): Date | null => {
   const normalized = String(value || '').trim()
   if (!normalized) return null
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized)) return null
 
-  const date = new Date(`${normalized}T00:00:00`)
+  const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(normalized)
+  const date = isDateOnly ? new Date(`${normalized}T00:00:00`) : new Date(normalized)
   if (Number.isNaN(date.getTime())) return null
 
-  if (mode === 'end') {
+  if (mode === 'end' && isDateOnly) {
     date.setHours(23, 59, 59, 999)
   }
 
@@ -70,7 +70,7 @@ export default async function FinancialAccountPreviewPage({ params, searchParams
 
   const [accountResult, transactionsResult, previewColumnsResult] = await Promise.all([
     getFinancialAccountById(id),
-    getTransactions(),
+    getAllTransactionsForFinancialAccount(id),
     getUserTransactionPreviewTableColumnsConfig(),
   ])
 
@@ -85,9 +85,6 @@ export default async function FinancialAccountPreviewPage({ params, searchParams
 
   const account = accountResult.data
   const allTransactions = transactionsResult.success ? transactionsResult.data : []
-  const allAccountParentTransactions = allTransactions.filter(
-    (item) => item.financialAccountId === id && !item.parentTransaction,
-  )
 
   let fromDate = parseDateInput(from, 'start')
   let toDate = parseDateInput(to, 'end')
@@ -98,27 +95,14 @@ export default async function FinancialAccountPreviewPage({ params, searchParams
 
   const hasDateRange = fromDate || toDate
   const accountTransactions = hasDateRange
-    ? (() => {
-        const parentTransactions = allTransactions
-          .filter((item) => item.financialAccountId === id && !item.parentTransaction)
-          .filter((item) => {
-            const transactionDate = parseTransactionDate(item.transactionDate)
-            if (!transactionDate) return false
+    ? allTransactions.filter((item) => {
+        const transactionDate = parseTransactionDate(item.transactionDate)
+        if (!transactionDate) return false
 
-            if (fromDate && transactionDate.getTime() < fromDate.getTime()) return false
-            if (toDate && transactionDate.getTime() > toDate.getTime()) return false
-            return true
-          })
-
-        const parentIds = new Set(parentTransactions.map((t) => t.id))
-
-        // Include all child transactions of filtered parents
-        const childTransactions = allTransactions.filter(
-          (item) => item.parentTransaction && parentIds.has(item.parentTransaction),
-        )
-
-        return [...parentTransactions, ...childTransactions]
-      })()
+        if (fromDate && transactionDate.getTime() < fromDate.getTime()) return false
+        if (toDate && transactionDate.getTime() > toDate.getTime()) return false
+        return true
+      })
     : []
 
   const report = buildTransactionReportData({
@@ -131,7 +115,7 @@ export default async function FinancialAccountPreviewPage({ params, searchParams
       toDate: toDate?.toISOString() ?? null,
     },
     transactions: accountTransactions,
-    allAccountParentTransactions,
+    allAccountTransactions: allTransactions,
     openingBalance:
       typeof account.startingBalance === 'number'
         ? account.startingBalance
