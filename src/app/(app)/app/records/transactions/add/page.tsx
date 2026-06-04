@@ -43,6 +43,7 @@ import {
 } from '../actions'
 import { generateAutoReferenceNumberBase } from '@/collections/utilities/autoReferenceNumber'
 import { useForm } from '@mantine/form'
+import { useQueryClient } from '@tanstack/react-query'
 import classes from '../../page.module.scss'
 import { CONTAINER_BREAKPOINTS } from '@/constants/breakpoints'
 import { useNavigationHistory } from '@/app/providers/NavigationHistory'
@@ -143,6 +144,7 @@ function parseDateTimeValue(value?: string | null): Date | null {
 export default function AddTransactionPage() {
   const pathname = usePathname()
   const router = useRouter()
+  const queryClient = useQueryClient()
   const { getBackPath } = useNavigationHistory()
   const params = useParams<{ id?: string }>()
   const transactionId = params?.id
@@ -310,6 +312,13 @@ export default function AddTransactionPage() {
     receiptPreviewCandidates[
       Math.min(receiptPreviewAttempt, Math.max(0, receiptPreviewCandidates.length - 1))
     ]
+
+  const markTransactionListStale = () => {
+    // Remove all cached list variants so next list visit loads fresh data.
+    queryClient.removeQueries({ queryKey: ['transactions-page'] })
+    // Related balances/options may have changed after transaction mutations.
+    void queryClient.invalidateQueries({ queryKey: ['financial-accounts-options'] })
+  }
 
   useEffect(() => {
     setReceiptPreviewAttempt(0)
@@ -779,6 +788,7 @@ export default function AddTransactionPage() {
       const result = await updateTransactionWithReceipt(transactionId, formData)
 
       if (result.success) {
+        markTransactionListStale()
         setPendingReceiptFile(null)
         setFeedback({ type: 'success', message: 'Transaction updated.' })
         await hydrateFromTransaction()
@@ -795,6 +805,7 @@ export default function AddTransactionPage() {
       const result = await createTransactionWithReceipt(formData)
 
       if (result.success && result.id) {
+        markTransactionListStale()
         setFeedback({ type: 'success', message: 'Transaction created successfully.' })
         // Wait a moment to show the success message before redirecting
         await new Promise((resolve) => setTimeout(resolve, 800))
@@ -840,6 +851,7 @@ export default function AddTransactionPage() {
       const result = await updateTransactionWithReceipt(transactionId, formData)
 
       if (result.success) {
+        markTransactionListStale()
         setPendingReceiptFile(null)
         setFeedback({ type: 'success', message: 'Transaction updated.' })
         router.push(
@@ -859,6 +871,7 @@ export default function AddTransactionPage() {
       const result = await createTransactionWithReceipt(formData)
 
       if (result.success && result.id) {
+        markTransactionListStale()
         setFeedback({ type: 'success', message: 'Transaction created successfully.' })
         // Wait a moment to show the success message before redirecting
         await new Promise((resolve) => setTimeout(resolve, 800))
@@ -892,6 +905,7 @@ export default function AddTransactionPage() {
 
     const result = await deleteTransaction(transactionId)
     if (result.success) {
+      markTransactionListStale()
       router.push('/app/records/transactions')
       return
     }

@@ -151,7 +151,9 @@ const syncParentAllocatedFunds = async (args: { req: any; parentTransactionIds: 
         : 0
 
     if (currentAllocatedFunds !== nextAllocatedFunds) {
-      const context = {
+      // Ensure skipTransactionBalanceSync is set on req.context so hooks properly preserve modifiedAt
+      const originalContext = args.req.context
+      args.req.context = {
         ...(args.req.context || {}),
         skipTransactionBalanceSync: true,
       }
@@ -166,7 +168,6 @@ const syncParentAllocatedFunds = async (args: { req: any; parentTransactionIds: 
           depth: 0,
           overrideAccess: true,
           req: args.req,
-          context,
         })
       } catch (error) {
         const status = getErrorStatusCode(error)
@@ -191,8 +192,10 @@ const syncParentAllocatedFunds = async (args: { req: any; parentTransactionIds: 
           depth: 0,
           overrideAccess: true,
           req: args.req,
-          context,
         })
+      } finally {
+        // Restore original context
+        args.req.context = originalContext
       }
     }
   }
@@ -755,14 +758,6 @@ const Transactions: CollectionConfig = {
           }),
         })
 
-        await syncAllocationFunds({
-          req,
-          accountIds: getAffectedAccountIds({
-            doc: doc as Record<string, unknown>,
-            previousDoc: previousDoc as Record<string, unknown>,
-          }),
-        })
-
         return doc
       },
     ],
@@ -783,13 +778,6 @@ const Transactions: CollectionConfig = {
         await syncParentAllocatedFunds({
           req,
           parentTransactionIds: getParentTransactionIds({
-            previousDoc: doc as Record<string, unknown>,
-          }),
-        })
-
-        await syncAllocationFunds({
-          req,
-          accountIds: getAffectedAccountIds({
             previousDoc: doc as Record<string, unknown>,
           }),
         })

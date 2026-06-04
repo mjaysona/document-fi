@@ -56,6 +56,13 @@ const TABLE_COLUMN_KEY_SET = new Set<TransactionReportColumnKey>(
   TRANSACTION_REPORT_COLUMN_OPTIONS.map((option) => option.value),
 )
 
+const normalizeTableColumnKey = (value: string): TransactionReportColumnKey | null => {
+  const normalized = value === 'updatedAt' ? 'modifiedAt' : value
+  return TABLE_COLUMN_KEY_SET.has(normalized as TransactionReportColumnKey)
+    ? (normalized as TransactionReportColumnKey)
+    : null
+}
+
 const parseTableColumnKeys = (value?: string | null): TransactionReportColumnKey[] => {
   const normalized = String(value || '').trim()
   if (!normalized) return DEFAULT_TABLE_COLUMNS
@@ -63,18 +70,17 @@ const parseTableColumnKeys = (value?: string | null): TransactionReportColumnKey
   const parsed = normalized
     .split(',')
     .map((item) => item.trim())
-    .filter((item): item is TransactionReportColumnKey =>
-      TABLE_COLUMN_KEY_SET.has(item as TransactionReportColumnKey),
-    )
+    .map((item) => normalizeTableColumnKey(item))
+    .filter((item): item is TransactionReportColumnKey => Boolean(item))
 
   const unique = Array.from(new Set(parsed))
   return unique.length > 0 ? unique : DEFAULT_TABLE_COLUMNS
 }
 
 const serializeTableColumnKeys = (keys: string[]): string => {
-  const valid = keys.filter((item): item is TransactionReportColumnKey =>
-    TABLE_COLUMN_KEY_SET.has(item as TransactionReportColumnKey),
-  )
+  const valid = keys
+    .map((item) => normalizeTableColumnKey(item))
+    .filter((item): item is TransactionReportColumnKey => Boolean(item))
 
   return Array.from(new Set(valid)).join(',')
 }
@@ -292,7 +298,7 @@ export default function TransactionsPage() {
     return () => {
       isMounted = false
     }
-  }, [tableColsParam])
+  }, [])
 
   useEffect(() => {
     const result = financialAccountsQuery.data
@@ -460,6 +466,8 @@ export default function TransactionsPage() {
   const isLoading = !hasQueryData && (isBootstrapping || transactionsQuery.isLoading)
 
   useEffect(() => {
+    if (isBootstrapping) return
+
     const params = new URLSearchParams(searchParams.toString())
 
     const normalizedSearch = search.trim()
@@ -523,6 +531,7 @@ export default function TransactionsPage() {
     filterSourceAccounts,
     filterStatuses,
     filterTypes,
+    isBootstrapping,
     router,
     search,
     searchParams,
@@ -884,8 +893,8 @@ export default function TransactionsPage() {
         label: 'Particulars',
         render: (row) => row.parent.particulars || '-',
       },
-      updatedAt: {
-        key: 'updatedAt',
+      modifiedAt: {
+        key: 'modifiedAt',
         label: 'Last Modified',
         render: (row) => formatDateTime(row.parent.modifiedAt),
       },

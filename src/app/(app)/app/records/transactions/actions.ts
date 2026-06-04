@@ -1151,7 +1151,9 @@ export async function getUserTransactionTableColumnsConfig(): Promise<{
 
     return {
       success: true,
-      columns: Array.isArray(savedColumns) ? savedColumns : undefined,
+      columns: Array.isArray(savedColumns)
+        ? savedColumns.map((column) => String(column || '').trim()).filter(Boolean)
+        : undefined,
     }
   } catch (error) {
     console.error('Failed to fetch user transaction table columns config:', error)
@@ -1186,7 +1188,9 @@ export async function getUserTransactionPreviewTableColumnsConfig(): Promise<{
 
     return {
       success: true,
-      columns: Array.isArray(savedColumns) ? savedColumns : undefined,
+      columns: Array.isArray(savedColumns)
+        ? savedColumns.map((column) => String(column || '').trim()).filter(Boolean)
+        : undefined,
     }
   } catch (error) {
     console.error('Failed to fetch user transaction preview table columns config:', error)
@@ -1232,6 +1236,7 @@ export async function saveTransactionTableColumns(columns: string[]): Promise<{
       'isForAllocation',
       'allocatedFunds',
       'parentTransaction',
+      'modifiedAt',
     ])
 
     const sanitizedColumns: PersistedTableColumn[] = Array.from(
@@ -1332,6 +1337,7 @@ export async function saveTransactionPreviewTableColumns(columns: string[]): Pro
       'isForAllocation',
       'allocatedFunds',
       'parentTransaction',
+      'modifiedAt',
     ])
 
     const sanitizedColumns: PersistedPreviewTableColumn[] = Array.from(
