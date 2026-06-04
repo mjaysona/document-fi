@@ -69,7 +69,7 @@ export type TransactionListItem = {
   runningBalance?: number
   transactionStatus?: TransactionStatus
   createdAt: string
-  modifiedAt: string
+  updatedAt: string
 }
 
 export type TransactionListSortBy = 'date' | 'amount' | 'updated'
@@ -759,7 +759,7 @@ export async function getTransactions(where?: Record<string, unknown>): Promise<
         runningBalance: typeof doc.runningBalance === 'number' ? doc.runningBalance : undefined,
         transactionStatus: normalizeTransactionStatus(doc.transactionStatus),
         createdAt: String(doc.createdAt || ''),
-        modifiedAt: String(doc.modifiedAt || ''),
+        updatedAt: String(doc.updatedAt || ''),
         receiptImage:
           doc.receiptImage && typeof doc.receiptImage === 'object'
             ? { url: doc.receiptImage.url || undefined }
@@ -845,7 +845,7 @@ const mapTransactionDocToListItem = (doc: any): TransactionListItem => ({
   runningBalance: typeof doc.runningBalance === 'number' ? doc.runningBalance : undefined,
   transactionStatus: normalizeTransactionStatus(doc.transactionStatus),
   createdAt: String(doc.createdAt || ''),
-  modifiedAt: String(doc.modifiedAt || ''),
+  updatedAt: String(doc.updatedAt || ''),
   receiptImage:
     doc.receiptImage && typeof doc.receiptImage === 'object'
       ? { url: doc.receiptImage.url || undefined }
@@ -867,7 +867,7 @@ export async function getTransactionsPage(
     const sortBy = params.sortBy || 'date'
     const sortOrder = params.sortOrder || 'desc'
     const sortField =
-      sortBy === 'amount' ? 'amount' : sortBy === 'updated' ? 'modifiedAt' : 'transactionDate'
+      sortBy === 'amount' ? 'amount' : sortBy === 'updated' ? 'updatedAt' : 'transactionDate'
     const sort = `${sortOrder === 'asc' ? '' : '-'}${sortField}`
 
     const whereAnd: Record<string, unknown>[] = []
@@ -1115,7 +1115,7 @@ export async function searchNonCompletedAllocatedFunds(
         runningBalance: typeof doc.runningBalance === 'number' ? doc.runningBalance : undefined,
         transactionStatus: normalizeTransactionStatus(doc.transactionStatus),
         createdAt: String(doc.createdAt || ''),
-        modifiedAt: String(doc.modifiedAt || ''),
+        updatedAt: String(doc.updatedAt || ''),
       })),
     }
   } catch (error) {
@@ -1206,11 +1206,7 @@ export async function saveTransactionTableColumns(columns: string[]): Promise<{
     const session = await auth.api.getSession({ headers: await headers() })
     if (!session?.user?.id) return { success: false, error: 'Unauthorized' }
 
-    type PersistedTableColumn = NonNullable<
-      NonNullable<UserConfiguration['transactionsConfig']>['tableColumns']
-    >[number]
-
-    const allowedColumns = new Set<PersistedTableColumn>([
+    const allowedColumns = [
       'transactionDate',
       'description',
       'particulars',
@@ -1236,8 +1232,11 @@ export async function saveTransactionTableColumns(columns: string[]): Promise<{
       'isForAllocation',
       'allocatedFunds',
       'parentTransaction',
-      'modifiedAt',
-    ])
+      'updatedAt',
+    ] as const
+
+    type PersistedTableColumn = (typeof allowedColumns)[number]
+    const allowedColumnSet = new Set<PersistedTableColumn>(allowedColumns)
 
     const sanitizedColumns: PersistedTableColumn[] = Array.from(
       new Set(
@@ -1245,7 +1244,7 @@ export async function saveTransactionTableColumns(columns: string[]): Promise<{
           .map((column) => String(column || '').trim())
           .filter((column) => column.length > 0)
           .filter((column): column is PersistedTableColumn =>
-            allowedColumns.has(column as PersistedTableColumn),
+            allowedColumnSet.has(column as PersistedTableColumn),
           ),
       ),
     )
@@ -1307,11 +1306,7 @@ export async function saveTransactionPreviewTableColumns(columns: string[]): Pro
     const session = await auth.api.getSession({ headers: await headers() })
     if (!session?.user?.id) return { success: false, error: 'Unauthorized' }
 
-    type PersistedPreviewTableColumn = NonNullable<
-      NonNullable<UserConfiguration['transactionsConfig']>['previewTableColumns']
-    >[number]
-
-    const allowedColumns = new Set<PersistedPreviewTableColumn>([
+    const allowedColumns = [
       'transactionDate',
       'description',
       'particulars',
@@ -1337,8 +1332,11 @@ export async function saveTransactionPreviewTableColumns(columns: string[]): Pro
       'isForAllocation',
       'allocatedFunds',
       'parentTransaction',
-      'modifiedAt',
-    ])
+      'updatedAt',
+    ] as const
+
+    type PersistedPreviewTableColumn = (typeof allowedColumns)[number]
+    const allowedColumnSet = new Set<PersistedPreviewTableColumn>(allowedColumns)
 
     const sanitizedColumns: PersistedPreviewTableColumn[] = Array.from(
       new Set(
@@ -1346,7 +1344,7 @@ export async function saveTransactionPreviewTableColumns(columns: string[]): Pro
           .map((column) => String(column || '').trim())
           .filter((column) => column.length > 0)
           .filter((column): column is PersistedPreviewTableColumn =>
-            allowedColumns.has(column as PersistedPreviewTableColumn),
+            allowedColumnSet.has(column as PersistedPreviewTableColumn),
           ),
       ),
     )

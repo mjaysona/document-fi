@@ -35,6 +35,10 @@ const transactionFieldOptions = (Transactions.fields as unknown[])
     label: typeof field.label === 'string' ? field.label : field.name,
     value: field.name,
   }))
+  .concat({
+    label: 'Updated At',
+    value: 'updatedAt',
+  })
 
 const UserConfigurations: CollectionConfig = {
   slug: 'user-configurations',

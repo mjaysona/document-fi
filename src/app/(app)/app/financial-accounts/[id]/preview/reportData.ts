@@ -201,7 +201,7 @@ export function buildTransactionReportData(args: {
     referenceNumber: normalizeString(item.referenceNumber),
     transactionDate: formatDate(item.transactionDate),
     createdAt: formatDate(item.createdAt),
-    updatedAt: formatDate(item.modifiedAt),
+    updatedAt: formatDate(item.updatedAt),
     sourceBank: normalizeString(item.sourceAccountName),
     destinationBank: normalizeString(item.destinationAccountName),
     financialAccount: normalizeString(item.financialAccountName),

@@ -151,7 +151,7 @@ const syncParentAllocatedFunds = async (args: { req: any; parentTransactionIds: 
         : 0
 
     if (currentAllocatedFunds !== nextAllocatedFunds) {
-      // Ensure skipTransactionBalanceSync is set on req.context so hooks properly preserve modifiedAt
+      // Ensure skipTransactionBalanceSync is set on req.context for system updates
       const originalContext = args.req.context
       args.req.context = {
         ...(args.req.context || {}),
@@ -384,7 +384,7 @@ const Transactions: CollectionConfig = {
   fields: [
     {
       name: 'allocatedFundType',
-      label: 'Allocated Fund Type',
+      label: 'Allocated fund type',
       type: 'select',
       options: [
         { label: 'Completed', value: 'completed' },
@@ -398,7 +398,7 @@ const Transactions: CollectionConfig = {
     },
     {
       name: 'transactionDate',
-      label: 'Transaction Date',
+      label: 'Transaction date',
       type: 'date',
       admin: {
         date: {
@@ -419,7 +419,7 @@ const Transactions: CollectionConfig = {
     },
     {
       name: 'transactionType',
-      label: 'Transaction Type',
+      label: 'Transaction type',
       type: 'select',
       required: true,
       options: [
@@ -429,19 +429,19 @@ const Transactions: CollectionConfig = {
     },
     {
       name: 'sourceAccount',
-      label: 'Source Bank',
+      label: 'Source bank',
       type: 'relationship',
       relationTo: 'banks',
     },
     {
       name: 'destinationAccount',
-      label: 'Destination Bank',
+      label: 'Destination bank',
       type: 'relationship',
       relationTo: 'banks',
     },
     {
       name: 'financialAccount',
-      label: 'Financial Account',
+      label: 'Financial account',
       type: 'relationship',
       relationTo: 'financial-accounts',
       validate: (value: any, { data }: any) => {
@@ -476,7 +476,7 @@ const Transactions: CollectionConfig = {
     },
     {
       name: 'transactionFee',
-      label: 'Transaction Fee',
+      label: 'Transaction fee',
       type: 'number',
       min: 0,
       required: true,
@@ -526,7 +526,7 @@ const Transactions: CollectionConfig = {
     },
     {
       name: 'totalAmount',
-      label: 'Total Amount',
+      label: 'Total amount',
       type: 'number',
       admin: {
         description: 'Auto-computed from Amount + Transaction Fee',
@@ -545,17 +545,17 @@ const Transactions: CollectionConfig = {
     },
     {
       name: 'currentBalance',
-      label: 'Current Balance',
+      label: 'Current balance',
       type: 'number',
     },
     {
       name: 'runningBalance',
-      label: 'Running Balance',
+      label: 'Running balance',
       type: 'number',
     },
     {
       name: 'transactionStatus',
-      label: 'Transaction Status',
+      label: 'Transaction status',
       type: 'select',
       required: true,
       defaultValue: 'completed',
@@ -566,13 +566,13 @@ const Transactions: CollectionConfig = {
     },
     {
       name: 'receiptImage',
-      label: 'Receipt Image',
+      label: 'Receipt image',
       type: 'relationship',
       relationTo: 'transaction-receipts',
     },
     {
       name: 'rawOcrText',
-      label: 'Raw OCR Text',
+      label: 'Raw OCR text',
       type: 'textarea',
       admin: {
         readOnly: true,
@@ -580,7 +580,7 @@ const Transactions: CollectionConfig = {
     },
     {
       name: 'aiExtractedJson',
-      label: 'AI Extracted JSON',
+      label: 'AI extracted JSON',
       type: 'json',
       admin: {
         readOnly: true,
@@ -588,7 +588,7 @@ const Transactions: CollectionConfig = {
     },
     {
       name: 'extractionConfidence',
-      label: 'Extraction Confidence',
+      label: 'Extraction confidence',
       type: 'number',
       min: 0,
       max: 100,
@@ -598,7 +598,7 @@ const Transactions: CollectionConfig = {
     },
     {
       name: 'isAiGenerated',
-      label: 'AI Generated',
+      label: 'AI generated',
       type: 'checkbox',
       defaultValue: false,
       admin: {
@@ -607,7 +607,7 @@ const Transactions: CollectionConfig = {
     },
     {
       name: 'isUserEdited',
-      label: 'User Edited',
+      label: 'User edited',
       type: 'checkbox',
       defaultValue: false,
       admin: {
@@ -616,7 +616,7 @@ const Transactions: CollectionConfig = {
     },
     {
       name: 'uploadedAt',
-      label: 'Uploaded At',
+      label: 'Uploaded at',
       type: 'date',
       defaultValue: () => new Date().toISOString(),
       admin: {
@@ -628,7 +628,7 @@ const Transactions: CollectionConfig = {
     },
     {
       name: 'isAllocatedFund',
-      label: 'Allocated Fund',
+      label: 'Allocated fund',
       type: 'checkbox',
       defaultValue: false,
       admin: {
@@ -639,7 +639,7 @@ const Transactions: CollectionConfig = {
     },
     {
       name: 'isForAllocation',
-      label: 'For Allocation',
+      label: 'For allocation',
       type: 'checkbox',
       defaultValue: false,
       admin: {
@@ -650,7 +650,7 @@ const Transactions: CollectionConfig = {
     },
     {
       name: 'isAutoGenerated',
-      label: 'Auto-generated Reference',
+      label: 'Auto-generated reference',
       type: 'checkbox',
       defaultValue: false,
       admin: {
@@ -661,7 +661,7 @@ const Transactions: CollectionConfig = {
     },
     {
       name: 'allocatedFunds',
-      label: 'Allocated Funds',
+      label: 'Allocated funds',
       type: 'number',
       defaultValue: 0,
       admin: {
@@ -672,24 +672,12 @@ const Transactions: CollectionConfig = {
     },
     {
       name: 'parentTransaction',
-      label: 'Parent Transaction',
+      label: 'Parent transaction',
       type: 'relationship',
       relationTo: 'transactions',
       admin: {
         position: 'sidebar',
         description: 'Parent transaction for fund allocation purposes',
-      },
-    },
-    {
-      name: 'modifiedAt',
-      label: 'Modified At',
-      type: 'date',
-      defaultValue: () => new Date().toISOString(),
-      admin: {
-        date: {
-          pickerAppearance: 'dayAndTime',
-          displayFormat: 'MMM d, yyyy h:mm a',
-        },
       },
     },
     {
@@ -714,21 +702,14 @@ const Transactions: CollectionConfig = {
       ({ data, operation, req, originalDoc }) => {
         const nextData = (data || {}) as Record<string, unknown>
 
-        if (operation === 'create') {
-          nextData.modifiedAt = new Date().toISOString()
-          return nextData
-        }
-
         if (operation === 'update') {
-          // Keep modifiedAt unchanged for balance-sync/system updates.
+          // Preserve updatedAt for balance-sync/system updates.
+          // Payload's timestamps: true auto-updates updatedAt, so we prevent it for sync operations.
           if (req.context?.skipTransactionBalanceSync) {
-            if (typeof nextData.modifiedAt === 'undefined') {
-              nextData.modifiedAt = (originalDoc as Record<string, unknown> | undefined)?.modifiedAt
+            if (typeof nextData.updatedAt === 'undefined') {
+              nextData.updatedAt = (originalDoc as Record<string, unknown> | undefined)?.updatedAt
             }
-            return nextData
           }
-
-          nextData.modifiedAt = new Date().toISOString()
         }
 
         return nextData

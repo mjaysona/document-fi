@@ -1,6 +1,6 @@
 'use client'
 
-import { Checkbox, Flex, Pagination, Table, Text, ScrollArea } from '@mantine/core'
+import { Box, Checkbox, Flex, Pagination, Table, Text, ScrollArea } from '@mantine/core'
 import type { ReactNode } from 'react'
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 
@@ -160,113 +160,114 @@ export function DataTable<T>({
   }
 
   return (
-    <ScrollArea>
-      <Table striped={striped} highlightOnHover withTableBorder>
-        <Table.Thead style={{ verticalAlign: 'top' }}>
-          <Table.Tr>
-            {hasSelection && (
-              <Table.Th style={{ width: 40 }}>
-                <Checkbox
-                  aria-label="Select all rows"
-                  checked={allVisibleSelected}
-                  indeterminate={!allVisibleSelected && someVisibleSelected}
-                  onChange={(e) => onToggleSelectAll?.(e.currentTarget.checked)}
-                />
-              </Table.Th>
-            )}
-            {columns.map((col) => (
-              <Table.Th key={col.key} style={col.width ? { width: col.width } : undefined}>
-                {col.label}
-              </Table.Th>
-            ))}
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody style={{ verticalAlign: 'top' }}>
-          {visibleData.map((row) => {
-            const rowKey = getRowKey(row)
-            const customBg = getRowBg?.(row)
-            const selectionBg =
-              hasSelection && selectedIds!.includes(rowKey)
-                ? 'var(--mantine-color-blue-light)'
-                : undefined
-            return (
-              <Fragment key={rowKey}>
-                <Table.Tr
-                  bg={customBg ?? selectionBg}
-                  onMouseDown={(event) => {
-                    pointerDownRef.current = {
-                      rowKey,
-                      x: event.clientX,
-                      y: event.clientY,
-                      at: Date.now(),
-                    }
-                    didDragRef.current = false
-                  }}
-                  onMouseMove={(event) => {
-                    const pointerDown = pointerDownRef.current
-                    if (!pointerDown || pointerDown.rowKey !== rowKey) return
+    <Box>
+      <ScrollArea>
+        <Table striped={striped} highlightOnHover withTableBorder>
+          <Table.Thead style={{ verticalAlign: 'top' }}>
+            <Table.Tr>
+              {hasSelection && (
+                <Table.Th style={{ width: 40 }}>
+                  <Checkbox
+                    aria-label="Select all rows"
+                    checked={allVisibleSelected}
+                    indeterminate={!allVisibleSelected && someVisibleSelected}
+                    onChange={(e) => onToggleSelectAll?.(e.currentTarget.checked)}
+                  />
+                </Table.Th>
+              )}
+              {columns.map((col) => (
+                <Table.Th key={col.key} style={col.width ? { width: col.width } : undefined}>
+                  {col.label}
+                </Table.Th>
+              ))}
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody style={{ verticalAlign: 'top' }}>
+            {visibleData.map((row) => {
+              const rowKey = getRowKey(row)
+              const customBg = getRowBg?.(row)
+              const selectionBg =
+                hasSelection && selectedIds!.includes(rowKey)
+                  ? 'var(--mantine-color-blue-light)'
+                  : undefined
+              return (
+                <Fragment key={rowKey}>
+                  <Table.Tr
+                    bg={customBg ?? selectionBg}
+                    onMouseDown={(event) => {
+                      pointerDownRef.current = {
+                        rowKey,
+                        x: event.clientX,
+                        y: event.clientY,
+                        at: Date.now(),
+                      }
+                      didDragRef.current = false
+                    }}
+                    onMouseMove={(event) => {
+                      const pointerDown = pointerDownRef.current
+                      if (!pointerDown || pointerDown.rowKey !== rowKey) return
 
-                    const deltaX = Math.abs(event.clientX - pointerDown.x)
-                    const deltaY = Math.abs(event.clientY - pointerDown.y)
-                    if (deltaX > 4 || deltaY > 4) {
-                      didDragRef.current = true
-                    }
-                  }}
-                  onMouseLeave={() => {
-                    pointerDownRef.current = null
-                  }}
-                  onClick={() => {
-                    if (!onRowClick) return
+                      const deltaX = Math.abs(event.clientX - pointerDown.x)
+                      const deltaY = Math.abs(event.clientY - pointerDown.y)
+                      if (deltaX > 4 || deltaY > 4) {
+                        didDragRef.current = true
+                      }
+                    }}
+                    onMouseLeave={() => {
+                      pointerDownRef.current = null
+                    }}
+                    onClick={() => {
+                      if (!onRowClick) return
 
-                    const pointerDown = pointerDownRef.current
-                    const pressedForMs = pointerDown ? Date.now() - pointerDown.at : 0
+                      const pointerDown = pointerDownRef.current
+                      const pressedForMs = pointerDown ? Date.now() - pointerDown.at : 0
 
-                    const hasSelectionRange =
-                      typeof window !== 'undefined' &&
-                      Boolean(window.getSelection && window.getSelection()?.toString().trim())
+                      const hasSelectionRange =
+                        typeof window !== 'undefined' &&
+                        Boolean(window.getSelection && window.getSelection()?.toString().trim())
 
-                    if (didDragRef.current || pressedForMs > 250 || hasSelectionRange) {
+                      if (didDragRef.current || pressedForMs > 250 || hasSelectionRange) {
+                        didDragRef.current = false
+                        pointerDownRef.current = null
+                        return
+                      }
+
                       didDragRef.current = false
                       pointerDownRef.current = null
-                      return
-                    }
-
-                    didDragRef.current = false
-                    pointerDownRef.current = null
-                    onRowClick(row)
-                  }}
-                  style={onRowClick ? { cursor: 'pointer' } : undefined}
-                >
-                  {hasSelection && (
-                    <Table.Td>
-                      <Checkbox
-                        aria-label={`Select row ${rowKey}`}
-                        checked={selectedIds!.includes(rowKey)}
-                        onChange={(e) => onToggleSelectRow?.(rowKey, e.currentTarget.checked)}
-                      />
-                    </Table.Td>
-                  )}
-                  {columns.map((col) => (
-                    <Table.Td key={col.key}>
-                      {col.render
-                        ? col.render(row)
-                        : String((row as Record<string, unknown>)[col.key] ?? '-')}
-                    </Table.Td>
-                  ))}
-                </Table.Tr>
-                {renderExpandedRow && isRowExpanded?.(row) && (
-                  <Table.Tr>
-                    <Table.Td colSpan={columns.length + (hasSelection ? 1 : 0)}>
-                      {renderExpandedRow(row)}
-                    </Table.Td>
+                      onRowClick(row)
+                    }}
+                    style={onRowClick ? { cursor: 'pointer' } : undefined}
+                  >
+                    {hasSelection && (
+                      <Table.Td>
+                        <Checkbox
+                          aria-label={`Select row ${rowKey}`}
+                          checked={selectedIds!.includes(rowKey)}
+                          onChange={(e) => onToggleSelectRow?.(rowKey, e.currentTarget.checked)}
+                        />
+                      </Table.Td>
+                    )}
+                    {columns.map((col) => (
+                      <Table.Td key={col.key}>
+                        {col.render
+                          ? col.render(row)
+                          : String((row as Record<string, unknown>)[col.key] ?? '-')}
+                      </Table.Td>
+                    ))}
                   </Table.Tr>
-                )}
-              </Fragment>
-            )
-          })}
-        </Table.Tbody>
-      </Table>
-
+                  {renderExpandedRow && isRowExpanded?.(row) && (
+                    <Table.Tr>
+                      <Table.Td colSpan={columns.length + (hasSelection ? 1 : 0)}>
+                        {renderExpandedRow(row)}
+                      </Table.Td>
+                    </Table.Tr>
+                  )}
+                </Fragment>
+              )
+            })}
+          </Table.Tbody>
+        </Table>
+      </ScrollArea>
       {pagination && pagination.totalPages > 1 && onPageChange && (
         <Flex justify="space-between" align="center" mt="lg">
           <Text size="sm" c="dimmed">
@@ -279,10 +280,11 @@ export function DataTable<T>({
             onChange={onPageChange}
             total={pagination.totalPages}
             withEdges
+            boundaries={1}
+            defaultValue={10}
           />
         </Flex>
       )}
-
       {!pagination && shouldUseClientPagination && clientTotalPages > 1 && (
         <Flex justify="space-between" align="center" mt="lg">
           <Text size="sm" c="dimmed">
@@ -295,9 +297,10 @@ export function DataTable<T>({
             onChange={(page) => setEffectiveClientPage(page, 'user')}
             total={clientTotalPages}
             withEdges
+            boundaries={1}
           />
         </Flex>
       )}
-    </ScrollArea>
+    </Box>
   )
 }

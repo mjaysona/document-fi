@@ -57,9 +57,8 @@ const TABLE_COLUMN_KEY_SET = new Set<TransactionReportColumnKey>(
 )
 
 const normalizeTableColumnKey = (value: string): TransactionReportColumnKey | null => {
-  const normalized = value === 'updatedAt' ? 'modifiedAt' : value
-  return TABLE_COLUMN_KEY_SET.has(normalized as TransactionReportColumnKey)
-    ? (normalized as TransactionReportColumnKey)
+  return TABLE_COLUMN_KEY_SET.has(value as TransactionReportColumnKey)
+    ? (value as TransactionReportColumnKey)
     : null
 }
 
@@ -754,7 +753,7 @@ export default function TransactionsPage() {
       },
       receiptImage: {
         key: 'receiptImage',
-        label: 'Receipt Image',
+        label: 'Receipt image',
         render: (row) => {
           const url = row.parent.receiptImage?.url || null
           if (!url) return '-'
@@ -763,7 +762,7 @@ export default function TransactionsPage() {
       },
       transactionDate: {
         key: 'transactionDate',
-        label: 'Transaction Date',
+        label: 'Transaction date',
         render: (row) => formatDate(row.parent.transactionDate),
       },
       transactionType: {
@@ -797,17 +796,17 @@ export default function TransactionsPage() {
       },
       sourceAccount: {
         key: 'sourceAccount',
-        label: 'Source Bank',
+        label: 'Source bank',
         render: (row) => row.parent.sourceAccountName || '-',
       },
       destinationAccount: {
         key: 'destinationAccount',
-        label: 'Destination Bank',
+        label: 'Destination bank',
         render: (row) => row.parent.destinationAccountName || '-',
       },
       financialAccount: {
         key: 'financialAccount',
-        label: 'Financial Account',
+        label: 'Financial account',
         render: (row) => row.parent.financialAccountName || '-',
       },
       from: {
@@ -842,22 +841,22 @@ export default function TransactionsPage() {
       },
       totalAmount: {
         key: 'totalAmount',
-        label: 'Total Amount',
+        label: 'Total amount',
         render: (row) => formatTotalAmount(row.parent.amount, row.parent.transactionFee),
       },
       currentBalance: {
         key: 'currentBalance',
-        label: 'Current Balance',
+        label: 'Current balance',
         render: (row) => formatCurrency(row.parent.currentBalance),
       },
       runningBalance: {
         key: 'runningBalance',
-        label: 'Running Balance',
+        label: 'Running balance',
         render: (row) => formatCurrency(row.parent.runningBalance),
       },
       isAllocatedFund: {
         key: 'isAllocatedFund',
-        label: 'Allocated Fund',
+        label: 'Allocated fund',
         render: (row) =>
           row.parent.isAllocatedFund ? (
             <CircleCheck size={16} color="green" />
@@ -867,7 +866,7 @@ export default function TransactionsPage() {
       },
       isForAllocation: {
         key: 'isForAllocation',
-        label: 'For Allocation',
+        label: 'For allocation',
         render: (row) =>
           row.parent.isForAllocation ? (
             <CircleCheck size={16} color="green" />
@@ -877,7 +876,7 @@ export default function TransactionsPage() {
       },
       allocatedFunds: {
         key: 'allocatedFunds',
-        label: 'Allocated Funds',
+        label: 'Allocated funds',
         render: (row) => {
           if (!row.parent.isAllocatedFund) return '-'
           return formatCurrency(row.parent.allocatedFunds)
@@ -893,10 +892,10 @@ export default function TransactionsPage() {
         label: 'Particulars',
         render: (row) => row.parent.particulars || '-',
       },
-      modifiedAt: {
-        key: 'modifiedAt',
-        label: 'Last Modified',
-        render: (row) => formatDateTime(row.parent.modifiedAt),
+      updatedAt: {
+        key: 'updatedAt',
+        label: 'Last updated',
+        render: (row) => formatDateTime(row.parent.updatedAt),
       },
     }
 
@@ -965,7 +964,7 @@ export default function TransactionsPage() {
                 onClick={() => toggleSort('updated')}
                 disabled={isLoading}
               >
-                Last modified {sortBy === 'updated' && (sortOrder === 'asc' ? '↑' : '↓')}
+                Last updated {sortBy === 'updated' && (sortOrder === 'asc' ? '↑' : '↓')}
               </Button>
             </Flex>
           </Flex>
@@ -1236,7 +1235,7 @@ export default function TransactionsPage() {
                 <Group gap="md" justify="space-between">
                   <Group>
                     <Text size="xs">Created: {formatDate(row.parent.createdAt)}</Text>
-                    <Text size="xs">Last Modified: {formatDate(row.parent.modifiedAt)}</Text>
+                    <Text size="xs">Updated: {formatDate(row.parent.updatedAt)}</Text>
                   </Group>
                 </Group>
                 <div className={classes['detail-grid']}>
@@ -1249,7 +1248,7 @@ export default function TransactionsPage() {
 
                   <Flex direction="column" className={classes.detailItem}>
                     <Text size="xs" c="dimmed">
-                      Transaction Date
+                      Transaction date
                     </Text>
                     <Text size="sm">{formatDate(row.parent.transactionDate)}</Text>
                   </Flex>
@@ -1281,7 +1280,7 @@ export default function TransactionsPage() {
 
                   <Flex direction="column" className={classes.detailItem}>
                     <Text size="xs" c="dimmed">
-                      Source Bank
+                      Source bank
                     </Text>
                     <Text size="sm">{row.parent.sourceAccountName || '-'}</Text>
                   </Flex>
@@ -1295,14 +1294,14 @@ export default function TransactionsPage() {
 
                   <Flex direction="column" className={classes.detailItem}>
                     <Text size="xs" c="dimmed">
-                      Destination Bank
+                      Destination bank
                     </Text>
                     <Text size="sm">{row.parent.destinationAccountName || '-'}</Text>
                   </Flex>
 
                   <Flex direction="column" className={classes.detailItem}>
                     <Text size="xs" c="dimmed">
-                      Financial Account
+                      Financial account
                     </Text>
                     <Text size="sm">{row.parent.financialAccountName || '-'}</Text>
                   </Flex>
@@ -1323,7 +1322,7 @@ export default function TransactionsPage() {
 
                   <Flex direction="column" className={classes.detailItem}>
                     <Text size="xs" c="dimmed">
-                      Total Amount
+                      Total amount
                     </Text>
                     <Text size="sm">
                       {formatTotalAmount(row.parent.amount, row.parent.transactionFee)}
@@ -1332,28 +1331,28 @@ export default function TransactionsPage() {
 
                   <Flex direction="column" className={classes.detailItem}>
                     <Text size="xs" c="dimmed">
-                      Current Balance
+                      Current balance
                     </Text>
                     <Text size="sm">{formatCurrency(row.parent.currentBalance)}</Text>
                   </Flex>
 
                   <Flex direction="column" className={classes.detailItem}>
                     <Text size="xs" c="dimmed">
-                      Running Balance
+                      Running balance
                     </Text>
                     <Text size="sm">{formatCurrency(row.parent.runningBalance)}</Text>
                   </Flex>
 
                   <Flex direction="column" className={classes.detailItem}>
                     <Text size="xs" c="dimmed">
-                      Allocated Fund
+                      Allocated fund
                     </Text>
                     <Text size="sm">{row.parent.isAllocatedFund ? 'Yes' : 'No'}</Text>
                   </Flex>
 
                   <Flex direction="column" className={classes.detailItem}>
                     <Text size="xs" c="dimmed">
-                      Allocated Funds
+                      Allocated funds
                     </Text>
                     <Text size="sm">{formatCurrency(row.parent.allocatedFunds)}</Text>
                   </Flex>

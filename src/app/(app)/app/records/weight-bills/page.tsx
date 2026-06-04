@@ -867,7 +867,7 @@ export default function WeightBillsPage() {
             size="sm"
             onClick={() => toggleSort('lastModified')}
           >
-            Last Modified {sortBy === 'lastModified' && (sortOrder === 'asc' ? '↑' : '↓')}
+            Last updated {sortBy === 'lastModified' && (sortOrder === 'asc' ? '↑' : '↓')}
           </Button>
         </Group>
 
