@@ -750,14 +750,6 @@ const Transactions: CollectionConfig = {
           }),
         })
 
-        await syncParentAllocatedFunds({
-          req,
-          parentTransactionIds: getParentTransactionIds({
-            doc: doc as Record<string, unknown>,
-            previousDoc: previousDoc as Record<string, unknown>,
-          }),
-        })
-
         return doc
       },
     ],
@@ -771,13 +763,6 @@ const Transactions: CollectionConfig = {
             previousDoc: doc as Record<string, unknown>,
           }),
           recomputeHints: getRecomputeHints({
-            previousDoc: doc as Record<string, unknown>,
-          }),
-        })
-
-        await syncParentAllocatedFunds({
-          req,
-          parentTransactionIds: getParentTransactionIds({
             previousDoc: doc as Record<string, unknown>,
           }),
         })
