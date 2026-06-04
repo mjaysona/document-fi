@@ -180,16 +180,20 @@ export function TransactionReportDocument({
   const breakdownMeasureRef = useRef<HTMLDivElement | null>(null)
   const rowRefs = useRef<Record<string, HTMLTableRowElement | null>>({})
 
-  // Starting balance is the account value before the first transaction in range.
+  // Starting balance is the account value before the first in-range transaction.
   let startingBalance: number | null = null
-  if (visibleRows.length > 0 && typeof visibleRows[0].currentBalance === 'number') {
-    startingBalance = visibleRows[0].currentBalance
-  } else if (visibleRows.length > 0 && typeof visibleRows[0].runningBalance === 'number') {
-    const firstImpact = getRowImpact(visibleRows[0])
+  const firstRowWithRunningBalance = visibleRows.find(
+    (row) => typeof row.runningBalance === 'number',
+  )
+
+  if (firstRowWithRunningBalance) {
+    const firstImpact = getRowImpact(firstRowWithRunningBalance)
     startingBalance =
       typeof firstImpact === 'number'
-        ? visibleRows[0].runningBalance - firstImpact
-        : visibleRows[0].runningBalance
+        ? firstRowWithRunningBalance.runningBalance! - firstImpact
+        : firstRowWithRunningBalance.runningBalance
+  } else if (visibleRows.length > 0 && typeof visibleRows[0].currentBalance === 'number') {
+    startingBalance = visibleRows[0].currentBalance
   } else if (lineChartData.length > 0 && typeof lineChartData[0].runningBalance === 'number') {
     startingBalance = lineChartData[0].runningBalance
   }
