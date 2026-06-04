@@ -1,6 +1,6 @@
 'use client'
 
-import { Box, Checkbox, Flex, Pagination, Table, Text, ScrollArea } from '@mantine/core'
+import { Box, Checkbox, Flex, Pagination, Table, Text, ScrollArea, Grid } from '@mantine/core'
 import type { ReactNode } from 'react'
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 
@@ -269,21 +269,27 @@ export function DataTable<T>({
         </Table>
       </ScrollArea>
       {pagination && pagination.totalPages > 1 && onPageChange && (
-        <Flex justify="space-between" align="center" mt="lg">
-          <Text size="sm" c="dimmed">
-            Showing {(pagination.page - 1) * pagination.pageSize + 1}–
-            {Math.min(pagination.page * pagination.pageSize, pagination.totalDocs)} of{' '}
-            {pagination.totalDocs} records
-          </Text>
-          <Pagination
-            value={pagination.page}
-            onChange={onPageChange}
-            total={pagination.totalPages}
-            withEdges
-            boundaries={1}
-            defaultValue={10}
-          />
-        </Flex>
+        <Grid justify="space-between" align="center" mt="lg">
+          <Grid.Col span={5}>
+            <Text size="sm" c="dimmed">
+              Showing {(pagination.page - 1) * pagination.pageSize + 1}–
+              {Math.min(pagination.page * pagination.pageSize, pagination.totalDocs)} of{' '}
+              {pagination.totalDocs} records
+            </Text>
+          </Grid.Col>
+          <Grid.Col span={7}>
+            <Box style={{ overflow: 'auto', minWidth: 200, maxWidth: '100%' }}>
+              <Pagination
+                style={{ display: 'flex', justifyContent: 'flex-end' }}
+                value={pagination.page}
+                onChange={onPageChange}
+                total={pagination.totalPages}
+                withEdges
+                layout="responsive"
+              />
+            </Box>
+          </Grid.Col>
+        </Grid>
       )}
       {!pagination && shouldUseClientPagination && clientTotalPages > 1 && (
         <Flex justify="space-between" align="center" mt="lg">
