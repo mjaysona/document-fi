@@ -279,7 +279,7 @@ export function DataTable<T>({
             </Text>
           </Grid.Col>
           <Grid.Col span={{ base: 12, sm: 7 }}>
-            <Box style={{ overflow: 'auto', minWidth: 200, maxWidth: '100%' }}>
+            <Box style={{ minWidth: 200, maxWidth: '100%' }}>
               <Pagination
                 className={styles['data-table__pagination']}
                 value={pagination.page}

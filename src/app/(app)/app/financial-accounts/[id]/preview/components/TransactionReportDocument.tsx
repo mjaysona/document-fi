@@ -85,19 +85,6 @@ const isRightAlignedColumn = (column: TransactionReportColumnKey): boolean => {
   return ['amount', 'fee', 'totalAmount', 'currentBalance', 'runningBalance'].includes(column)
 }
 
-const combineNameAndBank = (name: string, bank: string): string => {
-  const normalizedName = String(name || '').trim()
-  const normalizedBank = String(bank || '').trim()
-
-  const hasName = normalizedName && normalizedName !== '-'
-  const hasBank = normalizedBank && normalizedBank !== '-'
-
-  if (hasName && hasBank) return `${normalizedName} (${normalizedBank})`
-  if (hasName) return normalizedName
-  if (hasBank) return normalizedBank
-  return '-'
-}
-
 const getRowImpact = (row: TransactionReportTableRow): number | null => {
   if (row.status !== 'completed') return null
   if (typeof row.amount !== 'number') return null

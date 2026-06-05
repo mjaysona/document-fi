@@ -121,8 +121,8 @@ export const Navbar = ({
         justify="space-between"
         gap="md"
       >
-        <Flex gap={'sm'} direction="column">
-          <Flex gap={'sm'}>
+        <Flex gap="sm" direction="column">
+          <Flex gap="sm">
             <ActionIcon
               variant="default"
               aria-label="Collapse"

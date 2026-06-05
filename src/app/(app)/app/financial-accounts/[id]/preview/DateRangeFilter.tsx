@@ -127,17 +127,12 @@ export function DateRangeFilter({ logoUrl, initialFrom, initialTo }: DateRangeFi
     pushRangeToUrl(normalized)
   }
 
-  const clearRange = () => {
-    setRange([null, null])
-    pushRangeToUrl([null, null])
-  }
-
   return (
     <DatePickerInput
       w={{ base: '100%', md: 'auto' }}
       leftSection={<CalendarSearch size={16} />}
       type="range"
-      placeholder="Transactions date range"
+      placeholder="Date range"
       value={range}
       onChange={handleRangeChange}
       presets={getDefaultRangePresets()}

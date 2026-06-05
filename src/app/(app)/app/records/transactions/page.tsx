@@ -21,7 +21,7 @@ import {
   TextInput,
 } from '@mantine/core'
 import { CollapsibleImage } from './CollapsibleImage'
-import { CircleCheck, CircleX, Filter, Plus, Search, Settings } from 'lucide-react'
+import { CircleCheck, CircleX, Filter, Plus, RefreshCw, Search, Settings } from 'lucide-react'
 import {
   DataTable,
   type DataTableColumn,
@@ -992,17 +992,15 @@ export default function TransactionsPage() {
             {feedback.message}
           </Alert>
         )}
-        {!isLoading && (
-          <Box>
-            <Group justify="space-between" align="center">
-              <Flex gap={{ base: 'xs', sm: 'xl' }} wrap="wrap">
-                {selectedFinancialAccountCurrentBalance && (
-                  <Stack gap={0} align="flex-start">
-                    <Text size="xs">Current balance</Text>
-                    <Title order={3}>{selectedFinancialAccountCurrentBalance || '-'}</Title>
-                  </Stack>
-                )}
-                {/* <Stack gap={0} align="flex-start">
+        <Group justify="space-between" align="center">
+          <Flex gap={{ base: 'xs', sm: 'xl' }} wrap="wrap">
+            {selectedFinancialAccountCurrentBalance && (
+              <Stack gap={0} align="flex-start">
+                <Text size="xs">Current balance</Text>
+                <Title order={3}>{selectedFinancialAccountCurrentBalance || '-'}</Title>
+              </Stack>
+            )}
+            {/* <Stack gap={0} align="flex-start">
                   <Text size="xs">Unallocated funds</Text>
                   <Title order={3}>{selectedFinancialAccountUnallocatedFunds || '-'}</Title>
                   <Text size="xs" c="dimmed">
@@ -1010,31 +1008,41 @@ export default function TransactionsPage() {
                     {selectedFinancialAccountAllocationPool || '-'}
                   </Text>
                 </Stack> */}
-              </Flex>
-              <Group gap="xs" align="center">
-                <ActionIcon
-                  variant={filterOpen || activeFilterCount > 0 ? 'filled' : 'default'}
-                  size={36}
-                  aria-label="Toggle filters"
-                  onClick={toggleFilterCollapse}
-                >
-                  <Filter size={16} />
-                </ActionIcon>
-                <ActionIcon
-                  variant={tableConfigOpen ? 'filled' : 'default'}
-                  size={36}
-                  aria-label="Table configuration"
-                  onClick={toggleTableConfigCollapse}
-                >
-                  <Settings size={16} />
-                </ActionIcon>
-              </Group>
-            </Group>
+          </Flex>
+          <Group gap="xs" align="center">
+            <ActionIcon
+              variant="default"
+              size={36}
+              aria-label="Refresh data"
+              onClick={() => transactionsQuery.refetch()}
+              disabled={isLoading}
+            >
+              <RefreshCw size={16} />
+            </ActionIcon>
+            <ActionIcon
+              variant={filterOpen || activeFilterCount > 0 ? 'filled' : 'default'}
+              size={36}
+              aria-label="Toggle filters"
+              onClick={toggleFilterCollapse}
+            >
+              <Filter size={16} />
+            </ActionIcon>
+            <ActionIcon
+              variant={tableConfigOpen ? 'filled' : 'default'}
+              size={36}
+              aria-label="Table configuration"
+              onClick={toggleTableConfigCollapse}
+            >
+              <Settings size={16} />
+            </ActionIcon>
+          </Group>
+        </Group>
+        {!isLoading && (filterOpen || tableConfigOpen) && (
+          <Box>
             <Collapse expanded={filterOpen} transitionDuration={0}>
               <Stack
                 gap="xs"
                 p="sm"
-                mt="sm"
                 style={{
                   border: '1px solid var(--mantine-color-default-border)',
                   borderRadius: 'var(--mantine-radius-sm)',
@@ -1097,7 +1105,7 @@ export default function TransactionsPage() {
                   </Grid.Col>
                   <Grid.Col span={6}>
                     <MultiSelect
-                      label="Source Account"
+                      label="Source account"
                       placeholder="All source accounts"
                       data={sourceAccountOptions}
                       value={filterSourceAccounts}
@@ -1160,7 +1168,6 @@ export default function TransactionsPage() {
               <Stack
                 gap="xs"
                 p="sm"
-                mt="sm"
                 style={{
                   border: '1px solid var(--mantine-color-default-border)',
                   borderRadius: 'var(--mantine-radius-md)',
@@ -1211,7 +1218,6 @@ export default function TransactionsPage() {
             </Collapse>
           </Box>
         )}
-
         <DataTable
           columns={columns}
           data={parentRows}

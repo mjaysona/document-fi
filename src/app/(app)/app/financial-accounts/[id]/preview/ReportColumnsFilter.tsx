@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { Alert, Button, Group, MultiSelect, Stack } from '@mantine/core'
+import { Alert, Button, Flex, MultiSelect, Stack } from '@mantine/core'
 import { CircleCheck } from 'lucide-react'
 import {
   DEFAULT_TRANSACTION_REPORT_COLUMNS,
@@ -10,6 +10,7 @@ import {
   type TransactionReportColumnKey,
 } from './columns'
 import { saveTransactionPreviewTableColumns } from '../../../records/transactions/actions'
+import { useMediaQuery } from '@mantine/hooks'
 
 const REPORT_COLUMN_KEY_SET = new Set<TransactionReportColumnKey>(
   TRANSACTION_REPORT_COLUMN_OPTIONS.map((option) => option.value),
@@ -46,6 +47,20 @@ export function ReportColumnsFilter({ initialColumns }: ReportColumnsFilterProps
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const isDesktop = useMediaQuery('(min-width: 48em)')
+  const responsivePillsListStyle = useMemo(
+    () =>
+      isDesktop
+        ? {
+            flexWrap: 'nowrap' as const,
+            overflowX: 'auto' as const,
+          }
+        : {
+            flexWrap: 'wrap' as const,
+            overflowX: 'visible' as const,
+          },
+    [isDesktop],
+  )
 
   const normalizedInitialColumns = useMemo(
     () => parseReportColumnKeys(initialColumns.join(',')),
@@ -114,7 +129,7 @@ export function ReportColumnsFilter({ initialColumns }: ReportColumnsFilterProps
           {feedback.message}
         </Alert>
       )}
-      <Group align="start">
+      <Flex wrap="wrap" gap="sm">
         <MultiSelect
           flex={1}
           placeholder="Shown columns"
@@ -136,16 +151,18 @@ export function ReportColumnsFilter({ initialColumns }: ReportColumnsFilterProps
           styles={{
             root: { minWidth: 280 },
             input: { minHeight: 36 },
-            pillsList: {
-              flexWrap: 'nowrap',
-              overflowX: 'auto',
-            },
+            pillsList: responsivePillsListStyle,
           }}
         />
-        <Button variant="default" onClick={handleSaveColumns} loading={isSavingColumns}>
+        <Button
+          flex={{ base: '100%', xs: 'initial' }}
+          variant="default"
+          onClick={handleSaveColumns}
+          loading={isSavingColumns}
+        >
           Save
         </Button>
-      </Group>
+      </Flex>
     </Stack>
   )
 }

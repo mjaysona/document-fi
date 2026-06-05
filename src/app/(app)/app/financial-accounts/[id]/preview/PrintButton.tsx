@@ -1,17 +1,19 @@
 'use client'
 
-import { Button } from '@mantine/core'
+import { ActionIcon } from '@mantine/core'
 import { Printer } from 'lucide-react'
 
 export function PrintButton() {
   return (
-    <Button
-      w={{ base: '100%', md: 'auto' }}
+    <ActionIcon
       variant="default"
-      leftSection={<Printer size={16} />}
+      size="lg"
+      radius="sm"
+      aria-label="Print"
+      style={{ flexShrink: 0 }}
       onClick={() => window.print()}
     >
-      Print
-    </Button>
+      <Printer size={16} />
+    </ActionIcon>
   )
 }

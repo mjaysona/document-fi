@@ -11,6 +11,7 @@ import { buildTransactionReportData } from './reportData'
 import { PrintButton } from './PrintButton'
 import { DateRangeFilter } from './DateRangeFilter'
 import { ReportColumnsFilter } from './ReportColumnsFilter'
+import { ShareButton } from './ShareButton'
 import {
   DEFAULT_TRANSACTION_REPORT_COLUMNS,
   TRANSACTION_REPORT_COLUMN_OPTIONS,
@@ -153,6 +154,7 @@ export default async function FinancialAccountPreviewPage({ params, searchParams
         >
           <DateRangeFilter logoUrl={logoUrl} initialFrom={from} initialTo={to} />
           <PrintButton />
+          <ShareButton />
         </Flex>
       </Flex>
       <ReportColumnsFilter initialColumns={visibleColumns} />
