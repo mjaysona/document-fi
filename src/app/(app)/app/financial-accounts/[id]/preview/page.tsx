@@ -97,6 +97,13 @@ const parseOptionalNumberInput = (value?: string): number | null => {
   return Number.isFinite(parsed) ? parsed : null
 }
 
+const toLocalDateOnly = (date: Date): string => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 export default async function FinancialAccountPreviewPage({ params, searchParams }: Props) {
   const { id } = await params
   const { logoUrl, from, to, cols, sb, tt, sections } = await searchParams
@@ -148,8 +155,8 @@ export default async function FinancialAccountPreviewPage({ params, searchParams
       logoUrl: account.primaryLogoUrl ?? null,
       referenceNumber: account.id,
       date: new Date().toISOString(),
-      fromDate: fromDate?.toISOString() ?? null,
-      toDate: toDate?.toISOString() ?? null,
+      fromDate: fromDate ? toLocalDateOnly(fromDate) : null,
+      toDate: toDate ? toLocalDateOnly(toDate) : null,
     },
     transactions: accountTransactions,
     allAccountTransactions: allTransactions,
