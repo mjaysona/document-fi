@@ -696,6 +696,11 @@ const Transactions: CollectionConfig = {
         position: 'sidebar',
       },
     } as Field,
+    {
+      type: 'date',
+      name: 'lastUpdated',
+      label: 'Last Updated At',
+    },
   ],
   hooks: {
     beforeChange: [
@@ -703,12 +708,12 @@ const Transactions: CollectionConfig = {
         const nextData = (data || {}) as Record<string, unknown>
 
         if (operation === 'update') {
-          // Preserve updatedAt for balance-sync/system updates.
-          // Payload's timestamps: true auto-updates updatedAt, so we prevent it for sync operations.
+          // Preserve lastUpdated for balance-sync/system updates.
+          // Payload's timestamps: true auto-updates lastUpdated, so we prevent it for sync operations.
           if (req.context?.skipTransactionBalanceSync) {
-            if (typeof nextData.updatedAt === 'undefined') {
-              nextData.updatedAt = (originalDoc as Record<string, unknown> | undefined)?.updatedAt
-            }
+            nextData.lastUpdated = (originalDoc as Record<string, unknown> | undefined)?.lastUpdated
+          } else {
+            nextData.lastUpdated = new Date().toISOString()
           }
         }
 

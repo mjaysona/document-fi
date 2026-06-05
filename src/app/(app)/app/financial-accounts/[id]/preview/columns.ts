@@ -21,7 +21,7 @@ export const TRANSACTION_REPORT_COLUMN_OPTIONS = [
   { value: 'description', label: 'Description' },
   { value: 'particulars', label: 'Particulars' },
   { value: 'receiptImage', label: 'Receipt Image' },
-  { value: 'updatedAt', label: 'Last Updated' },
+  { value: 'lastUpdated', label: 'Last Updated' },
 ] as const
 
 export type TransactionReportColumnKey = (typeof TRANSACTION_REPORT_COLUMN_OPTIONS)[number]['value']

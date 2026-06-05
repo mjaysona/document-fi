@@ -69,7 +69,7 @@ export type TransactionListItem = {
   runningBalance?: number
   transactionStatus?: TransactionStatus
   createdAt: string
-  updatedAt: string
+  lastUpdated: string
 }
 
 export type TransactionListSortBy = 'date' | 'amount' | 'updated'
@@ -759,7 +759,7 @@ export async function getTransactions(where?: Record<string, unknown>): Promise<
         runningBalance: typeof doc.runningBalance === 'number' ? doc.runningBalance : undefined,
         transactionStatus: normalizeTransactionStatus(doc.transactionStatus),
         createdAt: String(doc.createdAt || ''),
-        updatedAt: String(doc.updatedAt || ''),
+        lastUpdated: String(doc.lastUpdated || ''),
         receiptImage:
           doc.receiptImage && typeof doc.receiptImage === 'object'
             ? { url: doc.receiptImage.url || undefined }
@@ -892,7 +892,7 @@ const mapTransactionDocToListItem = (doc: any): TransactionListItem => ({
   runningBalance: typeof doc.runningBalance === 'number' ? doc.runningBalance : undefined,
   transactionStatus: normalizeTransactionStatus(doc.transactionStatus),
   createdAt: String(doc.createdAt || ''),
-  updatedAt: String(doc.updatedAt || ''),
+  lastUpdated: String(doc.lastUpdated || ''),
   receiptImage:
     doc.receiptImage && typeof doc.receiptImage === 'object'
       ? { url: doc.receiptImage.url || undefined }
@@ -914,7 +914,7 @@ export async function getTransactionsPage(
     const sortBy = params.sortBy || 'date'
     const sortOrder = params.sortOrder || 'desc'
     const sortField =
-      sortBy === 'amount' ? 'amount' : sortBy === 'updated' ? 'updatedAt' : 'transactionDate'
+      sortBy === 'amount' ? 'amount' : sortBy === 'updated' ? 'lastUpdated' : 'transactionDate'
     const sort = `${sortOrder === 'asc' ? '' : '-'}${sortField}`
 
     const whereAnd: Record<string, unknown>[] = []
@@ -1162,7 +1162,7 @@ export async function searchNonCompletedAllocatedFunds(
         runningBalance: typeof doc.runningBalance === 'number' ? doc.runningBalance : undefined,
         transactionStatus: normalizeTransactionStatus(doc.transactionStatus),
         createdAt: String(doc.createdAt || ''),
-        updatedAt: String(doc.updatedAt || ''),
+        lastUpdated: String(doc.lastUpdated || ''),
       })),
     }
   } catch (error) {
@@ -1279,7 +1279,7 @@ export async function saveTransactionTableColumns(columns: string[]): Promise<{
       'isForAllocation',
       'allocatedFunds',
       'parentTransaction',
-      'updatedAt',
+      'lastUpdated',
     ] as const
 
     type PersistedTableColumn = (typeof allowedColumns)[number]
@@ -1379,7 +1379,7 @@ export async function saveTransactionPreviewTableColumns(columns: string[]): Pro
       'isForAllocation',
       'allocatedFunds',
       'parentTransaction',
-      'updatedAt',
+      'lastUpdated',
     ] as const
 
     type PersistedPreviewTableColumn = (typeof allowedColumns)[number]

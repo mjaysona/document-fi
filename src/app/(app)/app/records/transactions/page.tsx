@@ -892,10 +892,10 @@ export default function TransactionsPage() {
         label: 'Particulars',
         render: (row) => row.parent.particulars || '-',
       },
-      updatedAt: {
-        key: 'updatedAt',
+      lastUpdated: {
+        key: 'lastUpdated',
         label: 'Last updated',
-        render: (row) => formatDateTime(row.parent.updatedAt),
+        render: (row) => formatDateTime(row.parent.lastUpdated),
       },
     }
 
@@ -1235,7 +1235,7 @@ export default function TransactionsPage() {
                 <Group gap="md" justify="space-between">
                   <Group>
                     <Text size="xs">Created: {formatDate(row.parent.createdAt)}</Text>
-                    <Text size="xs">Updated: {formatDate(row.parent.updatedAt)}</Text>
+                    <Text size="xs">Updated: {formatDate(row.parent.lastUpdated)}</Text>
                   </Group>
                 </Group>
                 <div className={classes['detail-grid']}>
