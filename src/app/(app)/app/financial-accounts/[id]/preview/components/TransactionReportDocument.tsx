@@ -362,6 +362,12 @@ export function TransactionReportDocument({
     typeof startingBalance === 'number' && Number.isFinite(startingBalance)
       ? startingBalance + netChange
       : null
+  const netDifferenceBreakdownTitle =
+    transactionTypeFilter === 'debit'
+      ? 'Debits'
+      : transactionTypeFilter === 'credit'
+        ? 'Credits'
+        : 'Credits - Debits'
 
   const renderTable = (
     pageRows: DisplayRow[],
@@ -434,42 +440,48 @@ export function TransactionReportDocument({
                           fontSize: 8,
                         }}
                       >
-                        <span>Credits - Debits</span>
+                        <span>{netDifferenceBreakdownTitle}</span>
                       </div>
                       <div style={{ padding: '8px 12px' }}>
-                        <div
-                          style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                          }}
-                        >
-                          <span>Total credits:</span>
-                          <span style={{ color: '#2f9e44' }}>{formatMoney(totalCredits)}</span>
-                        </div>
-                        <div
-                          style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                          }}
-                        >
-                          <span>Total debits:</span>
-                          <span style={{ color: '#e03131' }}>{formatMoney(totalDebits)}</span>
-                        </div>
+                        {transactionTypeFilter !== 'debit' && (
+                          <div
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                            }}
+                          >
+                            <span>Total{transactionTypeFilter === 'all' ? ' credits' : ''}:</span>
+                            <span style={{ color: '#2f9e44' }}>{formatMoney(totalCredits)}</span>
+                          </div>
+                        )}
+                        {transactionTypeFilter !== 'credit' && (
+                          <div
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                            }}
+                          >
+                            <span>Total{transactionTypeFilter === 'all' ? ' debits' : ''}:</span>
+                            <span style={{ color: '#e03131' }}>{formatMoney(totalDebits)}</span>
+                          </div>
+                        )}
                       </div>
-                      <div style={{ padding: '8px 12px', borderTop: '1px solid #f1f5f9' }}>
-                        <div
-                          style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            fontWeight: 500,
-                          }}
-                        >
-                          <span>Net difference:</span>
-                          <span style={{ color: netChange < 0 ? '#e03131' : '#2f9e44' }}>
-                            {formatMoney(netChange)}
-                          </span>
+                      {transactionTypeFilter === 'all' && (
+                        <div style={{ padding: '8px 12px', borderTop: '1px solid #f1f5f9' }}>
+                          <div
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              fontWeight: 500,
+                            }}
+                          >
+                            <span>Net difference:</span>
+                            <span style={{ color: netChange < 0 ? '#e03131' : '#2f9e44' }}>
+                              {formatMoney(netChange)}
+                            </span>
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   ) : null}
                   {showRemainingBalanceBreakdown ? (
@@ -744,7 +756,7 @@ export function TransactionReportDocument({
                           fontSize: 8,
                         }}
                       >
-                        <span>Credits - Debits</span>
+                        <span>{netDifferenceBreakdownTitle}</span>
                       </div>
                       <div style={{ padding: '8px 12px' }}>
                         <div
