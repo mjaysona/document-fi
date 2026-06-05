@@ -11,10 +11,14 @@ import {
   type TransactionReportColumnKey,
 } from '../columns'
 import type { TransactionReportData, TransactionReportTableRow } from '../reportData'
+import type { TransactionTypeFilterValue } from '../TransactionTypeFilter'
+import { DEFAULT_REPORT_SECTIONS, type ReportSectionKey } from '../reportSections'
 
 type TransactionReportDocumentProps = {
   report: TransactionReportData
   visibleColumns?: TransactionReportColumnKey[]
+  transactionTypeFilter?: TransactionTypeFilterValue
+  visibleReportSections?: ReportSectionKey[]
 }
 
 type DisplayRow = {
@@ -136,6 +140,8 @@ const renderCellValue = (row: TransactionReportTableRow, column: TransactionRepo
 export function TransactionReportDocument({
   report,
   visibleColumns = DEFAULT_TRANSACTION_REPORT_COLUMNS,
+  transactionTypeFilter = 'all',
+  visibleReportSections = DEFAULT_REPORT_SECTIONS,
 }: TransactionReportDocumentProps) {
   const { header, lineChartData, barChartData, rows } = report
   const selectedColumns =
@@ -157,7 +163,26 @@ export function TransactionReportDocument({
     dateLabel: formatDate(point.date),
   }))
 
-  const visibleRows = useMemo(() => rows.filter((row) => !row.isForAllocation), [rows])
+  const visibleSectionSet = useMemo(
+    () => new Set<ReportSectionKey>(visibleReportSections),
+    [visibleReportSections],
+  )
+  const showDateSection = visibleSectionSet.has('date')
+  const showStartingBalanceSection = visibleSectionSet.has('startingBalance')
+  const showChartSection = visibleSectionSet.has('chart')
+  const showNetDifferenceBreakdown = visibleSectionSet.has('netDifferenceBreakdown')
+  const showRemainingBalanceBreakdown = visibleSectionSet.has('remainingBalanceBreakdown')
+  const showBreakdownSection = showNetDifferenceBreakdown || showRemainingBalanceBreakdown
+
+  const visibleRows = useMemo(
+    () =>
+      rows.filter((row) => {
+        if (row.isForAllocation) return false
+        if (transactionTypeFilter === 'all') return true
+        return row.type === transactionTypeFilter
+      }),
+    [rows, transactionTypeFilter],
+  )
 
   const displayRows = useMemo(() => flattenRowsForDisplay(visibleRows), [visibleRows])
   const [pagedRows, setPagedRows] = useState<DisplayRow[][]>([])
@@ -196,10 +221,12 @@ export function TransactionReportDocument({
         nextPageBaseRef.current?.getBoundingClientRect().height,
         FALLBACK_NEXT_PAGE_BASE_HEIGHT,
       )
-      const breakdownHeight = getValidMeasuredHeight(
-        breakdownMeasureRef.current?.getBoundingClientRect().height,
-        FALLBACK_BREAKDOWN_HEIGHT,
-      )
+      const breakdownHeight = showBreakdownSection
+        ? getValidMeasuredHeight(
+            breakdownMeasureRef.current?.getBoundingClientRect().height,
+            FALLBACK_BREAKDOWN_HEIGHT,
+          )
+        : 0
 
       const measuredDocumentHeight = getValidMeasuredHeight(
         measureDocumentRef.current?.getBoundingClientRect().height,
@@ -251,7 +278,7 @@ export function TransactionReportDocument({
       }
 
       // Reserve room for the breakdown block on the final page.
-      if (chunks.length > 0) {
+      if (chunks.length > 0 && showBreakdownSection) {
         const finalPageCapacity = Math.max(24, nextPageCapacity - breakdownHeight)
         const lastChunk = [...chunks[chunks.length - 1]]
         let lastChunkHeight = lastChunk.reduce((sum, row) => {
@@ -296,7 +323,7 @@ export function TransactionReportDocument({
       window.cancelAnimationFrame(rafId)
       window.removeEventListener('resize', paginateRows)
     }
-  }, [displayRows, selectedColumns])
+  }, [displayRows, selectedColumns, showBreakdownSection])
 
   const renderTableRow = (displayRow: DisplayRow) => {
     return (
@@ -336,17 +363,23 @@ export function TransactionReportDocument({
       ? startingBalance + netChange
       : null
 
-  const renderTable = (pageRows: DisplayRow[], isContinued: boolean, showBreakdown: boolean) => {
+  const renderTable = (
+    pageRows: DisplayRow[],
+    isContinued: boolean,
+    showBreakdownOnPage: boolean,
+  ) => {
+    const dateRangeLabel = `(${formatDate(header.fromDate)} - ${formatDate(header.toDate)})`
+    const transactionTitle = isContinued ? 'Transactions (continued)' : 'Transactions'
+    const transactionHeading = showDateSection
+      ? `${transactionTitle} ${dateRangeLabel}`
+      : transactionTitle
+
     return (
       <section
         className={`${styles.table__section} ${isContinued ? styles['table__section--continued'] : ''}`.trim()}
         aria-label="Transactions table preview section"
       >
-        <h2 className={styles.section__title}>
-          {isContinued
-            ? `Transactions (continued) (${formatDate(header.fromDate)} - ${formatDate(header.toDate)})`
-            : `Transactions (${formatDate(header.fromDate)} - ${formatDate(header.toDate)})`}
-        </h2>
+        <h2 className={styles.section__title}>{transactionHeading}</h2>
 
         {visibleRows.length === 0 ? (
           <p className={styles.placeholder__text}>No transactions available for this report.</p>
@@ -370,10 +403,12 @@ export function TransactionReportDocument({
               <tbody>{pageRows.map((displayRow) => renderTableRow(displayRow))}</tbody>
             </table>
 
-            {showBreakdown ? (
+            {showBreakdownOnPage && showBreakdownSection ? (
               <div style={{ marginTop: 24 }}>
                 <h2 className={styles.section__title}>
-                  Breakdown ({formatDate(header.fromDate)} - {formatDate(header.toDate)})
+                  {showDateSection
+                    ? `Breakdown (${formatDate(header.fromDate)} - ${formatDate(header.toDate)})`
+                    : 'Breakdown'}
                 </h2>
                 <div
                   style={{
@@ -384,110 +419,112 @@ export function TransactionReportDocument({
                     marginTop: 12,
                   }}
                 >
-                  {/* Left: Credits - Debits breakdown */}
-                  <div style={{ flex: 1, minWidth: 180, border: '1px solid #f1f5f9' }}>
-                    <div
-                      style={{
-                        backgroundColor: '#f8f9fa',
-                        color: '#6b7280',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        padding: '8px 12px',
-                        borderBottom: '1px solid #f1f5f9',
-                        textTransform: 'uppercase',
-                        fontWeight: 700,
-                        fontSize: 8,
-                      }}
-                    >
-                      <span>Credits - Debits</span>
-                    </div>
-                    <div style={{ padding: '8px 12px' }}>
+                  {showNetDifferenceBreakdown ? (
+                    <div style={{ flex: 1, minWidth: 180, border: '1px solid #f1f5f9' }}>
                       <div
                         style={{
+                          backgroundColor: '#f8f9fa',
+                          color: '#6b7280',
                           display: 'flex',
                           justifyContent: 'space-between',
+                          padding: '8px 12px',
+                          borderBottom: '1px solid #f1f5f9',
+                          textTransform: 'uppercase',
+                          fontWeight: 700,
+                          fontSize: 8,
                         }}
                       >
-                        <span>Total credits:</span>
-                        <span style={{ color: '#2f9e44' }}>{formatMoney(totalCredits)}</span>
+                        <span>Credits - Debits</span>
                       </div>
-                      <div
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                        }}
-                      >
-                        <span>Total debits:</span>
-                        <span style={{ color: '#e03131' }}>{formatMoney(totalDebits)}</span>
+                      <div style={{ padding: '8px 12px' }}>
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                          }}
+                        >
+                          <span>Total credits:</span>
+                          <span style={{ color: '#2f9e44' }}>{formatMoney(totalCredits)}</span>
+                        </div>
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                          }}
+                        >
+                          <span>Total debits:</span>
+                          <span style={{ color: '#e03131' }}>{formatMoney(totalDebits)}</span>
+                        </div>
                       </div>
-                    </div>
-                    <div style={{ padding: '8px 12px', borderTop: '1px solid #f1f5f9' }}>
-                      <div
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          fontWeight: 500,
-                        }}
-                      >
-                        <span>Net difference:</span>
-                        <span style={{ color: netChange < 0 ? '#e03131' : '#2f9e44' }}>
-                          {formatMoney(netChange)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  {/* Right: Starting balance - (difference from credits - debits) */}
-                  <div style={{ flex: 1, minWidth: 180, border: '1px solid #f1f5f9' }}>
-                    <div
-                      style={{
-                        backgroundColor: '#f8f9fa',
-                        color: '#6b7280',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        padding: '8px 12px',
-                        borderBottom: '1px solid #f1f5f9',
-                        textTransform: 'uppercase',
-                        fontWeight: 700,
-                        fontSize: 8,
-                      }}
-                    >
-                      <span>Remaining balance</span>
-                    </div>
-                    <div style={{ padding: '8px 12px' }}>
-                      <div
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                        }}
-                      >
-                        <span>Starting balance:</span>
-                        <span style={{ fontWeight: 700 }}>{formatMoney(startingBalance)}</span>
-                      </div>
-                      <div
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                        }}
-                      >
-                        <span>Net difference:</span>
-                        <span style={{ color: netChange < 0 ? '#e03131' : '#2f9e44' }}>
-                          {formatMoney(netChange)}
-                        </span>
+                      <div style={{ padding: '8px 12px', borderTop: '1px solid #f1f5f9' }}>
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            fontWeight: 500,
+                          }}
+                        >
+                          <span>Net difference:</span>
+                          <span style={{ color: netChange < 0 ? '#e03131' : '#2f9e44' }}>
+                            {formatMoney(netChange)}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                    <div style={{ padding: '8px 12px', borderTop: '1px solid #f1f5f9' }}>
+                  ) : null}
+                  {showRemainingBalanceBreakdown ? (
+                    <div style={{ flex: 1, minWidth: 180, border: '1px solid #f1f5f9' }}>
                       <div
                         style={{
+                          backgroundColor: '#f8f9fa',
+                          color: '#6b7280',
                           display: 'flex',
                           justifyContent: 'space-between',
-                          fontWeight: 500,
+                          padding: '8px 12px',
+                          borderBottom: '1px solid #f1f5f9',
+                          textTransform: 'uppercase',
+                          fontWeight: 700,
+                          fontSize: 8,
                         }}
                       >
-                        <span>Remaining balance:</span>
-                        <span style={{ fontWeight: 700 }}>{formatMoney(endingBalance)}</span>
+                        <span>Remaining balance</span>
+                      </div>
+                      <div style={{ padding: '8px 12px' }}>
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                          }}
+                        >
+                          <span>Starting balance:</span>
+                          <span style={{ fontWeight: 700 }}>{formatMoney(startingBalance)}</span>
+                        </div>
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                          }}
+                        >
+                          <span>Net difference:</span>
+                          <span style={{ color: netChange < 0 ? '#e03131' : '#2f9e44' }}>
+                            {formatMoney(netChange)}
+                          </span>
+                        </div>
+                      </div>
+                      <div style={{ padding: '8px 12px', borderTop: '1px solid #f1f5f9' }}>
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            fontWeight: 500,
+                          }}
+                        >
+                          <span>Remaining balance:</span>
+                          <span style={{ fontWeight: 700 }}>{formatMoney(endingBalance)}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  ) : null}
                 </div>
               </div>
             ) : null}
@@ -527,109 +564,117 @@ export function TransactionReportDocument({
             <div className={styles.document__title}>
               <span>TRANSACTIONS REPORT</span>
             </div>
-            <div className={styles.transaction__details}>
-              <div className={styles.transaction__detail}>
-                <p className={styles['transaction__detail-label']}>Date</p>
-                <p className={styles['transaction__detail-value']}>
-                  {formatDate(header.fromDate)} - {formatDate(header.toDate)}
-                </p>
-              </div>
-              <div className={styles.transaction__detail}>
-                <p className={styles['transaction__detail-label']}>Starting balance</p>
-                <p className={styles['transaction__detail-value']}>
-                  {formatMoney(startingBalance)}
-                </p>
-              </div>
-            </div>
-            <section className={styles.chart__section} aria-label="Charts preview section">
-              <div className={styles.chart__grid}>
-                <div className={styles.chart__card}>
-                  <p className={styles.chart__title}>Running Balance Trend (Line)</p>
-                  {hasLineData ? (
-                    <div className={styles.chart__viewport}>
-                      <LineChart
-                        h={300}
-                        data={lineChartSeries}
-                        dataKey="dateLabel"
-                        series={[
-                          {
-                            name: 'runningBalance',
-                            label: 'Running Balance',
-                            color: 'teal.6',
-                          },
-                        ]}
-                        curveType="linear"
-                        withLegend={false}
-                        withTooltip={false}
-                        tickLine="none"
-                        yAxisProps={{
-                          width: 72,
-                          tickFormatter: (value) =>
-                            new Intl.NumberFormat('en-PH', {
-                              style: 'currency',
-                              currency: 'PHP',
-                              minimumFractionDigits: 0,
-                              maximumFractionDigits: 0,
-                            }).format(Number(value || 0)),
-                        }}
-                        valueFormatter={(value) =>
-                          new Intl.NumberFormat('en-PH', {
-                            style: 'currency',
-                            currency: 'PHP',
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          }).format(Number(value || 0))
-                        }
-                      />
-                    </div>
-                  ) : (
-                    <p className={styles.placeholder__text}>No running balance data available.</p>
-                  )}
-                </div>
-
-                <div className={styles.chart__card}>
-                  <p className={styles.chart__title}>Money In vs Money Out (Bar)</p>
-                  {hasBarData ? (
-                    <div className={styles.chart__viewport}>
-                      <BarChart
-                        h={300}
-                        data={barChartSeries}
-                        dataKey="dateLabel"
-                        series={[
-                          { name: 'credit', label: 'Credit', color: 'green.6' },
-                          { name: 'debit', label: 'Debit', color: 'red.6' },
-                        ]}
-                        withLegend
-                        withTooltip={false}
-                        tickLine="none"
-                        yAxisProps={{
-                          width: 72,
-                          tickFormatter: (value) =>
-                            new Intl.NumberFormat('en-PH', {
-                              style: 'currency',
-                              currency: 'PHP',
-                              minimumFractionDigits: 0,
-                              maximumFractionDigits: 0,
-                            }).format(Number(value || 0)),
-                        }}
-                        valueFormatter={(value) =>
-                          new Intl.NumberFormat('en-PH', {
-                            style: 'currency',
-                            currency: 'PHP',
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          }).format(Number(value || 0))
-                        }
-                      />
-                    </div>
-                  ) : (
-                    <p className={styles.placeholder__text}>
-                      No transaction amount data available.
+            {showDateSection || showStartingBalanceSection ? (
+              <div className={styles.transaction__details}>
+                {showDateSection ? (
+                  <div className={styles.transaction__detail}>
+                    <p className={styles['transaction__detail-label']}>Date</p>
+                    <p className={styles['transaction__detail-value']}>
+                      {formatDate(header.fromDate)} - {formatDate(header.toDate)}
                     </p>
-                  )}
-                </div>
+                  </div>
+                ) : null}
+                {showStartingBalanceSection ? (
+                  <div className={styles.transaction__detail}>
+                    <p className={styles['transaction__detail-label']}>Starting balance</p>
+                    <p className={styles['transaction__detail-value']}>
+                      {formatMoney(startingBalance)}
+                    </p>
+                  </div>
+                ) : null}
               </div>
-            </section>
+            ) : null}
+            {showChartSection ? (
+              <section className={styles.chart__section} aria-label="Charts preview section">
+                <div className={styles.chart__grid}>
+                  <div className={styles.chart__card}>
+                    <p className={styles.chart__title}>Running Balance Trend (Line)</p>
+                    {hasLineData ? (
+                      <div className={styles.chart__viewport}>
+                        <LineChart
+                          h={300}
+                          data={lineChartSeries}
+                          dataKey="dateLabel"
+                          series={[
+                            {
+                              name: 'runningBalance',
+                              label: 'Running Balance',
+                              color: 'teal.6',
+                            },
+                          ]}
+                          curveType="linear"
+                          withLegend={false}
+                          withTooltip={false}
+                          tickLine="none"
+                          yAxisProps={{
+                            width: 72,
+                            tickFormatter: (value) =>
+                              new Intl.NumberFormat('en-PH', {
+                                style: 'currency',
+                                currency: 'PHP',
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0,
+                              }).format(Number(value || 0)),
+                          }}
+                          valueFormatter={(value) =>
+                            new Intl.NumberFormat('en-PH', {
+                              style: 'currency',
+                              currency: 'PHP',
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            }).format(Number(value || 0))
+                          }
+                        />
+                      </div>
+                    ) : (
+                      <p className={styles.placeholder__text}>No running balance data available.</p>
+                    )}
+                  </div>
+
+                  <div className={styles.chart__card}>
+                    <p className={styles.chart__title}>Money In vs Money Out (Bar)</p>
+                    {hasBarData ? (
+                      <div className={styles.chart__viewport}>
+                        <BarChart
+                          h={300}
+                          data={barChartSeries}
+                          dataKey="dateLabel"
+                          series={[
+                            { name: 'credit', label: 'Credit', color: 'green.6' },
+                            { name: 'debit', label: 'Debit', color: 'red.6' },
+                          ]}
+                          withLegend
+                          withTooltip={false}
+                          tickLine="none"
+                          yAxisProps={{
+                            width: 72,
+                            tickFormatter: (value) =>
+                              new Intl.NumberFormat('en-PH', {
+                                style: 'currency',
+                                currency: 'PHP',
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0,
+                              }).format(Number(value || 0)),
+                          }}
+                          valueFormatter={(value) =>
+                            new Intl.NumberFormat('en-PH', {
+                              style: 'currency',
+                              currency: 'PHP',
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            }).format(Number(value || 0))
+                          }
+                        />
+                      </div>
+                    ) : (
+                      <p className={styles.placeholder__text}>
+                        No transaction amount data available.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </section>
+            ) : null}
           </article>
         </div>
 
@@ -668,123 +713,131 @@ export function TransactionReportDocument({
 
         <article className={styles.document}>
           <section className={styles.table__section}>
-            <div ref={breakdownMeasureRef} style={{ marginTop: 24 }}>
-              <h2 className={styles.section__title}>
-                Breakdown ({formatDate(header.fromDate)} - {formatDate(header.toDate)})
-              </h2>
-              <div
-                style={{
-                  fontSize: 10,
-                  display: 'flex',
-                  gap: 24,
-                  justifyContent: 'space-between',
-                  marginTop: 12,
-                }}
-              >
-                <div style={{ flex: 1, minWidth: 180, border: '1px solid #f1f5f9' }}>
-                  <div
-                    style={{
-                      backgroundColor: '#f8f9fa',
-                      color: '#6b7280',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      padding: '8px 12px',
-                      borderBottom: '1px solid #f1f5f9',
-                      textTransform: 'uppercase',
-                      fontWeight: 700,
-                      fontSize: 8,
-                    }}
-                  >
-                    <span>Credits - Debits</span>
-                  </div>
-                  <div style={{ padding: '8px 12px' }}>
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                      }}
-                    >
-                      <span>Total credits:</span>
-                      <span style={{ color: '#2f9e44' }}>{formatMoney(totalCredits)}</span>
+            {showBreakdownSection ? (
+              <div ref={breakdownMeasureRef} style={{ marginTop: 24 }}>
+                <h2 className={styles.section__title}>
+                  {showDateSection
+                    ? `Breakdown (${formatDate(header.fromDate)} - ${formatDate(header.toDate)})`
+                    : 'Breakdown'}
+                </h2>
+                <div
+                  style={{
+                    fontSize: 10,
+                    display: 'flex',
+                    gap: 24,
+                    justifyContent: 'space-between',
+                    marginTop: 12,
+                  }}
+                >
+                  {showNetDifferenceBreakdown ? (
+                    <div style={{ flex: 1, minWidth: 180, border: '1px solid #f1f5f9' }}>
+                      <div
+                        style={{
+                          backgroundColor: '#f8f9fa',
+                          color: '#6b7280',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          padding: '8px 12px',
+                          borderBottom: '1px solid #f1f5f9',
+                          textTransform: 'uppercase',
+                          fontWeight: 700,
+                          fontSize: 8,
+                        }}
+                      >
+                        <span>Credits - Debits</span>
+                      </div>
+                      <div style={{ padding: '8px 12px' }}>
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                          }}
+                        >
+                          <span>Total credits:</span>
+                          <span style={{ color: '#2f9e44' }}>{formatMoney(totalCredits)}</span>
+                        </div>
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                          }}
+                        >
+                          <span>Total debits:</span>
+                          <span style={{ color: '#e03131' }}>{formatMoney(totalDebits)}</span>
+                        </div>
+                      </div>
+                      <div style={{ padding: '8px 12px', borderTop: '1px solid #f1f5f9' }}>
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            fontWeight: 500,
+                          }}
+                        >
+                          <span>Net difference:</span>
+                          <span style={{ color: netChange < 0 ? '#e03131' : '#2f9e44' }}>
+                            {formatMoney(netChange)}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                      }}
-                    >
-                      <span>Total debits:</span>
-                      <span style={{ color: '#e03131' }}>{formatMoney(totalDebits)}</span>
+                  ) : null}
+                  {showRemainingBalanceBreakdown ? (
+                    <div style={{ flex: 1, minWidth: 180, border: '1px solid #f1f5f9' }}>
+                      <div
+                        style={{
+                          backgroundColor: '#f8f9fa',
+                          color: '#6b7280',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          padding: '8px 12px',
+                          borderBottom: '1px solid #f1f5f9',
+                          textTransform: 'uppercase',
+                          fontWeight: 700,
+                          fontSize: 8,
+                        }}
+                      >
+                        <span>Remaining balance</span>
+                      </div>
+                      <div style={{ padding: '8px 12px' }}>
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                          }}
+                        >
+                          <span>Starting balance:</span>
+                          <span style={{ fontWeight: 700 }}>{formatMoney(startingBalance)}</span>
+                        </div>
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                          }}
+                        >
+                          <span>Net difference:</span>
+                          <span style={{ color: netChange < 0 ? '#e03131' : '#2f9e44' }}>
+                            {formatMoney(netChange)}
+                          </span>
+                        </div>
+                      </div>
+                      <div style={{ padding: '8px 12px', borderTop: '1px solid #f1f5f9' }}>
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            fontWeight: 500,
+                          }}
+                        >
+                          <span>Remaining balance:</span>
+                          <span style={{ fontWeight: 700 }}>{formatMoney(endingBalance)}</span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div style={{ padding: '8px 12px', borderTop: '1px solid #f1f5f9' }}>
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        fontWeight: 500,
-                      }}
-                    >
-                      <span>Net difference:</span>
-                      <span style={{ color: netChange < 0 ? '#e03131' : '#2f9e44' }}>
-                        {formatMoney(netChange)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <div style={{ flex: 1, minWidth: 180, border: '1px solid #f1f5f9' }}>
-                  <div
-                    style={{
-                      backgroundColor: '#f8f9fa',
-                      color: '#6b7280',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      padding: '8px 12px',
-                      borderBottom: '1px solid #f1f5f9',
-                      textTransform: 'uppercase',
-                      fontWeight: 700,
-                      fontSize: 8,
-                    }}
-                  >
-                    <span>Remaining balance</span>
-                  </div>
-                  <div style={{ padding: '8px 12px' }}>
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                      }}
-                    >
-                      <span>Starting balance:</span>
-                      <span style={{ fontWeight: 700 }}>{formatMoney(startingBalance)}</span>
-                    </div>
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                      }}
-                    >
-                      <span>Net difference:</span>
-                      <span style={{ color: netChange < 0 ? '#e03131' : '#2f9e44' }}>
-                        {formatMoney(netChange)}
-                      </span>
-                    </div>
-                  </div>
-                  <div style={{ padding: '8px 12px', borderTop: '1px solid #f1f5f9' }}>
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        fontWeight: 500,
-                      }}
-                    >
-                      <span>Remaining balance:</span>
-                      <span style={{ fontWeight: 700 }}>{formatMoney(endingBalance)}</span>
-                    </div>
-                  </div>
+                  ) : null}
                 </div>
               </div>
-            </div>
+            ) : null}
           </section>
         </article>
 

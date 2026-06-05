@@ -146,6 +146,7 @@ export function buildTransactionReportData(args: {
   transactions: TransactionListItem[]
   allAccountTransactions?: TransactionListItem[]
   openingBalance?: number
+  useCustomRangeOpeningBalance?: boolean
   range?: ReportRange
 }): TransactionReportData {
   const sortedTransactions = sortTransactions(args.transactions)
@@ -167,10 +168,11 @@ export function buildTransactionReportData(args: {
       typeof args.openingBalance === 'number' && Number.isFinite(args.openingBalance)
         ? args.openingBalance
         : 0
+    const hasCustomRangeOpeningBalance = args.useCustomRangeOpeningBalance === true
 
     let openingBalance = baseOpeningBalance
 
-    if (fromTimestamp !== null) {
+    if (fromTimestamp !== null && !hasCustomRangeOpeningBalance) {
       const lastTransactionBeforeRange =
         [...allAccountTransactions].reverse().find((item) => {
           const transactionTime = toBoundaryTimestamp(item.transactionDate)
@@ -189,7 +191,7 @@ export function buildTransactionReportData(args: {
       }
     }
 
-    if (fromTimestamp !== null) {
+    if (fromTimestamp !== null && !hasCustomRangeOpeningBalance) {
       const hasAnchoredOpeningBalance = [...allAccountTransactions].reverse().some((item) => {
         const transactionTime = toBoundaryTimestamp(item.transactionDate)
         return (

@@ -5,12 +5,17 @@ import {
   AppShell,
   Flex,
   Loader,
+  Button,
+  Group,
+  Menu,
   Text,
   useComputedColorScheme,
   useMantineColorScheme,
+  Badge,
+  Stack,
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
-import { Menu, Moon, Sun, UserCircle, X } from 'lucide-react'
+import { LogOut, Menu as MenuIcon, Moon, Sun, UserCircle, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import classes from './index.module.css'
 import { Logo } from '@/app/(app)/components/Logo'
@@ -18,7 +23,7 @@ import { Navbar } from '@/app/(app)/components/Navbar'
 import { useAuth } from '@/app/providers/Auth'
 import { signOut } from '@/app/(app)/lib/auth-client'
 import { useEffect, useState } from 'react'
-import { UserPreference } from '~/payload-types'
+import { UserPreference, UserRole } from '~/payload-types'
 import { useMutation } from '@tanstack/react-query'
 
 type LayoutProps = {
@@ -27,7 +32,7 @@ type LayoutProps = {
 }
 
 export default function Layout({ children, userPreferences }: LayoutProps) {
-  const { isValidSession } = useAuth()
+  const { isValidSession, user } = useAuth()
   const [isSigningOut, setIsSigningOut] = useState<boolean>(false)
   const [isExpanded, setIsExpanded] = useState<boolean>(
     userPreferences?.sidenavState !== 'collapsed',
@@ -85,6 +90,17 @@ export default function Layout({ children, userPreferences }: LayoutProps) {
     })
   }
 
+  const userName = user?.name?.trim()
+  const userEmail = user?.email?.trim()
+  const userUsername =
+    user && 'username' in user && typeof user.username === 'string' ? user.username.trim() : ''
+  const displayIdentity = userName || userEmail || userUsername || 'Unknown user'
+  const firstResolvedRole = user?.userRoles?.find(
+    (role): role is UserRole =>
+      typeof role !== 'string' && Boolean(role?.label) && Boolean(role.label.trim()),
+  )
+  const displayRole = firstResolvedRole?.label?.trim() || 'User'
+
   return (
     <AppShell
       header={{ height: 60 }}
@@ -116,7 +132,37 @@ export default function Layout({ children, userPreferences }: LayoutProps) {
             <Sun size={16} className="light" />
             <Moon size={16} className="dark" />
           </ActionIcon>
-          <ActionIcon
+          <Menu shadow="md" width={200}>
+            <Menu.Target>
+              <ActionIcon variant="default" size="lg" radius="sm" aria-label="Profile">
+                <UserCircle size={16} />
+              </ActionIcon>
+            </Menu.Target>
+
+            <Menu.Dropdown>
+              <Menu.Label>
+                <Stack gap="sm">
+                  <Group gap="xxs" justify="space-between" align="center">
+                    <Text size="md">{`${displayIdentity}`}</Text>
+                    <Badge color="gray" variant="light">
+                      {displayRole}
+                    </Badge>
+                  </Group>
+                  <Button variant="default" size="xs" onClick={() => router.push('/app/user')}>
+                    View Profile
+                  </Button>
+                </Stack>
+              </Menu.Label>
+              <Menu.Divider />
+              <Menu.Item>
+                <Group justify="space-between" align="center" gap="xs">
+                  <Text>Logout</Text>
+                  <LogOut size={12} />
+                </Group>
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
+          {/* <ActionIcon
             onClick={() => router.push('/app/user')}
             variant="default"
             size="lg"
@@ -124,7 +170,7 @@ export default function Layout({ children, userPreferences }: LayoutProps) {
             aria-label="Profile"
           >
             <UserCircle size={16} />
-          </ActionIcon>
+          </ActionIcon> */}
           <ActionIcon
             onClick={() => {
               handleToggleColorScheme()
@@ -136,7 +182,7 @@ export default function Layout({ children, userPreferences }: LayoutProps) {
             radius="sm"
             aria-label="Toggle navigation"
           >
-            <Menu size={16} display={!opened ? 'block' : 'none'} />
+            <MenuIcon size={16} display={!opened ? 'block' : 'none'} />
             <X size={16} display={opened ? 'block' : 'none'} />
           </ActionIcon>
         </div>
