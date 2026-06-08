@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { Button, Group } from '@mantine/core'
 import { DatePickerInput } from '@mantine/dates'
 import { CalendarSearch } from 'lucide-react'
 
@@ -63,6 +62,7 @@ const getDefaultRangePresets = (): { label: string; value: DateRange }[] => {
   const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
 
   return [
+    { label: 'Today', value: [toDateOnly(today), toDateOnly(today)] },
     { label: 'Last 7 days', value: toStringRange(lastNDays(7)) },
     {
       label: 'Last 30 days',
@@ -131,6 +131,7 @@ export function DateRangeFilter({ logoUrl, initialFrom, initialTo }: DateRangeFi
     <DatePickerInput
       w={{ base: '100%', md: 'auto' }}
       leftSection={<CalendarSearch size={16} />}
+      allowSingleDateInRange
       type="range"
       placeholder="Date range"
       value={range}

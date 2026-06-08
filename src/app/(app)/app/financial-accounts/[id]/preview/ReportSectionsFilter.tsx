@@ -4,12 +4,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { MultiSelect } from '@mantine/core'
 import {
-  DEFAULT_REPORT_SECTIONS,
   REPORT_SECTION_OPTIONS,
   normalizeReportSections,
   serializeReportSections,
   type ReportSectionKey,
 } from './reportSections'
+import { useMediaQuery } from '@mantine/hooks'
 
 type ReportSectionsFilterProps = {
   initialSections: ReportSectionKey[]
@@ -19,6 +19,20 @@ export function ReportSectionsFilter({ initialSections }: ReportSectionsFilterPr
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const isDesktop = useMediaQuery('(min-width: 48em)')
+  const responsivePillsListStyle = useMemo(
+    () =>
+      isDesktop
+        ? {
+            flexWrap: 'nowrap' as const,
+            overflowX: 'auto' as const,
+          }
+        : {
+            flexWrap: 'wrap' as const,
+            overflowX: 'visible' as const,
+          },
+    [isDesktop],
+  )
 
   const normalizedInitialSections = useMemo(
     () => normalizeReportSections(initialSections),
@@ -66,10 +80,7 @@ export function ReportSectionsFilter({ initialSections }: ReportSectionsFilterPr
       clearable={false}
       size="sm"
       styles={{
-        pillsList: {
-          'flex-wrap': 'noWrap',
-          'overflow-x': 'auto',
-        },
+        pillsList: responsivePillsListStyle,
       }}
     />
   )

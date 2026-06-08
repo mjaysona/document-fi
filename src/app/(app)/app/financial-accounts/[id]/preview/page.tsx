@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Stack, ActionIcon, Title, Flex, Grid, GridCol } from '@mantine/core'
+import { Stack, ActionIcon, Title, Flex, Grid, GridCol, Card } from '@mantine/core'
 import { ArrowLeft } from 'lucide-react'
 import { getFinancialAccountById } from '../../actions'
 import {
@@ -202,16 +202,20 @@ export default async function FinancialAccountPreviewPage({ params, searchParams
           <ShareButton />
         </Flex>
       </Flex>
+      <Card withBorder radius="sm" p="xs">
+        <Grid>
+          <GridCol span={{ base: 12, xs: 6, md: 3 }}>
+            <StartingBalanceFilter initialStartingBalance={sb} />
+          </GridCol>
+          <GridCol span={{ base: 12, xs: 6, md: 3 }}>
+            <TransactionTypeFilter initialTransactionType={transactionTypeFilter} />
+          </GridCol>
+          <GridCol span={{ base: 12, xs: 12, md: 6 }}>
+            <ReportSectionsFilter initialSections={visibleReportSections} />
+          </GridCol>
+        </Grid>
+      </Card>
       <Grid>
-        <GridCol span={3}>
-          <StartingBalanceFilter initialStartingBalance={sb} />
-        </GridCol>
-        <GridCol span={3}>
-          <TransactionTypeFilter initialTransactionType={transactionTypeFilter} />
-        </GridCol>
-        <GridCol span={6}>
-          <ReportSectionsFilter initialSections={visibleReportSections} />
-        </GridCol>
         <GridCol span={12}>
           <ReportColumnsFilter initialColumns={visibleColumns} />
         </GridCol>

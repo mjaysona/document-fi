@@ -300,11 +300,6 @@ export default function FinancialAccountCreatePage() {
         ? currentBalance
         : Number(currentBalance.replace(/,/g, '').trim())
 
-    if (currentBalance === '' || Number.isNaN(parsedCurrentBalance)) {
-      setFeedback({ type: 'error', message: 'Current Balance is required' })
-      return
-    }
-
     if (hasError) return
 
     const validatedBankId = bankId
@@ -569,7 +564,7 @@ export default function FinancialAccountCreatePage() {
             </Fieldset>
             <Fieldset legend="Finance" p="sm" m="0" radius="md">
               <Grid>
-                <Grid.Col span={4}>
+                <Grid.Col span={6}>
                   <Select
                     label="Bank"
                     data={bankOptions}
@@ -584,7 +579,7 @@ export default function FinancialAccountCreatePage() {
                     required
                   />
                 </Grid.Col>
-                <Grid.Col span={4}>
+                <Grid.Col span={6}>
                   <NumberInput
                     label="Starting Balance"
                     value={startingBalance}
@@ -600,26 +595,6 @@ export default function FinancialAccountCreatePage() {
                     hideControls
                     disabled={isSaving || (isEditMode && Boolean(startingBalance))}
                     error={startingBalanceError}
-                    required
-                  />
-                </Grid.Col>
-                <Grid.Col span={4}>
-                  <NumberInput
-                    label="Current Balance"
-                    value={
-                      typeof currentBalance === 'number'
-                        ? currentBalance
-                        : parseFloat(currentBalance.replace(/,/g, '')) || ''
-                    }
-                    onChange={(value) => setCurrentBalance(value || '')}
-                    min={0}
-                    leftSection="₱"
-                    decimalScale={2}
-                    fixedDecimalScale
-                    thousandSeparator=","
-                    hideControls
-                    disabled={isSaving || (isEditMode && Boolean(currentBalance))}
-                    error={currentBalanceError}
                     required
                   />
                 </Grid.Col>
