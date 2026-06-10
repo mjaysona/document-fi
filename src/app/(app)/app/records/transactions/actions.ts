@@ -759,7 +759,7 @@ export async function getTransactions(where?: Record<string, unknown>): Promise<
         runningBalance: typeof doc.runningBalance === 'number' ? doc.runningBalance : undefined,
         transactionStatus: normalizeTransactionStatus(doc.transactionStatus),
         createdAt: String(doc.createdAt || ''),
-        lastUpdated: String(doc.lastUpdated || ''),
+        lastUpdated: String(doc.lastUpdated || doc.createdAt || ''),
         receiptImage:
           doc.receiptImage && typeof doc.receiptImage === 'object'
             ? { url: doc.receiptImage.url || undefined }
