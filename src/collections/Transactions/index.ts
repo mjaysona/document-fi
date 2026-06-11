@@ -717,6 +717,10 @@ const Transactions: CollectionConfig = {
           }
         }
 
+        if (operation === 'create') {
+          nextData.lastUpdated = new Date().toISOString()
+        }
+
         return nextData
       },
     ],
