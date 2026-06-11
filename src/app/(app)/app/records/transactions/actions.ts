@@ -892,7 +892,7 @@ const mapTransactionDocToListItem = (doc: any): TransactionListItem => ({
   runningBalance: typeof doc.runningBalance === 'number' ? doc.runningBalance : undefined,
   transactionStatus: normalizeTransactionStatus(doc.transactionStatus),
   createdAt: String(doc.createdAt || ''),
-  lastUpdated: String(doc.lastUpdated || ''),
+  lastUpdated: String(doc.lastUpdated || doc.createdAt || ''),
   receiptImage:
     doc.receiptImage && typeof doc.receiptImage === 'object'
       ? { url: doc.receiptImage.url || undefined }
@@ -1162,7 +1162,7 @@ export async function searchNonCompletedAllocatedFunds(
         runningBalance: typeof doc.runningBalance === 'number' ? doc.runningBalance : undefined,
         transactionStatus: normalizeTransactionStatus(doc.transactionStatus),
         createdAt: String(doc.createdAt || ''),
-        lastUpdated: String(doc.lastUpdated || ''),
+        lastUpdated: String(doc.lastUpdated || doc.createdAt || ''),
       })),
     }
   } catch (error) {
