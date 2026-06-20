@@ -930,6 +930,8 @@ export async function getTransactionsPage(
           { referenceNumber: { like: escapedSearch } },
           { description: { like: escapedSearch } },
           { particulars: { like: escapedSearch } },
+          { from: { like: escapedSearch } },
+          { to: { like: escapedSearch } },
         ],
       })
     }
