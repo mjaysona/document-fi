@@ -42,6 +42,7 @@ export type TransactionReportTableRow = {
   allocatedFunds?: number | null
   description: string
   particulars: string
+  receiptImageUrl?: string | null
   isAllocatedFund?: boolean
   isForAllocation?: boolean
   children?: TransactionReportTableRow[]
@@ -261,6 +262,7 @@ export function buildTransactionReportData(args: {
     allocatedFunds: typeof item.allocatedFunds === 'number' ? item.allocatedFunds : null,
     description: normalizeString(item.description),
     particulars: normalizeString(item.particulars),
+    receiptImageUrl: item.receiptImage?.url ?? null,
     isAllocatedFund: item.isAllocatedFund ?? false,
     isForAllocation: item.isForAllocation ?? false,
   }))

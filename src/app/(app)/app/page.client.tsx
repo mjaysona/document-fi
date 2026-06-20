@@ -121,7 +121,12 @@ const PageClient: React.FC<PageClientProps> = ({ recentTransactions, recentAccou
                 )}
               </Stack>
             </Box>
-            <Button mt="sm" variant="light" size="sm">
+            <Button
+              mt="sm"
+              variant="light"
+              size="sm"
+              onClick={() => router.push('/app/records/transactions')}
+            >
               View all transactions
             </Button>
           </Paper>
@@ -182,7 +187,12 @@ const PageClient: React.FC<PageClientProps> = ({ recentTransactions, recentAccou
                 </Text>
               )}
             </Box>
-            <Button mt="sm" variant="light" size="sm">
+            <Button
+              mt="sm"
+              variant="light"
+              size="sm"
+              onClick={() => router.push('/app/financial-accounts')}
+            >
               View all accounts
             </Button>
           </Paper>

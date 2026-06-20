@@ -119,6 +119,17 @@ const renderCellValue = (row: TransactionReportTableRow, column: TransactionRepo
   if (column === 'isAllocatedFund') return row.isAllocatedFund ? 'Yes' : 'No'
   if (column === 'description') return row.description
   if (column === 'particulars') return row.particulars
+  if (column === 'receiptImage') {
+    return row.receiptImageUrl ? (
+      <Image
+        src={row.receiptImageUrl}
+        alt="Receipt"
+        style={{ maxHeight: 220, objectFit: 'contain', objectPosition: 'left' }}
+      />
+    ) : (
+      '-'
+    )
+  }
 
   if (column === 'transactionType') {
     return (
@@ -328,11 +339,19 @@ export function TransactionReportDocument({
   const renderTableRow = (displayRow: DisplayRow) => {
     return (
       <tr key={displayRow.key}>
-        {columnHeaders.map((column) => {
+        {columnHeaders.map((column, index) => {
+          // Skip column if previous column was receiptImage (which spans 2 columns)
+          if (index > 0 && columnHeaders[index - 1].value === 'receiptImage') {
+            return null
+          }
+
+          const colSpan = column.value === 'receiptImage' ? 2 : 1
+
           return (
             <td
               key={`${displayRow.key}-${column.value}`}
               className={isRightAlignedColumn(column.value) ? styles['cell--right'] : undefined}
+              colSpan={colSpan}
             >
               {renderCellValue(displayRow.row, column.value)}
             </td>
@@ -394,16 +413,26 @@ export function TransactionReportDocument({
             <table className={styles.table}>
               <thead>
                 <tr>
-                  {columnHeaders.map((column) => (
-                    <th
-                      key={column.value}
-                      className={
-                        isRightAlignedColumn(column.value) ? styles['cell--right'] : undefined
-                      }
-                    >
-                      {column.label}
-                    </th>
-                  ))}
+                  {columnHeaders.map((column, index) => {
+                    // Skip column if previous column was receiptImage (which spans 2 columns)
+                    if (index > 0 && columnHeaders[index - 1].value === 'receiptImage') {
+                      return null
+                    }
+
+                    const colSpan = column.value === 'receiptImage' ? 2 : 1
+
+                    return (
+                      <th
+                        key={column.value}
+                        className={
+                          isRightAlignedColumn(column.value) ? styles['cell--right'] : undefined
+                        }
+                        colSpan={colSpan}
+                      >
+                        {column.label}
+                      </th>
+                    )
+                  })}
                 </tr>
               </thead>
               <tbody>{pageRows.map((displayRow) => renderTableRow(displayRow))}</tbody>
@@ -713,9 +742,20 @@ export function TransactionReportDocument({
               <table className={styles.table}>
                 <thead>
                   <tr>
-                    {columnHeaders.map((column) => (
-                      <th key={`measure-next-${column.value}`}>{column.label}</th>
-                    ))}
+                    {columnHeaders.map((column, index) => {
+                      // Skip column if previous column was receiptImage (which spans 2 columns)
+                      if (index > 0 && columnHeaders[index - 1].value === 'receiptImage') {
+                        return null
+                      }
+
+                      const colSpan = column.value === 'receiptImage' ? 2 : 1
+
+                      return (
+                        <th key={`measure-next-${column.value}`} colSpan={colSpan}>
+                          {column.label}
+                        </th>
+                      )
+                    })}
                   </tr>
                 </thead>
               </table>
@@ -858,16 +898,26 @@ export function TransactionReportDocument({
             <table className={styles.table}>
               <thead>
                 <tr>
-                  {columnHeaders.map((column) => (
-                    <th
-                      key={`measure-rows-header-${column.value}`}
-                      className={
-                        isRightAlignedColumn(column.value) ? styles['cell--right'] : undefined
-                      }
-                    >
-                      {column.label}
-                    </th>
-                  ))}
+                  {columnHeaders.map((column, index) => {
+                    // Skip column if previous column was receiptImage (which spans 2 columns)
+                    if (index > 0 && columnHeaders[index - 1].value === 'receiptImage') {
+                      return null
+                    }
+
+                    const colSpan = column.value === 'receiptImage' ? 2 : 1
+
+                    return (
+                      <th
+                        key={`measure-rows-header-${column.value}`}
+                        className={
+                          isRightAlignedColumn(column.value) ? styles['cell--right'] : undefined
+                        }
+                        colSpan={colSpan}
+                      >
+                        {column.label}
+                      </th>
+                    )
+                  })}
                 </tr>
               </thead>
               <tbody>
@@ -878,13 +928,21 @@ export function TransactionReportDocument({
                       rowRefs.current[displayRow.key] = element
                     }}
                   >
-                    {columnHeaders.map((column) => {
+                    {columnHeaders.map((column, index) => {
+                      // Skip column if previous column was receiptImage (which spans 2 columns)
+                      if (index > 0 && columnHeaders[index - 1].value === 'receiptImage') {
+                        return null
+                      }
+
+                      const colSpan = column.value === 'receiptImage' ? 2 : 1
+
                       return (
                         <td
                           key={`measure-cell-${displayRow.key}-${column.value}`}
                           className={
                             isRightAlignedColumn(column.value) ? styles['cell--right'] : undefined
                           }
+                          colSpan={colSpan}
                         >
                           {renderCellValue(displayRow.row, column.value)}
                         </td>
