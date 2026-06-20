@@ -910,7 +910,7 @@ export default function TransactionsPage() {
       <Flex gap={{ base: 'xs', xs: 'xs', md: 'md' }} direction="column">
         <Group gap="xs" align="center">
           <TextInput
-            placeholder="Search by reference number..."
+            placeholder="Search by reference, description, or particulars..."
             leftSection={<Search size={16} />}
             value={search}
             onChange={(e) => handleSearchChange(e.currentTarget.value)}

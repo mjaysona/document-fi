@@ -928,6 +928,8 @@ export async function getTransactionsPage(
           { referenceNumber: { equals: normalizedSearch } },
           { referenceNumber: { equals: uppercaseSearch } },
           { referenceNumber: { like: escapedSearch } },
+          { description: { like: escapedSearch } },
+          { particulars: { like: escapedSearch } },
         ],
       })
     }
