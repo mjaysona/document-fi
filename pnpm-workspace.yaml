@@ -1,0 +1,39 @@
+onlyBuiltDependencies:
+  - esbuild@0.18.20
+  - esbuild@0.25.12
+  - esbuild@0.27.7
+  - sharp@0.32.6
+  - sharp@0.34.5
+  - unrs-resolver@1.12.2
+minimumReleaseAgeExclude:
+  - '@better-auth/core@1.6.20'
+  - '@better-auth/drizzle-adapter@1.6.20'
+  - '@better-auth/kysely-adapter@1.6.20'
+  - '@better-auth/memory-adapter@1.6.20'
+  - '@better-auth/mongo-adapter@1.6.20'
+  - '@better-auth/prisma-adapter@1.6.20'
+  - '@better-auth/telemetry@1.6.20'
+  - '@faceless-ui/scroll-info@2.0.0'
+  - '@faceless-ui/window-info@3.0.1'
+  - '@next/eslint-plugin-next@15.0.0-canary.173'
+  - '@types/pg@8.10.2'
+  - '@aws-sdk/checksums@3.1000.7'
+  - bson-objectid@2.0.4
+  - buffer-image-size@0.6.4
+  - eslint-config-next@15.0.0-canary.173
+  - file-type@19.3.0
+  - graphql-http@1.22.0
+  - json-schema-to-typescript@15.0.3
+  - jsox@1.2.121
+  - mongoose-paginate-v2@1.8.5
+  - object-to-formdata@4.5.1
+  - qs-esm@7.0.2
+  - react-datepicker@7.6.0
+  - react-select@5.9.0
+  - to-snake-case@1.0.0
+  - ts-essentials@10.0.3
+  - use-context-selector@2.0.0
+allowBuilds:
+  esbuild: true
+  sharp: true
+  unrs-resolver: true
