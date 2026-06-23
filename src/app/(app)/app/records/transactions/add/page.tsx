@@ -33,12 +33,14 @@ import {
   deleteTransaction,
   getBanks,
   getFinancialAccounts,
+  getTransactionPurposes,
   getTransactionById,
   processTransactionReceipt,
   updateTransactionWithReceipt,
   type BankOption,
   type FinancialAccountOption,
   type TransactionStatus,
+  type TransactionPurposeOption,
   type TransactionType,
 } from '../actions'
 import { generateAutoReferenceNumberBase } from '@/collections/utilities/autoReferenceNumber'
@@ -60,6 +62,7 @@ type OriginalTransactionSnapshot = {
 type TransactionFormValues = {
   transactionDate: string
   description: string
+  transactionPurpose: string | null
   particulars: string
   transactionType: TransactionType | null
   sourceAccount: string | null
@@ -151,6 +154,7 @@ export default function AddTransactionPage() {
   const isEditMode = pathname?.includes('/app/records/transactions/') && pathname?.endsWith('/edit')
   const [banks, setBanks] = useState<BankOption[]>([])
   const [financialAccounts, setFinancialAccounts] = useState<FinancialAccountOption[]>([])
+  const [transactionPurposes, setTransactionPurposes] = useState<TransactionPurposeOption[]>([])
   const [isLoading, setIsLoading] = useState(Boolean(isEditMode))
   const [isSaving, setIsSaving] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -165,6 +169,7 @@ export default function AddTransactionPage() {
     initialValues: {
       transactionDate: '',
       description: '',
+      transactionPurpose: null,
       particulars: '',
       transactionType: 'debit',
       sourceAccount: null,
@@ -181,6 +186,7 @@ export default function AddTransactionPage() {
     },
     validate: {
       transactionDate: (value) => (value ? null : 'Transaction date is required.'),
+      transactionPurpose: (value) => (value ? null : 'Purpose is required.'),
       transactionType: (value) => (value ? null : 'Transaction type is required.'),
       sourceAccount: (value) => (value ? null : 'Source bank is required.'),
       destinationAccount: (value) => (value ? null : 'Destination bank is required.'),
@@ -335,6 +341,7 @@ export default function AddTransactionPage() {
     form.setValues({
       transactionDate: tx.transactionDate ?? '',
       description: tx.description,
+      transactionPurpose: tx.transactionPurpose ?? null,
       particulars: tx.particulars ?? '',
       transactionType: tx.transactionType ?? null,
       destinationAccount: tx.destinationAccount ?? null,
@@ -478,11 +485,16 @@ export default function AddTransactionPage() {
     const load = async () => {
       setIsLoading(Boolean(isEditMode))
 
-      const [banksResult, accountsResult] = await Promise.all([getBanks(), getFinancialAccounts()])
+      const [banksResult, accountsResult, purposesResult] = await Promise.all([
+        getBanks(),
+        getFinancialAccounts(),
+        getTransactionPurposes(),
+      ])
 
       if (!isMounted) return
       if (banksResult.success) setBanks(banksResult.data)
       if (accountsResult.success) setFinancialAccounts(accountsResult.data)
+      if (purposesResult.success) setTransactionPurposes(purposesResult.data)
 
       if (!isEditMode) {
         setIsLoading(false)
@@ -511,6 +523,7 @@ export default function AddTransactionPage() {
       form.setValues({
         transactionDate: tx.transactionDate ?? '',
         description: tx.description,
+        transactionPurpose: tx.transactionPurpose ?? null,
         particulars: tx.particulars ?? '',
         transactionType: tx.transactionType ?? null,
         destinationAccount: tx.destinationAccount ?? null,
@@ -702,6 +715,8 @@ export default function AddTransactionPage() {
     if (form.values.transactionDate) formData.append('transactionDate', form.values.transactionDate)
     if (form.values.particulars.trim())
       formData.append('particulars', form.values.particulars.trim())
+    if (form.values.transactionPurpose)
+      formData.append('transactionPurpose', form.values.transactionPurpose)
     if (form.values.transactionType) formData.append('transactionType', form.values.transactionType)
     if (form.values.sourceAccount) formData.append('sourceAccount', form.values.sourceAccount)
     if (form.values.destinationAccount)
@@ -1115,7 +1130,19 @@ export default function AddTransactionPage() {
                     />
                   </Grid.Col>
                   <Grid.Col span={{ base: 12, sm: 6 }}>
-                    <NumberInput
+                    <Select
+                      label="Purpose"
+                      data={transactionPurposes.map((purpose) => ({
+                        value: purpose.id,
+                        label: purpose.name,
+                      }))}
+                      value={form.values.transactionPurpose}
+                      onChange={(value) => form.setFieldValue('transactionPurpose', value)}
+                      clearable={false}
+                      error={form.errors.transactionPurpose}
+                      required
+                    />
+                    {/* <NumberInput
                       label="Current Balance"
                       value={selectedAccountCurrentBalance}
                       min={0}
@@ -1126,7 +1153,7 @@ export default function AddTransactionPage() {
                       hideControls
                       disabled
                       placeholder="Select financial account"
-                    />
+                    /> */}
                   </Grid.Col>
                   <Grid.Col span={{ base: 12, sm: 6 }}>
                     <DateTimePicker

@@ -30,12 +30,14 @@ import {
 import {
   getBanks,
   getFinancialAccounts,
+  getTransactionPurposes,
   getTransactionsPage,
   getUserTransactionTableColumnsConfig,
   saveTransactionTableColumns,
   type BankOption,
   type FinancialAccountOption,
   type TransactionStatus,
+  type TransactionPurposeOption,
   type TransactionType,
   type TransactionListSortBy,
   type TransactionListSortOrder,
@@ -176,6 +178,7 @@ export default function TransactionsPage() {
   const initialFilterStatuses = parseCsvParam(searchParams.get('statuses')).filter(
     (value): value is TransactionStatus => value === 'completed' || value === 'failed',
   )
+  const initialFilterTransactionPurposes = parseCsvParam(searchParams.get('transactionPurposes'))
   const initialFilterSourceAccounts = parseCsvParam(searchParams.get('sourceAccounts'))
   const initialFilterDestinationAccounts = parseCsvParam(searchParams.get('destinationAccounts'))
   const initialStartDate = searchParams.get('startDate')?.trim() || null
@@ -199,6 +202,7 @@ export default function TransactionsPage() {
   const [items, setItems] = useState<TransactionListItem[]>([])
   const [banks, setBanks] = useState<BankOption[]>([])
   const [financialAccounts, setFinancialAccounts] = useState<FinancialAccountOption[]>([])
+  const [transactionPurposes, setTransactionPurposes] = useState<TransactionPurposeOption[]>([])
   const [isBootstrapping, setIsBootstrapping] = useState(true)
   const [search, setSearch] = useState(initialSearch)
   const [debouncedSearch, setDebouncedSearch] = useState(initialSearch)
@@ -209,6 +213,9 @@ export default function TransactionsPage() {
   )
   const [filterTypes, setFilterTypes] = useState<string[]>(initialFilterTypes)
   const [filterStatuses, setFilterStatuses] = useState<string[]>(initialFilterStatuses)
+  const [filterTransactionPurposes, setFilterTransactionPurposes] = useState<string[]>(
+    initialFilterTransactionPurposes,
+  )
   const [filterSourceAccounts, setFilterSourceAccounts] = useState<string[]>(
     initialFilterSourceAccounts,
   )
@@ -272,8 +279,9 @@ export default function TransactionsPage() {
     let isMounted = true
 
     const loadInitial = async () => {
-      const [banksResult, savedColumnsResult] = await Promise.all([
+      const [banksResult, purposesResult, savedColumnsResult] = await Promise.all([
         getBanks(),
+        getTransactionPurposes(),
         getUserTransactionTableColumnsConfig(),
       ])
 
@@ -281,6 +289,10 @@ export default function TransactionsPage() {
 
       if (banksResult.success) {
         setBanks(banksResult.data)
+      }
+
+      if (purposesResult.success) {
+        setTransactionPurposes(purposesResult.data)
       }
 
       // Initialize table columns: URL params > saved config > defaults
@@ -358,6 +370,7 @@ export default function TransactionsPage() {
         filterFinancialAccount,
         filterSourceAccounts: [...filterSourceAccounts].sort(),
         filterStatuses: [...filterStatuses].sort(),
+        filterTransactionPurposes: [...filterTransactionPurposes].sort(),
         filterTypes: [...filterTypes].sort(),
         sortBy,
         sortOrder,
@@ -368,6 +381,7 @@ export default function TransactionsPage() {
       filterFinancialAccount,
       filterSourceAccounts,
       filterStatuses,
+      filterTransactionPurposes,
       filterTypes,
       sortBy,
       sortOrder,
@@ -397,6 +411,7 @@ export default function TransactionsPage() {
       pageSize: 10,
       search: debouncedSearch,
       financialAccountId: filterFinancialAccount || null,
+      transactionPurposeIds: [...filterTransactionPurposes].sort(),
       transactionTypes: [...filterTypes]
         .filter((value): value is TransactionType => value === 'debit' || value === 'credit')
         .sort(),
@@ -418,6 +433,7 @@ export default function TransactionsPage() {
       filterFinancialAccount,
       filterSourceAccounts,
       filterStatuses,
+      filterTransactionPurposes,
       filterTypes,
       sortBy,
       sortOrder,
@@ -495,6 +511,10 @@ export default function TransactionsPage() {
     if (statusValues.length > 0) params.set('statuses', statusValues.join(','))
     else params.delete('statuses')
 
+    const purposeValues = [...filterTransactionPurposes].filter(Boolean).sort()
+    if (purposeValues.length > 0) params.set('transactionPurposes', purposeValues.join(','))
+    else params.delete('transactionPurposes')
+
     const sourceValues = [...filterSourceAccounts].filter(Boolean).sort()
     if (sourceValues.length > 0) params.set('sourceAccounts', sourceValues.join(','))
     else params.delete('sourceAccounts')
@@ -529,6 +549,7 @@ export default function TransactionsPage() {
     filterFinancialAccount,
     filterSourceAccounts,
     filterStatuses,
+    filterTransactionPurposes,
     filterTypes,
     isBootstrapping,
     router,
@@ -638,6 +659,17 @@ export default function TransactionsPage() {
     [banks],
   )
 
+  const transactionPurposeOptions = useMemo(
+    () =>
+      transactionPurposes
+        .map((purpose) => ({
+          value: purpose.id,
+          label: purpose.name,
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
+    [transactionPurposes],
+  )
+
   const destinationAccountOptions = useMemo(
     () =>
       banks
@@ -716,6 +748,7 @@ export default function TransactionsPage() {
   const activeFilterCount =
     filterTypes.length +
     filterStatuses.length +
+    filterTransactionPurposes.length +
     filterSourceAccounts.length +
     filterDestinationAccounts.length +
     (filterDateRange[0] || filterDateRange[1] ? 1 : 0)
@@ -808,6 +841,18 @@ export default function TransactionsPage() {
         key: 'financialAccount',
         label: 'Financial account',
         render: (row) => row.parent.financialAccountName || '-',
+      },
+      transactionPurpose: {
+        key: 'transactionPurpose',
+        label: 'Transaction purpose',
+        render: (row) => {
+          if (!row.parent.transactionPurposeName) return '-'
+          return (
+            <Badge color="cyan" variant="light" tt="capitalize">
+              {row.parent.transactionPurposeName}
+            </Badge>
+          )
+        },
       },
       from: {
         key: 'from',
@@ -1055,7 +1100,7 @@ export default function TransactionsPage() {
                   gap="sm"
                   justify="space-between"
                 >
-                  <Grid.Col span={{ base: 12, sm: 6, lg: 4 }}>
+                  <Grid.Col span={{ base: 12, sm: 6, lg: 3 }}>
                     <MultiSelect
                       label="Type"
                       placeholder="All types"
@@ -1074,7 +1119,7 @@ export default function TransactionsPage() {
                       clearable
                     />
                   </Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 6, lg: 4 }}>
+                  <Grid.Col span={{ base: 12, sm: 6, lg: 3 }}>
                     <MultiSelect
                       label="Status"
                       placeholder="All statuses"
@@ -1093,7 +1138,24 @@ export default function TransactionsPage() {
                       clearable
                     />
                   </Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 6, lg: 4 }}>
+                  <Grid.Col span={{ base: 12, sm: 6, lg: 3 }}>
+                    <MultiSelect
+                      label="Purpose"
+                      placeholder="All purposes"
+                      data={transactionPurposeOptions}
+                      value={filterTransactionPurposes}
+                      onChange={(nextValues) => {
+                        setFilterTransactionPurposes(nextValues)
+                        setOpenMultiSelect(null)
+                      }}
+                      dropdownOpened={openMultiSelect === 'transactionPurpose'}
+                      onDropdownOpen={() => setOpenMultiSelect('transactionPurpose')}
+                      onDropdownClose={() => setOpenMultiSelect(null)}
+                      clearable
+                      searchable
+                    />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 6, lg: 3 }}>
                     <DatePickerInput
                       type="range"
                       label="Date Range"
@@ -1152,6 +1214,7 @@ export default function TransactionsPage() {
                       onClick={() => {
                         setFilterTypes([])
                         setFilterStatuses([])
+                        setFilterTransactionPurposes([])
                         setFilterSourceAccounts([])
                         setFilterDestinationAccounts([])
                         setDatePickerRange([null, null])

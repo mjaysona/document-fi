@@ -41,6 +41,7 @@ import Quotes from './src/collections/Quotes'
 import Banks from './src/collections/Banks'
 import FinancialAccounts from './src/collections/FinancialAccounts'
 import Transactions from './src/collections/Transactions'
+import TransactionPurposes from './src/collections/TransactionPurposes'
 import TransactionReceipts from './src/collections/TransactionReceipts'
 import UserConfigurations from './src/collections/UserConfigurations'
 
@@ -79,6 +80,7 @@ export default buildConfig({
     WeightBills,
     Banks,
     FinancialAccounts,
+    TransactionPurposes,
     Transactions,
     TransactionReceipts,
     UserConfigurations,

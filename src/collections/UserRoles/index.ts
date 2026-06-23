@@ -24,6 +24,7 @@ const configurableCollections = [
   'sessions',
   'session-uploads',
   'transactions',
+  'transaction-purposes',
   'transaction-receipts',
   'users',
   'user-preferences',

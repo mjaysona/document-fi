@@ -37,10 +37,17 @@ export type FinancialAccountOption = {
   allocatedFunds?: number
 }
 
+export type TransactionPurposeOption = {
+  id: string
+  name: string
+}
+
 export type TransactionListItem = {
   receiptImage?: { url?: string }
   id: string
   description: string
+  transactionPurposeId?: string
+  transactionPurposeName?: string
   particulars?: string
   transactionType?: TransactionType
   financialAccountId?: string
@@ -80,6 +87,7 @@ export type GetTransactionsPageParams = {
   pageSize?: number
   search?: string
   financialAccountId?: string | null
+  transactionPurposeIds?: string[]
   transactionTypes?: TransactionType[]
   transactionStatuses?: TransactionStatus[]
   sourceAccountIds?: string[]
@@ -107,6 +115,7 @@ export type TransactionFormInput = {
   allocatedFundType?: 'completed' | 'returned' | null // <--- fix type
   transactionDate?: string
   description: string
+  transactionPurpose?: string | null
   particulars?: string
   transactionType?: TransactionType | null
   sourceAccount?: string
@@ -559,6 +568,7 @@ function mapTransactionInput(
   return {
     transactionDate: normalizeTransactionDate(input.transactionDate),
     description: input.description.trim(),
+    transactionPurpose: input.transactionPurpose || undefined,
     particulars: input.particulars?.trim() || undefined,
     transactionType: input.transactionType,
     sourceAccount: input.sourceAccount || undefined,
@@ -677,6 +687,33 @@ export async function getFinancialAccounts(): Promise<{
   }
 }
 
+export async function getTransactionPurposes(): Promise<{
+  success: boolean
+  data: TransactionPurposeOption[]
+  error?: string
+}> {
+  try {
+    const payload = await getPayload({ config })
+    const result = await payload.find({
+      collection: 'transaction-purposes',
+      sort: 'name',
+      limit: 200,
+      depth: 0,
+    })
+
+    return {
+      success: true,
+      data: (result.docs as any[]).map((doc) => ({
+        id: String(doc.id),
+        name: String(doc.name || ''),
+      })),
+    }
+  } catch (error) {
+    console.error('Failed to fetch transaction purposes:', error)
+    return { success: false, data: [], error: 'Failed to load transaction purposes.' }
+  }
+}
+
 export async function getTransactions(where?: Record<string, unknown>): Promise<{
   success: boolean
   data: TransactionListItem[]
@@ -697,6 +734,18 @@ export async function getTransactions(where?: Record<string, unknown>): Promise<
       data: (result.docs as any[]).map((doc) => ({
         id: String(doc.id),
         description: String(doc.description || ''),
+        transactionPurposeId:
+          doc.transactionPurpose && typeof doc.transactionPurpose === 'object'
+            ? String(doc.transactionPurpose.id)
+            : doc.transactionPurpose
+              ? String(doc.transactionPurpose)
+              : undefined,
+        transactionPurposeName:
+          doc.transactionPurpose &&
+          typeof doc.transactionPurpose === 'object' &&
+          doc.transactionPurpose.name
+            ? String(doc.transactionPurpose.name)
+            : undefined,
         particulars: doc.particulars ? String(doc.particulars) : undefined,
         transactionType: normalizeTransactionType(doc.transactionType),
         financialAccountId:
@@ -822,6 +871,16 @@ export async function getAllTransactionsForFinancialAccount(financialAccountId: 
 const mapTransactionDocToListItem = (doc: any): TransactionListItem => ({
   id: String(doc.id),
   description: String(doc.description || ''),
+  transactionPurposeId:
+    doc.transactionPurpose && typeof doc.transactionPurpose === 'object'
+      ? String(doc.transactionPurpose.id)
+      : doc.transactionPurpose
+        ? String(doc.transactionPurpose)
+        : undefined,
+  transactionPurposeName:
+    doc.transactionPurpose && typeof doc.transactionPurpose === 'object' && doc.transactionPurpose.name
+      ? String(doc.transactionPurpose.name)
+      : undefined,
   particulars: doc.particulars ? String(doc.particulars) : undefined,
   transactionType: normalizeTransactionType(doc.transactionType),
   financialAccountId:
@@ -952,6 +1011,21 @@ export async function getTransactionsPage(
       whereAnd.push({
         transactionType: {
           in: typeFilters,
+        },
+      })
+    }
+
+    const transactionPurposeIds = Array.from(
+      new Set(
+        (params.transactionPurposeIds || [])
+          .map((value) => String(value || '').trim())
+          .filter(Boolean),
+      ),
+    )
+    if (transactionPurposeIds.length > 0) {
+      whereAnd.push({
+        transactionPurpose: {
+          in: transactionPurposeIds,
         },
       })
     }
@@ -1265,6 +1339,7 @@ export async function saveTransactionTableColumns(columns: string[]): Promise<{
       'sourceAccount',
       'destinationAccount',
       'financialAccount',
+      'transactionPurpose',
       'from',
       'to',
       'referenceNumber',
@@ -1365,6 +1440,7 @@ export async function saveTransactionPreviewTableColumns(columns: string[]): Pro
       'sourceAccount',
       'destinationAccount',
       'financialAccount',
+      'transactionPurpose',
       'from',
       'to',
       'referenceNumber',
@@ -1576,6 +1652,7 @@ export async function createTransactionWithReceipt(formData: FormData): Promise<
     const createResult = await createTransaction({
       transactionDate: String(formData.get('transactionDate') || '').trim() || undefined,
       description,
+      transactionPurpose: String(formData.get('transactionPurpose') || '').trim() || undefined,
       particulars: String(formData.get('particulars') || '').trim() || undefined,
       transactionType: normalizeTransactionType(formData.get('transactionType')),
       sourceAccount: String(formData.get('sourceAccount') || '').trim() || undefined,
@@ -1678,6 +1755,12 @@ export async function getTransactionById(id: string): Promise<{
           ? String((doc as any).transactionDate)
           : undefined,
         description: String((doc as any).description || ''),
+        transactionPurpose:
+          (doc as any).transactionPurpose && typeof (doc as any).transactionPurpose === 'object'
+            ? String((doc as any).transactionPurpose.id)
+            : (doc as any).transactionPurpose
+              ? String((doc as any).transactionPurpose)
+              : undefined,
         particulars: (doc as any).particulars ? String((doc as any).particulars) : undefined,
         transactionType: normalizeTransactionType((doc as any).transactionType),
         sourceAccount:
@@ -1899,6 +1982,7 @@ export async function updateTransactionWithReceipt(
     return await updateTransaction(id, {
       transactionDate: String(formData.get('transactionDate') || '').trim() || undefined,
       description: String(formData.get('description') || '').trim(),
+      transactionPurpose: String(formData.get('transactionPurpose') || '').trim() || undefined,
       particulars: String(formData.get('particulars') || '').trim() || undefined,
       transactionType: normalizeTransactionType(formData.get('transactionType')),
       sourceAccount: String(formData.get('sourceAccount') || '').trim() || undefined,

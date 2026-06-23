@@ -6,6 +6,7 @@ export const TRANSACTION_REPORT_COLUMN_OPTIONS = [
   { value: 'sourceAccount', label: 'Source Bank' },
   { value: 'destinationAccount', label: 'Destination Bank' },
   { value: 'financialAccount', label: 'Financial Account' },
+  { value: 'transactionPurpose', label: 'Transaction Purpose' },
   { value: 'from', label: 'From' },
   { value: 'to', label: 'To' },
   { value: 'sender', label: 'Sender' },

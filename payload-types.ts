@@ -77,6 +77,7 @@ export interface Config {
     'weight-bills': WeightBill;
     banks: Bank;
     'financial-accounts': FinancialAccount;
+    'transaction-purposes': TransactionPurpose;
     transactions: Transaction;
     'transaction-receipts': TransactionReceipt;
     'user-configurations': UserConfiguration;
@@ -105,6 +106,7 @@ export interface Config {
     'weight-bills': WeightBillsSelect<false> | WeightBillsSelect<true>;
     banks: BanksSelect<false> | BanksSelect<true>;
     'financial-accounts': FinancialAccountsSelect<false> | FinancialAccountsSelect<true>;
+    'transaction-purposes': TransactionPurposesSelect<false> | TransactionPurposesSelect<true>;
     transactions: TransactionsSelect<false> | TransactionsSelect<true>;
     'transaction-receipts': TransactionReceiptsSelect<false> | TransactionReceiptsSelect<true>;
     'user-configurations': UserConfigurationsSelect<false> | UserConfigurationsSelect<true>;
@@ -448,6 +450,16 @@ export interface Media {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "transaction-purposes".
+ */
+export interface TransactionPurpose {
+  id: string;
+  name: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "transactions".
  */
 export interface Transaction {
@@ -458,6 +470,7 @@ export interface Transaction {
   allocatedFundType?: ('completed' | 'returned') | null;
   transactionDate?: string | null;
   description?: string | null;
+  transactionPurpose?: (string | null) | TransactionPurpose;
   particulars?: string | null;
   transactionType: 'debit' | 'credit';
   sourceAccount?: (string | null) | Bank;
@@ -560,6 +573,7 @@ export interface UserConfiguration {
           | 'allocatedFundType'
           | 'transactionDate'
           | 'description'
+          | 'transactionPurpose'
           | 'particulars'
           | 'transactionType'
           | 'sourceAccount'
@@ -596,6 +610,7 @@ export interface UserConfiguration {
           | 'allocatedFundType'
           | 'transactionDate'
           | 'description'
+          | 'transactionPurpose'
           | 'particulars'
           | 'transactionType'
           | 'sourceAccount'
@@ -800,6 +815,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'financial-accounts';
         value: string | FinancialAccount;
+      } | null)
+    | ({
+        relationTo: 'transaction-purposes';
+        value: string | TransactionPurpose;
       } | null)
     | ({
         relationTo: 'transactions';
@@ -1068,12 +1087,22 @@ export interface FinancialAccountsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "transaction-purposes_select".
+ */
+export interface TransactionPurposesSelect<T extends boolean = true> {
+  name?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "transactions_select".
  */
 export interface TransactionsSelect<T extends boolean = true> {
   allocatedFundType?: T;
   transactionDate?: T;
   description?: T;
+  transactionPurpose?: T;
   particulars?: T;
   transactionType?: T;
   sourceAccount?: T;

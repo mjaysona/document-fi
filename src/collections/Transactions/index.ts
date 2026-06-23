@@ -413,6 +413,12 @@ const Transactions: CollectionConfig = {
       type: 'text',
     },
     {
+      name: 'transactionPurpose',
+      label: 'Transaction purpose',
+      type: 'relationship',
+      relationTo: 'transaction-purposes',
+    },
+    {
       name: 'particulars',
       label: 'Particulars',
       type: 'textarea',
