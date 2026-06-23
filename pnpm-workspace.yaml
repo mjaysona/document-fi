@@ -36,6 +36,20 @@ minimumReleaseAgeExclude:
   - to-snake-case@1.0.0
   - ts-essentials@10.0.3
   - use-context-selector@2.0.0
+  - '@aws-sdk/client-s3@3.1073.0'
+  - '@aws-sdk/lib-storage@3.1073.0'
+  - '@aws-sdk/middleware-flexible-checksums@3.974.32'
+  - '@aws-sdk/middleware-sdk-s3@3.972.53'
+  - '@aws-sdk/s3-request-presigner@3.1073.0'
+  - '@mongodb-js/saslprep@1.4.10'
+  - '@next/env@15.5.19'
+  - happy-dom@20.10.5
+  - md-to-react-email@5.0.6
+  - monaco-editor@0.55.1
+  - react-error-boundary@6.1.2
+  - react-phone-number-input@3.4.17
+  - strtok3@8.0.5
+  - tabbable@6.5.0
 allowBuilds:
   esbuild: true
   sharp: true
