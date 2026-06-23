@@ -285,6 +285,12 @@ function parseConfidenceValue(value: FormDataEntryValue | null): number | undefi
   return Math.max(0, Math.min(100, parsed))
 }
 
+function parseRelationshipValue(value: FormDataEntryValue | null): string | null {
+  if (typeof value !== 'string') return null
+  const normalized = value.trim()
+  return normalized || null
+}
+
 async function isReferenceNumberTaken(args: {
   payload: Awaited<ReturnType<typeof getPayload>>
   referenceNumber?: string
@@ -568,7 +574,7 @@ function mapTransactionInput(
   return {
     transactionDate: normalizeTransactionDate(input.transactionDate),
     description: input.description.trim(),
-    transactionPurpose: input.transactionPurpose || undefined,
+    transactionPurpose: input.transactionPurpose || null,
     particulars: input.particulars?.trim() || undefined,
     transactionType: input.transactionType,
     sourceAccount: input.sourceAccount || undefined,
@@ -1652,7 +1658,7 @@ export async function createTransactionWithReceipt(formData: FormData): Promise<
     const createResult = await createTransaction({
       transactionDate: String(formData.get('transactionDate') || '').trim() || undefined,
       description,
-      transactionPurpose: String(formData.get('transactionPurpose') || '').trim() || undefined,
+      transactionPurpose: parseRelationshipValue(formData.get('transactionPurpose')),
       particulars: String(formData.get('particulars') || '').trim() || undefined,
       transactionType: normalizeTransactionType(formData.get('transactionType')),
       sourceAccount: String(formData.get('sourceAccount') || '').trim() || undefined,
@@ -1982,7 +1988,7 @@ export async function updateTransactionWithReceipt(
     return await updateTransaction(id, {
       transactionDate: String(formData.get('transactionDate') || '').trim() || undefined,
       description: String(formData.get('description') || '').trim(),
-      transactionPurpose: String(formData.get('transactionPurpose') || '').trim() || undefined,
+      transactionPurpose: parseRelationshipValue(formData.get('transactionPurpose')),
       particulars: String(formData.get('particulars') || '').trim() || undefined,
       transactionType: normalizeTransactionType(formData.get('transactionType')),
       sourceAccount: String(formData.get('sourceAccount') || '').trim() || undefined,

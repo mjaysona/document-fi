@@ -186,7 +186,6 @@ export default function AddTransactionPage() {
     },
     validate: {
       transactionDate: (value) => (value ? null : 'Transaction date is required.'),
-      transactionPurpose: (value) => (value ? null : 'Purpose is required.'),
       transactionType: (value) => (value ? null : 'Transaction type is required.'),
       sourceAccount: (value) => (value ? null : 'Source bank is required.'),
       destinationAccount: (value) => (value ? null : 'Destination bank is required.'),
@@ -715,8 +714,7 @@ export default function AddTransactionPage() {
     if (form.values.transactionDate) formData.append('transactionDate', form.values.transactionDate)
     if (form.values.particulars.trim())
       formData.append('particulars', form.values.particulars.trim())
-    if (form.values.transactionPurpose)
-      formData.append('transactionPurpose', form.values.transactionPurpose)
+    formData.append('transactionPurpose', form.values.transactionPurpose ?? '')
     if (form.values.transactionType) formData.append('transactionType', form.values.transactionType)
     if (form.values.sourceAccount) formData.append('sourceAccount', form.values.sourceAccount)
     if (form.values.destinationAccount)
@@ -1138,9 +1136,8 @@ export default function AddTransactionPage() {
                       }))}
                       value={form.values.transactionPurpose}
                       onChange={(value) => form.setFieldValue('transactionPurpose', value)}
-                      clearable={false}
+                      clearable
                       error={form.errors.transactionPurpose}
-                      required
                     />
                     {/* <NumberInput
                       label="Current Balance"
