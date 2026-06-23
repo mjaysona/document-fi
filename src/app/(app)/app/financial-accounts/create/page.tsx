@@ -19,7 +19,7 @@ import {
   Image,
 } from '@mantine/core'
 import { Dropzone } from '@mantine/dropzone'
-import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from 'react-image-crop'
+import ReactCrop from 'react-image-crop'
 import 'react-image-crop/dist/ReactCrop.css'
 import { Modal } from '@mantine/core'
 import getCroppedImg from './utils/cropImage'
@@ -35,6 +35,14 @@ import {
 import { Ban, CheckCircle, Upload } from 'lucide-react'
 
 type Feedback = { type: 'success' | 'error'; message: string }
+
+type Crop = {
+  x: number
+  y: number
+  width: number
+  height: number
+  unit: 'px' | '%'
+}
 
 type LogoKind = 'primary' | 'brandmark'
 
