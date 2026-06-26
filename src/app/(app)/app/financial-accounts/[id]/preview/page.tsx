@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Stack, ActionIcon, Title, Flex, Grid, GridCol, Card } from '@mantine/core'
+import { Stack, ActionIcon, Title, Flex } from '@mantine/core'
 import { ArrowLeft } from 'lucide-react'
 import { getFinancialAccountById } from '../../actions'
 import {
@@ -10,14 +10,8 @@ import {
 import { buildTransactionReportData } from './reportData'
 import { PrintButton } from './PrintButton'
 import { DateRangeFilter } from './DateRangeFilter'
-import { ReportColumnsFilter } from './ReportColumnsFilter'
-import { ReportSectionsFilter } from './ReportSectionsFilter'
 import { ShareButton } from './ShareButton'
-import { StartingBalanceFilter } from '@/app/(app)/app/financial-accounts/[id]/preview/StartingBalanceFilter'
-import {
-  TransactionTypeFilter,
-  type TransactionTypeFilterValue,
-} from '@/app/(app)/app/financial-accounts/[id]/preview/TransactionTypeFilter'
+import { type TransactionTypeFilterValue } from '@/app/(app)/app/financial-accounts/[id]/preview/TransactionTypeFilter'
 import {
   DEFAULT_TRANSACTION_REPORT_COLUMNS,
   TRANSACTION_REPORT_COLUMN_OPTIONS,
@@ -26,6 +20,7 @@ import {
 import { parseReportSections } from './reportSections'
 import styles from './page.module.scss'
 import { TransactionReportDocument } from '@/app/(app)/app/financial-accounts/[id]/preview/components/TransactionReportDocument'
+import { PreviewControlPanels } from './PreviewControlPanels'
 
 const REPORT_COLUMN_KEY_SET = new Set<TransactionReportColumnKey>(
   TRANSACTION_REPORT_COLUMN_OPTIONS.map((option) => option.value),
@@ -202,24 +197,12 @@ export default async function FinancialAccountPreviewPage({ params, searchParams
           <ShareButton />
         </Flex>
       </Flex>
-      <Card withBorder radius="sm" p="xs">
-        <Grid>
-          <GridCol span={{ base: 12, xs: 6, md: 3 }}>
-            <StartingBalanceFilter initialStartingBalance={sb} />
-          </GridCol>
-          <GridCol span={{ base: 12, xs: 6, md: 3 }}>
-            <TransactionTypeFilter initialTransactionType={transactionTypeFilter} />
-          </GridCol>
-          <GridCol span={{ base: 12, xs: 12, md: 6 }}>
-            <ReportSectionsFilter initialSections={visibleReportSections} />
-          </GridCol>
-        </Grid>
-      </Card>
-      <Grid>
-        <GridCol span={12}>
-          <ReportColumnsFilter initialColumns={visibleColumns} />
-        </GridCol>
-      </Grid>
+      <PreviewControlPanels
+        initialStartingBalance={sb}
+        initialTransactionType={transactionTypeFilter}
+        initialSections={visibleReportSections}
+        initialColumns={visibleColumns}
+      />
       <div className={styles['print-area__wrapper']}>
         <div className={styles['print-area']}>
           <TransactionReportDocument
