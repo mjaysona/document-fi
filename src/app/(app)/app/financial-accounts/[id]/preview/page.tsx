@@ -1,16 +1,20 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Stack, ActionIcon, Title, Flex } from '@mantine/core'
+import { Stack, ActionIcon, Title, Flex, Group, Box } from '@mantine/core'
 import { ArrowLeft } from 'lucide-react'
 import { getFinancialAccountById } from '../../actions'
 import {
+  getBanks,
+  getTransactionPurposes,
   getAllTransactionsForFinancialAccount,
   getUserTransactionPreviewTableColumnsConfig,
+  type TransactionStatus,
 } from '../../../records/transactions/actions'
 import { buildTransactionReportData } from './reportData'
 import { PrintButton } from './PrintButton'
 import { DateRangeFilter } from './DateRangeFilter'
 import { ShareButton } from './ShareButton'
+import { StartingBalanceFilter } from './StartingBalanceFilter'
 import { type TransactionTypeFilterValue } from '@/app/(app)/app/financial-accounts/[id]/preview/TransactionTypeFilter'
 import {
   DEFAULT_TRANSACTION_REPORT_COLUMNS,
@@ -51,7 +55,18 @@ type Props = {
     sb?: string
     tt?: string
     sections?: string
+    statuses?: string
+    transactionPurposes?: string
+    sourceAccounts?: string
+    destinationAccounts?: string
   }>
+}
+
+const parseCsvParam = (value?: string | null): string[] => {
+  return String(value || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
 }
 
 const parseTransactionTypeFilter = (value?: string): TransactionTypeFilterValue => {
@@ -101,12 +116,16 @@ const toLocalDateOnly = (date: Date): string => {
 
 export default async function FinancialAccountPreviewPage({ params, searchParams }: Props) {
   const { id } = await params
-  const { logoUrl, from, to, cols, sb, tt, sections } = await searchParams
+  const { logoUrl, from, to, cols, sb, tt, sections, statuses, transactionPurposes, sourceAccounts, destinationAccounts } =
+    await searchParams
 
-  const [accountResult, transactionsResult, previewColumnsResult] = await Promise.all([
+  const [accountResult, transactionsResult, previewColumnsResult, banksResult, purposesResult] =
+    await Promise.all([
     getFinancialAccountById(id),
     getAllTransactionsForFinancialAccount(id),
     getUserTransactionPreviewTableColumnsConfig(),
+    getBanks(),
+    getTransactionPurposes(),
   ])
 
   const normalizedColsParam = String(cols || '').trim()
@@ -127,13 +146,37 @@ export default async function FinancialAccountPreviewPage({ params, searchParams
   const hasCustomStartingBalance = customStartingBalance !== null
   const transactionTypeFilter = parseTransactionTypeFilter(tt)
   const visibleReportSections = parseReportSections(sections)
+  const initialFilterStatuses = parseCsvParam(statuses).filter(
+    (value): value is TransactionStatus => value === 'completed' || value === 'failed',
+  )
+  const initialFilterTransactionPurposes = parseCsvParam(transactionPurposes)
+  const initialFilterSourceAccounts = parseCsvParam(sourceAccounts)
+  const initialFilterDestinationAccounts = parseCsvParam(destinationAccounts)
+
+  const transactionPurposeOptions = purposesResult.success
+    ? purposesResult.data
+        .map((purpose) => ({ value: purpose.id, label: purpose.name }))
+        .sort((a, b) => a.label.localeCompare(b.label))
+    : []
+
+  const bankOptions = banksResult.success
+    ? banksResult.data
+        .map((bank) => ({
+          value: bank.id,
+          label:
+            bank.name && bank.shortName
+              ? `${bank.name} (${bank.shortName})`
+              : bank.name || bank.shortName || bank.code || bank.id,
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label))
+    : []
 
   if (fromDate && toDate && fromDate.getTime() > toDate.getTime()) {
     ;[fromDate, toDate] = [toDate, fromDate]
   }
 
   const hasDateRange = fromDate || toDate
-  const accountTransactions = hasDateRange
+  const dateFilteredTransactions = hasDateRange
     ? allTransactions.filter((item) => {
         const transactionDate = parseTransactionDate(item.transactionDate)
         if (!transactionDate) return false
@@ -143,6 +186,38 @@ export default async function FinancialAccountPreviewPage({ params, searchParams
         return true
       })
     : []
+
+  const accountTransactions = dateFilteredTransactions.filter((item) => {
+    if (
+      initialFilterStatuses.length > 0 &&
+      !initialFilterStatuses.includes(item.transactionStatus || 'failed')
+    ) {
+      return false
+    }
+
+    if (
+      initialFilterTransactionPurposes.length > 0 &&
+      !initialFilterTransactionPurposes.includes(item.transactionPurposeId || '')
+    ) {
+      return false
+    }
+
+    if (
+      initialFilterSourceAccounts.length > 0 &&
+      !initialFilterSourceAccounts.includes(item.sourceAccountId || '')
+    ) {
+      return false
+    }
+
+    if (
+      initialFilterDestinationAccounts.length > 0 &&
+      !initialFilterDestinationAccounts.includes(item.destinationAccountId || '')
+    ) {
+      return false
+    }
+
+    return true
+  })
 
   const report = buildTransactionReportData({
     header: {
@@ -192,7 +267,6 @@ export default async function FinancialAccountPreviewPage({ params, searchParams
           justify="flex-end"
           style={{ flexShrink: 0 }}
         >
-          <DateRangeFilter logoUrl={logoUrl} initialFrom={from} initialTo={to} />
           <PrintButton />
           <ShareButton />
         </Flex>
@@ -202,6 +276,18 @@ export default async function FinancialAccountPreviewPage({ params, searchParams
         initialTransactionType={transactionTypeFilter}
         initialSections={visibleReportSections}
         initialColumns={visibleColumns}
+        initialStatuses={initialFilterStatuses}
+        initialTransactionPurposes={initialFilterTransactionPurposes}
+        initialSourceAccounts={initialFilterSourceAccounts}
+        initialDestinationAccounts={initialFilterDestinationAccounts}
+        transactionPurposeOptions={transactionPurposeOptions}
+        bankOptions={bankOptions}
+        toolbarLeft={
+          <Group gap="xs" wrap="wrap">
+            <DateRangeFilter logoUrl={logoUrl} initialFrom={from} initialTo={to} />
+            <StartingBalanceFilter initialStartingBalance={sb} />
+          </Group>
+        }
       />
       <div className={styles['print-area__wrapper']}>
         <div className={styles['print-area']}>

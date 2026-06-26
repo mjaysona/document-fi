@@ -129,9 +129,9 @@ export function DateRangeFilter({ logoUrl, initialFrom, initialTo }: DateRangeFi
 
   return (
     <DatePickerInput
-      w={{ base: '100%', md: 'auto' }}
       leftSection={<CalendarSearch size={16} />}
       allowSingleDateInRange
+      label="Date range"
       type="range"
       placeholder="Date range"
       value={range}
