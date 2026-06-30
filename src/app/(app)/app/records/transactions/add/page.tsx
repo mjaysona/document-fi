@@ -318,11 +318,16 @@ export default function AddTransactionPage() {
       Math.min(receiptPreviewAttempt, Math.max(0, receiptPreviewCandidates.length - 1))
     ]
 
-  const markTransactionListStale = () => {
-    // Remove all cached list variants so next list visit loads fresh data.
-    queryClient.removeQueries({ queryKey: ['transactions-page'] })
-    // Related balances/options may have changed after transaction mutations.
-    void queryClient.invalidateQueries({ queryKey: ['financial-accounts-options'] })
+  const markTransactionListStale = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['transactions-page'] }),
+      queryClient.invalidateQueries({ queryKey: ['financial-accounts-options'] }),
+    ])
+
+    await Promise.all([
+      queryClient.refetchQueries({ queryKey: ['transactions-page'] }),
+      queryClient.refetchQueries({ queryKey: ['financial-accounts-options'] }),
+    ])
   }
 
   useEffect(() => {
@@ -801,7 +806,7 @@ export default function AddTransactionPage() {
       const result = await updateTransactionWithReceipt(transactionId, formData)
 
       if (result.success) {
-        markTransactionListStale()
+        await markTransactionListStale()
         setPendingReceiptFile(null)
         setFeedback({ type: 'success', message: 'Transaction updated.' })
         await hydrateFromTransaction()
@@ -818,7 +823,7 @@ export default function AddTransactionPage() {
       const result = await createTransactionWithReceipt(formData)
 
       if (result.success && result.id) {
-        markTransactionListStale()
+        await markTransactionListStale()
         setFeedback({ type: 'success', message: 'Transaction created successfully.' })
         // Wait a moment to show the success message before redirecting
         await new Promise((resolve) => setTimeout(resolve, 800))
@@ -864,7 +869,7 @@ export default function AddTransactionPage() {
       const result = await updateTransactionWithReceipt(transactionId, formData)
 
       if (result.success) {
-        markTransactionListStale()
+        await markTransactionListStale()
         setPendingReceiptFile(null)
         setFeedback({ type: 'success', message: 'Transaction updated.' })
         router.push(
@@ -884,7 +889,7 @@ export default function AddTransactionPage() {
       const result = await createTransactionWithReceipt(formData)
 
       if (result.success && result.id) {
-        markTransactionListStale()
+        await markTransactionListStale()
         setFeedback({ type: 'success', message: 'Transaction created successfully.' })
         // Wait a moment to show the success message before redirecting
         await new Promise((resolve) => setTimeout(resolve, 800))
@@ -918,7 +923,7 @@ export default function AddTransactionPage() {
 
     const result = await deleteTransaction(transactionId)
     if (result.success) {
-      markTransactionListStale()
+      await markTransactionListStale()
       router.push('/app/records/transactions')
       return
     }
