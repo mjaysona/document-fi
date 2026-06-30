@@ -7,12 +7,15 @@ import { Filter, Settings } from 'lucide-react'
 import { useMediaQuery } from '@mantine/hooks'
 import { ReportColumnsFilter } from './ReportColumnsFilter'
 import { ReportSectionsFilter } from './ReportSectionsFilter'
+import { TransactionTypeFilter, type TransactionTypeFilterValue } from './TransactionTypeFilter'
 import {
-  TransactionTypeFilter,
-  type TransactionTypeFilterValue,
-} from './TransactionTypeFilter'
-import { DEFAULT_REPORT_SECTIONS, normalizeReportSections, type ReportSectionKey } from './reportSections'
+  DEFAULT_REPORT_SECTIONS,
+  normalizeReportSections,
+  type ReportSectionKey,
+} from './reportSections'
 import type { TransactionReportColumnKey } from './columns'
+import { ShareButton } from '@/app/(app)/app/financial-accounts/[id]/preview/ShareButton'
+import { PrintButton } from '@/app/(app)/app/records/quotations/[id]/preview/PrintButton'
 
 type Option = {
   value: string
@@ -153,7 +156,8 @@ export function PreviewControlPanels({
     else params.delete('sourceAccounts')
 
     const serializedDestinationAccounts = serializeCsv(nextDestinationAccounts)
-    if (serializedDestinationAccounts) params.set('destinationAccounts', serializedDestinationAccounts)
+    if (serializedDestinationAccounts)
+      params.set('destinationAccounts', serializedDestinationAccounts)
     else params.delete('destinationAccounts')
 
     const query = params.toString()
@@ -197,6 +201,8 @@ export function PreviewControlPanels({
           >
             <Settings size={16} />
           </ActionIcon>
+          <PrintButton />
+          <ShareButton />
         </Group>
       </Group>
 

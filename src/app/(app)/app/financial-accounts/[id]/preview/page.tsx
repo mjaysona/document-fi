@@ -116,17 +116,28 @@ const toLocalDateOnly = (date: Date): string => {
 
 export default async function FinancialAccountPreviewPage({ params, searchParams }: Props) {
   const { id } = await params
-  const { logoUrl, from, to, cols, sb, tt, sections, statuses, transactionPurposes, sourceAccounts, destinationAccounts } =
-    await searchParams
+  const {
+    logoUrl,
+    from,
+    to,
+    cols,
+    sb,
+    tt,
+    sections,
+    statuses,
+    transactionPurposes,
+    sourceAccounts,
+    destinationAccounts,
+  } = await searchParams
 
   const [accountResult, transactionsResult, previewColumnsResult, banksResult, purposesResult] =
     await Promise.all([
-    getFinancialAccountById(id),
-    getAllTransactionsForFinancialAccount(id),
-    getUserTransactionPreviewTableColumnsConfig(),
-    getBanks(),
-    getTransactionPurposes(),
-  ])
+      getFinancialAccountById(id),
+      getAllTransactionsForFinancialAccount(id),
+      getUserTransactionPreviewTableColumnsConfig(),
+      getBanks(),
+      getTransactionPurposes(),
+    ])
 
   const normalizedColsParam = String(cols || '').trim()
   const visibleColumns = normalizedColsParam
@@ -244,31 +255,20 @@ export default async function FinancialAccountPreviewPage({ params, searchParams
 
   return (
     <Stack>
-      <Flex gap="sm" justify="space-between" wrap={{ base: 'wrap', md: 'nowrap' }} align="start">
-        <Flex gap="sm" align="start" wrap="nowrap">
-          <Link href={`/app/financial-accounts/${account.id}`}>
-            <ActionIcon
-              variant="default"
-              size="lg"
-              radius="sm"
-              aria-label="Back"
-              style={{ flexShrink: 0 }}
-            >
-              <ArrowLeft size={16} />
-            </ActionIcon>
-          </Link>
-          <Flex mih={32} align="center" gap="xs" wrap="nowrap">
-            <Title order={5}>Transaction Report for {account.name}</Title>
-          </Flex>
-        </Flex>
-        <Flex
-          w={{ base: '100%', md: 'auto' }}
-          gap="sm"
-          justify="flex-end"
-          style={{ flexShrink: 0 }}
-        >
-          <PrintButton />
-          <ShareButton />
+      <Flex gap="sm" align="start" wrap="nowrap">
+        <Link href={`/app/financial-accounts/${account.id}`}>
+          <ActionIcon
+            variant="default"
+            size="lg"
+            radius="sm"
+            aria-label="Back"
+            style={{ flexShrink: 0 }}
+          >
+            <ArrowLeft size={16} />
+          </ActionIcon>
+        </Link>
+        <Flex mih={32} align="center" gap="xs" wrap="nowrap">
+          <Title order={5}>Transaction Report for {account.name}</Title>
         </Flex>
       </Flex>
       <PreviewControlPanels
